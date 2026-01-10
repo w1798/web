@@ -77,7 +77,10 @@
             <div class="trait-group custom">
                 <h3>自定義類別和適性詞</h3>
                 <div class="custom-input-section">
-                    <textarea id="customTraitInput" placeholder="輸入自定義特類別(五字)適性詞(一到四字)，先類別，後輸入該類別的適性詞，一行一行輸入，如：
+                    <textarea id="customTraitInput" placeholder="1.輸入自定義特類別(五字)適性詞(四字以內)
+2.先輸入類別，再輸入該類別的適性詞，一行一行輸入
+3.該類別要增加適性詞，請先輸入類別後再輸入適性詞即可
+4.如：
 品學兼優型
 才德兼備
 勤學篤行
@@ -101,8 +104,8 @@
         <h3>自定提示詞</h3>
         <div class="template-setting">
             <label>提示詞範本設定：</label>
-            <textarea id="promptTemplate" rows="2" style="width: 100%; margin-top: 5px;">請為{grade}年級的學生{name}，以正向、溫暖、鼓勵的語氣，根據學生特質{{traits}}，生成{wordCount}字的期末評語</textarea>
-            <small style="color: #666;">可用變數：{grade}、{name}、{{traits}}、{wordCount}</small>
+            <textarea id="promptTemplate" rows="2" style="width: 100%; margin-top: 5px;">請為{grade}年級的學生{name}，以正向、溫暖、鼓勵的語氣，根據學生特質{traits}，生成{wordCount}字的期末評語</textarea>
+            <small style="color: #666;">可用變數：{grade}、{name}、{traits}、{wordCount}</small>
         </div>
     </div>
     </div>
@@ -129,5 +132,6 @@
         </footer>
     </div>
     <script src="script.js"></script>
+<button id="scrollToTop" title="回到頂部">↑</button>
 </body>
 </html>
