@@ -123,6 +123,23 @@ document.getElementById('resetTemplate').onclick = resetTemplate;
     
     // 範本變動時自動儲存
     document.getElementById('promptTemplate').onchange = saveToLocalStorage;
+
+
+const topBtn = document.getElementById('scrollToTop');
+
+    // 點擊按鈕回到頂部
+    topBtn.onclick = () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // 當頁面捲動超過 300px 才顯示按鈕
+    window.onscroll = () => {
+        if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
+            topBtn.style.display = "block";
+        } else {
+            topBtn.style.display = "none";
+        }
+    };
 }
 
 
@@ -173,14 +190,44 @@ function addCustomTraits() {
     const input = document.getElementById('customTraitInput');
     const lines = input.value.split('\n').map(l => l.trim()).filter(l => l);
     if (lines.length === 0) return;
-    let curr = traitsData.length - 1;
+
+    // 追蹤當前正在操作的類別索引
+    let currentCategoryIdx = traitsData.length - 1;
+
     lines.forEach(text => {
-        if (text.length >= 5) { traitsData.push({ category: text, items: [] }); curr = traitsData.length - 1; }
-        else {
-            if (curr < 0) { traitsData.push({ category: "其他", items: [text] }); curr = 0; }
-            else if (!traitsData[curr].items.includes(text)) traitsData[curr].items.push(text);
+        // 判斷是否為「類別名稱」（長度大於等於 5，或根據你的需求調整判斷標準）
+        if (text.length >= 5) {
+            // 關鍵修改：檢查類別是否已存在
+            const existingIdx = traitsData.findIndex(g => g.category === text);
+            
+            if (existingIdx !== -1) {
+                // 如果類別已存在，將指標移到該類別
+                currentCategoryIdx = existingIdx;
+            } else {
+                // 如果是新類別，則新增並更新指標
+                traitsData.push({ category: text, items: [] });
+                currentCategoryIdx = traitsData.length - 1;
+            }
+        } else {
+            // 處理「適性詞」
+            if (currentCategoryIdx < 0) {
+                // 防呆：若一開始就輸入短詞且無現有類別，放入「其他」
+                const otherIdx = traitsData.findIndex(g => g.category === "其他");
+                if (otherIdx !== -1) {
+                    currentCategoryIdx = otherIdx;
+                } else {
+                    traitsData.push({ category: "其他", items: [] });
+                    currentCategoryIdx = traitsData.length - 1;
+                }
+            }
+
+            // 確保詞彙不重複後加入
+            if (!traitsData[currentCategoryIdx].items.includes(text)) {
+                traitsData[currentCategoryIdx].items.push(text);
+            }
         }
     });
+
     input.value = '';
     saveToLocalStorage();
     initializeTraitButtons();
@@ -226,7 +273,9 @@ function generatePrompt() {
 
     generatedPrompts.sort((a, b) => a.studentId.localeCompare(b.studentId));
     document.getElementById('promptPreview').textContent = generatedPrompts.map(p => p.prompt).join('\n\n');
-    
+  
+    document.getElementById('promptPreview').textContent = generatedPrompts.map(p => p.prompt).join('\n\n');
+
     saveToLocalStorage();
     selectedStudents.forEach(s => {
         document.querySelectorAll('.student-button').forEach(btn => { if(btn.textContent === s) btn.style.display = 'none'; });
@@ -234,6 +283,9 @@ function generatePrompt() {
     selectedTraits.clear();
     document.querySelectorAll('.trait-button').forEach(b => b.classList.remove('selected'));
     selectedStudents.clear();
+// --- 新增這行：捲動到頁面底部 ---
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+
 }
 
 function copyPrompt() {
