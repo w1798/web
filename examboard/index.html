@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>考試看板 Modified by Charles Nextime</title>
+    <title>考試看板  Modified by Charles Nextime</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -17,7 +16,6 @@
         .transition-layout { transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
         .progress-container { height: 6px; background: #e2e8f0; border-radius: 999px; overflow: hidden; width: 40px; }
         .progress-bar { height: 100%; background: #3b82f6; transition: width 0.1s linear; }
-        /* 限制考科寬度約 4 個字 */
         .subject-input { width: 120px; }
     </style>
 </head>
@@ -195,9 +193,17 @@
                     <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} reminders={reminders} setReminders={setReminders} subjectOptions={subjectOptions} setSubjectOptions={setSubjectOptions} classInfo={classInfo} setClassInfo={setClassInfo} />
 
                     <div className="w-1/2 h-full p-6 overflow-y-auto border-r-2 border-gray-100 flex flex-col">
-                        <div className="flex justify-between items-center mb-4 border-b-2 border-slate-100 pb-2">
-                            <h1 className="text-3xl font-black text-slate-700">評量科目和時間</h1>
-                            <button onClick={() => setShowSettings(true)} className="p-2 bg-slate-100 rounded-xl hover:bg-slate-200 transition-all text-slate-600"><Settings size={28}/></button>
+                        {/* 頂部標題與總人數統計（已調整為相同大小） */}
+                        <div className="flex justify-between items-center mb-6 border-b-2 border-slate-100 pb-3">
+                            <div className="flex items-center gap-6">
+                                <h1 className="text-3xl font-black text-slate-700">評量科目和時間</h1>
+                                <div className="text-3xl font-black text-slate-400 flex gap-4">
+                                    <span>全班 <span className="text-blue-600">{classInfo.total}</span> 人</span>
+                                    <span>/</span>
+                                    <span>缺考 <span className="text-red-500">{classInfo.absent}</span> 人</span>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowSettings(true)} className="p-2 bg-slate-100 rounded-xl hover:bg-slate-200 transition-all text-slate-600"><Settings size={32}/></button>
                         </div>
                         
                         <div className="flex-1 space-y-2">
@@ -226,7 +232,7 @@
 
                                     <div className="flex items-center justify-between">
                                         <div className="text-lg font-bold text-slate-400">
-                                            缺 <span className="text-red-500">{a}</span> 人，個別試場 <span className="text-blue-500">{b}</span> 人，實到 <span className={`text-3xl font-black ml-1 ${isActive ? 'text-green-600' : 'text-slate-700'}`}>{c}</span>人
+                                            個別試場 <span className="text-blue-500">{b}</span> 人，實到 <span className={`text-3xl font-black ml-1 ${isActive ? 'text-green-600' : 'text-slate-700'}`}>{c}</span>人
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <input type="file" ref={el => fileRefs.current[item.id] = el} className="hidden" accept="audio/*" onChange={(e)=>{
@@ -252,7 +258,6 @@
                                 </div>
                             );
                         })}
-                        {/* 新增按鈕現在固定在考科列表的最下方 */}
                         <button onClick={addNextSession} className="w-full py-4 mt-4 border-2 border-dashed border-slate-100 rounded-2xl text-slate-300 text-xl font-bold hover:bg-slate-50 transition-all">+ 新增下一節評量</button>
                         </div>
                     </div>
