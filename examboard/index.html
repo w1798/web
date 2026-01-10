@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>教室監考系統 - 專業版</title>
+    <title>教室監考系統 - 進階人數管理</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -15,7 +15,6 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .modal-overlay { animation: fadeIn 0.2s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        select { appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 0.5rem center; background-size: 1.5em; }
     </style>
 </head>
 <body>
@@ -37,69 +36,73 @@
         const Play = (props) => <Icon {...props}><polygon points="5 3 19 12 5 21 5 3"></polygon></Icon>;
         const Pause = (props) => <Icon {...props}><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></Icon>;
         const Upload = (props) => <Icon {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></Icon>;
+        const Eye = (props) => <Icon {...props}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></Icon>;
+        const EyeOff = (props) => <Icon {...props}><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07-2.3-2.3"></path><line x1="1" y1="1" x2="23" y2="23"></line></Icon>;
 
         // --- 設定視窗 ---
-        const SettingsModal = ({ isOpen, onClose, reminders, setReminders, subjectOptions, setSubjectOptions }) => {
+        const SettingsModal = ({ isOpen, onClose, reminders, setReminders, subjectOptions, setSubjectOptions, classInfo, setClassInfo }) => {
             if (!isOpen) return null;
             return (
                 <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-6 backdrop-blur-sm modal-overlay">
                     <div className="bg-white w-full max-w-6xl h-[85vh] flex flex-col rounded-3xl shadow-2xl overflow-hidden">
                         <div className="p-6 border-b flex justify-between items-center bg-gray-50">
-                            <h2 className="text-2xl font-bold">系統設定</h2>
-                            <button onClick={onClose} className="px-8 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700">完成</button>
+                            <h2 className="text-2xl font-bold">系統進階設定</h2>
+                            <button onClick={onClose} className="px-10 py-3 bg-blue-600 text-white rounded-2xl font-bold">儲存並完成</button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
-                            {/* 科目清單設定 */}
-                            <section className="bg-gray-50 p-6 rounded-2xl">
-                                <h3 className="text-xl font-black text-blue-600 mb-4 flex justify-between items-center">
-                                    考科選單內容
-                                    <button onClick={() => setSubjectOptions([...subjectOptions, "新科目"])} className="p-1 bg-blue-100 rounded-full text-blue-600"><Plus size={20}/></button>
-                                </h3>
+                            {/* 左：科目與個別考場 */}
+                            <section className="bg-blue-50/50 p-6 rounded-3xl border border-blue-100">
+                                <h3 className="text-xl font-black text-blue-700 mb-4 flex justify-between">考科選單 & 個別考場人數 <button onClick={() => setSubjectOptions([...subjectOptions, { name: "新科目", specialRoom: 0 }])}><Plus size={20}/></button></h3>
                                 {subjectOptions.map((sub, idx) => (
-                                    <div key={idx} className="flex gap-2 mb-2">
-                                        <input value={sub} onChange={(e) => {
-                                            const newOpt = [...subjectOptions];
-                                            newOpt[idx] = e.target.value;
-                                            setSubjectOptions(newOpt);
-                                        }} className="flex-1 p-2 rounded-lg border border-gray-200" />
-                                        <button onClick={() => setSubjectOptions(subjectOptions.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-600"><Trash2 size={20}/></button>
+                                    <div key={idx} className="flex gap-2 mb-3 items-center">
+                                        <input value={sub.name} onChange={(e) => {
+                                            const newOpt = [...subjectOptions]; newOpt[idx].name = e.target.value; setSubjectOptions(newOpt);
+                                        }} className="flex-1 p-2 rounded-xl border-none shadow-sm" />
+                                        <select value={sub.specialRoom} onChange={(e) => {
+                                            const newOpt = [...subjectOptions]; newOpt[idx].specialRoom = parseInt(e.target.value); setSubjectOptions(newOpt);
+                                        }} className="p-2 rounded-xl bg-white shadow-sm font-bold text-blue-600">
+                                            {[...Array(10).keys()].map(n => <option key={n} value={n}>{n}人</option>)}
+                                        </select>
+                                        <button onClick={() => setSubjectOptions(subjectOptions.filter((_, i) => i !== idx))} className="text-red-300"><Trash2 size={20}/></button>
                                     </div>
                                 ))}
+                                <div className="mt-8 pt-6 border-t border-blue-200">
+                                    <h3 className="text-xl font-black text-gray-700 mb-4">全班人數設定</h3>
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between bg-white p-3 rounded-2xl shadow-sm">
+                                            <span>全班總人數</span>
+                                            <select value={classInfo.total} onChange={(e)=>setClassInfo({...classInfo, total: parseInt(e.target.value)})} className="font-bold text-lg">
+                                                {[...Array(41).keys()].map(n => <option key={n} value={n}>{n}人</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="flex items-center justify-between bg-white p-3 rounded-2xl shadow-sm">
+                                            <span>今日缺考人數</span>
+                                            <select value={classInfo.absent} onChange={(e)=>setClassInfo({...classInfo, absent: parseInt(e.target.value)})} className="font-bold text-lg text-red-500">
+                                                {[...Array(41).keys()].map(n => <option key={n} value={n}>{n}人</option>)}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
                             </section>
-                            {/* 提醒文字設定 */}
-                            <section className="bg-red-50 p-6 rounded-2xl">
-                                <h3 className="text-xl font-black text-red-600 mb-4 flex justify-between items-center">
-                                    考試提醒文字
-                                    <button onClick={() => setReminders({...reminders, exam: [...reminders.exam, "新提醒"]})} className="p-1 bg-red-100 rounded-full"><Plus size={20}/></button>
-                                </h3>
+                            
+                            {/* 中 & 右：提醒文字 */}
+                            <section className="bg-red-50/50 p-6 rounded-3xl border border-red-100">
+                                <h3 className="text-xl font-black text-red-600 mb-4">考試提醒文字</h3>
                                 {reminders.exam.map((text, idx) => (
                                     <div key={idx} className="flex gap-2 mb-2">
                                         <input value={text} onChange={(e) => {
-                                            const newR = [...reminders.exam]; newR[idx] = e.target.value;
-                                            setReminders({...reminders, exam: newR});
-                                        }} className="flex-1 p-2 rounded-lg border-none" />
-                                        <button onClick={() => {
-                                            const newR = reminders.exam.filter((_, i) => i !== idx);
-                                            setReminders({...reminders, exam: newR});
-                                        }} className="text-red-300"><Trash2 size={20}/></button>
+                                            const newR = [...reminders.exam]; newR[idx] = e.target.value; setReminders({...reminders, exam: newR});
+                                        }} className="flex-1 p-2 rounded-xl border-none shadow-sm" />
                                     </div>
                                 ))}
                             </section>
-                            <section className="bg-green-50 p-6 rounded-2xl">
-                                <h3 className="text-xl font-black text-green-600 mb-4 flex justify-between items-center">
-                                    下課提醒文字
-                                    <button onClick={() => setReminders({...reminders, break: [...reminders.break, "新提醒"]})} className="p-1 bg-green-100 rounded-full"><Plus size={20}/></button>
-                                </h3>
+                            <section className="bg-green-50/50 p-6 rounded-3xl border border-green-100">
+                                <h3 className="text-xl font-black text-green-600 mb-4">下課提醒文字</h3>
                                 {reminders.break.map((text, idx) => (
                                     <div key={idx} className="flex gap-2 mb-2">
                                         <input value={text} onChange={(e) => {
-                                            const newR = [...reminders.break]; newR[idx] = e.target.value;
-                                            setReminders({...reminders, break: newR});
-                                        }} className="flex-1 p-2 rounded-lg border-none" />
-                                        <button onClick={() => {
-                                            const newR = reminders.break.filter((_, i) => i !== idx);
-                                            setReminders({...reminders, break: newR});
-                                        }} className="text-green-300"><Trash2 size={20}/></button>
+                                            const newR = [...reminders.break]; newR[idx] = e.target.value; setReminders({...reminders, break: newR});
+                                        }} className="flex-1 p-2 rounded-xl border-none shadow-sm" />
                                     </div>
                                 ))}
                             </section>
@@ -114,19 +117,17 @@
             const [timeOffset, setTimeOffset] = useState(0);
             const [showReminders, setShowReminders] = useState(true);
             const [showSettings, setShowSettings] = useState(false);
-            
-            // 狀態：科目選項
-            const [subjectOptions, setSubjectOptions] = useState(['國語', '自然', '英語', '數學', '社會']);
-            
-            // 狀態：當前考試清單
-            const [schedule, setSchedule] = useState([
-                { id: 1, subject: '國語', start: '08:40', end: '09:20', audio: null },
-                { id: 2, subject: '數學', start: '09:30', end: '10:10', audio: null }
+            const [classInfo, setClassInfo] = useState({ total: 25, absent: 0 });
+            const [subjectOptions, setSubjectOptions] = useState([
+                { name: '國語', specialRoom: 0 }, { name: '自然', specialRoom: 0 }, 
+                { name: '英語', specialRoom: 0 }, { name: '數學', specialRoom: 0 }, { name: '社會', specialRoom: 0 }
             ]);
-
+            const [schedule, setSchedule] = useState([
+                { id: 1, subject: '國語', start: '08:40', end: '09:20', audio: null }
+            ]);
             const [reminders, setReminders] = useState({
-                exam: ["考卷記得寫上班級姓名座號", "有問題舉手問老師", "不會寫的題目跳過寫會的題目", "耐心、細心、小心"],
-                break: ["等監考老師點完再下課", "桌面淨空", "提早上廁所喝水"]
+                exam: ["考卷記得寫班級姓名座號", "有問題舉手問老師", "耐心細心檢查"],
+                break: ["提早上廁所喝水", "桌面淨空"]
             });
 
             const [playingAudioId, setPlayingAudioId] = useState(null);
@@ -143,13 +144,10 @@
                 const currentTime = adjustedTime.getTime();
                 const parseT = (timeStr) => {
                     const [h, m] = timeStr.split(':').map(Number);
-                    const d = new Date(adjustedTime);
-                    d.setHours(h, m, 0, 0);
-                    return d.getTime();
+                    const d = new Date(adjustedTime); d.setHours(h, m, 0, 0); return d.getTime();
                 };
                 for (let i = 0; i < schedule.length; i++) {
-                    const start = parseT(schedule[i].start);
-                    const end = parseT(schedule[i].end);
+                    const start = parseT(schedule[i].start); const end = parseT(schedule[i].end);
                     if (currentTime >= start && currentTime <= end) return { type: 'exam', slotIndex: i, timeLeft: end - currentTime, totalDuration: end - start };
                     if (i < schedule.length - 1) {
                         const nextStart = parseT(schedule[i+1].start);
@@ -159,33 +157,29 @@
                 return { type: 'idle' };
             }, [adjustedTime, schedule]);
 
-            const handleAudioUpload = (id, file) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    setSchedule(schedule.map(item => item.id === id ? { ...item, audio: e.target.result } : item));
-                };
-                reader.readAsDataURL(file);
-            };
-
             return (
-                <div className="w-screen h-screen flex flex-col overflow-hidden bg-white">
+                <div className="w-screen h-screen flex flex-col bg-white overflow-hidden">
                     <SettingsModal 
-                        isOpen={showSettings} 
-                        onClose={() => setShowSettings(false)} 
+                        isOpen={showSettings} onClose={() => setShowSettings(false)} 
                         reminders={reminders} setReminders={setReminders}
                         subjectOptions={subjectOptions} setSubjectOptions={setSubjectOptions}
+                        classInfo={classInfo} setClassInfo={setClassInfo}
                     />
-                    
-                    {/* 上方：時鐘與狀態 */}
+
+                    {/* 上方：時鐘與切換按鈕 */}
                     <div className="h-1/3 flex border-b-8 border-gray-900">
                         <div className="w-2/3 flex flex-col items-center justify-center bg-gray-900 text-white border-r-4 border-gray-700">
-                            <div className="text-[3vh] font-bold text-gray-400 mb-2">民國{adjustedTime.getFullYear()-1911}年{adjustedTime.getMonth()+1}月{adjustedTime.getDate()}日</div>
                             <div className="text-[14vh] font-mono font-black">{adjustedTime.toLocaleTimeString('zh-TW', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
                         </div>
                         <div className="w-1/3 p-6 flex flex-col justify-center gap-4 relative">
-                            <button onClick={() => setShowSettings(true)} className="absolute top-4 right-4 p-4 bg-gray-100 rounded-2xl hover:bg-gray-200"><Settings size={32}/></button>
+                            <div className="absolute top-4 right-4 flex gap-4">
+                                <button onClick={() => setShowReminders(!showReminders)} className="p-4 bg-gray-100 rounded-2xl">
+                                    {showReminders ? <EyeOff size={32}/> : <Eye size={32}/>}
+                                </button>
+                                <button onClick={() => setShowSettings(true)} className="p-4 bg-gray-100 rounded-2xl"><Settings size={32}/></button>
+                            </div>
                             <div className="w-full h-24 bg-gray-100 relative overflow-hidden rounded-3xl border-4 border-gray-800">
-                                <div className={`absolute top-0 left-0 h-full transition-all duration-1000 ${currentStatus.type === 'exam' ? 'bg-red-500' : 'bg-green-500'}`} style={{ width: currentStatus.timeLeft ? `${(currentStatus.timeLeft / currentStatus.totalDuration) * 100}%` : '0%' }}></div>
+                                <div className={`absolute h-full transition-all duration-1000 ${currentStatus.type === 'exam'?'bg-red-500':'bg-green-500'}`} style={{ width: currentStatus.timeLeft ? `${(currentStatus.timeLeft / currentStatus.totalDuration) * 100}%` : '0%' }}></div>
                                 <div className="absolute inset-0 flex items-center justify-center z-10 font-black text-2xl">
                                     {currentStatus.type === 'idle' ? '待機中' : `${currentStatus.type === 'exam'?'考試':'休息'}剩餘 ${Math.ceil(currentStatus.timeLeft/60000)} 分`}
                                 </div>
@@ -193,58 +187,63 @@
                         </div>
                     </div>
 
-                    {/* 下方：主畫面 3/5 與 2/5 比例 */}
+                    {/* 下方：3/5 與 2/5 佈局 */}
                     <div className="h-2/3 flex">
-                        {/* 左側 3/5：考試科目進度 */}
-                        <div className="w-3/5 h-full p-6 overflow-y-auto border-r-4 border-gray-50">
-                            <h3 className="text-xl font-bold mb-4 text-gray-400 flex items-center gap-2">● 考試科目進度</h3>
-                            {schedule.map((item, idx) => (
-                                <div key={item.id} className={`mb-4 p-4 rounded-3xl border-2 flex items-center justify-between ${currentStatus.slotIndex === idx ? 'bg-yellow-50 border-yellow-400' : 'bg-white border-gray-100'}`}>
-                                    <div className="flex items-center gap-4">
-                                        {/* 修改：改為下拉選單 */}
-                                        <select 
-                                            value={item.subject} 
-                                            onChange={(e) => {
-                                                const newS = [...schedule];
-                                                newS[idx].subject = e.target.value;
-                                                setSchedule(newS);
-                                            }}
-                                            className="text-2xl font-black bg-gray-50 border-2 border-gray-200 rounded-xl px-4 py-2 outline-none focus:border-blue-500 min-w-[150px]"
-                                        >
-                                            <option value="">選擇科目</option>
-                                            {subjectOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                                        </select>
-                                        
-                                        <div className="flex items-center gap-2 text-2xl font-mono font-bold">
-                                            <input type="time" value={item.start} onChange={(e)=>{const s=[...schedule]; s[idx].start=e.target.value; setSchedule(s);}} className="bg-transparent" />
-                                            <span>~</span>
-                                            <input type="time" value={item.end} onChange={(e)=>{const s=[...schedule]; s[idx].end=e.target.value; setSchedule(s);}} className="bg-transparent" />
+                        <div className={`${showReminders ? 'w-3/5' : 'w-full'} p-6 overflow-y-auto transition-all duration-500`}>
+                            {schedule.map((item, idx) => {
+                                // 取得當前選擇科目的個別考場人數
+                                const selectedSub = subjectOptions.find(o => o.name === item.subject);
+                                const b = selectedSub ? selectedSub.specialRoom : 0;
+                                const a = classInfo.absent;
+                                const c = classInfo.total - a - b;
+
+                                return (
+                                    <div key={item.id} className={`mb-4 p-6 rounded-[2rem] border-2 flex items-center justify-between ${currentStatus.slotIndex === idx ? 'bg-yellow-50 border-yellow-400 shadow-lg' : 'bg-white border-gray-100'}`}>
+                                        <div className="flex flex-col gap-2">
+                                            <div className="flex items-center gap-4">
+                                                <select value={item.subject} onChange={(e)=>{const s=[...schedule]; s[idx].subject=e.target.value; setSchedule(s);}} className="text-3xl font-black bg-gray-100 px-4 py-2 rounded-xl">
+                                                    <option value="">選擇科目</option>
+                                                    {subjectOptions.map(o => <option key={o.name} value={o.name}>{o.name}</option>)}
+                                                </select>
+                                                <div className="text-2xl font-mono font-bold flex items-center gap-2">
+                                                    <input type="time" value={item.start} onChange={(e)=>{const s=[...schedule]; s[idx].start=e.target.value; setSchedule(s);}} className="bg-transparent" />
+                                                    <span>~</span>
+                                                    <input type="time" value={item.end} onChange={(e)=>{const s=[...schedule]; s[idx].end=e.target.value; setSchedule(s);}} className="bg-transparent" />
+                                                </div>
+                                            </div>
+                                            <div className="px-2 text-xl font-bold text-gray-500">
+                                                缺考 <span className="text-red-500">{a}</span> 人，個別考場 <span className="text-blue-500">{b}</span> 人，實到 <span className="text-green-600 text-2xl font-black">{c}</span> 人
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-4 items-center">
+                                            <label className="cursor-pointer text-gray-400 hover:text-blue-500">
+                                                <Upload size={24}/><input type="file" className="hidden" onChange={(e)=>{
+                                                    const r = new FileReader(); r.onload=(f)=>setSchedule(schedule.map(s=>s.id===item.id?{...s, audio:f.target.result}:s)); r.readAsDataURL(e.target.files[0]);
+                                                }} />
+                                            </label>
+                                            {item.audio && <button onClick={()=>{
+                                                const a=audioRefs.current[item.id]; playingAudioId===item.id?(a.pause(),setPlayingAudioId(null)):(a.play(),setPlayingAudioId(item.id));
+                                            }} className="text-blue-500">{playingAudioId===item.id?<Pause size={32}/>:<Play size={32}/>}<audio ref={el=>audioRefs.current[item.id]=el} src={item.audio} onEnded={()=>setPlayingAudioId(null)}/></button>}
+                                            <button onClick={()=>setSchedule(schedule.filter(s=>s.id!==item.id))} className="text-red-200 hover:text-red-500"><Trash2 size={24}/></button>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-4">
-                                        <label className="cursor-pointer text-gray-400 hover:text-blue-500"><Upload size={20}/><input type="file" className="hidden" onChange={(e) => handleAudioUpload(item.id, e.target.files[0])} /></label>
-                                        {item.audio && <button onClick={() => {
-                                            const a = audioRefs.current[item.id];
-                                            playingAudioId === item.id ? (a.pause(), setPlayingAudioId(null)) : (a.play(), setPlayingAudioId(item.id));
-                                        }}>{playingAudioId === item.id ? <Pause size={24}/> : <Play size={24}/>}<audio ref={el=>audioRefs.current[item.id]=el} src={item.audio} onEnded={()=>setPlayingAudioId(null)}/></button>}
-                                        <button onClick={() => setSchedule(schedule.filter(s => s.id !== item.id))} className="text-red-300 hover:text-red-500"><Trash2 size={24}/></button>
-                                    </div>
-                                </div>
-                            ))}
-                            <button onClick={() => setSchedule([...schedule, { id: Date.now(), subject: '國語', start: '12:00', end: '13:00', audio: null }])} className="w-full py-3 border-2 border-dashed border-gray-200 rounded-2xl text-gray-400 font-bold hover:bg-gray-50">+ 增加節次</button>
+                                );
+                            })}
+                            <button onClick={() => setSchedule([...schedule, { id: Date.now(), subject: '國語', start: '12:00', end: '13:00', audio: null }])} className="w-full py-4 border-4 border-dashed border-gray-100 rounded-[2rem] text-gray-300 text-xl font-bold hover:bg-gray-50 transition-all">+ 增加下一場考試</button>
                         </div>
 
-                        {/* 右側 2/5：注意事項 */}
-                        <div className="w-2/5 h-full bg-blue-50 p-10 flex flex-col justify-center items-center text-center">
-                            <h2 className="text-2xl font-black text-blue-800 mb-6 border-b-4 border-blue-200 pb-2 w-full uppercase">
-                                {currentStatus.type === 'exam' ? '📋 考試注意事項' : '🔔 準備事項'}
-                            </h2>
-                            <div className="h-64 flex items-center">
-                                <p className="text-[5vh] font-black text-gray-800 leading-tight">
-                                    { (currentStatus.type === 'exam' ? reminders.exam : reminders.break)[Math.floor((Date.now()/5000) % ( (currentStatus.type === 'exam' ? reminders.exam : reminders.break).length || 1))] }
-                                </p>
+                        {showReminders && (
+                            <div className="w-2/5 h-full bg-blue-50/50 p-10 flex flex-col justify-center items-center text-center">
+                                <h2 className="text-2xl font-black text-blue-800 mb-8 border-b-4 border-blue-200 pb-2 w-full uppercase">
+                                    {currentStatus.type === 'exam' ? '📋 考試注意事項' : '🔔 準備事項'}
+                                </h2>
+                                <div className="h-64 flex items-center">
+                                    <p className="text-[5vh] font-black text-gray-800 leading-tight">
+                                        { (currentStatus.type === 'exam' ? reminders.exam : reminders.break)[Math.floor((Date.now()/5000) % ( (currentStatus.type === 'exam' ? reminders.exam : reminders.break).length || 1))] }
+                                    </p>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
             );
