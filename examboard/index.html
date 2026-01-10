@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>監考系統 - 教學現場專用版</title>
+    <title>監考系統 - 專業進度條版</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -13,8 +13,10 @@
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        input[type='range'] { accent-color: #3b82f6; height: 4px; }
         .transition-layout { transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        /* 進度條容器樣式 */
+        .progress-container { height: 6px; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
+        .progress-bar { height: 100%; background: #3b82f6; transition: width 0.1s linear; }
     </style>
 </head>
 <body>
@@ -32,6 +34,7 @@
         const Settings = (props) => <Icon {...props}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.35a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></Icon>;
         const Trash2 = (props) => <Icon {...props}><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></Icon>;
         const Upload = (props) => <Icon {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></Icon>;
+        const RotateCcw = (props) => <Icon {...props}><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></Icon>;
         const Eye = (props) => <Icon {...props}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></Icon>;
         const EyeOff = (props) => <Icon {...props}><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07-2.3-2.3"></path><line x1="1" y1="1" x2="23" y2="23"></line></Icon>;
 
@@ -89,23 +92,23 @@
                 { name: '國語', specialRoom: 0 }, { name: '自然', specialRoom: 0 }, { name: '英語', specialRoom: 0 }, { name: '數學', specialRoom: 0 }, { name: '社會', specialRoom: 0 }
             ]);
             
-            // 預設第一節
             const [schedule, setSchedule] = useState([{ id: 1, subject: '國語', start: '08:40', end: '09:20', audio: null }]);
             const [reminders, setReminders] = useState({
                 exam: ["考卷記得寫上班級姓名座號", "有問題舉手問老師", "耐心、細心、多檢查"],
                 break: ["提早上廁所喝水", "桌面淨空", "準備下一科文具"]
             });
 
+            // 音訊播放狀態
             const [playingAudioId, setPlayingAudioId] = useState(null);
             const [audioProgress, setAudioProgress] = useState({});
             const audioRefs = useRef({});
+            const fileRefs = useRef({});
 
             useEffect(() => {
                 const timer = setInterval(() => setNow(new Date()), 1000);
                 return () => clearInterval(timer);
             }, []);
 
-            // 預設節次時間邏輯
             const addNextSession = () => {
                 const sessions = [
                     { start: '08:40', end: '09:20' },
@@ -114,14 +117,41 @@
                     { start: '11:15', end: '11:45' }
                 ];
                 const nextIdx = schedule.length % sessions.length;
-                const newSession = {
+                setSchedule([...schedule, {
                     id: Date.now(),
                     subject: subjectOptions[0]?.name || '',
                     start: sessions[nextIdx].start,
                     end: sessions[nextIdx].end,
                     audio: null
-                };
-                setSchedule([...schedule, newSession]);
+                }]);
+            };
+
+            const toggleAudio = (id) => {
+                const audio = audioRefs.current[id];
+                if (!audio) return;
+                if (playingAudioId === id) {
+                    audio.pause();
+                    setPlayingAudioId(null);
+                } else {
+                    Object.values(audioRefs.current).forEach(a => a?.pause());
+                    audio.play();
+                    setPlayingAudioId(id);
+                }
+            };
+
+            const replayAudio = (id) => {
+                const audio = audioRefs.current[id];
+                if (!audio) return;
+                audio.currentTime = 0;
+                audio.play();
+                setPlayingAudioId(id);
+            };
+
+            const handleTimeUpdate = (id) => {
+                const audio = audioRefs.current[id];
+                if (audio && audio.duration > 0) {
+                    setAudioProgress(prev => ({ ...prev, [id]: (audio.currentTime / audio.duration) * 100 }));
+                }
             };
 
             const currentStatus = useMemo(() => {
@@ -142,7 +172,7 @@
             }, [now, schedule]);
 
             return (
-                <div className="w-screen h-screen flex bg-white overflow-hidden">
+                <div className="w-screen h-screen flex bg-white overflow-hidden text-slate-800">
                     <SettingsModal 
                         isOpen={showSettings} onClose={() => setShowSettings(false)} 
                         reminders={reminders} setReminders={setReminders}
@@ -159,10 +189,10 @@
                             const c = classInfo.total - a - b;
 
                             return (
-                                <div key={item.id} className={`mb-6 p-6 rounded-[2rem] border-2 transition-layout ${currentStatus.slotIndex === idx ? 'bg-yellow-50 border-yellow-400 shadow-lg' : 'bg-white border-gray-100'}`}>
-                                    <div className="flex items-center justify-between mb-2">
+                                <div key={item.id} className={`mb-6 p-6 rounded-[2rem] border-2 transition-layout ${currentStatus.slotIndex === idx ? 'bg-yellow-100 border-yellow-400 shadow-lg' : 'bg-white border-gray-100 shadow-sm'}`}>
+                                    <div className="flex items-center justify-between mb-4">
                                         <div className="flex items-center gap-4">
-                                            <select value={item.subject} onChange={(e)=>{const s=[...schedule]; s[idx].subject=e.target.value; setSchedule(s);}} className="text-3xl font-black bg-slate-100 px-4 py-1 rounded-xl">
+                                            <select value={item.subject} onChange={(e)=>{const s=[...schedule]; s[idx].subject=e.target.value; setSchedule(s);}} className="text-3xl font-black bg-slate-100 px-4 py-1 rounded-xl outline-none">
                                                 {subjectOptions.map(o => <option key={o.name} value={o.name}>{o.name}</option>)}
                                             </select>
                                             <div className="text-2xl font-mono font-bold flex items-center gap-2">
@@ -172,47 +202,70 @@
                                             </div>
                                         </div>
                                         <div className="flex gap-4">
-                                            <label className="cursor-pointer text-gray-300 hover:text-blue-500"><Upload size={24}/><input type="file" className="hidden" onChange={(e)=>{
-                                                const r = new FileReader(); r.onload=(f)=>setSchedule(schedule.map(s=>s.id===item.id?{...s, audio:f.target.result}:s)); r.readAsDataURL(e.target.files[0]);
-                                            }} /></label>
-                                            <button onClick={()=>setSchedule(schedule.filter(s=>s.id!==item.id))} className="text-red-100 hover:text-red-400"><Trash2 size={24}/></button>
+                                            <button onClick={()=>setSchedule(schedule.filter(s=>s.id!==item.id))} className="text-red-200 hover:text-red-500"><Trash2 size={24}/></button>
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-4 mb-2">
-                                        {item.audio && (
-                                            <button onClick={() => {
-                                                const a = audioRefs.current[item.id];
-                                                if (playingAudioId === item.id) { a.pause(); setPlayingAudioId(null); }
-                                                else { Object.values(audioRefs.current).forEach(x=>x?.pause()); a.play(); setPlayingAudioId(item.id); }
-                                            }} className={`px-4 py-1 rounded-lg text-sm font-bold text-white ${playingAudioId === item.id ? 'bg-red-500' : 'bg-blue-600'}`}>
-                                                {playingAudioId === item.id ? '暫停' : '播放'}
-                                            </button>
-                                        )}
+                                    {/* 下方控制列：人數顯示 + 音訊控制 */}
+                                    <div className="flex items-center justify-between">
                                         <div className="text-lg font-bold text-gray-400">
-                                            缺考 <span className="text-red-500">{a}</span>，個考 <span className="text-blue-500">{b}</span>，實到 <span className="text-green-600 text-3xl font-black ml-2">{c}</span>
+                                            缺考 <span className="text-red-500">{a}</span>，個考 <span className="text-blue-500">{b}</span>，實到 <span className="text-green-600 text-4xl font-black ml-2 tracking-tighter">{c}</span>人
+                                        </div>
+                                        
+                                        <div className="flex items-center gap-2">
+                                            <input type="file" ref={el => fileRefs.current[item.id] = el} className="hidden" accept="audio/*" onChange={(e)=>{
+                                                const f = e.target.files[0];
+                                                if(f){
+                                                    const url = URL.createObjectURL(f);
+                                                    setSchedule(schedule.map(s => s.id === item.id ? {...s, audio: url} : s));
+                                                }
+                                            }} />
+                                            
+                                            {/* 上傳 */}
+                                            <button onClick={()=>fileRefs.current[item.id].click()} className="p-2 bg-gray-100 text-gray-500 rounded-lg hover:bg-gray-200 transition-colors" title="上傳聽力音檔">
+                                                <Upload size={20}/>
+                                            </button>
+
+                                            {item.audio && (
+                                                <div className="flex items-center gap-2 animate-in slide-in-from-right duration-300">
+                                                    {/* 播放/暫停 */}
+                                                    <button onClick={() => toggleAudio(item.id)} className={`px-4 py-2 rounded-lg text-sm font-black text-white shadow-sm transition-all ${playingAudioId === item.id ? 'bg-red-500' : 'bg-green-600'}`}>
+                                                        {playingAudioId === item.id ? '暫停' : '播放'}
+                                                    </button>
+                                                    {/* 重播 */}
+                                                    <button onClick={() => replayAudio(item.id)} className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200" title="從頭播放">
+                                                        <RotateCcw size={20}/>
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
-                                    
+
+                                    {/* 音訊進度條 (獨立列) */}
                                     {item.audio && (
-                                        <div className="px-2">
-                                            <input type="range" className="w-full" value={audioProgress[item.id] || 0} onChange={(e) => {
-                                                const a = audioRefs.current[item.id]; if(a){ a.currentTime = (e.target.value/100)*a.duration; setAudioProgress({...audioProgress, [item.id]: e.target.value}); }
-                                            }} />
-                                            <audio ref={el => audioRefs.current[item.id] = el} src={item.audio} onTimeUpdate={() => {
-                                                const a = audioRefs.current[item.id]; setAudioProgress(p => ({...p, [item.id]: (a.currentTime/a.duration)*100}));
-                                            }} onEnded={()=>setPlayingAudioId(null)} />
+                                        <div className="mt-4">
+                                            <div className="progress-container">
+                                                <div className="progress-bar" style={{ width: `${audioProgress[item.id] || 0}%` }}></div>
+                                            </div>
+                                            <audio 
+                                                ref={el => audioRefs.current[item.id] = el} 
+                                                src={item.audio} 
+                                                onTimeUpdate={() => handleTimeUpdate(item.id)} 
+                                                onEnded={() => {
+                                                    setPlayingAudioId(null);
+                                                    setAudioProgress(p => ({...p, [item.id]: 0}));
+                                                }}
+                                            />
                                         </div>
                                     )}
                                 </div>
                             );
                         })}
-                        <button onClick={addNextSession} className="w-full py-4 border-4 border-dashed border-gray-100 rounded-[2rem] text-gray-300 text-xl font-bold hover:bg-gray-50">+ 新增下一節考試</button>
+                        <button onClick={addNextSession} className="w-full py-4 border-4 border-dashed border-gray-100 rounded-[2rem] text-gray-300 text-xl font-bold hover:bg-gray-50 transition-all">+ 新增下一節考試</button>
                     </div>
 
                     {/* 右側 2/5 資訊區 */}
                     <div className="w-2/5 h-full flex flex-col transition-layout">
-                        {/* 右上：時間區 (依 showReminders 縮放) */}
                         <div className={`bg-gray-900 text-white p-8 flex flex-col items-center justify-center relative transition-layout ${showReminders ? 'h-2/5' : 'h-full'}`}>
                             <div className="absolute top-4 right-4 flex gap-4">
                                 <button onClick={() => setShowReminders(!showReminders)} className="p-2 bg-white/10 rounded-lg">{showReminders ? <EyeOff size={20}/> : <Eye size={20}/>}</button>
@@ -224,9 +277,8 @@
                             </div>
                         </div>
 
-                        {/* 右下：提醒區 */}
                         {showReminders && (
-                            <div className="h-3/5 bg-blue-50/60 p-10 flex flex-col items-center justify-center text-center animate-in fade-in duration-500">
+                            <div className="h-3/5 bg-blue-50/60 p-10 flex flex-col items-center justify-center text-center">
                                 <h2 className="text-2xl font-black text-blue-800 mb-6 border-b-4 border-blue-200 pb-2 w-full">考試注意事項</h2>
                                 <div className="flex-1 flex items-center">
                                     <p className="text-[5.5vh] font-black text-gray-800 leading-tight">
