@@ -1,14 +1,21 @@
 
+
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Puti-AI學生期末評語提示詞生成器 V8</title>
+    <title>Puti-AI學生期末評語提示詞生成器 V8 加強版 by Charels Nextime</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<div class="custom-actions">
+    <button id="exportTraits">匯出特質檔 (.json)</button>
+    <button id="importTraits">匯入特質檔 (.json)</button>
+    <button id="resetConfig" style="background-color: #ffeded; color: #d9534f;">重置系統設定 ↺</button>
+    <input type="file" id="traitFileInput" style="display: none;" accept=".json">
+</div>
     <div class="container">
-        <h1>Puti-AI學生期末評語提示詞生成器 V8</h1>
+        <h1>Puti-AI學生期末評語提示詞生成器 V8 加強版</h1>
         <h2>貼切個別學生版</h2>
 
         <div class="input-section">
@@ -36,11 +43,16 @@
                 <input type="number" id="wordCount" min="50" max="500" value="100">
             </div>
 
-            <div class="student-list">
-                <label for="studentNames">學生清單 (一行一名):</label>
-                <textarea id="studentNames" rows="5"></textarea>
-                <button id="generateButtons">確定</button>
-            </div>
+<div class="student-list">
+    <label for="studentNames">學生清單 (一行一名):</label>
+    <textarea id="studentNames" rows="5"></textarea>
+    <div class="action-row">
+        <button id="generateButtons">確定</button>
+        <span id="stepHint" style="display: none; color: #d9534f; font-weight: bold; margin-left: 10px;">
+            📢 1.點選學生 → 2.點選適性詞 (可多選) → 3.點選下方「生成提示詞」→ 4.複製貼上在 AI(如 ChatGPT、Gemini 等)生成評語
+        </span>
+    </div>
+</div>
         </div>
 
         <div id="studentButtons" class="student-buttons"></div>
@@ -63,9 +75,19 @@
                 <div class="buttons"></div>
             </div>
             <div class="trait-group custom">
-                <h3>自定義特質</h3>
+                <h3>自定義類別和適性詞</h3>
                 <div class="custom-input-section">
-                    <textarea id="customTraitInput" placeholder="輸入自定義特質或評語詞彙 (一行一個)" rows="4"></textarea>
+                    <textarea id="customTraitInput" placeholder="輸入自定義特類別(五字)適性詞(一到四字)，先類別，後輸入該類別的適性詞，一行一行輸入，如：
+品學兼優型
+才德兼備
+勤學篤行
+堪為表率
+潛力待發型
+大器晚成
+韜光養晦
+伺機而動
+穩紮穩打
+" rows="20"></textarea>
                     <div class="custom-buttons">
                         <button id="addCustomTraits">批量新增</button>
                         <button id="clearCustomTraits">清空所有</button>
@@ -74,12 +96,23 @@
                 <div class="buttons"></div>
             </div>
         </div>
+<div class="trait-group custom">
+    <div class="category-header">
+        <h3>自定提示詞</h3>
+        <div class="template-setting">
+            <label>提示詞範本設定：</label>
+            <textarea id="promptTemplate" rows="2" style="width: 100%; margin-top: 5px;">請為{grade}年級的學生{name}，以正向、溫暖、鼓勵的語氣，根據學生特質{{traits}}，生成{wordCount}字的期末評語</textarea>
+            <small style="color: #666;">可用變數：{grade}、{name}、{{traits}}、{wordCount}</small>
+        </div>
+    </div>
+    </div>
 
         <div class="action-buttons">
             <button id="generate">生成提示詞</button>
             <button id="copy">複製提示詞</button>
             <button id="openAI">貼到AI生成</button>
-            <button id="reset">重置提示詞 ⚠️</button>
+<button id="resetTemplate" type="button">🔄 重置範本</button>
+            <button id="reset">清除己生成的提示詞 ⚠️</button>
         </div>
 
         <div class="preview">
@@ -89,6 +122,7 @@
 
         <footer>
             <p>屏東縣後庄國小黃朝榮老師作品</p>
+            <p>加強版 by Charels Nextime</p>
             <p>免費分享，歡迎擴散推廣</p>
             <p>嚴禁商用與任何侵權、不尊重著作權的行為</p>
             <p>更多 Puti-AI 教學工具 <a href="https://padlet.com/clongwh/puti_ai_tools" target="_blank">https://padlet.com/clongwh/puti_ai_tools</a></p>
