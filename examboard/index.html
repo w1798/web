@@ -58,20 +58,25 @@
             </div>
         </div>
         <div class="modal-body">
-            <div class="modal-sidebar">
-                <h3 style="color: var(--primary); margin-top: 0;">1. 人數與科目</h3>
-                全班 <select id="inputTotal"></select><br><br>
-                缺考 <select id="inputAbsent"></select>
-                <hr class="modal-divider">
-                <div id="modalSubjectList"></div>
-                <button onclick="addNewSubjectOption()" class="btn-add-subject">+ 增加預設科目</button>
-            </div>
+<div class="modal-sidebar">
+    <h3 style="color: var(--primary); margin-top: 0;">1. 出席人數</h3>
+    <div style="display: flex; gap: 15px; align-items: center; background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
+        <label>全班 <select id="inputTotal"></select></label>
+        <label>缺考 <select id="inputAbsent"></select></label>
+    </div>
+
+    <hr class="modal-divider">
+
+    <h3 style="color: var(--primary);">2. 科目和個別試場人數</h3>
+    <div id="modalSubjectList"></div>
+    <button onclick="addNewSubjectOption()" class="btn-add-subject">+ 增加預設科目</button>
+</div>
             <div class="setting-section">
-                <h3 style="color: var(--red); margin-top: 0;">2. 考試中提醒</h3>
+                <h3 style="color: var(--red); margin-top: 0;">3. 考試中提醒</h3>
                 <textarea id="examReminders"></textarea>
             </div>
             <div class="setting-section">
-                <h3 style="color: var(--green); margin-top: 0;">3. 下課中提醒</h3>
+                <h3 style="color: var(--green); margin-top: 0;">4. 下課中提醒</h3>
                 <textarea id="breakReminders"></textarea>
             </div>
         </div>
