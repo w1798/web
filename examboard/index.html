@@ -17,7 +17,7 @@
                     <div class="stats">全班 <span id="totalCount">25</span> 人 / 缺考 <span id="absentCount">0</span> 人</div>
                 </div>
                 <div class="nav-tools">
-                    <button class="btn-sm" onclick="exportData()">💾 存檔</button>
+                    <button class="btn-sm" onclick="exportData()">💾 匯出</button>
                     <button class="btn-sm" onclick="document.getElementById('importFile').click()">📂 匯入</button>
                     <button class="btn-sm" onclick="resetAll()" style="color: var(--red);">🔄 重置</button>
                     <button class="btn-sm" onclick="toggleModal(true)">⚙️ 設定</button>
@@ -54,7 +54,7 @@
             <h2 style="margin: 0;">評量相關設定</h2>
             <div style="display: flex; gap: 10px;">
                 <button onclick="toggleModal(false)" class="btn-modal-cancel">取消</button>
-                <button onclick="saveSettingsFromModal()" class="btn-modal-save">儲存並關閉</button>
+                <button onclick="saveSettingsFromModal()" class="btn-modal-save">確定</button>
             </div>
         </div>
         <div class="modal-body">
