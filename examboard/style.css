@@ -76,6 +76,27 @@ body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background:
 .modal-header { padding: 15px 25px; background: #f1f5f9; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
 .modal-body { padding: 25px; overflow-y: auto; display: grid; grid-template-columns: 280px 1fr 1fr; gap: 25px; box-sizing: border-box; width: 100%; flex-grow: 1; }
 
+/* 調整 Modal 側邊欄內的標籤與下拉選單 */
+.modal-sidebar label {
+    font-size: 0.95rem;
+    font-weight: bold;
+    color: var(--slate-700);
+    white-space: nowrap;
+}
+
+.modal-sidebar select {
+    padding: 4px;
+    border-radius: 4px;
+    border: 1px solid #cbd5e1;
+}
+
+/* 讓科目清單稍微緊湊一點，適應新的標題空間 */
+#modalSubjectList {
+    max-height: 40vh; /* 限制高度，避免科目太多時撐開視窗 */
+    overflow-y: auto;
+    margin-bottom: 10px;
+}
+
 .modal-sidebar { background: #f8fafc; padding: 15px; border-radius: 12px; }
 .modal-divider { margin: 20px 0; border: 0; border-top: 1px solid #ddd; }
 .btn-add-subject { width: 100%; margin-top: 10px; padding: 10px; cursor: pointer; }
