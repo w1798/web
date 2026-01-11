@@ -3,287 +3,302 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>考試看板  Modified by Charles Nextime</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>考試看板 by Charles Nextime</title>
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; font-family: system-ui, -apple-system, sans-serif; background-color: #f8fafc; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        .transition-layout { transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
-        .progress-container { height: 6px; background: #e2e8f0; border-radius: 999px; overflow: hidden; width: 40px; }
-        .progress-bar { height: 100%; background: #3b82f6; transition: width 0.1s linear; }
-        .subject-input { width: 120px; }
+        :root {
+            --primary: #3b82f6;
+            --bg: #f8fafc;
+            --slate-100: #f1f5f9;
+            --slate-400: #94a3b8;
+            --slate-700: #334155;
+            --red: #ef4444;
+            --green: #22c55e;
+            --yellow-bg: #fefce8;
+            --yellow-border: #facc15;
+        }
+
+        body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: #1e293b; overflow: hidden; }
+        .app-container { display: flex; width: 100vw; height: 100vh; }
+        
+        /* 左側欄位 */
+        .panel-left { width: 50%; height: 100%; border-right: 2px solid var(--slate-100); display: flex; flex-direction: column; padding: 12px 16px; box-sizing: border-box; }
+        .panel-left-header { flex-shrink: 0; padding-bottom: 8px; border-bottom: 2px solid var(--slate-100); margin-bottom: 8px; }
+        
+        .header-main { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .title-group { display: flex; align-items: center; gap: 15px; }
+        .title { font-size: 1.8rem; font-weight: 900; color: var(--slate-700); margin: 0; white-space: nowrap; }
+        .stats { font-size: 1.1rem; font-weight: 800; color: var(--slate-400); white-space: nowrap; }
+        
+        .nav-tools { display: flex; gap: 4px; align-items: center; }
+        .btn-sm { padding: 4px 6px; font-size: 0.85rem; border-radius: 6px; border: 1px solid #cbd5e1; background: white; cursor: pointer; font-weight: bold; }
+
+        .schedule-scroll-area { flex-grow: 1; overflow-y: auto; padding-right: 4px; }
+
+        .card { background: white; border: 2px solid #f1f5f9; border-radius: 1.2rem; padding: 12px 16px; margin-bottom: 8px; transition: all 0.3s; }
+        .card.active { background: var(--yellow-bg); border-color: var(--yellow-border); }
+        
+        .time-range-group { display: flex; align-items: center; }
+        .time-range-input { font-size: 1.3rem; font-weight: bold; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 6px; width: 160px; padding: 6px; }
+        
+        .card-row-2 { display: flex; align-items: center; justify-content: flex-start; gap: 15px; margin-top: 10px; font-weight: bold; color: var(--slate-400); font-size: 1.3rem; }
+        .actual-num { font-size: 1.8rem; color: #1e293b; }
+
+        .audio-controls { display: flex; align-items: center; gap: 8px; }
+        .progress-container { width: 70px; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
+        .progress-bar { height: 100%; background: var(--primary); width: 0%; }
+        .btn-icon { background: none; border: none; cursor: pointer; font-size: 1.4rem; display: flex; align-items: center; }
+
+        /* 右側比例：徹底滿版修正 */
+        .panel-right { width: 50%; height: 100%; display: flex; flex-direction: column; position: relative; }
+        .clock-section { 
+            background: #0f172a; color: white; 
+            height: 40%; /* 預設高度 */
+            display: flex; align-items: center; justify-content: center; 
+            position: absolute; top: 0; left: 0; right: 0; 
+            transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1); 
+            z-index: 10; overflow: hidden; 
+        }
+        .clock-section.full { 
+            height: 100% !important; /* 強制下拉到 5/5 滿版 */
+        }
+        .time-display { font-family: monospace; font-weight: 900; font-size: 8rem; }
+        
+        .reminder-section { 
+            background: #eff6ff; 
+            margin-top: auto; /* 推到最下面 */
+            height: 60%; 
+            display: flex; flex-direction: column; align-items: center; padding: 20px; text-align: center; box-sizing: border-box; 
+            z-index: 1;
+        }
+        .reminder-title { font-size: 1.8rem; font-weight: 900; color: #1e40af; border-bottom: 6px solid #bfdbfe; margin-bottom: 1.5rem; width: 85%; padding-top: 10px; }
+        .reminder-text { font-size: 3.2rem; font-weight: 900; line-height: 1.3; color: #1e293b; flex-grow: 1; display: flex; align-items: flex-start; justify-content: center; }
+
+        /* 設定視窗 */
+        #settingsModal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 100; }
+        .modal-content { background: white; width: 95%; height: 85vh; border-radius: 24px; display: flex; flex-direction: column; overflow: hidden; }
+        .modal-body { padding: 25px; overflow-y: auto; display: grid; grid-template-columns: 280px 1fr 1fr; gap: 25px; box-sizing: border-box; width: 100%; }
+        .setting-section textarea { width: 100%; flex-grow: 1; min-height: 450px; font-size: 1.2rem; padding: 15px; border-radius: 12px; border: 1px solid #cbd5e1; resize: none; box-sizing: border-box; }
     </style>
 </head>
 <body>
-    <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect, useRef, useMemo } = React;
-
-        const Icon = ({ children, size = 24, className = "", onClick }) => (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} onClick={onClick} style={{ cursor: onClick ? 'pointer' : 'default' }}>
-                {children}
-            </svg>
-        );
-
-        const Settings = (props) => <Icon {...props}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.35a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></Icon>;
-        const Trash2 = (props) => <Icon {...props}><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></Icon>;
-        const Upload = (props) => <Icon {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></Icon>;
-        const RotateCcw = (props) => <Icon {...props}><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></Icon>;
-        const Eye = (props) => <Icon {...props}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></Icon>;
-        const EyeOff = (props) => <Icon {...props}><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07-2.3-2.3"></path><line x1="1" y1="1" x2="23" y2="23"></line></Icon>;
-
-        const SettingsModal = ({ isOpen, onClose, reminders, setReminders, subjectOptions, setSubjectOptions, classInfo, setClassInfo }) => {
-            if (!isOpen) return null;
-            const addR = (t) => setReminders({...reminders, [t]: [...reminders[t], "新提醒文字"]});
-            const delR = (t, i) => setReminders({...reminders, [t]: reminders[t].filter((_, idx) => idx !== i)});
-
-            return (
-                <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-6 backdrop-blur-sm">
-                    <div className="bg-white w-full max-w-6xl h-[85vh] flex flex-col rounded-3xl shadow-2xl overflow-hidden">
-                        <div className="p-6 border-b flex justify-between items-center bg-gray-100">
-                            <h2 className="text-3xl font-bold text-gray-800">評量相關設定</h2>
-                            <button onClick={onClose} className="px-10 py-3 bg-blue-600 text-white rounded-xl font-bold text-xl hover:bg-blue-700">儲存並關閉</button>
-                        </div>
-                        <div className="flex-1 overflow-y-auto p-8 grid grid-cols-3 gap-8">
-                            <section className="bg-slate-50 p-6 rounded-2xl flex flex-col">
-                                <h3 className="text-xl font-black text-slate-600 mb-4 border-l-4 border-slate-400 pl-3">人數設定</h3>
-                                <div className="space-y-4 text-2xl mb-8">
-                                    <div className="flex justify-between font-bold text-slate-700 bg-white p-3 rounded-xl shadow-sm border border-slate-100">
-                                        <span>全班人數</span>
-                                        <select value={classInfo.total} className="border-2 rounded px-2 text-blue-600" onChange={(e)=>setClassInfo({...classInfo, total: parseInt(e.target.value)})}>
-                                            {[...Array(51).keys()].map(n => <option key={n} value={n}>{n} 人</option>)}
-                                        </select>
-                                    </div>
-                                    <div className="flex justify-between font-bold text-red-500 bg-white p-3 rounded-xl shadow-sm border border-red-50">
-                                        <span>缺考人數</span>
-                                        <select value={classInfo.absent} className="border-2 rounded px-2" onChange={(e)=>setClassInfo({...classInfo, absent: parseInt(e.target.value)})}>
-                                            {[...Array(51).keys()].map(n => <option key={n} value={n}>{n} 人</option>)}
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <h3 className="text-xl font-black text-blue-600 mb-4 border-l-4 border-blue-400 pl-3">預設考科與個別試場人數</h3>
-                                <div className="flex-1 overflow-y-auto pr-2">
-                                    {subjectOptions.map((sub, idx) => (
-                                        <div key={idx} className="flex gap-2 mb-2 items-center">
-                                            <input value={sub.name} onChange={(e) => { const n = [...subjectOptions]; n[idx].name = e.target.value; setSubjectOptions(n); }} className="subject-input p-2 text-xl rounded border font-semibold bg-white" />
-                                            <select value={sub.specialRoom} onChange={(e) => { const n = [...subjectOptions]; n[idx].specialRoom = parseInt(e.target.value); setSubjectOptions(n); }} className="p-2 text-xl rounded border bg-white flex-1">
-                                                {[...Array(11).keys()].map(n => <option key={n} value={n}>{n}人</option>)}
-                                            </select>
-                                            <button onClick={() => setSubjectOptions(subjectOptions.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-600"><Trash2 size={24}/></button>
-                                        </div>
-                                    ))}
-                                    <button onClick={() => setSubjectOptions([...subjectOptions, { name: "新科目", specialRoom: 0 }])} className="w-full mt-2 py-3 border-2 border-dashed border-blue-200 text-blue-400 font-bold text-xl hover:bg-blue-50 transition-all">+ 增加科目</button>
-                                </div>
-                            </section>
-
-                            <section className="bg-red-50 p-6 rounded-2xl">
-                                <div className="flex justify-between items-center mb-4 text-red-600 border-l-4 border-red-400 pl-3">
-                                    <h3 className="text-xl font-black">考試提醒</h3>
-                                    <button onClick={()=>addR('exam')} className="bg-red-600 text-white px-4 py-1.5 rounded-lg text-base font-bold">增加</button>
-                                </div>
-                                {reminders.exam.map((text, idx) => (
-                                    <div key={idx} className="flex gap-2 mb-3 group">
-                                        <textarea value={text} onChange={(e) => { const n = [...reminders.exam]; n[idx] = e.target.value; setReminders({...reminders, exam: n}); }} className="w-full p-3 text-xl rounded-xl border outline-none bg-white" rows="2" />
-                                        <button onClick={()=>delR('exam', idx)} className="text-red-300 hover:text-red-600 self-center"><Trash2 size={22}/></button>
-                                    </div>
-                                ))}
-                            </section>
-
-                            <section className="bg-green-50 p-6 rounded-2xl">
-                                <div className="flex justify-between items-center mb-4 text-green-600 border-l-4 border-green-400 pl-3">
-                                    <h3 className="text-xl font-black">下課提醒</h3>
-                                    <button onClick={()=>addR('break')} className="bg-green-600 text-white px-4 py-1.5 rounded-lg text-base font-bold">增加</button>
-                                </div>
-                                {reminders.break.map((text, idx) => (
-                                    <div key={idx} className="flex gap-2 mb-3 group">
-                                        <textarea value={text} onChange={(e) => { const n = [...reminders.break]; n[idx] = e.target.value; setReminders({...reminders, break: n}); }} className="w-full p-3 text-xl rounded-xl border outline-none bg-white" rows="2" />
-                                        <button onClick={()=>delR('break', idx)} className="text-green-300 hover:text-green-600 self-center"><Trash2 size={22}/></button>
-                                    </div>
-                                ))}
-                            </section>
-                        </div>
-                    </div>
+<div class="app-container">
+    <div class="panel-left">
+        <div class="panel-left-header">
+            <div class="header-main">
+                <div class="title-group">
+                    <h1 class="title">評量科目</h1>
+                    <div class="stats">全班 <span id="totalCount">25</span> 人 / 缺考 <span id="absentCount">0</span> 人</div>
                 </div>
-            );
-        };
-
-        const ExamSystem = () => {
-            const [now, setNow] = useState(new Date());
-            const [showReminders, setShowReminders] = useState(true);
-            const [showSettings, setShowSettings] = useState(false);
-            const [classInfo, setClassInfo] = useState({ total: 25, absent: 0 });
-            const [subjectOptions, setSubjectOptions] = useState([
-                { name: '國語', specialRoom: 0 }, { name: '自然', specialRoom: 0 }, { name: '英語', specialRoom: 0 }, { name: '數學', specialRoom: 0 }, { name: '社會', specialRoom: 0 }
-            ]);
-            const [schedule, setSchedule] = useState([{ id: 1, subject: '國語', start: '08:40', end: '09:20', audio: null }]);
-            const [reminders, setReminders] = useState({
-                exam: [
-                "考卷記得寫上班級姓名座號",
-                "身體有問題或東西掉了，請舉手問老師",
-                "先寫會的題目，寫錯字要擦乾淨",
-                "耐心、細心、小心",
-                "考卷有問題等出題老師來了再問",
-                "不要轉頭、玩東西，寫完多檢查",
-                "寫完請檢查或趴下休息",
-                "不要轉頭玩東西，寫完多檢查"
-                ],
-                break: [
-                "等監考老師點完再離開座位下課",
-                "利用下課準備下個科目與文具用品",
-                "提早上廁所喝水",
-                "桌面淨空",
-                "準備考試、收拾位置、坐在位置上"
-                ]
-            });
-
-            const [playingAudioId, setPlayingAudioId] = useState(null);
-            const [audioProgress, setAudioProgress] = useState({});
-            const audioRefs = useRef({});
-            const fileRefs = useRef({});
-
-            useEffect(() => {
-                const timer = setInterval(() => setNow(new Date()), 1000);
-                return () => clearInterval(timer);
-            }, []);
-
-            const addNextSession = () => {
-                const baseSessions = [{ start: '08:40', end: '09:20' }, { start: '09:30', end: '10:10' }, { start: '10:25', end: '11:05' }, { start: '11:15', end: '11:45' }];
-                const nextIdx = schedule.length % baseSessions.length;
-                setSchedule([...schedule, { id: Date.now(), subject: subjectOptions[0]?.name || '', start: baseSessions[nextIdx].start, end: baseSessions[nextIdx].end, audio: null }]);
-            };
-
-            const toggleAudio = (id) => {
-                const audio = audioRefs.current[id];
-                if (!audio) return;
-                if (playingAudioId === id) { audio.pause(); setPlayingAudioId(null); } 
-                else { Object.values(audioRefs.current).forEach(a => a?.pause()); audio.play(); setPlayingAudioId(id); }
-            };
-
-            const replayAudio = (id) => {
-                const audio = audioRefs.current[id];
-                if (audio) { audio.currentTime = 0; audio.play(); setPlayingAudioId(id); }
-            };
-
-            const currentStatus = useMemo(() => {
-                const currentTime = now.getTime();
-                const parseT = (timeStr) => {
-                    const [h, m] = timeStr.split(':').map(Number);
-                    const d = new Date(now); d.setHours(h, m, 0, 0); return d.getTime();
-                };
-                for (let i = 0; i < schedule.length; i++) {
-                    const start = parseT(schedule[i].start); const end = parseT(schedule[i].end);
-                    if (currentTime >= start && currentTime <= end) return { type: 'exam', slotIndex: i };
-                    if (i < schedule.length - 1) {
-                        const nextStart = parseT(schedule[i+1].start);
-                        if (currentTime > end && currentTime < nextStart) return { type: 'break' };
-                    }
-                }
-                return { type: 'idle' };
-            }, [now, schedule]);
-
-            return (
-                <div className="w-screen h-screen flex bg-white overflow-hidden text-slate-800">
-                    <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} reminders={reminders} setReminders={setReminders} subjectOptions={subjectOptions} setSubjectOptions={setSubjectOptions} classInfo={classInfo} setClassInfo={setClassInfo} />
-
-                    <div className="w-1/2 h-full p-6 overflow-y-auto border-r-2 border-gray-100 flex flex-col">
-                        {/* 頂部標題與總人數統計（已調整為相同大小） */}
-                        <div className="flex justify-between items-center mb-6 border-b-2 border-slate-100 pb-3">
-                            <div className="flex items-center gap-6">
-                                <h1 className="text-3xl font-black text-slate-700">評量科目和時間</h1>
-                                <div className="text-3xl font-black text-slate-400 flex gap-4">
-                                    <span>全班 <span className="text-blue-600">{classInfo.total}</span> 人</span>
-                                    <span>/</span>
-                                    <span>缺考 <span className="text-red-500">{classInfo.absent}</span> 人</span>
-                                </div>
-                            </div>
-                            <button onClick={() => setShowSettings(true)} className="p-2 bg-slate-100 rounded-xl hover:bg-slate-200 transition-all text-slate-600"><Settings size={32}/></button>
-                        </div>
-                        
-                        <div className="flex-1 space-y-2">
-                        {schedule.map((item, idx) => {
-                            const subInfo = subjectOptions.find(o => o.name === item.subject);
-                            const b = subInfo ? subInfo.specialRoom : 0;
-                            const a = classInfo.absent;
-                            const c = classInfo.total - a - b;
-                            const isActive = currentStatus.slotIndex === idx;
-
-                            return (
-                                <div key={item.id} className={`p-3 rounded-[1.5rem] border-2 transition-all ${isActive ? 'bg-yellow-50 border-yellow-400 shadow-md' : 'bg-white border-slate-50'}`}>
-                                    <div className="flex items-center justify-between mb-1">
-                                        <div className="flex items-center gap-3">
-                                            <select value={item.subject} onChange={(e)=>{const s=[...schedule]; s[idx].subject=e.target.value; setSchedule(s);}} className={`text-3xl font-black bg-slate-50 px-3 py-0.5 rounded-xl outline-none ${isActive ? 'text-orange-600 bg-yellow-100' : ''}`}>
-                                                {subjectOptions.map(o => <option key={o.name} value={o.name}>{o.name}</option>)}
-                                            </select>
-                                            <div className="text-xl font-mono font-bold flex items-center gap-1 text-slate-500">
-                                                <input type="time" value={item.start} onChange={(e)=>{const s=[...schedule]; s[idx].start=e.target.value; setSchedule(s);}} className="bg-transparent" />
-                                                <span>~</span>
-                                                <input type="time" value={item.end} onChange={(e)=>{const s=[...schedule]; s[idx].end=e.target.value; setSchedule(s);}} className="bg-transparent" />
-                                            </div>
-                                        </div>
-                                        <button onClick={()=>setSchedule(schedule.filter(s=>s.id!==item.id))} className="text-red-200 hover:text-red-500"><Trash2 size={20}/></button>
-                                    </div>
-
-                                    <div className="flex items-center justify-between">
-                                        <div className="text-lg font-bold text-slate-400">
-                                            個別試場 <span className="text-blue-500">{b}</span> 人，實到 <span className={`text-3xl font-black ml-1 ${isActive ? 'text-green-600' : 'text-slate-700'}`}>{c}</span>人
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <input type="file" ref={el => fileRefs.current[item.id] = el} className="hidden" accept="audio/*" onChange={(e)=>{
-                                                const f = e.target.files[0];
-                                                if(f){ const url = URL.createObjectURL(f); setSchedule(schedule.map(s => s.id === item.id ? {...s, audio: url} : s)); }
-                                            }} />
-                                            <button onClick={()=>fileRefs.current[item.id].click()} className="p-2 text-slate-300 hover:text-blue-500"><Upload size={18}/></button>
-                                            {item.audio && (
-                                                <div className="flex items-center gap-2 bg-slate-50 px-2 py-1 rounded-xl border border-slate-100">
-                                                    <div className="progress-container"><div className="progress-bar" style={{ width: `${audioProgress[item.id] || 0}%` }}></div></div>
-                                                    <button onClick={() => toggleAudio(item.id)} className={`px-2 py-1 rounded-lg text-xs font-black text-white ${playingAudioId === item.id ? 'bg-red-500' : 'bg-green-600'}`}>
-                                                        {playingAudioId === item.id ? '暫停音檔' : '播放音檔'}
-                                                    </button>
-                                                    <button onClick={() => replayAudio(item.id)} className="text-blue-400"><RotateCcw size={16}/></button>
-                                                    <audio ref={el => audioRefs.current[item.id] = el} src={item.audio} onTimeUpdate={() => {
-                                                        const audio = audioRefs.current[item.id];
-                                                        if (audio) setAudioProgress(p => ({ ...p, [item.id]: (audio.currentTime / audio.duration) * 100 }));
-                                                    }} onEnded={() => setPlayingAudioId(null)} />
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                        <button onClick={addNextSession} className="w-full py-4 mt-4 border-2 border-dashed border-slate-100 rounded-2xl text-slate-300 text-xl font-bold hover:bg-slate-50 transition-all">+ 新增下一節評量</button>
-                        </div>
-                    </div>
-
-                    <div className="w-1/2 h-full flex flex-col transition-layout">
-                        <div className={`bg-slate-900 text-white p-8 flex flex-col items-center justify-center relative transition-layout ${showReminders ? 'h-1/2' : 'h-full'}`}>
-                            <div className="absolute top-6 right-6"><button onClick={() => setShowReminders(!showReminders)} className="p-3 bg-white/10 rounded-2xl hover:bg-white/20 transition-all">{showReminders ? <EyeOff size={24}/> : <Eye size={24}/>}</button></div>
-                            <div className={`font-mono font-black leading-none transition-all tracking-tighter ${showReminders ? 'text-[15vh]' : 'text-[25vh]'}`}>
-                                {now.toLocaleTimeString('zh-TW', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                            </div>
-                        </div>
-                        {showReminders && (
-                            <div className="h-1/2 bg-blue-50/80 p-12 flex flex-col items-center justify-center text-center">
-                                <h2 className="text-3xl font-black text-blue-800 mb-8 border-b-8 border-blue-200 pb-2 w-full uppercase tracking-widest text-center">評量注意事項</h2>
-                                <div className="flex-1 flex items-center"><p className="text-[6.5vh] font-black text-slate-800 leading-tight">
-                                    { (currentStatus.type === 'exam' ? reminders.exam : reminders.break)[Math.floor((Date.now()/5000) % ( (currentStatus.type === 'exam' ? reminders.exam : reminders.break).length || 1))] }
-                                </p></div>
-                            </div>
-                        )}
-                    </div>
+                <div class="nav-tools">
+                    <button class="btn-sm" onclick="exportData()">💾 存檔</button>
+                    <button class="btn-sm" onclick="document.getElementById('importFile').click()">📂 匯入</button>
+                    <button class="btn-sm" onclick="resetAll()" style="color: var(--red);">🔄 重置</button>
+                    <button class="btn-sm" onclick="toggleModal(true)">⚙️ 設定</button>
+                    <input type="file" id="importFile" hidden accept=".json" onchange="importData(this)">
                 </div>
-            );
-        };
+            </div>
+        </div>
+        <div class="schedule-scroll-area">
+            <div id="scheduleList"></div>
+            <button onclick="addSession()" style="width: 100%; padding: 15px; margin: 10px 0; border: 2px dashed #cbd5e1; background: white; border-radius: 12px; color: #94a3b8; font-size: 1.2rem; font-weight: bold; cursor: pointer;">+ 新增下一節評量</button>
+        </div>
+<div class="author-info">
+        <a href="https://nextime5.blogspot.com/2025/05/blog-post.html" target="_blank" class="author-link">
+            
+Completed by Charles Nextime with AI assistance, 2026
+        </a>
+    </div>
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<ExamSystem />);
-    </script>
+    </div>
+
+    <div class="panel-right">
+        <div class="clock-section" id="clockSection">
+            <button onclick="toggleReminders()" style="position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.1); border: none; padding: 10px; border-radius: 10px; color: white; cursor: pointer; font-size: 1.5rem; z-index: 100;">👁️</button>
+            <div class="time-display" id="timeDisplay">00:00:00</div>
+        </div>
+        <div class="reminder-section" id="reminderSection">
+            <div class="reminder-title">評量注意事項</div>
+            <div class="reminder-text" id="reminderText">載入中...</div>
+        </div>
+    </div>
+</div>
+
+<div id="settingsModal">
+    <div class="modal-content">
+        <div style="padding: 15px 25px; background: #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="margin: 0;">評量相關設定</h2>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="toggleModal(false)" style="padding: 10px 20px; background: #94a3b8; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer;">取消</button>
+                <button onclick="saveSettingsFromModal()" style="padding: 10px 30px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer;">儲存並關閉</button>
+            </div>
+        </div>
+        <div class="modal-body">
+            <div style="background: #f8fafc; padding: 15px; border-radius: 12px;">
+                <h3 style="color: var(--primary); margin-top: 0;">1. 人數與科目</h3>
+                全班 <select id="inputTotal"></select><br><br>
+                缺考 <select id="inputAbsent"></select>
+                <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;">
+                <div id="modalSubjectList"></div>
+                <button onclick="addNewSubjectOption()" style="width: 100%; margin-top: 10px; padding: 10px;">+ 增加預設科目</button>
+            </div>
+            <div class="setting-section"><h3 style="color: var(--red); margin-top: 0;">2. 考試中提醒</h3><textarea id="examReminders"></textarea></div>
+            <div class="setting-section"><h3 style="color: var(--green); margin-top: 0;">3. 下課中提醒</h3><textarea id="breakReminders"></textarea></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const DEFAULT_STATE = {
+        total: 25, absent: 0,
+        subjects: [{ name: '國語', specialRoom: 0 }, { name: '自然', specialRoom: 0 }, { name: '英語', specialRoom: 0 }, { name: '數學', specialRoom: 0 }, { name: '社會', specialRoom: 0 }],
+        schedule: [{ id: Date.now().toString(), subject: '國語', start: '08:40', end: '09:20', audioUrl: null }],
+        reminders: { exam: ["考卷記得寫上班級姓名座號", "身體有問題或東西掉了，請舉手問老師", "先寫會的題目，寫錯字要擦乾淨", "耐心、細心、小心", "考卷有問題等出題老師來了再問", "不要轉頭、玩東西，寫完多檢查", "寫完請檢查或趴下休息"], break: ["等監考老師點完再離開座位下課", "利用下課準備下個科目與文具用品", "提早上廁所喝水", "桌面淨空"] },
+        showReminders: true
+    };
+
+    let state;
+    let tempState;
+    const audioPlayers = {}; 
+
+    function init() {
+        const saved = localStorage.getItem('examBoardState');
+        state = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_STATE));
+        populateNumberOptions('inputTotal', 50);
+        populateNumberOptions('inputAbsent', 50);
+        syncUI();
+        setInterval(updateTime, 1000);
+        setInterval(updateReminderUI, 5000);
+    }
+
+    function saveToLocal() { localStorage.setItem('examBoardState', JSON.stringify(state)); }
+
+    function syncUI() {
+        document.getElementById('totalCount').innerText = state.total;
+        document.getElementById('absentCount').innerText = state.absent;
+        const clock = document.getElementById('clockSection');
+        if (!state.showReminders) clock.classList.add('full');
+        else clock.classList.remove('full');
+        renderSchedule();
+    }
+
+    function updateTime() {
+        const now = new Date();
+        document.getElementById('timeDisplay').innerText = now.toLocaleTimeString('zh-TW', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        updateActiveCardUI(checkStatus(now));
+        Object.keys(audioPlayers).forEach(id => {
+            const a = audioPlayers[id];
+            const p = document.getElementById(`prog-${id}`);
+            if (a && p && a.duration) p.style.width = (a.currentTime / a.duration) * 100 + '%';
+        });
+    }
+
+    function checkStatus(now) {
+        const currentMin = now.getHours() * 60 + now.getMinutes();
+        for (let i = 0; i < state.schedule.length; i++) {
+            const s = state.schedule[i];
+            if (currentMin >= timeToMin(s.start) && currentMin < timeToMin(s.end)) return { type: 'exam', index: i };
+            if (i < state.schedule.length - 1) {
+                if (currentMin >= timeToMin(s.end) && currentMin < timeToMin(state.schedule[i+1].start)) return { type: 'break' };
+            }
+        }
+        return { type: 'idle' };
+    }
+
+    function timeToMin(t) { if(!t) return 0; const [h, m] = t.split(':').map(Number); return h * 60 + m; }
+
+    function updateReminderUI() {
+        if (!state.showReminders) return;
+        const list = (checkStatus(new Date()).type === 'exam') ? state.reminders.exam : state.reminders.break;
+        if (list.length > 0) document.getElementById('reminderText').innerText = list[Math.floor(Date.now() / 5000) % list.length];
+    }
+
+    function toggleAudio(id, url) {
+        if (!audioPlayers[id]) {
+            audioPlayers[id] = new Audio(url);
+            audioPlayers[id].onended = () => { const b = document.getElementById(`play-${id}`); if(b) b.innerText = '▶️'; };
+        }
+        const a = audioPlayers[id];
+        const btn = document.getElementById(`play-${id}`);
+        a.paused ? (a.play(), btn.innerText = '⏸️') : (a.pause(), btn.innerText = '▶️');
+    }
+
+    function replayAudio(id) { const a = audioPlayers[id]; if (a) { a.currentTime = 0; a.play(); document.getElementById(`play-${id}`).innerText = '⏸️'; } }
+
+    function handleAudioUpload(input, idx) {
+        if (input.files[0]) {
+            const id = state.schedule[idx].id;
+            const url = URL.createObjectURL(input.files[0]);
+            state.schedule[idx].audioUrl = url;
+            if (audioPlayers[id]) audioPlayers[id].pause();
+            audioPlayers[id] = new Audio(url);
+            audioPlayers[id].onended = () => { const b = document.getElementById(`play-${id}`); if(b) b.innerText = '▶️'; };
+            saveToLocal(); renderSchedule();
+        }
+    }
+
+    function renderSchedule() {
+        const container = document.getElementById('scheduleList');
+        container.innerHTML = state.schedule.map((item, idx) => {
+            const sub = state.subjects.find(s => s.name === item.subject) || { specialRoom: 0 };
+            const isPlaying = audioPlayers[item.id] && !audioPlayers[item.id].paused;
+            return `
+                <div class="card" id="card-${idx}">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <select onchange="state.schedule[${idx}].subject = this.value; saveToLocal(); renderSchedule();" style="font-size: 1.6rem; font-weight: 900; border: none; background: #f1f5f9; border-radius: 8px; cursor:pointer;">
+                            ${state.subjects.map(o => `<option value="${o.name}" ${o.name === item.subject ? 'selected' : ''}>${o.name}</option>`).join('')}
+                        </select>
+                        <div class="time-range-group">
+                            <input type="time" class="time-range-input" value="${item.start}" oninput="state.schedule[${idx}].start = this.value; saveToLocal();"> 
+                            <span style="font-size:1.3rem; font-weight:bold; margin: 0 10px;">~</span>
+                            <input type="time" class="time-range-input" value="${item.end}" oninput="state.schedule[${idx}].end = this.value; saveToLocal();">
+                        </div>
+                        <button onclick="removeSession(${idx})" style="color: #ccc; border:none; background:none; cursor:pointer;">✕</button>
+                    </div>
+                    <div class="card-row-2">
+                        <span>個別試場 ${sub.specialRoom} 人 / 實到 <span class="actual-num">${state.total - state.absent - sub.specialRoom}</span> 人</span>
+                        <div class="audio-controls">
+                            <button class="btn-icon" onclick="document.getElementById('file-${idx}').click()">📤</button>
+                            <input type="file" id="file-${idx}" hidden accept="audio/*" onchange="handleAudioUpload(this, ${idx})">
+                            ${item.audioUrl ? `
+                                <button class="btn-icon" id="play-${item.id}" onclick="toggleAudio('${item.id}', '${item.audioUrl}')">${isPlaying ? '⏸️' : '▶️'}</button>
+                                <button class="btn-icon" onclick="replayAudio('${item.id}')">🔄</button>
+                                <div class="progress-container"><div class="progress-bar" id="prog-${item.id}"></div></div>
+                                <button class="btn-icon" onclick="clearAudio(${idx})" style="color:var(--red); font-size:1.1rem;">✕</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>`;
+        }).join('');
+    }
+
+    function addSession() {
+        const count = state.schedule.length;
+        let time = count < 4 ? [{ start: '08:40', end: '09:20' }, { start: '09:30', end: '10:10' }, { start: '10:25', end: '11:05' }, { start: '11:15', end: '11:55' }][count] : { start: state.schedule[count-1].end, end: '12:00' };
+        state.schedule.push({ id: Date.now().toString(), subject: state.subjects[count % state.subjects.length].name, start: time.start, end: time.end, audioUrl: null });
+        saveToLocal(); renderSchedule();
+    }
+    function removeSession(idx) { const id = state.schedule[idx].id; if (audioPlayers[id]) { audioPlayers[id].pause(); delete audioPlayers[id]; } state.schedule.splice(idx, 1); saveToLocal(); renderSchedule(); }
+    function clearAudio(idx) { const id = state.schedule[idx].id; if (audioPlayers[id]) { audioPlayers[id].pause(); delete audioPlayers[id]; } state.schedule[idx].audioUrl = null; saveToLocal(); renderSchedule(); }
+    function toggleReminders() { state.showReminders = !state.showReminders; saveToLocal(); syncUI(); }
+    function populateNumberOptions(id, max) { const s = document.getElementById(id); for(let i=0; i<=max; i++) s.add(new Option(i + ' 人', i)); }
+    function exportData() {
+        const data = JSON.parse(JSON.stringify(state));
+        data.schedule.forEach(s => s.audioUrl = null);
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], {type: "application/json"}));
+        a.download = `exam_config_${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+    }
+    function importData(input) { if(!input.files[0]) return; const reader = new FileReader(); reader.onload = (e) => { state = JSON.parse(e.target.result); saveToLocal(); syncUI(); }; reader.readAsText(input.files[0]); }
+    function resetAll() { if(confirm("重置將恢復預設，確定嗎？")) { state = JSON.parse(JSON.stringify(DEFAULT_STATE)); saveToLocal(); syncUI(); } }
+    function toggleModal(show) { const m = document.getElementById('settingsModal'); m.style.display = show ? 'flex' : 'none'; if (show) { tempState = JSON.parse(JSON.stringify(state)); document.getElementById('inputTotal').value = tempState.total; document.getElementById('inputAbsent').value = tempState.absent; document.getElementById('examReminders').value = tempState.reminders.exam.join('\n'); document.getElementById('breakReminders').value = tempState.reminders.break.join('\n'); renderModalSubjects(); } }
+    function saveSettingsFromModal() { state.total = parseInt(document.getElementById('inputTotal').value); state.absent = parseInt(document.getElementById('inputAbsent').value); state.subjects = tempState.subjects; state.reminders.exam = document.getElementById('examReminders').value.split('\n').filter(t => t.trim()); state.reminders.break = document.getElementById('breakReminders').value.split('\n').filter(t => t.trim()); saveToLocal(); syncUI(); toggleModal(false); }
+    function renderModalSubjects() { document.getElementById('modalSubjectList').innerHTML = tempState.subjects.map((s, i) => `<div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;"><input type="text" value="${s.name}" oninput="tempState.subjects[${i}].name=this.value" style="font-size:1.1rem; width:100px; padding:4px;"><select onchange="tempState.subjects[${i}].specialRoom=parseInt(this.value)">${Array.from({length:11}, (_,v)=>`<option value="${v}" ${v===s.specialRoom?'selected':''}>${v} 人</option>`).join('')}</select><button onclick="tempState.subjects.splice(${i},1); renderModalSubjects()">✕</button></div>`).join(''); }
+    function addNewSubjectOption() { tempState.subjects.push({ name: '新科目', specialRoom: 0 }); renderModalSubjects(); }
+    function updateActiveCardUI(status) { state.schedule.forEach((_, i) => { const c = document.getElementById(`card-${i}`); if (c) c.classList.toggle('active', (status.type === 'exam' && status.index === i)); }); }
+
+    init();
+</script>
 </body>
 </html>
