@@ -1,1 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Charles Nextime 的程式庫</title>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --text-color: #2d3436;
+        }
+
+        body {
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            background: var(--primary-gradient);
+            background-attachment: fixed;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .main-content {
+            width: 100%;
+            max-width: 1200px;
+            padding: 40px 20px 100px 20px; /* 底部增加 100px 確保卡片不被遮擋 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: white;
+            margin-bottom: 30px;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            font-size: 1.8rem;
+        }
+
+        #link-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr); 
+            gap: 15px;
+            width: 100%;
+        }
+
+        /* 響應式：平板 3 欄，手機 2 欄 */
+        @media (max-width: 1000px) { #link-container { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 600px) { #link-container { grid-template-columns: repeat(2, 1fr); } }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            border: 1px solid rgba(255,255,255,0.3);
+            backdrop-filter: blur(10px);
+            min-height: 100px;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            background: #ffffff;
+            box-shadow: 0 12px 20px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            margin: 0 0 8px 0;
+            font-size: 1.05rem;
+            color: #4834d4;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card p {
+            margin: 0;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            color: #636e72;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* --- 修正後的 Footer：永遠固定在畫面最下方 --- */
+        .author-info {
+            position: fixed; /* 固定定位 */
+            bottom: 0;      /* 貼齊底部 */
+            left: 0;
+            width: 100%;
+            text-align: center;
+            padding: 15px 0;
+            background: rgba(0, 0, 0, 0.4); /* 加深一點背景以利閱讀 */
+            backdrop-filter: blur(5px);    /* 底部也來點毛玻璃感 */
+            z-index: 1000;                 /* 確保在卡片之上 */
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .author-link {
+            text-decoration: none;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.85rem;
+            padding: 5px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .author-link:hover {
+            color: #fff;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-content">
+        <h1>Charles Nextime 的程式庫</h1>
+        <div id="link-container"></div>
+    </div>
+
+    <footer class="author-info">
+        <a href="https://nextime5.blogspot.com" target="_blank" class="author-link">
+            Completed by Charles Nextime with AI assistance, 2026
+        </a>
+    </footer>
+
+    <script>
+        // 這裡放您的連結資料
+        const links = [
+            { title: "作業訂正小幫手", desc: "快速處理學生作業訂正流程。", url: "https://w1798.github.io/web/markit" },
+            { title: "Puti-AI 評語生成器", desc: "V8 加強版：輕鬆生成期末評語。", url: "https://w1798.github.io/web/comment" },
+            { title: "考試看板", desc: "即時顯示考試資訊與進度。", url: "https://w1798.github.io/web/examboard" },
+            // 您可以複製多個測試看看捲動效果
+        ];
+
+        function renderLinks() {
+            const container = document.getElementById('link-container');
+            container.innerHTML = links.map(item => `
+                <a href="${item.url}" target="_blank" class="card">
+                    <h2>${item.title}</h2>
+                    <p>${item.desc}</p>
+                </a>
+            `).join('');
+        }
+        renderLinks();
+    </script>
+</body>
+</html>
 
