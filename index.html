@@ -1,1 +1,82 @@
 
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>目錄索引與說明</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #333; }
+        h1 { border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .directory-list { list-style: none; padding: 0; }
+        .directory-item { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; transition: hover 0.3s; }
+        .directory-item:hover { background-color: #f9f9f9; }
+        .dir-link { font-size: 1.2rem; font-weight: bold; color: #007bff; text-decoration: none; }
+        .readme-content { margin-top: 8px; font-size: 0.95rem; color: #666; background: #fff; padding: 10px; border-left: 3px solid #ccc; }
+        .author-info { margin-top: 50px; padding: 20px; border-top: 1px solid #eee; text-align: center; }
+        .author-link { color: #555; text-decoration: none; font-size: 0.9rem; }
+        .author-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <h1>項目目錄索引</h1>
+    <div id="file-list">讀取中...</div>
+
+    <footer class="author-info">
+        <a href="https://nextime5.blogspot.com" target="_blank" class="author-link">
+            Completed by Charles Nextime with AI assistance, 2026
+        </a>
+    </footer>
+
+    <script>
+        // 這裡定義你想顯示的資料夾名稱清單
+        // 注意：純前端 JS 無法自動獲取資料夾清單，建議在此手動填入或由後端產出
+        const folders = ['project1', 'project2', 'docs']; 
+
+        async function loadDirectories() {
+            const container = document.getElementById('file-list');
+            container.innerHTML = '';
+
+            if (folders.length === 0) {
+                container.innerHTML = '目前無目錄資訊。';
+                return;
+            }
+
+            for (const folder of folders) {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'directory-item';
+
+                // 建立連結
+                const link = document.createElement('a');
+                link.href = `./${folder}/`;
+                link.className = 'dir-link';
+                link.innerText = `📁 ${folder}`;
+                itemDiv.appendChild(link);
+
+                // 讀取 readme.txt
+                const readmeDiv = document.createElement('div');
+                readmeDiv.className = 'readme-content';
+                readmeDiv.innerText = '正在讀取說明...';
+                itemDiv.appendChild(readmeDiv);
+
+                container.appendChild(itemDiv);
+
+                try {
+                    const response = await fetch(`./${folder}/readme.txt`);
+                    if (response.ok) {
+                        const text = await response.text();
+                        readmeDiv.innerText = text;
+                    } else {
+                        readmeDiv.innerText = '無說明文件 (readme.txt)';
+                    }
+                } catch (error) {
+                    readmeDiv.innerText = '無法讀取說明文件';
+                }
+            }
+        }
+
+        window.onload = loadDirectories;
+    </script>
+</body>
+</html>
