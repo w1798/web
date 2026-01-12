@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>作業訂正小幫手 by Charles Nextime</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-theme="soft">
+
+<header>
+    <div class="logo">作業總覽</div>
+    <div class="nav-buttons">
+        <button class="nav-btn" onclick="exportData()">匯出</button>
+        <button class="nav-btn" onclick="triggerImport()">匯入</button>
+        <input type="file" id="importInput" style="display:none" accept=".json" onchange="importData(event)">
+        <button class="nav-btn" onclick="resetSystem()">重置</button>
+        <button class="nav-btn" onclick="openModal('settingsModal')">設定</button>
+        <button class="nav-btn" onclick="openReportModal()">個人作業查詢</button>
+        <button class="nav-btn" onclick="openTotalListModal()">總訂正名單</button>
+        <button class="nav-btn btn-primary" onclick="openAddModal()">新增作業</button>
+    </div>
+</header>
+
+<main id="assignmentContainer" class="main-layout"></main>
+
+<footer class="author-info">
+    <a href="https://nextime5.blogspot.com" target="_blank" class="author-link">
+        Completed by Charles Nextime with AI assistance, 2026
+    </a>
+</footer>
+
+<div id="settingsModal" class="modal">
+    <div class="modal-content modal-full modal-fixed-70">
+        <div class="modal-header-btns">
+            <button class="nav-btn" onclick="closeModal('settingsModal')">取消</button>
+            <button class="btn-confirm" onclick="saveSettings()">確定儲存</button>
+        </div>
+        <h2 class="settings-title">系統設定</h2>
+        <div class="settings-grid-container scroll-box">
+            <div class="settings-column">
+                <div class="settings-row">
+                    <label>介面風格：<select id="themeSelect" class="select-short-width">
+                        <option value="soft">柔和藍</option><option value="tech">科技黑</option>
+                        <option value="girl">粉嫩色</option><option value="forest">森林綠</option>
+                        <option value="ocean">海洋藍</option><option value="sunset">夕陽橘</option>
+                        <option value="lavender">薰衣草</option><option value="minimal">極簡灰</option>
+                        <option value="sakura">櫻花粉</option><option value="coffee">咖啡棕</option>
+                    </select></label>
+                </div>
+                <div class="settings-row">
+                    <label>作業排序：<select id="sortOrderSelect" class="select-short-width">
+                        <option value="desc">新 → 舊</option>
+                        <option value="asc">舊 → 新</option>
+                    </select></label>
+                </div>
+                <div class="settings-row">
+                    <label>主頁作業數：<select id="layoutSelect" class="select-short-width"></select></label>
+                </div>
+                <div class="settings-row">
+                    <label>座號每行：<select id="studentColsSelect" class="select-short-width">
+                        <option value="5">5 個</option><option value="6">6 個</option>
+                        <option value="7">7 個</option><option value="8">8 個</option>
+                        <option value="9">9 個</option><option value="10">10 個</option>
+                    </select></label>
+                </div>
+            </div>
+            <div class="settings-column">
+                <div class="settings-row">
+                    <label>點座號視窗大小：<select id="sizeDetail" class="select-short-width size-sel"></select></label>
+                </div>
+                <div class="settings-row">
+                    <label>個人查詢視窗大小：<select id="sizeReport" class="select-short-width size-sel"></select></label>
+                </div>
+                <div class="settings-row">
+                    <label>總名單視窗大小：<select id="sizeTotal" class="select-short-width size-sel"></select></label>
+                </div>
+                <div class="settings-row">
+                    <label>自動加日期：<input type="checkbox" id="autoDate" style="width: 20px; height: 20px; vertical-align: middle;"></label>
+                </div>
+                <div class="settings-row">
+                    <button class="btn-danger btn-small" onclick="cleanFinishedAssignments()">🗑️ 清除已完成作業</button>
+                </div>
+            </div>
+            <div class="settings-full-row">
+                <label>全班座號 (用,分開)：</label>
+                <textarea id="studentListConfig" class="input-triple"></textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="detailModal" class="modal">
+    <div class="modal-content modal-full dynamic-size" id="detailModalContent">
+        <div class="modal-header-btns"><button class="btn-danger" id="deleteBtn">刪除</button><button class="btn-confirm" onclick="closeModal('detailModal')">完成</button></div>
+        <h2 id="detailTitle" style="margin-bottom: 10px;"></h2>
+        <div id="studentGrid" class="student-grid scroll-box"></div>
+    </div>
+</div>
+
+<div id="studentReportModal" class="modal">
+    <div class="modal-content modal-full dynamic-size" id="reportModalContent">
+        <div class="modal-header-btns"><button class="nav-btn" onclick="closeModal('studentReportModal')">關閉</button></div>
+        <div class="report-header-left">
+            <h2>個人作業查詢</h2>
+            <div class="select-box">
+                <label>座號：</label>
+                <select id="reportStudentSelect" class="select-short" onchange="generateStudentReport()"></select>
+            </div>
+        </div>
+        <p style="text-align:left; color:#666; margin: 0 0 10px 20px;">(切換座號即時查詢，點選下方作業可進入登記)</p>
+        <div id="reportResult" class="scroll-box"></div>
+    </div>
+</div>
+
+<div id="totalListModal" class="modal">
+    <div class="modal-content modal-full dynamic-size" id="totalModalContent">
+        <div class="modal-header-btns"><button class="nav-btn" onclick="copyTotalList()">複製名單</button><button class="nav-btn" onclick="closeModal('totalListModal')">關閉</button></div>
+        <h2>總訂正名單</h2>
+        <p style="color:#666; margin-bottom:10px;">(點選作業名稱可直接進入登記介面)</p>
+        <div id="totalListContent" class="scroll-box"></div>
+    </div>
+</div>
+
+<div id="addAssignmentModal" class="modal">
+    <div class="modal-content" style="max-width: 450px;">
+        <div class="modal-header-btns">
+            <button class="nav-btn" onclick="closeModal('addAssignmentModal')">取消</button>
+            <button class="btn-confirm" onclick="addAssignment()">確定</button>
+        </div>
+        <h2 style="margin-top:10px;">新增作業名稱</h2>
+        <input type="text" id="assignmentNameInput" class="large-input" maxlength="25">
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
