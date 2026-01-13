@@ -112,7 +112,7 @@ function renderAssignments() {
     container.innerHTML = '';
 
     if (state.assignments.length === 0) {
-        container.innerHTML = `<div class="empty-hint">請先「新增作業」開始使用！</div>`;
+        container.innerHTML = `<div class="empty-hint">請先「新增任務」開始使用！</div>`;
         return;
     }
 
@@ -178,7 +178,7 @@ function openDetail(id) {
     });
     window.onmouseup = () => isDragging = false;
     document.getElementById('deleteBtn').onclick = () => { 
-        if(confirm("確定刪除此作業？")) { state.assignments = state.assignments.filter(a => a.id !== id); saveData(); closeModal('detailModal'); } 
+        if(confirm("確定刪除此任務？")) { state.assignments = state.assignments.filter(a => a.id !== id); saveData(); closeModal('detailModal'); } 
     };
     openModal('detailModal');
 }
@@ -203,7 +203,7 @@ function generateStudentReport() {
     const undone = sorted.filter(a => !a.doneList.includes(num));
     document.getElementById('reportResult').innerHTML = undone.length 
         ? undone.map(a => `<div class="report-link" onclick="closeModal('studentReportModal'); openDetail(${a.id})">${a.name}</div>`).join('')
-        : `<p style="text-align:center; font-size:1.2rem; margin-top:20px;">✅ 該生已完成所有作業！</p>`;
+        : `<p style="text-align:center; font-size:1.2rem; margin-top:20px;">✅ 該生已完成所有任務！</p>`;
 }
 
 function openTotalListModal() {
@@ -211,11 +211,11 @@ function openTotalListModal() {
     const container = document.getElementById('totalListContent');
     const totalStudentCount = state.settings.studentList.split(',').map(s => s.trim()).filter(s => s).length;
     
-    // 只過濾出「尚未全班完成」的作業
+    // 只過濾出「尚未全班完成」的任務
     const unfinishedAssignments = sorted.filter(a => a.doneList.length < totalStudentCount);
 
     if (unfinishedAssignments.length === 0) {
-        container.innerHTML = `<div class="all-done-msg">✨ 作業都完成！ ✨</div>`;
+        container.innerHTML = `<div class="all-done-msg">✨ 任務都完成！ ✨</div>`;
     } else {
         container.innerHTML = unfinishedAssignments.map(a => {
             const undone = state.settings.studentList.split(',').map(s => s.trim()).filter(s => s && !a.doneList.includes(s));
@@ -255,8 +255,8 @@ function addAssignment() {
 function cleanFinishedAssignments() {
     const totalCount = state.settings.studentList.split(',').map(s => s.trim()).filter(s => s).length;
     const finishedCount = state.assignments.filter(a => a.doneList.length >= totalCount).length;
-    if (finishedCount === 0) return alert("目前沒有已完成的作業。");
-    if (confirm(`確定刪除 ${finishedCount} 個已完成作業？`)) {
+    if (finishedCount === 0) return alert("目前沒有已完成的任務。");
+    if (confirm(`確定刪除 ${finishedCount} 個已完成任務？`)) {
         state.assignments = state.assignments.filter(a => a.doneList.length < totalCount);
         saveData();
         closeModal('settingsModal');
