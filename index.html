@@ -25,7 +25,7 @@
         .main-content {
             width: 100%;
             max-width: 1200px;
-            padding: 40px 20px 100px 20px; /* 底部增加 100px 確保卡片不被遮擋 */
+            padding: 40px 20px 120px 20px; /* 底部增加間距防止 Footer 遮擋 */
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -36,30 +36,38 @@
             margin-bottom: 30px;
             text-shadow: 0 4px 10px rgba(0,0,0,0.2);
             font-size: 1.8rem;
+            text-align: center;
         }
 
         #link-container {
             display: grid;
+            /* 使用 grid 並配合 align-items 確保卡片高度一致 */
             grid-template-columns: repeat(5, 1fr); 
-            gap: 15px;
+            gap: 20px;
             width: 100%;
         }
 
-        /* 響應式：平板 3 欄，手機 2 欄 */
-        @media (max-width: 1000px) { #link-container { grid-template-columns: repeat(3, 1fr); } }
-        @media (max-width: 600px) { #link-container { grid-template-columns: repeat(2, 1fr); } }
+        /* 響應式佈局調整 */
+        @media (max-width: 1100px) { #link-container { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 768px) { #link-container { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 480px) { #link-container { grid-template-columns: 1fr; } }
 
         .card {
             background: var(--card-bg);
             border-radius: 12px;
-            padding: 15px;
+            padding: 20px;
             box-shadow: 0 8px 15px rgba(0,0,0,0.1);
             transition: all 0.3s ease;
             text-decoration: none;
             color: inherit;
             border: 1px solid rgba(255,255,255,0.3);
             backdrop-filter: blur(10px);
-            min-height: 100px;
+            
+            /* 讓卡片內容能垂直延伸 */
+            display: flex;
+            flex-direction: column;
+            height: 100%; 
+            box-sizing: border-box;
         }
 
         .card:hover {
@@ -69,36 +77,35 @@
         }
 
         .card h2 {
-            margin: 0 0 8px 0;
-            font-size: 1.05rem;
+            margin: 0 0 12px 0;
+            font-size: 1.1rem;
             color: #4834d4;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            /* 移除強制單行，改為自然換行 */
+            line-height: 1.3;
         }
 
         .card p {
             margin: 0;
-            font-size: 0.85rem;
-            line-height: 1.4;
+            font-size: 0.9rem;
+            line-height: 1.6;
             color: #636e72;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
+            /* 關鍵修正：移除 -webkit-line-clamp 以顯示完整文字 */
+            display: block; 
+            overflow: visible;
+            text-align: justify;
         }
 
-        /* --- 修正後的 Footer：永遠固定在畫面最下方 --- */
+        /* --- Footer 設定 --- */
         .author-info {
-            position: fixed; /* 固定定位 */
-            bottom: 0;      /* 貼齊底部 */
+            position: fixed;
+            bottom: 0;
             left: 0;
             width: 100%;
             text-align: center;
             padding: 15px 0;
-            background: rgba(0, 0, 0, 0.4); /* 加深一點背景以利閱讀 */
-            backdrop-filter: blur(5px);    /* 底部也來點毛玻璃感 */
-            z-index: 1000;                 /* 確保在卡片之上 */
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
             border-top: 1px solid rgba(255,255,255,0.1);
         }
 
@@ -106,7 +113,6 @@
             text-decoration: none;
             color: rgba(255, 255, 255, 0.9);
             font-size: 0.85rem;
-            padding: 5px 15px;
             transition: all 0.3s ease;
         }
 
@@ -114,13 +120,18 @@
             color: #fff;
             text-decoration: underline;
         }
+
+        /* 標題連結樣式 */
+        .title-link {
+            text-decoration: none;
+        }
     </style>
 </head>
 <body>
 
     <div class="main-content">
-        <a href="https://nextime5.blogspot.com" target="_blank" class="author-link">
-        <h1>Charles Nextime 的網頁程式</h1>
+        <a href="https://nextime5.blogspot.com" target="_blank" class="title-link">
+            <h1>Charles Nextime 的網頁程式</h1>
         </a>
         <div id="link-container"></div>
     </div>
@@ -132,13 +143,28 @@
     </footer>
 
     <script>
-        // 這裡放您的連結資料
+        // 連結資料陣列
         const links = [
-            { title: "Charles Nextime 的程式", desc: "一些好用的 Windows 獨立軟體，開放程式碼自由使用。", url: "https://nextime5.blogspot.com/" },
-            { title: "評語提示詞架構師", desc: "提供高自由度，讓您自定義類別與特質，並透過視覺化操作輕鬆完成評語提詞。介面風格時尚美觀，兼具實用與設計感，是追求效率與極簡美學者的最佳選擇。", url: "https://w1798.github.io/web/evalprompt" },
-            { title: "教學清點小幫手", desc: "快速處理學生各項任務或作業訂正流程。", url: "https://w1798.github.io/web/markit" },
-            { title: "考試看板", desc: "即時顯示考試資訊與進度。", url: "https://w1798.github.io/web/examboard" },
-            // 您可以複製多個測試看看捲動效果
+            { 
+                title: "Charles Nextime 的程式", 
+                desc: "一些好用的 Windows 獨立軟體，開放程式碼自由使用。", 
+                url: "https://nextime5.blogspot.com/" 
+            },
+            { 
+                title: "評語提示詞架構師", 
+                desc: "提供高自由度，讓您自定義類別與特質，並透過視覺化操作輕鬆完成評語提詞。介面風格時尚美觀，兼具實用與設計感，是追求效率與極簡美學者的最佳選擇。", 
+                url: "https://w1798.github.io/web/evalprompt" 
+            },
+            { 
+                title: "教學清點小幫手", 
+                desc: "快速處理學生各項任務或作業訂正流程，讓課堂管理變得輕鬆高效。", 
+                url: "https://w1798.github.io/web/markit" 
+            },
+            { 
+                title: "考試看板", 
+                desc: "即時顯示考試資訊、倒數計時與當前進度，幫助學生掌握考試時間流逝。", 
+                url: "https://w1798.github.io/web/examboard" 
+            }
         ];
 
         function renderLinks() {
@@ -150,6 +176,7 @@
                 </a>
             `).join('');
         }
+        
         renderLinks();
     </script>
 </body>
