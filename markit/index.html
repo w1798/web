@@ -5,11 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>作業訂正小幫手 by Charles Nextime</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        .quick-select-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 15px; }
+        .tag-btn { background: var(--primary); opacity: 0.8; color: white; padding: 6px 12px; border-radius: 15px; cursor: pointer; font-size: 0.9rem; border: none; transition: 0.2s; }
+        .tag-btn:hover { opacity: 1; transform: scale(1.05); }
+        .clickable-task { text-decoration: underline; cursor: pointer; color: var(--primary); font-weight: bold; }
+        .clickable-task:hover { filter: brightness(0.8); }
+        .empty-hint { grid-column: 1 / -1; text-align: center; padding: 100px 20px; color: #888; font-size: 1.5rem; font-weight: bold; }
+        /* 總名單全完成樣式 */
+        .all-done-msg { text-align: center; font-size: 1.8rem; color: #28a745; padding: 50px 0; font-weight: bold; }
+    </style>
 </head>
 <body data-theme="soft">
 
 <header>
-    <div class="logo">作業總覽</div>
+    <div class="logo">作業訂正小幫手 - 作業總覽</div>
     <div class="nav-buttons">
         <button class="nav-btn" onclick="exportData()">匯出</button>
         <button class="nav-btn" onclick="triggerImport()">匯入</button>
@@ -23,12 +33,6 @@
 </header>
 
 <main id="assignmentContainer" class="main-layout"></main>
-
-<footer class="author-info">
-    <a href="https://w1798.github.io/web/" target="_blank" class="author-link">
-        Completed by Charles Nextime with AI assistance, 2026
-    </a>
-</footer>
 
 <div id="settingsModal" class="modal">
     <div class="modal-content modal-full modal-fixed-70">
@@ -46,12 +50,9 @@
                         <option value="ocean">海洋藍</option><option value="sunset">夕陽橘</option>
                         <option value="lavender">薰衣草</option><option value="minimal">極簡灰</option>
                         <option value="sakura">櫻花粉</option><option value="coffee">咖啡棕</option>
-                    </select></label>
-                </div>
-                <div class="settings-row">
-                    <label>作業排序：<select id="sortOrderSelect" class="select-short-width">
-                        <option value="desc">新 → 舊</option>
-                        <option value="asc">舊 → 新</option>
+                        <option value="mint">薄荷綠</option><option value="lemon">檸檬黃</option>
+                        <option value="grape">葡萄紫</option><option value="chocolate">巧克力</option>
+                        <option value="midnight">午夜藍</option>
                     </select></label>
                 </div>
                 <div class="settings-row">
@@ -63,6 +64,12 @@
                         <option value="7">7 個</option><option value="8">8 個</option>
                         <option value="9">9 個</option><option value="10">10 個</option>
                     </select></label>
+                </div>
+                <div class="settings-row">
+                    <label>自動加日期：<input type="checkbox" id="autoDate" style="width:20px;height:20px;"></label>
+                </div>
+                <div class="settings-row">
+                    <label>作業標籤累加模式：<input type="checkbox" id="appendModeSetting" style="width:20px;height:20px;"></label>
                 </div>
             </div>
             <div class="settings-column">
@@ -76,11 +83,17 @@
                     <label>總名單視窗大小：<select id="sizeTotal" class="select-short-width size-sel"></select></label>
                 </div>
                 <div class="settings-row">
-                    <label>自動加日期：<input type="checkbox" id="autoDate" style="width: 20px; height: 20px; vertical-align: middle;"></label>
+                    <label>作業排序：<select id="sortOrderSelect" class="select-short-width">
+                        <option value="desc">新 → 舊</option><option value="asc">舊 → 新</option>
+                    </select></label>
                 </div>
                 <div class="settings-row">
                     <button class="btn-danger btn-small" onclick="cleanFinishedAssignments()">🗑️ 清除已完成作業</button>
                 </div>
+            </div>
+            <div class="settings-full-row">
+                <label>快速作業標籤 (用,分隔)：</label>
+                <input type="text" id="quickTasksConfig" class="input-triple" style="height:40px;">
             </div>
             <div class="settings-full-row">
                 <label>全班座號 (用,分開)：</label>
@@ -90,10 +103,25 @@
     </div>
 </div>
 
+<div id="addAssignmentModal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header-btns">
+            <button class="nav-btn" onclick="closeModal('addAssignmentModal')">取消</button>
+            <button class="btn-confirm" onclick="addAssignment()">確定</button>
+        </div>
+        <h2 style="margin-top:10px;">新增作業名稱</h2>
+        <input type="text" id="assignmentNameInput" class="large-input" placeholder="輸入或點選標籤">
+        <div class="quick-select-tags" id="quickTags"></div>
+    </div>
+</div>
+
 <div id="detailModal" class="modal">
     <div class="modal-content modal-full dynamic-size" id="detailModalContent">
-        <div class="modal-header-btns"><button class="btn-danger" id="deleteBtn">刪除</button><button class="btn-confirm" onclick="closeModal('detailModal')">完成</button></div>
-        <h2 id="detailTitle" style="margin-bottom: 10px;"></h2>
+        <div class="modal-header-btns">
+            <button class="btn-danger" id="deleteBtn">刪除作業</button>
+            <button class="btn-confirm" onclick="closeModal('detailModal')">完成</button>
+        </div>
+        <h2 id="detailTitle"></h2>
         <div id="studentGrid" class="student-grid scroll-box"></div>
     </div>
 </div>
@@ -103,35 +131,26 @@
         <div class="modal-header-btns"><button class="nav-btn" onclick="closeModal('studentReportModal')">關閉</button></div>
         <div class="report-header-left">
             <h2>個人作業查詢</h2>
-            <div class="select-box">
-                <label>座號：</label>
-                <select id="reportStudentSelect" class="select-short" onchange="generateStudentReport()"></select>
-            </div>
+            <select id="reportStudentSelect" class="select-short" onchange="generateStudentReport()"></select>
         </div>
-        <p style="text-align:left; color:#666; margin: 0 0 10px 20px;">(切換座號即時查詢，點選下方作業可進入登記)</p>
         <div id="reportResult" class="scroll-box"></div>
     </div>
 </div>
 
 <div id="totalListModal" class="modal">
     <div class="modal-content modal-full dynamic-size" id="totalModalContent">
-        <div class="modal-header-btns"><button class="nav-btn" onclick="copyTotalList()">複製名單</button><button class="nav-btn" onclick="closeModal('totalListModal')">關閉</button></div>
-        <h2>總訂正名單</h2>
-        <p style="color:#666; margin-bottom:10px;">(點選作業名稱可直接進入登記介面)</p>
+        <div class="modal-header-btns">
+            <button class="nav-btn" onclick="copyTotalList()">複製名單</button>
+            <button class="nav-btn" onclick="closeModal('totalListModal')">關閉</button>
+        </div>
+        <h2>總訂正名單(點選作業名稱進行圈選)</h2>
         <div id="totalListContent" class="scroll-box"></div>
     </div>
 </div>
 
-<div id="addAssignmentModal" class="modal">
-    <div class="modal-content" style="max-width: 450px;">
-        <div class="modal-header-btns">
-            <button class="nav-btn" onclick="closeModal('addAssignmentModal')">取消</button>
-            <button class="btn-confirm" onclick="addAssignment()">確定</button>
-        </div>
-        <h2 style="margin-top:10px;">新增作業名稱</h2>
-        <input type="text" id="assignmentNameInput" class="large-input" maxlength="25">
-    </div>
-</div>
+<footer class="author-info">
+    <a href="https://w1798.github.io/web/" target="_blank" class="author-link">Completed by Charles Nextime with AI assistance, 2026</a>
+</footer>
 
 <script src="script.js"></script>
 </body>
