@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>評語提示詞架構師 by Charles Nextime</title>
+    <title>評語提詞架構師 by Charles Nextime</title>
     <link rel="stylesheet" href="style.css?ver=1.04">
 </head>
 <body>
 
 <header>
-    <h1 id="title-text">評語提示詞架構師</h1>
+    <h1 id="title-text">評語提詞架構師</h1>
     <div class="nav-btns">
         <button onclick="exportData()">匯出</button>
         <button onclick="document.getElementById('importFile').click()">匯入</button>
@@ -23,7 +23,7 @@
     <div id="studentContainer" class="student-grid"></div>
     
     <div class="action-center">
-        <button class="btn-main" onclick="generatePrompts()">產出提示詞</button>
+        <button class="btn-main" onclick="generatePrompts()">產出提詞</button>
         <button class="btn-main secondary" onclick="clearAllSelections()">清除已選</button>
     </div>
 
@@ -85,7 +85,7 @@
             <div class="settings-bottom">
                 <div class="settings-box">
                     <label>
-                        自定義提示詞架構 
+                        自定義提詞架構 
                         <button class="reset-link" onclick="resetField('promptTemplateSet')">[重置]</button>
                         <span class="help-text">{grade}年級、{name}姓名、{tone}語氣、{traits}特質、{wordCount}字數</span>
                     </label>
