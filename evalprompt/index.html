@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>評語提示詞架構師 by Charles Nextime</title>
+    <link rel="stylesheet" href="style.css?ver=1.01">
+</head>
+<body>
+
+<header>
+    <h1 id="title-text">評語提示詞架構師</h1>
+    <div class="nav-btns">
+        <button onclick="exportData()">匯出</button>
+        <button onclick="document.getElementById('importFile').click()">匯入</button>
+        <input type="file" id="importFile" style="display:none" onchange="importData(event)">
+        <button onclick="resetSystem()">重置</button>
+        <button onclick="openSettings()">設定</button>
+    </div>
+</header>
+
+<main>
+    <div id="studentContainer" class="student-grid"></div>
+    
+    <div class="action-center">
+        <button class="btn-main" onclick="generatePrompts()">產出提示詞</button>
+        <button class="btn-main secondary" onclick="clearAllSelections()">清除已選</button>
+    </div>
+
+    <div id="output-area">
+        <pre id="outputText"></pre>
+        <div class="output-btns centered">
+            <button class="btn-main" onclick="copyOutput()">複製</button>
+            <button class="btn-main secondary" onclick="document.getElementById('output-area').style.display='none'">清除</button>
+        </div>
+    </div>
+</main>
+
+<footer class="footer-bar">
+    <div class="author-info">
+        <a href="https://nextime5.blogspot.com" target="_blank" class="author-link">
+            Completed by Charles Nextime with AI assistance, 2026
+        </a>
+    </div>
+</footer>
+
+<div id="settingsModal" class="overlay">
+    <div class="modal">
+        <div class="modal-header compact-header">
+            <h3>評語相關設定</h3>
+            <div class="header-btns">
+                <button onclick="closeSettings()">取消</button>
+                <button class="btn-main btn-sm" onclick="saveSettings()">確定</button>
+            </div>
+        </div>
+        
+        <div class="settings-layout">
+            <div class="settings-top">
+                <div class="settings-box zone-a">
+                    <div class="inline-group"><label>風格</label><select id="themeSelect" onchange="applyTheme(this.value)"></select></div>
+                    <div class="inline-group"><label>年級</label><select id="gradeSet"></select></div>
+                    <div class="inline-group"><label>字數</label><select id="wordCountSet"></select></div>
+                    <div class="inline-group"><label>每行</label><select id="gridCountSet"></select></div>
+                    <div class="inline-group"><label>類別</label><select id="traitColSet"></select></div>
+                </div>
+                <div class="settings-box zone-b">
+                    <label>學生清單</label>
+                    <textarea id="studentListSet" placeholder="一行一個姓名"></textarea>
+                </div>
+                <div class="settings-box zone-c">
+                    <label>類別和特質 <button class="reset-link" onclick="resetField('traitsSet')">[重置]</button></label>
+                    <span class="help-text-mini">五字為各類別的開頭，四字以內為該類別的特質</span>
+                    <textarea id="traitsSet"></textarea>
+                </div>
+                <div class="settings-box zone-d">
+                    <label>語氣清單</label>
+                    <textarea id="tonesSet" placeholder="一行一個語氣"></textarea>
+                </div>
+                <div class="settings-box zone-e">
+                    <label>提詞先置詞</label>
+                    <textarea id="prePromptSet"></textarea>
+                </div>
+            </div>
+
+            <div class="settings-bottom">
+                <div class="settings-box">
+                    <label>
+                        自定義提示詞架構 
+                        <button class="reset-link" onclick="resetField('promptTemplateSet')">[重置]</button>
+                        <span class="help-text">{grade}年級、{name}姓名、{tone}語氣、{traits}特質、{wordCount}字數</span>
+                    </label>
+                    <textarea id="promptTemplateSet"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer footer-right compact-footer">
+            <button onclick="closeSettings()">取消</button>
+            <button class="btn-main btn-sm" onclick="saveSettings()">確定</button>
+        </div>
+    </div>
+</div>
+
+<div id="studentModal" class="overlay">
+    <div class="modal student-config-modal">
+        <div class="modal-header compact-header">
+            <h2 id="currentStudentTitle">請為 OO 選擇類別和特質</h2>
+            <div class="header-btns">
+                <button onclick="closeStudentModal()">取消</button>
+                <button onclick="resetStudentSelection()">重置</button>
+                <button class="btn-main btn-sm" onclick="confirmStudentSelection()">確定</button>
+            </div>
+        </div>
+
+        <div id="traitsPicker" class="trait-container scrollable-content"></div>
+        
+        <div class="student-modal-footer-combined">
+            <div class="tone-bar">
+                <label>語氣選擇：</label>
+                <div id="tonePicker" class="tone-list"></div>
+            </div>
+            <div class="footer-btns-group">
+                <button onclick="closeStudentModal()">取消</button>
+                <button onclick="resetStudentSelection()">重置</button>
+                <button class="btn-main btn-sm" onclick="confirmStudentSelection()">確定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="script.js?ver=1.01"></script>
+</body>
+</html>
