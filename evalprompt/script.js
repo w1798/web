@@ -1,203 +1,374 @@
-const themes = [
-    { name: "柔和藍", bg: "#f0f4f8", accent: "#3b82f6" },
-    { name: "森林綠", bg: "#f1f8f1", accent: "#22c55e" },
-    { name: "夕陽橘", bg: "#fff7ed", accent: "#f97316" },
-    { name: "薰衣草紫", bg: "#f5f3ff", accent: "#8b5cf6" },
-    { name: "玫瑰粉", bg: "#fff1f2", accent: "#f43f5e" },
-    { name: "午夜藍", bg: "#1e293b", accent: "#38bdf8", text: "#383afc" },
-    { name: "薄荷涼", bg: "#ecfdf5", accent: "#10b981" },
-    { name: "檸檬黃", bg: "#fefce8", accent: "#eab308" },
-    { name: "大地色", bg: "#fafaf9", accent: "#78716c" },
-    { name: "櫻草紅", bg: "#fef2f2", accent: "#dc2626" },
-    { name: "深海綠", bg: "#f0fdfa", accent: "#0d9488" },
-    { name: "葡萄紫", bg: "#faf5ff", accent: "#9333ea" },
-    { name: "灰金屬", bg: "#f8fafc", accent: "#475569" },
-    { name: "櫻花粉", bg: "#fdf2f8", accent: "#db2777" },
-    { name: "高雅灰", bg: "#f3f4f6", accent: "#374151" }
+/**
+ * Puti-AI 學生期末評語提示詞生成器 V8.2
+ */
+
+// 預設資料
+const defaultTraits = [
+    { category: "品學兼優型", items: ["才德兼備", "勤學篤行", "嚴於律己", "尊師重道", "慎思明辨", "知行合一", "進退有度", "謙遜自持", "恪守本分", "惜時如金", "精益求精", "誠信正直", "樂善好施", "觸類旁通", "堪為表率"] },
+    { category: "潛力待發型", items: ["大器晚成", "韜光養晦", "靜觀其變", "厚積薄發", "蓄勢待發", "後發先至", "不鳴則已", "沉潛剛克", "伺機而動", "穩紮穩打", "深藏若虛", "引而不發", "待時而動", "後來居上", "一鳴驚人"] },
+    { category: "活躍社交型", items: ["樂群敬業", "談吐不凡", "妙語如珠", "熱情洋溢", "應對得體", "廣結善緣", "幽默風趣", "靈活變通", "助人為樂", "開朗大方", "號召有力", "適應力強", "感染力強", "人際圓融", "進退合宜"] },
+    { category: "創意無限型", items: ["別出心裁", "獨具匠心", "標新立異", "天馬行空", "奇思妙想", "不拘一格", "推陳出新", "自出機杼", "匠心獨運", "超凡脫俗", "與眾不同", "突破常規", "另闢蹊徑", "巧奪天工", "出人意表"] },
+    { category: "穩扎穩打型", items: ["腳踏實地", "按部就班", "循序漸進", "一絲不苟", "兢兢業業", "穩健踏實", "步步為營", "實事求是", "專心致志", "持之以恆", "細心謹慎", "條理分明", "量力而行", "務實求真", "鍥而不捨"] },
+    { category: "領導魅力型", items: ["遠見卓識", "知人善任", "決策果斷", "統籌全局", "以身作則", "公正無私", "膽識過人", "運籌帷幄", "高瞻遠矚", "顧全大局", "指揮若定", "臨危不亂", "德才兼備", "眾望所歸", "領袖群倫"] },
+    { category: "藝術表達型", items: ["才華橫溢", "情感豐沛", "觀察入微", "風格獨特", "表現力強", "審美獨到", "敏感細膩", "意境深遠", "形神兼備", "聲情並茂", "繪聲繪色", "活靈活現", "文采斐然", "妙筆生花", "栩栩如生"] },
+    { category: "邏輯分析型", items: ["條理清晰", "推理嚴密", "分析透徹", "思維縝密", "客觀冷靜", "洞見癥結", "辯才無礙", "明察秋毫", "抽絲剝繭", "層次分明", "有理有據", "邏輯嚴謹", "證據確鑿", "實證求真", "追本溯源"] },
+    { category: "運動健將型", items: ["體魄強健", "身手敏捷", "協調自如", "爆發力強", "意志堅定", "團隊合作", "反應迅速", "耐力過人", "遵守規則", "追求卓越", "刻苦訓練", "勝不驕躁", "敗不氣餒", "動靜得宜", "競技精神"] },
+    { category: "同理心強型", items: ["將心比心", "善解人意", "體貼入微", "關懷備至", "慈悲為懷", "寬厚仁慈", "樂於助人", "雪中送炭", "濟弱扶傾", "感同身受", "溫情脈脈", "細緻周到", "設身處地", "推己及人", "仁心仁術"] },
+    { category: "獨立自主型", items: ["自立自強", "自給自足", "獨當一面", "特立獨行", "自我驅動", "目標明確", "自學成才", "不隨流俗", "冷靜沉著", "內省自覺", "主動進取", "自律甚嚴", "獨立思考", "自力更生", "自成一格"] },
+    { category: "團隊協作型", items: ["同心協力", "分工合作", "配合無間", "群策群力", "和衷共濟", "攜手並進", "互助互惠", "取長補短", "齊心合力", "同舟共濟", "協力同心", "眾志成城", "團結一致", "相輔相成", "共存共榮"] },
+    { category: "好奇探索型", items: ["追根究底", "求知若渴", "學而不厭", "勇於嘗試", "開拓進取", "標新探奇", "實事求是", "實驗精神", "挑戰未知", "廣泛涉獵", "觸類旁通", "舉一反三", "好學不倦", "格物致知", "明辨篤行"] },
+    { category: "務實執行型", items: ["實事求是", "腳踏實地", "言行一致", "說到做到", "雷厲風行", "立竿見影", "注重實效", "勤勉懇切", "任勞任怨", "埋頭苦幹", "專注目標", "效率至上", "結果導向", "使命必達", "克盡厥職"] },
+    { category: "多才多藝型", items: ["文武雙全", "才藝兼備", "博學多才", "多才多藝", "學貫中西", "通才達識", "能文能武", "動靜皆宜", "左右開弓", "兼容並蓄", "融會貫通", "學以致用", "一專多能", "觸類旁通", "全知全能"] }
 ];
 
-const defaultConfig = {
-    grade: "1", wordCount: "100", students: "姓名1\n姓名2",
-    traitsRaw: "品學兼優型\n才德兼備\n勤學篤行\n嚴於律己\n尊師重道\n慎思明辨\n知行合一\n進退有度\n謙遜自持\n恪守本分\n惜時如金\n精益求精\n誠信正直\n樂善好施\n觸類旁通\n堪為表率\n潛力待發型\n大器晚成\n韜光養晦\n靜觀其變\n厚積薄發\n蓄勢待發\n後發先至\n不鳴則已\n沉潛剛克\n伺機而動\n穩紮穩打\n深藏若虛\n引而不發\n待時而動\n後來居上\n一鳴驚人\n活躍社交型\n樂群敬業\n談吐不凡\n妙語如珠\n熱情洋溢\n應對得體\n廣結善緣\n幽默風趣\n靈活變通\n助人為樂\n開朗大方\n號召有力\n適應力強\n感染力強\n人際圓融\n進退合宜\n創意無限型\n別出心裁\n獨具匠心\n標新立異\n天馬行空\n奇思妙想\n不拘一格\n推陳出新\n自出機杼\n匠心獨運\n超凡脫俗\n與眾不同\n突破常規\n另闢蹊徑\n巧奪天工\n出人意表\n穩扎穩打型\n腳踏實地\n按部就班\n循序漸進\n一絲不苟\n兢兢業業\n穩健踏實\n步步為營\n實事求是\n專心致志\n持之以恆\n細心謹慎\n條理分明\n量力而行\n務實求真\n鍥而不捨\n領導魅力型\n遠見卓識\n知人善任\n決策果斷\n統籌全局\n以身作則\n公正無私\n膽識過人\n運籌帷幄\n高瞻遠矚\n顧全大局\n指揮若定\n臨危不亂\n德才兼備\n眾望所歸\n領袖群倫\n藝術表達型\n才華橫溢\n情感豐沛\n觀察入微\n風格獨特\n表現力強\n審美獨到\n敏感細膩\n意境深遠\n形神兼備\n聲情並茂\n繪聲繪色\n活靈活現\n文采斐然\n妙筆生花\n栩栩如生\n邏輯分析型\n條理清晰\n推理嚴密\n分析透徹\n思維縝密\n客觀冷靜\n洞見癥結\n辯才無礙\n明察秋毫\n抽絲剝繭\n層次分明\n有理有據\n邏輯嚴謹\n證據確鑿\n實證求真\n追本溯源\n運動健將型\n體魄強健\n身手敏捷\n協調自如\n爆發力強\n意志堅定\n團隊合作\n反應迅速\n耐力過人\n遵守規則\n追求卓越\n刻苦訓練\n勝不驕躁\n敗不氣餒\n動靜得宜\n競技精神\n同理心強型\n將心比心\n善解人意\n體貼入微\n關懷備至\n慈悲為懷\n寬厚仁慈\n樂於助人\n雪中送炭\n濟弱扶傾\n感同身受\n溫情脈脈\n細緻周到\n設身處地\n推己及人\n仁心仁術\n獨立自主型\n自立自強\n自給自足\n獨當一面\n特立獨行\n自我驅動\n目標明確\n自學成才\n不隨流俗\n冷靜沉著\n內省自覺\n主動進取\n自律甚嚴\n獨立思考\n自力更生\n自成一格\n團隊協作型\n同心協力\n分工合作\n配合無間\n群策群力\n和衷共濟\n攜手並進\n互助互惠\n取長補短\n齊心合力\n同舟共濟\n協力同心\n眾志成城\n團結一致\n相輔相成\n共存共榮\n好奇探索型\n追根究底\n求知若渴\n學而不厭\n勇於嘗試\n開拓進取\n標新探奇\n實事求是\n實驗精神\n挑戰未知\n廣泛涉獵\n觸類旁通\n舉一反三\n好學不倦\n格物致知\n明辨篤行\n務實執行型\n實事求是\n腳踏實地\n言行一致\n說到做到\n雷厲風行\n立竿見影\n注重實效\n勤勉懇切\n任勞任怨\n埋頭苦幹\n專注目標\n效率至上\n結果導向\n使命必達\n克盡厥職\n多才多藝型\n文武雙全\n才藝兼備\n博學多才\n多才多藝\n學貫中西\n通才達識\n能文能武\n動靜皆宜\n左右開弓\n兼容並蓄\n融會貫通\n學以致用\n一專多能\n觸類旁通\n全知全能",
-    tones: "正向\n溫暖\n鼓勵\n同情\n關懷",
-    prePrompt: "我是一名專業的導師，",
-    promptTemplate: "請為{grade}年級的學生{name}，以{tone}的語氣，根據學生特質{traits}，生成{wordCount}字的期末評語",
-    themeIdx: 0, gridCount: 8, traitCols: 4, lastTones: []
-};
 
-let config = JSON.parse(localStorage.getItem('eval_v6_config')) || { ...defaultConfig };
-let studentStates = JSON.parse(localStorage.getItem('eval_v6_states')) || {}; 
-let activeStudent = null;
+const DEFAULT_TEMPLATE = "請為{grade}年級的學生{name}，以正向、溫暖、鼓勵的語氣，根據學生特質{{traits}}，生成{wordCount}字的期末評語";
 
-function init() {
-    const gSelect = document.getElementById('gradeSet');
-    for(let i=1; i<=12; i++) gSelect.add(new Option(i + '年級', i));
-    const wSelect = document.getElementById('wordCountSet');
-    [50, 100, 150, 200, 250, 300].forEach(v => wSelect.add(new Option(v + '字', v)));
-    const tSelect = document.getElementById('themeSelect');
-    themes.forEach((t, i) => tSelect.add(new Option(t.name, i)));
-    const gcSelect = document.getElementById('gridCountSet');
-    for(let i=5; i<=10; i++) gcSelect.add(new Option(i + '位', i));
-    const tcSelect = document.getElementById('traitColSet');
-    for(let i=3; i<=6; i++) tcSelect.add(new Option(i + '組', i));
+let traitsData = JSON.parse(JSON.stringify(defaultTraits));
+let selectedStudents = new Set();
+let selectedTraits = new Set();
+let studentsData = [];
+let generatedPrompts = [];
 
-    loadConfigToUI();
-    applyTheme(config.themeIdx);
-    renderStudentGrid();
+// --- 初始化 ---
+document.addEventListener('DOMContentLoaded', () => {
+    loadFromLocalStorage();
+    initializeTraitButtons();
+    setupEventListeners();
+});
+
+function getPastelColor(index) {
+    const hue = (index * 137.5) % 360;
+    return `hsl(${hue}, 70%, 92%)`;
 }
 
-function applyTheme(idx) {
-    const t = themes[idx];
-    document.documentElement.style.setProperty('--primary-bg', t.bg);
-    document.documentElement.style.setProperty('--accent-color', t.accent);
-    document.documentElement.style.setProperty('--text-color', t.text || '#1e293b');
-    config.themeIdx = idx;
+function initializeTraitButtons() {
+    const container = document.querySelector('.traits-section');
+    const groups = container.querySelectorAll('.trait-group:not(.custom)');
+    groups.forEach(g => g.remove());
+    const customSection = container.querySelector('.trait-group.custom');
+
+    traitsData.forEach((group, groupIndex) => {
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'trait-group';
+        groupDiv.style.backgroundColor = getPastelColor(groupIndex);
+        groupDiv.style.border = `1px solid ${getPastelColor(groupIndex).replace('92%', '80%')}`;
+
+        const h3 = document.createElement('h3');
+        h3.textContent = group.category;
+        const delBtn = document.createElement('span');
+        delBtn.textContent = ' (刪除此類別)';
+        delBtn.style.cssText = "font-size:12px; color:#cc4444; cursor:pointer; margin-left:10px;";
+        delBtn.onclick = () => removeCategory(groupIndex);
+        h3.appendChild(delBtn);
+        
+        const btnContainer = document.createElement('div');
+        btnContainer.className = 'buttons';
+group.items.forEach((trait, tIdx) => {
+            const btn = document.createElement('button');
+            btn.className = 'trait-button';
+            // 檢查是否已被選取，若是則加上選取樣式
+            if (selectedTraits.has(trait)) btn.classList.add('selected');
+            
+            // 建立文字標籤，避免與垃圾桶重疊
+            const textSpan = document.createElement('span');
+            textSpan.textContent = trait;
+            btn.appendChild(textSpan);
+
+            // 建立垃圾桶
+            const x = document.createElement('span');
+            x.innerHTML = 'X'; 
+            x.className = 'delete-trait-bin'; 
+            x.title = "刪除此詞彙"; 
+            x.onclick = (e) => { 
+                e.stopPropagation(); // 防止觸發按鈕的選取事件
+                removeTrait(groupIndex, tIdx); 
+            };
+            btn.appendChild(x);
+
+            // 修正：補上點選變色邏輯
+            btn.onclick = () => toggleTrait(btn, trait);
+
+            // 修正：將按鈕放進容器
+            btnContainer.appendChild(btn); 
+        });
+        groupDiv.appendChild(h3);
+        groupDiv.appendChild(btnContainer);
+        container.insertBefore(groupDiv, customSection);
+    });
 }
 
-function loadConfigToUI() {
-    document.getElementById('gradeSet').value = config.grade;
-    document.getElementById('wordCountSet').value = config.wordCount;
-    document.getElementById('studentListSet').value = config.students;
-    document.getElementById('traitsSet').value = config.traitsRaw;
-    document.getElementById('tonesSet').value = config.tones;
-    document.getElementById('prePromptSet').value = config.prePrompt;
-    document.getElementById('promptTemplateSet').value = config.promptTemplate;
-    document.getElementById('themeSelect').value = config.themeIdx;
-    document.getElementById('gridCountSet').value = config.gridCount;
-    document.getElementById('traitColSet').value = config.traitCols || 5;
-}
+function setupEventListeners() {
+    // 學生確定按鈕與提示
+    document.getElementById('generateButtons').onclick = () => {
+        generateStudentButtons();
+        document.getElementById('stepHint').style.display = 'inline';
+    };
 
-function saveSettings() {
-    config.grade = document.getElementById('gradeSet').value;
-    config.wordCount = document.getElementById('wordCountSet').value;
-    config.students = document.getElementById('studentListSet').value;
-    config.traitsRaw = document.getElementById('traitsSet').value;
-    config.tones = document.getElementById('tonesSet').value;
-    config.prePrompt = document.getElementById('prePromptSet').value;
-    config.promptTemplate = document.getElementById('promptTemplateSet').value;
-    config.gridCount = document.getElementById('gridCountSet').value;
-    config.traitCols = document.getElementById('traitColSet').value;
-    saveToLocal(); renderStudentGrid(); closeSettings();
-}
+document.getElementById('resetTemplate').onclick = resetTemplate;
+    document.getElementById('generate').onclick = generatePrompt;
+    document.getElementById('copy').onclick = copyPrompt;
+    document.getElementById('openAI').onclick = openAIWebsite;
+    document.getElementById('reset').onclick = confirmReset;
+    document.getElementById('addCustomTraits').onclick = addCustomTraits;
+    document.getElementById('clearCustomTraits').onclick = clearAllTraitsData;
+    document.getElementById('exportTraits').onclick = exportTraitsJSON;
+    document.getElementById('importTraits').onclick = () => document.getElementById('traitFileInput').click();
+    document.getElementById('traitFileInput').onchange = importTraitsJSON;
+    document.getElementById('resetConfig').onclick = resetFullSystem;
 
-function openStudentModal(name) {
-    activeStudent = name;
-    document.getElementById('currentStudentTitle').innerText = `請為 ${name} 選擇類別和特質`;
-    document.getElementById('studentModal').style.display = 'flex';
-
-    const picker = document.getElementById('traitsPicker');
-    picker.innerHTML = '';
-    picker.style.gridTemplateColumns = `repeat(${config.traitCols}, 1fr)`;
+    document.getElementById('customTraitInput').addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.key === 'Enter') addCustomTraits();
+    });
     
-    const lines = config.traitsRaw.split('\n');
-    let currentGroup = null;
+    // 範本變動時自動儲存
+    document.getElementById('promptTemplate').onchange = saveToLocalStorage;
 
-    lines.forEach(line => {
-        const trimmed = line.trim();
-        if(trimmed.length === 5) {
-            currentGroup = document.createElement('div');
-            currentGroup.className = 'trait-box';
-            currentGroup.innerHTML = `<div class="trait-title">${trimmed}</div>`;
-            picker.appendChild(currentGroup);
-        } else if(trimmed && currentGroup) {
-            const span = document.createElement('span');
-            span.className = 'trait-item';
-            span.innerText = trimmed;
-            if(studentStates[name]?.traits.includes(trimmed)) span.classList.add('active');
-            span.onclick = () => span.classList.toggle('active');
-            currentGroup.appendChild(span);
+
+const topBtn = document.getElementById('scrollToTop');
+
+    // 點擊按鈕回到頂部
+    topBtn.onclick = () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // 當頁面捲動超過 300px 才顯示按鈕
+    window.onscroll = () => {
+        if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
+            topBtn.style.display = "block";
+        } else {
+            topBtn.style.display = "none";
+        }
+    };
+}
+
+
+function resetTemplate() {
+    if (confirm('確定要將「提示詞範本」恢復成原始預設值嗎？')) {
+        // DEFAULT_TEMPLATE 是您程式碼最上方定義好的常數
+        document.getElementById('promptTemplate').value = DEFAULT_TEMPLATE;
+        saveToLocalStorage(); // 儲存變更
+	
+    }
+}
+
+
+function resetFullSystem() {
+    if (confirm('確定要將系統恢復成原始預設值嗎？')) {
+        localStorage.removeItem('puti_ai_v8_config');
+        location.reload();
+    }
+}
+
+// --- 核心功能 ---
+function generateStudentButtons() {
+    const names = document.getElementById('studentNames').value.split('\n').map(n => n.trim()).filter(n => n);
+    studentsData = names.map((name, index) => ({ id: String(index + 1).padStart(2, '0'), name: name }));
+    const container = document.getElementById('studentButtons');
+    container.innerHTML = '';
+    studentsData.forEach(student => {
+        const btn = document.createElement('button');
+        btn.className = 'student-button';
+        btn.textContent = `${student.id}.${student.name}`;
+        btn.onclick = () => toggleStudent(btn, student);
+        container.appendChild(btn);
+    });
+}
+
+function toggleStudent(btn, student) {
+    const key = `${student.id}.${student.name}`;
+    if (selectedStudents.has(key)) { selectedStudents.delete(key); btn.classList.remove('selected'); }
+    else { selectedStudents.add(key); btn.classList.add('selected'); }
+}
+
+function toggleTrait(btn, trait) {
+    if (selectedTraits.has(trait)) { selectedTraits.delete(trait); btn.classList.remove('selected'); }
+    else { selectedTraits.add(trait); btn.classList.add('selected'); }
+}
+
+function addCustomTraits() {
+    const input = document.getElementById('customTraitInput');
+    const lines = input.value.split('\n').map(l => l.trim()).filter(l => l);
+    if (lines.length === 0) return;
+
+    // 追蹤當前正在操作的類別索引
+    let currentCategoryIdx = traitsData.length - 1;
+
+    lines.forEach(text => {
+        // 判斷是否為「類別名稱」（長度大於等於 5，或根據你的需求調整判斷標準）
+        if (text.length >= 5) {
+            // 關鍵修改：檢查類別是否已存在
+            const existingIdx = traitsData.findIndex(g => g.category === text);
+            
+            if (existingIdx !== -1) {
+                // 如果類別已存在，將指標移到該類別
+                currentCategoryIdx = existingIdx;
+            } else {
+                // 如果是新類別，則新增並更新指標
+                traitsData.push({ category: text, items: [] });
+                currentCategoryIdx = traitsData.length - 1;
+            }
+        } else {
+            // 處理「適性詞」
+            if (currentCategoryIdx < 0) {
+                // 防呆：若一開始就輸入短詞且無現有類別，放入「其他」
+                const otherIdx = traitsData.findIndex(g => g.category === "其他");
+                if (otherIdx !== -1) {
+                    currentCategoryIdx = otherIdx;
+                } else {
+                    traitsData.push({ category: "其他", items: [] });
+                    currentCategoryIdx = traitsData.length - 1;
+                }
+            }
+
+            // 確保詞彙不重複後加入
+            if (!traitsData[currentCategoryIdx].items.includes(text)) {
+                traitsData[currentCategoryIdx].items.push(text);
+            }
         }
     });
 
-    const toneDiv = document.getElementById('tonePicker');
-    toneDiv.innerHTML = '';
-    const toneList = config.tones.split('\n').map(t => t.trim()).filter(t => t);
-    const activeTones = studentStates[name]?.tones || (config.lastTones.length ? config.lastTones : toneList.slice(0, 1));
+    input.value = '';
+    saveToLocalStorage();
+    initializeTraitButtons();
+}
+
+function removeCategory(idx) {
+    if (confirm('刪除類別？')) { traitsData.splice(idx, 1); saveToLocalStorage(); initializeTraitButtons(); }
+}
+
+function removeTrait(gIdx, tIdx) {
+    const traitName = traitsData[gIdx].items[tIdx];
+    // 增加確認視窗
+    if (confirm(`確定要刪除適性詞「${traitName}」嗎？`)) {
+        const r = traitsData[gIdx].items.splice(tIdx, 1);
+        selectedTraits.delete(r[0]);
+        saveToLocalStorage();
+        initializeTraitButtons();
+    }
+}
+
+function clearAllTraitsData() {
+    if (confirm('清空原來和自訂義所有類別和適性詞？')) { traitsData = []; saveToLocalStorage(); initializeTraitButtons(); }
+}
+
+function generatePrompt() {
+    if (selectedStudents.size === 0 || selectedTraits.size === 0) { alert('請選擇學生和特質！'); return; }
     
-    toneList.forEach(t => {
-        const span = document.createElement('span');
-        span.className = 'trait-item';
-        span.innerText = t;
-        if(activeTones.includes(t)) span.classList.add('active');
-        span.onclick = () => span.classList.toggle('active');
-        toneDiv.appendChild(span);
+    const grade = document.getElementById('grade').value;
+    const wordCount = document.getElementById('wordCount').value;
+    const traitsStr = Array.from(selectedTraits).join('、');
+    const template = document.getElementById('promptTemplate').value;
+    
+    Array.from(selectedStudents).forEach(student => {
+        // 使用正則表達式取代範本標籤
+        let finalPrompt = template
+            .replace('{grade}', grade)
+            .replace('{name}', student)
+            .replace('{wordCount}', wordCount)
+            .replace('{traits}', traitsStr);
+            
+        generatedPrompts.push({ studentId: student.split('.')[0], prompt: finalPrompt });
     });
-}
 
-function confirmStudentSelection() {
-    const traits = Array.from(document.querySelectorAll('#traitsPicker .trait-item.active')).map(el => el.innerText);
-    const tones = Array.from(document.querySelectorAll('#tonePicker .trait-item.active')).map(el => el.innerText);
-    if(traits.length > 0) {
-        studentStates[activeStudent] = { traits, tones };
-        config.lastTones = tones;
-    } else { delete studentStates[activeStudent]; }
-    saveToLocal(); renderStudentGrid(); closeStudentModal();
-}
+    generatedPrompts.sort((a, b) => a.studentId.localeCompare(b.studentId));
+    document.getElementById('promptPreview').textContent = generatedPrompts.map(p => p.prompt).join('\n\n');
+  
+    document.getElementById('promptPreview').textContent = generatedPrompts.map(p => p.prompt).join('\n\n');
 
-function generatePrompts() {
-    const selectedNames = Object.keys(studentStates);
-    if(selectedNames.length === 0) return alert("請先設定學生的特質！");
-    let result = (config.prePrompt ? config.prePrompt + "\n\n" : "");
-    selectedNames.forEach(name => {
-        const data = studentStates[name];
-        let p = config.promptTemplate
-            .replace(/{grade}/g, config.grade).replace(/{name}/g, name)
-            .replace(/{tone}/g, data.tones.join('、')).replace(/{traits}/g, data.traits.join('、'))
-            .replace(/{wordCount}/g, config.wordCount);
-        result += p + "\n";
+    saveToLocalStorage();
+    selectedStudents.forEach(s => {
+        document.querySelectorAll('.student-button').forEach(btn => { if(btn.textContent === s) btn.style.display = 'none'; });
     });
-    document.getElementById('outputText').innerText = result;
-    document.getElementById('output-area').style.display = 'block';
+    selectedTraits.clear();
+    document.querySelectorAll('.trait-button').forEach(b => b.classList.remove('selected'));
+    selectedStudents.clear();
+// --- 新增這行：捲動到頁面底部 ---
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+
 }
 
-function renderStudentGrid() {
-    const container = document.getElementById('studentContainer');
-    container.innerHTML = '';
-    container.style.gridTemplateColumns = `repeat(${config.gridCount}, 1fr)`;
-    const names = config.students.split('\n').filter(n => n.trim() !== "");
-    names.forEach(name => {
-        const div = document.createElement('div');
-        div.className = 'student-card' + (studentStates[name] ? ' selected' : '');
-        div.innerText = name;
-        div.onclick = () => openStudentModal(name);
-        container.appendChild(div);
-    });
+function copyPrompt() {
+    const t = document.getElementById('promptPreview').textContent;
+    if (t) navigator.clipboard.writeText(t).then(() => alert('已複製！'));
 }
 
-function saveToLocal() {
-    localStorage.setItem('eval_v6_config', JSON.stringify(config));
-    localStorage.setItem('eval_v6_states', JSON.stringify(studentStates));
+function openAIWebsite() { window.open('https://student.magicschool.ai/s/join?joinCode=GYDRVQ', '_blank'); }
+
+function confirmReset() {
+    if (confirm('重置提示詞？')) {
+        document.getElementById('promptPreview').textContent = '';
+        document.querySelectorAll('.student-button').forEach(b => { b.style.display = 'inline-block'; b.classList.remove('selected'); });
+        selectedStudents.clear();
+        generatedPrompts = [];
+        saveToLocalStorage();
+    }
 }
 
-function resetField(id) {
-    if(!confirm("重置此項？")) return;
-    if(id === 'traitsSet') document.getElementById(id).value = defaultConfig.traitsRaw;
-    if(id === 'promptTemplateSet') document.getElementById(id).value = defaultConfig.promptTemplate;
-}
-
-function openSettings() { document.getElementById('settingsModal').style.display = 'flex'; }
-function closeSettings() { document.getElementById('settingsModal').style.display = 'none'; }
-function closeStudentModal() { document.getElementById('studentModal').style.display = 'none'; }
-function resetStudentSelection() { delete studentStates[activeStudent]; saveToLocal(); renderStudentGrid(); closeStudentModal(); }
-function clearAllSelections() { if(confirm("清除所有選取？")) { studentStates = {}; saveToLocal(); renderStudentGrid(); }}
-function resetSystem() { if(confirm("確定完全重置？")) { localStorage.clear(); location.reload(); }}
-function copyOutput() { navigator.clipboard.writeText(document.getElementById('outputText').innerText); alert("已複製"); }
-function exportData() {
-    const data = JSON.stringify({ config, studentStates });
+// --- 檔案功能 ---
+function exportTraitsJSON() {
+    const data = {
+        traits: traitsData,
+        template: document.getElementById('promptTemplate').value
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
-    a.download = `EvalPrompt_${new Date().toISOString().slice(0,10)}.json`;
+    a.href = URL.createObjectURL(blob);
+    a.download = `puti_config_${new Date().toISOString().slice(0,10)}.json`;
     a.click();
 }
-function importData(e) {
+
+function importTraitsJSON(event) {
+    const file = event.target.files[0];
     const reader = new FileReader();
-    reader.onload = (ev) => {
-        const imported = JSON.parse(ev.target.result);
-        config = imported.config; studentStates = imported.studentStates;
-        saveToLocal(); location.reload();
+    reader.onload = (e) => {
+        try {
+            const imported = JSON.parse(e.target.result);
+            if (confirm('覆蓋現有設定？')) {
+                // 相容舊版與新版 JSON 格式
+                if (Array.isArray(imported)) {
+                    traitsData = imported;
+                } else {
+                    traitsData = imported.traits || [];
+                    if (imported.template) document.getElementById('promptTemplate').value = imported.template;
+                }
+                saveToLocalStorage();
+                initializeTraitButtons();
+            }
+        } catch (err) { alert('格式錯誤'); }
     };
-    reader.readAsText(e.target.files[0]);
+    reader.readAsText(file);
 }
 
-init();
+// --- 儲存管理 ---
+function saveToLocalStorage() {
+    const appState = {
+        grade: document.getElementById('grade').value,
+        wordCount: document.getElementById('wordCount').value,
+        studentsData: studentsData,
+        generatedPrompts: generatedPrompts,
+        traitsData: traitsData,
+        promptTemplate: document.getElementById('promptTemplate').value
+    };
+    localStorage.setItem('puti_ai_v8_config', JSON.stringify(appState));
+}
+
+function loadFromLocalStorage() {
+    const saved = localStorage.getItem('puti_ai_v8_config');
+    if (saved) {
+        const state = JSON.parse(saved);
+        document.getElementById('grade').value = state.grade || "";
+        document.getElementById('wordCount').value = state.wordCount || 100;
+        document.getElementById('promptTemplate').value = state.promptTemplate || DEFAULT_TEMPLATE;
+        if (state.traitsData) traitsData = state.traitsData;
+        if (state.studentsData) {
+            studentsData = state.studentsData;
+            document.getElementById('studentNames').value = studentsData.map(s => s.name).join('\n');
+            generateStudentButtons();
+        }
+        if (state.generatedPrompts) {
+            generatedPrompts = state.generatedPrompts;
+            document.getElementById('promptPreview').textContent = generatedPrompts.map(p => p.prompt).join('\n\n');
+        }
+    }
+}
