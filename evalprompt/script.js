@@ -22,7 +22,7 @@ const defaultConfig = {
 
     tones: "正向\n溫暖\n鼓勵\n同情\n關懷",
     prePrompt: "我是一名專業的導師，",
-    promptTemplate: "請給{grade}年級的{name}學生寫一段期末的話。希望從學生的特質{traits}出發，用{tone}的語氣來描述，內容長度約{wordCount}字。",
+    promptTemplate: "請給{grade}年級的{name}寫一段期末的話。希望從學生的特質{traits}出發，用{tone}的語氣來描述，內容長度約{wordCount}字。",
     themeIdx: 0, gridCount: 8, traitCols: 4, lastTones: []
 };
 
