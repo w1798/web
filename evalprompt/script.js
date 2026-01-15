@@ -210,4 +210,22 @@ function importData(e) {
     reader.readAsText(e.target.files[0]);
 }
 
+// 監聽滾動事件，超過 300px 才顯示按鈕
+window.onscroll = function() {
+    const btn = document.getElementById("backToTop");
+    if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
+        btn.style.display = "block";
+    } else {
+        btn.style.display = "none";
+    }
+};
+
+// 回到頂端函式
+function scrollToTop() {
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth' // 平滑滾動
+    });
+}
+
 init();
