@@ -153,3 +153,39 @@ select, input { font-size: 1rem; padding: 5px; border-radius: 6px; border: 1px s
     display: flex;
     gap: 8px;
 }
+
+/* 回到頂端按鈕樣式 */
+#backToTop {
+    display: none; /* 預設隱藏，滾動後顯示 */
+    position: fixed;
+    bottom: 90px;  /* 避開底部 footer 的高度 */
+    right: 30px;
+    z-index: 999;
+    width: 50px;
+    height: 50px;
+    border: none;
+    outline: none;
+    background-color: var(--accent-color);
+    color: white;
+    cursor: pointer;
+    border-radius: 50%; /* 圓形按鈕 */
+    font-size: 24px;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+#backToTop:hover {
+    transform: scale(1.1); /* 滑鼠移入稍微放大 */
+    background-color: var(--text-color);
+}
+
+/* 手機版調整位置 */
+@media (max-width: 767px) {
+    #backToTop {
+        bottom: 85px;
+        right: 20px;
+        width: 45px;
+        height: 45px;
+    }
+}
