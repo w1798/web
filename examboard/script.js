@@ -1,5 +1,5 @@
 /**
- * 考試看板系統 script.js
+ * 數位考場看板 script.js
  */
 
 const DEFAULT_STATE = {
