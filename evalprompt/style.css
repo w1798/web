@@ -1,6 +1,10 @@
 :root {
-    --primary-bg: #f0f4f8; --secondary-bg: #ffffff; --accent-color: #3b82f6;
-    --text-color: #1e293b; --border-radius: 12px; --card-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    --primary-bg: #f0f4f8; 
+    --secondary-bg: #ffffff; 
+    --accent-color: #3b82f6;
+    --text-color: #1e293b; 
+    --border-radius: 12px; 
+    --card-shadow: 0 4px 10px rgba(0,0,0,0.08);
 }
 
 * { box-sizing: border-box; font-family: "Microsoft JhengHei", sans-serif; }
@@ -15,6 +19,13 @@ header h1 { font-size: 1.8rem; margin: 0; color: var(--accent-color); }
 
 main { padding: 15px; max-width: 1600px; margin: auto; }
 
+/* 學生卡片佈局 */
+.student-grid { 
+    display: grid; 
+    gap: 12px; 
+    margin: 15px 0;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); 
+}
 
 .student-card {
     background: var(--secondary-bg); padding: 18px; text-align: center;
@@ -24,20 +35,41 @@ main { padding: 15px; max-width: 1600px; margin: auto; }
 .student-card.selected { border-color: var(--accent-color); background-color: rgba(59, 130, 246, 0.1); }
 .student-card.selected::after { content: "已選"; display: block; font-size: 0.7rem; color: var(--accent-color); font-weight: bold; margin-top: 5px; }
 
-/* Modal 佈局 */
+/* Modal 基礎樣式 */
 .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 2000; }
 
+.modal { 
+    background: var(--secondary-bg); 
+    width: 96%; 
+    height: 94%; 
+    max-width: 1400px; 
+    border-radius: var(--border-radius); 
+    padding: 15px; 
+    display: flex; 
+    flex-direction: column; 
+    overflow: hidden; 
+}
 
-/* 緊湊標題欄 */
 .compact-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1.5px solid var(--primary-bg); padding-bottom: 6px; }
 .compact-header h2, .compact-header h3 { margin: 0; font-size: 1.3rem; }
 
+/* 設定視窗佈局 - 恢復比例 */
 .settings-layout { display: flex; flex-direction: column; gap: 10px; flex: 1; overflow-y: auto; padding-right: 5px; }
 
-.settings-bottom { height: 34%; min-height: 140px; }
+.settings-top { 
+    display: flex; 
+    gap: 10px; 
+    height: 60vh; /* 恢復電腦版固定高度 */
+}
 
-/* 比例 1.5 : 1 : 2 : 1 : 2.5 */
-.zone-a { flex: 1.5; } .zone-b { flex: 1; } .zone-c { flex: 2; } .zone-d { flex: 1; } .zone-e { flex: 2.5; }
+.settings-bottom { height: 30%; min-height: 140px; }
+
+/* 比例分配 1.5 : 1 : 2 : 1 : 2.5 */
+.zone-a { flex: 1.5; } 
+.zone-b { flex: 1; } 
+.zone-c { flex: 2; } 
+.zone-d { flex: 1; } 
+.zone-e { flex: 2.5; }
 
 .settings-box { border: 1px solid #ddd; padding: 10px; border-radius: 10px; background: #fafafa; display: flex; flex-direction: column; }
 .settings-box textarea { flex: 1; width: 100%; resize: none; margin-top: 5px; font-size: 1rem; padding: 8px; border: 1px solid #ccc; border-radius: 8px; }
@@ -49,15 +81,29 @@ label { font-weight: bold; font-size: 1.05rem; color: var(--accent-color); }
 select, input { font-size: 1rem; padding: 5px; border-radius: 6px; border: 1px solid #ccc; width: 100%; }
 .help-text-mini { font-size: 0.75rem; color: #888; margin-bottom: 4px; }
 
-/* 學生適性詞挑選區 */
+/* 特質選擇區 - 關鍵修正：透過變數控制組數 */
 .scrollable-content { flex: 1; overflow-y: auto; margin: 5px 0; padding: 10px; background: #fcfcfc; border-radius: 10px; border: 1px solid #eee; }
-.trait-container { display: grid; gap: 10px; } /* 列數由 JS 動態控制 */
+
+.trait-container { 
+    display: grid; 
+    gap: 10px; 
+    /* 手機版自動填充 */
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); 
+}
+
+@media (min-width: 768px) {
+    .trait-container {
+        /* 電腦版由 JS 變數 --trait-cols 決定精確組數 */
+        grid-template-columns: repeat(var(--trait-cols, 5), 1fr) !important;
+    }
+}
+
 .trait-box { border: 1.2px solid var(--accent-color); padding: 8px; border-radius: 10px; background: #fff; height: fit-content; }
 .trait-title { background: var(--accent-color); color: white; padding: 3px; border-radius: 5px; text-align: center; margin-bottom: 8px; font-weight: bold; font-size: 0.9rem; }
 .trait-item { display: inline-block; padding: 4px 10px; margin: 2px; border: 1px solid #ddd; border-radius: 15px; cursor: pointer; font-size: 0.95rem; background: #fff; }
 .trait-item.active { background: var(--accent-color); color: white; border-color: var(--accent-color); }
 
-/* 置中樣式 */
+/* 頁尾與按鈕樣式 */
 .action-center { display: flex; justify-content: center; align-items: center; padding: 20px; }
 .output-btns.centered { display: flex; justify-content: center; gap: 15px; padding: 10px 0; }
 
@@ -67,91 +113,20 @@ select, input { font-size: 1rem; padding: 5px; border-radius: 6px; border: 1px s
 .tone-list { display: flex; flex-wrap: wrap; gap: 5px; }
 .footer-btns-group { display: flex; gap: 8px; white-space: nowrap; }
 
-.footer-right { justify-content: flex-end !important; }
-.compact-footer { padding-top: 10px !important; margin-top: 5px; }
-.modal-footer { display: flex; gap: 10px; border-top: 1px solid #eee; }
-
 .btn-main { background: var(--accent-color); color: white; border: none; padding: 10px 30px; border-radius: 10px; cursor: pointer; font-size: 1.1rem; font-weight: bold; }
-.btn-main.secondary { background: #64748b; margin-left: 0; }
+.btn-main.secondary { background: #64748b; }
 .btn-sm { padding: 5px 20px; font-size: 1rem; }
 
 .footer-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; border-top: 1px solid #eee; padding: 12px 0; text-align: center; z-index: 1000; }
 .author-link { color: var(--accent-color); text-decoration: none; font-weight: bold; font-size: 0.9rem; }
 
-.reset-link { color: #f43f5e; font-size: 0.8rem; border: none; background: none; cursor: pointer; }
 #output-area { background: #1e293b; color: #fff; padding: 20px; border-radius: 12px; margin: 15px auto; max-width: 1400px; display: none; }
 #outputText { white-space: pre-wrap; font-size: 1.05rem; line-height: 1.6; }
 
-
-/* 讓學生格狀欄位在手機上自動調整數量 */
-.student-grid { 
-    display: grid; 
-    gap: 12px; 
-    margin: 15px 0;
-    /* 這裡刪除原本由 JS 固定控制的 logic，改用 CSS 自動填充 */
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); 
-}
-
-/* 調整 Modal 彈出視窗：手機版占滿畫面，電腦版適中 */
-.modal { 
-    background: var(--secondary-bg); 
-    width: 96%; 
-    height: 94%; 
-    max-width: 1200px; /* 電腦版不宜過寬 */
-    border-radius: var(--border-radius); 
-    padding: 15px; 
-    display: flex; 
-    flex-direction: column; 
-    overflow: hidden; 
-}
-
-/* 針對設定選單的響應式設計 */
-.settings-top { 
-    display: flex; 
-    flex-wrap: wrap; /* 讓內容在手機上自動換行 */
-    gap: 10px; 
-    height: auto; /* 取消固定高度 */
-    overflow-y: visible;
-}
-
-/* 手機版：讓每一區塊佔滿 100% 寬度 */
-.settings-box { 
-    flex: 1 1 100% !important; 
-    min-height: 150px;
-}
-
-/* 針對底部語氣列與按鈕的優化 */
-.student-modal-footer-combined {
-    flex-direction: column; /* 手機版改為上下排列 */
-    align-items: stretch;
-    gap: 10px;
-}
-
-/* 電腦版 (螢幕寬度大於 768px) 的微調 */
-@media (min-width: 768px) {
-    .student-grid {
-        /* 回復由 JS 控制的網格數量（或維持 auto-fill） */
-    }
-    .settings-top { 
-        flex-wrap: nowrap; 
-        height: 60vh; /* 回復電腦版的高度感 */
-    }
-    .settings-box { 
-        flex: 1 !important; /* 電腦版根據內容分配寬度 */
-    }
-    .student-modal-footer-combined {
-        flex-direction: row; /* 電腦版恢復左右排列 */
-    }
-    .zone-a { flex: 1.5 !important; }
-    .zone-b { flex: 1 !important; }
-    .zone-c { flex: 2 !important; }
-    .zone-d { flex: 1 !important; }
-    .zone-e { flex: 2.5 !important; }
-}
-
-/* 特質挑選器在手機上也要能看 */
-.trait-container {
-    display: grid;
-    /* 手機上一欄，電腦版多欄 */
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important; 
+/* 手機版響應式微調 */
+@media (max-width: 767px) {
+    header { padding: 0.5rem 1rem; flex-direction: column; gap: 10px; }
+    .settings-top { flex-direction: column; height: auto; }
+    .settings-box { flex: 1 1 auto !important; }
+    .student-modal-footer-combined { flex-direction: column; align-items: stretch; }
 }
