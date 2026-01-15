@@ -15,7 +15,15 @@ header {
     padding: 0.2rem 2rem; background: var(--secondary-bg);
     box-shadow: var(--card-shadow); position: sticky; top: 0; z-index: 100;
 }
-header h1 { font-size: 1.8rem; margin: 0; color: var(--accent-color); }
+header h1 { font-size: 1.8rem; margin: 0; color: var(--accent-color);}
+
+
+.sub-title {
+    font-size: 0.9rem;    /* 字體大小（1.8rem 的一半左右） */
+    color: #64748b;       /* 顏色改淺一點，增加層次感 */
+    font-weight: normal;  /* 取消粗體，讓主標題更顯眼 */
+    margin-top: 4px;      /* 與主標題的間距 */
+}
 
 main { padding: 15px; max-width: 1600px; margin: auto; }
 
