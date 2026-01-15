@@ -18,7 +18,7 @@ const themes = [
 
 const defaultConfig = {
     grade: "1", wordCount: "100", students: "姓名1\n姓名2",
-    traitsRaw: "品學兼優型\n才德兼備\n勤學篤行\n嚴於律己\n尊師重道\n慎思明辨\n知行合一\n進退有度\n謙遜自持\n恪守本分\n潛力待發型\n大器晚成\n韜光養晦\n靜觀其變\n厚積薄發\n蓄勢待發\n後發先至\n不鳴則已\n沉潛剛克\n活躍社交型\n樂群敬業\n談吐不凡\n妙語如珠\n熱情洋溢\n應對得體\n廣結善緣\n幽默風趣\n靈活變通\n創意無限型\n別出心裁\n獨具匠心\n標新立異\n天馬行空\n奇思妙想\n不拘一格\n推陳出新\n自出機杼\n匠心獨運\n穩扎穩打型\n腳踏實地\n按部就班\n循序漸進\n一絲不苟\n兢兢業業\n穩健踏實\n步步為營\n實事求是\n專心致志\n領導魅力型\n遠見卓識\n知人善任\n決策果斷\n統籌全局\n以身作則\n公正無私\n膽識過人\n運籌帷幄\n高瞻遠矚\n藝術表達型\n才華橫溢\n情感豐沛\n觀察入微\n風格獨特\n表現力強\n審美獨到\n敏感細膩\n意境深遠\n妙筆生花\n邏輯分析型\n條理清晰\n推理嚴密\n分析透徹\n思維縝密\n客觀冷靜\n洞見癥結\n辯才無礙\n明察秋毫\n抽絲剝繭\n運動健將型\n體魄強健\n身手敏捷\n協調自如\n爆發力強\n意志堅定\n團隊合作\n反應迅速\n耐力過人\n追求卓越\n同理心強型\n將心比心\n善解人意\n體貼入微\n關懷備至\n寬厚仁慈\n樂於助人\n雪中送炭\n感同身受\n設身處地\n獨立自主型\n自立自強\n自給自足\n獨當一面\n特立獨行\n自我驅動\n目標明確\n自學成才\n冷靜沉著\n獨立思考\n團隊協作型\n同心協力\n分工合作\n配合無間\n群策群力\n和衷共濟\n攜手並進\n齊心合力\n眾志成城\n相輔相成\n好奇探索型\n追根究底\n求知若渴\n學而不厭\n勇於嘗試\n開拓進取\n挑戰未知\n舉一反三\n好學不倦\n格物致知\n務實執行型\n實事求是\n腳踏實地\n言行一致\n雷厲風行\n立竿見影\n注重實效\n勤勉懇切\n埋頭苦幹\n使命必達\n多才多藝型\n文武雙全\n才藝兼備\n博學多才\n多才多藝\n能文能武\n動靜皆宜\n融會貫通\n學以致用\n全知全能",
+    traitsRaw: "班級幹部類\n班長\n副班長\n風紀\n學藝\n衛生長\n國語小老師\n數學小老師\n品學兼優類\n才德兼備\n勤學篤行\n嚴於律己\n尊師重道\n慎思明辨\n知行合一\n進退有度\n謙遜自持\n恪守本分\n潛力待發類\n深藏不露\n大器晚成\n韜光養晦\n靜觀其變\n厚積薄發\n蓄勢待發\n後發先至\n不鳴則已\n沉潛剛克\n活躍社交類\n左右逢源\n樂群敬業\n談吐不凡\n妙語如珠\n熱情洋溢\n應對得體\n廣結善緣\n幽默風趣\n靈活變通\n創意無限類\n別出心裁\n獨具匠心\n標新立異\n天馬行空\n奇思妙想\n不拘一格\n推陳出新\n自出機杼\n匠心獨運\n穩扎穩打類\n腳踏實地\n按部就班\n循序漸進\n一絲不苟\n兢兢業業\n穩健踏實\n步步為營\n實事求是\n專心致志\n領導魅力類\n遠見卓識\n知人善任\n決策果斷\n統籌全局\n以身作則\n公正無私\n膽識過人\n運籌帷幄\n高瞻遠矚\n藝術表達類\n才華橫溢\n情感豐沛\n觀察入微\n風格獨特\n表現力強\n審美獨到\n敏感細膩\n意境深遠\n妙筆生花\n邏輯分析類\n條理清晰\n推理嚴密\n分析透徹\n思維縝密\n客觀冷靜\n洞見癥結\n辯才無礙\n明察秋毫\n抽絲剝繭\n運動健將類\n體魄強健\n身手敏捷\n協調自如\n爆發力強\n意志堅定\n團隊合作\n反應迅速\n耐力過人\n追求卓越\n同理心強類\n將心比心\n善解人意\n體貼入微\n關懷備至\n寬厚仁慈\n樂於助人\n雪中送炭\n感同身受\n設身處地\n獨立自主類\n自立自強\n自給自足\n獨當一面\n特立獨行\n自我驅動\n目標明確\n自學成才\n冷靜沉著\n獨立思考\n團隊協作類\n同心協力\n分工合作\n配合無間\n群策群力\n和衷共濟\n攜手並進\n齊心合力\n眾志成城\n相輔相成\n好奇探索類\n追根究底\n求知若渴\n學而不厭\n勇於嘗試\n開拓進取\n挑戰未知\n舉一反三\n好學不倦\n格物致知\n務實執行類\n實事求是\n腳踏實地\n言行一致\n雷厲風行\n立竿見影\n注重實效\n勤勉懇切\n埋頭苦幹\n使命必達\n多才多藝類\n文武雙全\n才藝兼備\n博學多才\n多才多藝\n能文能武\n動靜皆宜\n融會貫通\n學以致用\n全知全能",
 
     tones: "正向\n溫暖\n鼓勵\n同情\n關懷",
     prePrompt: "我是一名專業的導師，",
@@ -88,27 +88,34 @@ function openStudentModal(name) {
 
     const picker = document.getElementById('traitsPicker');
     picker.innerHTML = '';
+    picker.style.setProperty('--trait-cols', config.traitCols);
     picker.style.gridTemplateColumns = `repeat(${config.traitCols}, 1fr)`;
     
     const lines = config.traitsRaw.split('\n');
     let currentGroup = null;
 
-    lines.forEach(line => {
-        const trimmed = line.trim();
-        if(trimmed.length === 5) {
-            currentGroup = document.createElement('div');
-            currentGroup.className = 'trait-box';
-            currentGroup.innerHTML = `<div class="trait-title">${trimmed}</div>`;
-            picker.appendChild(currentGroup);
-        } else if(trimmed && currentGroup) {
-            const span = document.createElement('span');
-            span.className = 'trait-item';
-            span.innerText = trimmed;
-            if(studentStates[name]?.traits.includes(trimmed)) span.classList.add('active');
-            span.onclick = () => span.classList.toggle('active');
-            currentGroup.appendChild(span);
-        }
-    });
+// 在 openStudentModal 函式內尋找並替換此段落
+lines.forEach(line => {
+    const trimmed = line.trim();
+    if (!trimmed) return; // 跳過空行
+
+    // 規則 1：判別最後一個字為「類」的當作類別開頭
+    if (trimmed.endsWith("類")) {
+        currentGroup = document.createElement('div');
+        currentGroup.className = 'trait-box';
+        currentGroup.innerHTML = `<div class="trait-title">${trimmed}</div>`;
+        picker.appendChild(currentGroup);
+    } 
+    // 規則 2：其他的內容不論字數，皆視為該類別下的特質
+    else if (currentGroup) {
+        const span = document.createElement('span');
+        span.className = 'trait-item';
+        span.innerText = trimmed;
+        if (studentStates[name]?.traits.includes(trimmed)) span.classList.add('active');
+        span.onclick = () => span.classList.toggle('active');
+        currentGroup.appendChild(span);
+    }
+});
 
     const toneDiv = document.getElementById('tonePicker');
     toneDiv.innerHTML = '';
