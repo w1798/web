@@ -6,7 +6,7 @@ let state = {
         studentList: FULL_30, sizeDetail: 50, sizeReport: 70, sizeTotal: 70,
         sortOrder: 'desc',
         quickTasks: "國習,數習,生字,圈詞",
-	studentFontSize: 50,
+	studentFontSize: 18,
         appendMode: false
     },
     assignments: []
@@ -26,9 +26,19 @@ function initSelectors() {
 
     const fontSel = document.getElementById('studentFontSizeSelect');
     if (fontSel) {
-        for (let i = 14; i <= 130; i += 4) { // 每隔 2px 一個選項，若要每 1px 則改為 i++
+	fontSel.innerHTML = '';
+        
+        let i = 14;
+        while (i <= 150) {
             fontSel.add(new Option(`${i} px`, i));
+            
+            if (i < 34) {
+                i += 2;
+            } else {
+                i += 4;
+            }
         }
+      
     }
    
     const sizes = [95, 90, 80, 70, 60, 50, 40, 30];
