@@ -53,7 +53,19 @@ header { display: flex; justify-content: space-between; align-items: center; bac
 /* 滾動區域與內容 */
 .scroll-box { flex: 1; overflow-y: auto; background: rgba(0,0,0,0.03); border-radius: 12px; padding: 15px; }
 .student-grid { display: grid; grid-template-columns: repeat(var(--student-cols), 1fr); gap: 8px; align-content: start; }
-.student-item { aspect-ratio: 1.8 / 1; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; font-size: 1.1rem; cursor: pointer; font-weight: bold; background: var(--card); }
+.student-item { 
+    aspect-ratio: 1.8 / 1; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    border: 1px solid rgba(0,0,0,0.1); 
+    border-radius: 6px; 
+    font-size: var(--student-font-size); /* 使用變數控制大小 */
+    cursor: pointer; 
+    font-weight: bold; 
+    background: var(--card); 
+}
+
 .student-item.done { background: var(--primary); color: white; border-color: var(--primary); }
 
 /* 設定頁面佈局 */
