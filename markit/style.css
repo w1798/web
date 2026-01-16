@@ -64,9 +64,6 @@ header { display: flex; justify-content: space-between; align-items: center; bac
     cursor: pointer; 
     font-weight: bold; 
     background: var(--card); 
-    min-width: 0; /* 防止格子被內容撐開 */
-    overflow: hidden; /* 隱藏溢出文字 */
-    white-space: nowrap; /* 不換行 */
 }
 
 .student-item.done { background: var(--primary); color: white; border-color: var(--primary); }
