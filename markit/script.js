@@ -6,6 +6,7 @@ let state = {
         studentList: FULL_30, sizeDetail: 50, sizeReport: 70, sizeTotal: 70,
         sortOrder: 'desc',
         quickTasks: "國習,數習,生字,圈詞",
+	studentFontSize: 50,
         appendMode: false
     },
     assignments: []
@@ -21,7 +22,15 @@ window.onload = () => {
 function initSelectors() {
     const layoutSel = document.getElementById('layoutSelect');
     if(layoutSel) for(let i=1; i<=10; i++) layoutSel.add(new Option(`${i} 個`, i));
-    
+ 
+
+    const fontSel = document.getElementById('studentFontSizeSelect');
+    if (fontSel) {
+        for (let i = 14; i <= 130; i += 4) { // 每隔 2px 一個選項，若要每 1px 則改為 i++
+            fontSel.add(new Option(`${i} px`, i));
+        }
+    }
+   
     const sizes = [95, 90, 80, 70, 60, 50, 40, 30];
     document.querySelectorAll('.size-sel').forEach(sel => {
         sizes.forEach(s => sel.add(new Option(`${s}%`, s)));
@@ -74,6 +83,7 @@ function applySettings() {
     document.body.setAttribute('data-theme', s.theme);
     document.documentElement.style.setProperty('--grid-cols', s.gridCols);
     document.documentElement.style.setProperty('--student-cols', s.studentCols);
+    document.documentElement.style.setProperty('--student-font-size', (s.studentFontSize || 18) + 'px');
     
     if(document.getElementById('detailModalContent')) 
         document.getElementById('detailModalContent').style.width = (s.sizeDetail || 50) + '%';
@@ -96,6 +106,7 @@ function saveSettings() {
     s.sizeTotal = parseInt(document.getElementById('sizeTotal').value);
     s.quickTasks = document.getElementById('quickTasksConfig').value.trim();
     s.studentList = document.getElementById('studentListConfig').value.trim() || FULL_30;
+    s.studentFontSize = parseInt(document.getElementById('studentFontSizeSelect').value);
     
     saveData();
     applySettings();
@@ -145,6 +156,7 @@ function openModal(id) {
         document.getElementById('sizeDetail').value = s.sizeDetail || 50;
         document.getElementById('sizeReport').value = s.sizeReport || 70;
         document.getElementById('sizeTotal').value = s.sizeTotal || 70;
+        document.getElementById('studentFontSizeSelect').value = s.studentFontSize || 18;
     }
 }
 
