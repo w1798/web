@@ -64,6 +64,9 @@ header { display: flex; justify-content: space-between; align-items: center; bac
     cursor: pointer; 
     font-weight: bold; 
     background: var(--card); 
+    min-width: 0; /* 防止格子被內容撐開 */
+    overflow: hidden; /* 隱藏溢出文字 */
+    white-space: nowrap; /* 不換行 */
 }
 
 .student-item.done { background: var(--primary); color: white; border-color: var(--primary); }
@@ -110,10 +113,10 @@ header { display: flex; justify-content: space-between; align-items: center; bac
     .settings-grid-container { grid-template-columns: 1fr; }
     .settings-full-row { grid-column: 1; }
     
-    /* 手機版座號網格強制 5 欄 */
-    .student-grid { 
-        grid-template-columns: repeat(5, 1fr) !important; 
-    }
+    /* 手機版座號幾欄 */
+.student-grid { 
+    grid-template-columns: repeat(var(--student-cols), 1fr); 
+}
     
     .modal-content { padding: 15px; padding-top: 60px; }
     .modal-header-btns { width: 100%; justify-content: flex-end; left: 0; padding-right: 15px; }
