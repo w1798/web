@@ -3,7 +3,7 @@ const FULL_30 = "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,
 let state = {
     settings: { 
         autoDate: true, theme: 'soft', gridCols: 5, studentCols: 7, 
-        studentList: FULL_30, sizeDetail: 50, sizeReport: 70, sizeTotal: 70,
+        studentList: FULL_30, sizeDetail: 95, sizeReport: 70, sizeTotal: 70,
         sortOrder: 'desc',
         quickTasks: "國習,數習,生字,圈詞",
 	studentFontSize: 18,
@@ -32,7 +32,7 @@ function initSelectors() {
         while (i <= 150) {
             fontSel.add(new Option(`${i} px`, i));
             
-            if (i < 34) {
+            if (i < 30) {
                 i += 2;
             } else {
                 i += 4;
