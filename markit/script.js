@@ -48,7 +48,7 @@ function initSelectors() {
 }
 
 function loadData() {
-    const saved = localStorage.getItem('MarkIt_V17');
+    const saved = localStorage.getItem('MarkIt');
     if (saved) state = JSON.parse(saved);
     applySettings();
     renderAssignments();
@@ -285,12 +285,12 @@ function cleanFinishedAssignments() {
     }
 }
 
-function saveData() { localStorage.setItem('MarkIt_V17', JSON.stringify(state)); renderAssignments(); }
-function saveDataQuietly() { localStorage.setItem('MarkIt_V17', JSON.stringify(state)); }
+function saveData() { localStorage.setItem('MarkIt', JSON.stringify(state)); renderAssignments(); }
+function saveDataQuietly() { localStorage.setItem('MarkIt', JSON.stringify(state)); }
 function triggerImport() { document.getElementById('importInput').click(); }
 function importData(e) {
     const reader = new FileReader();
     reader.onload = (ev) => { state = JSON.parse(ev.target.result); saveData(); location.reload(); };
     reader.readAsText(e.target.files[0]);
 }
-function resetSystem() { if(confirm("確定重置系統？")) { localStorage.removeItem('MarkIt_V17'); location.reload(); } }
+function resetSystem() { if(confirm("確定重置系統？")) { localStorage.removeItem('MarkIt'); location.reload(); } }
