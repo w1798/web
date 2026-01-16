@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>教學清點小幫手 by Charles Nextime</title>
-    <link rel="stylesheet" href="style.css?ver=1.02">
+    <link rel="stylesheet" href="style.css?ver=1.03">
     <style>
         .quick-select-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 15px; }
         .tag-btn { background: var(--primary); opacity: 0.8; color: white; padding: 6px 12px; border-radius: 15px; cursor: pointer; font-size: 0.9rem; border: none; transition: 0.2s; }
@@ -60,11 +60,15 @@
                 </div>
                 <div class="settings-row">
                     <label>座號每行：<select id="studentColsSelect" class="select-short-width">
+			<option value="3">3 個</option><option value="4">4 個</option>
                         <option value="5">5 個</option><option value="6">6 個</option>
                         <option value="7">7 個</option><option value="8">8 個</option>
                         <option value="9">9 個</option><option value="10">10 個</option>
                     </select></label>
                 </div>
+<div class="settings-row">
+    <label>座號字體：<select id="studentFontSizeSelect" class="select-short-width"></select></label>
+</div>
                 <div class="settings-row">
                     <label>自動加日期：<input type="checkbox" id="autoDate" style="width:20px;height:20px;"></label>
                 </div>
@@ -152,6 +156,6 @@
     <a href="https://w1798.github.io/web/" target="_blank" class="author-link">Completed by Charles Nextime with AI assistance, 2026</a>
 </footer>
 
-<script src="script.js?ver=1.01"></script>
+<script src="script.js?ver=1.03"></script>
 </body>
 </html>
