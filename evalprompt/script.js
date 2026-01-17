@@ -335,20 +335,54 @@ function renderVisualEditor() {
         `;
 
         const itemList = box.querySelector('.v-item-list');
-        cat.items.forEach((item, tIdx) => {
-            const itemDiv = document.createElement('div');
-            itemDiv.className = 'v-trait-item';
-            itemDiv.draggable = true;
-            itemDiv.innerHTML = `<span>${item}</span><span class="v-trait-del" onclick="deleteTraitVisual(${cIdx}, ${tIdx})">×</span>`;
+// 在 renderVisualEditor 函式內
+cat.items.forEach((item, tIdx) => {
+    const itemDiv = document.createElement('div');
+    itemDiv.className = 'v-trait-item';
+    itemDiv.draggable = true;
+    itemDiv.innerHTML = `<span>${item}</span><span class="v-trait-del" onclick="deleteTraitVisual(${cIdx}, ${tIdx})">×</span>`;
+    
+    // 修改 1: 讓特質項目也能接收放置事件，以記錄目標位置
+    itemDiv.ondragover = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        itemDiv.style.borderTop = "2px solid var(--accent-color)"; // 視覺提示：插入在此處上方
+    };
+    
+    itemDiv.ondragleave = () => {
+        itemDiv.style.borderTop = ""; // 移除提示
+    };
+
+    itemDiv.ondragstart = (e) => {
+        e.stopPropagation();
+        e.dataTransfer.setData('text/type', 'trait');
+        e.dataTransfer.setData('text/fromCat', cIdx);
+        e.dataTransfer.setData('text/traitIdx', tIdx);
+    };
+
+    // 修改 2: 在特質上放下時，執行插入動作
+    itemDiv.ondrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        itemDiv.style.borderTop = "";
+        
+        const type = e.dataTransfer.getData('text/type');
+        if (type === 'trait') {
+            const fromCatIdx = parseInt(e.dataTransfer.getData('text/fromCat'));
+            const fromTraitIdx = parseInt(e.dataTransfer.getData('text/traitIdx'));
             
-            itemDiv.ondragstart = (e) => {
-                e.stopPropagation();
-                e.dataTransfer.setData('text/type', 'trait');
-                e.dataTransfer.setData('text/fromCat', cIdx);
-                e.dataTransfer.setData('text/traitIdx', tIdx);
-            };
-            itemList.appendChild(itemDiv);
-        });
+            // 取出移動的項目
+            const movedTrait = tempTraitsData[fromCatIdx].items.splice(fromTraitIdx, 1)[0];
+            
+            // 插入到當前類別 (cIdx) 的指定位置 (tIdx)
+            tempTraitsData[cIdx].items.splice(tIdx, 0, movedTrait);
+            
+            renderVisualEditor();
+        }
+    };
+    
+    itemList.appendChild(itemDiv);
+});
         container.appendChild(box);
     });
 }
