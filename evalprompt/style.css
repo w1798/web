@@ -114,7 +114,7 @@ background: color-mix(in srgb, var(--accent-color), transparent 50%);
 .settings-top { 
     display: flex; 
     gap: 10px; 
-    height: 60vh; /* 恢復電腦版固定高度 */
+    height: 65vh; /* 恢復電腦版固定高度 */
 }
 
 .settings-bottom { height: 30%; min-height: 140px; }
@@ -143,6 +143,12 @@ background: color-mix(in srgb, var(--accent-color), transparent 50%);
     width: 80px;       /* 統一縮小選單寬度 */
     padding: 2px 4px;
     font-size: 0.9rem;
+}
+
+.inline-group input[type="checkbox"] {
+    flex: none;
+    width: auto;
+    cursor: pointer;
 }
 
 label { font-weight: bold; font-size: 1.05rem; color: var(--accent-color); }
