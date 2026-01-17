@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>評語提詞自造佳 by Charles Nextime</title>
-    <link rel="stylesheet" href="style.css?ver=1.11">
+    <link rel="stylesheet" href="style.css?ver=1.13">
 </head>
 <body>
 
@@ -58,13 +58,14 @@
         
         <div class="settings-layout">
             <div class="settings-top">
-                <div class="settings-box zone-a">
-                    <div class="inline-group"><label>風格</label><select id="themeSelect" onchange="applyTheme(this.value)"></select></div>
-                    <div class="inline-group"><label>年級</label><select id="gradeSet"></select></div>
-                    <div class="inline-group"><label>字數</label><select id="wordCountSet"></select></div>
-                    <div class="inline-group"><label>每行</label><select id="gridCountSet"></select></div>
-                    <div class="inline-group"><label>類別</label><select id="traitColSet"></select></div>
-                </div>
+<div class="settings-box zone-a">
+    <div class="inline-group"><label>介面風格</label><select id="themeSelect" onchange="applyTheme(this.value)"></select></div>
+    <div class="inline-group"><label>學生年級</label><select id="gradeSet"></select></div>
+    <div class="inline-group"><label>評語字數</label><select id="wordCountSet"></select></div>
+    <div class="inline-group"><label>每行學生</label><select id="gridCountSet"></select></div>
+    <div class="inline-group"><label>每列類別</label><select id="traitColSet"></select></div>
+    <div class="inline-group"><label>字體大小</label><select id="fontSizeSet" onchange="applyFontSize(this.value)"></select></div>
+</div>
                 <div class="settings-box zone-b">
                     <label>學生清單</label>
                     <textarea id="studentListSet" placeholder="一行一個姓名"></textarea>
@@ -118,7 +119,7 @@
 <div id="visualTraitsModal" class="overlay">
     <div class="modal">
         <div class="modal-header compact-header">
-            <h3>視覺化類別與特質編輯 (可直接拖拉移動類別或特質改變位置)</h3>
+            <h3>視覺化類別與特質編輯 (可直接拖拉移動類別或特質改變位置，**新增類別以"類"結尾即可**)</h3>
             <div class="header-btns">
                 <button onclick="closeVisualModal()">取消</button>
                 <button class="btn-main btn-sm" onclick="saveVisualTraits()">確定並套用</button>
@@ -167,6 +168,6 @@
 
 <button id="backToTop" onclick="scrollToTop()" title="回到頂端">↑</button>
 
-<script src="script.js?ver=1.11"></script>
+<script src="script.js?ver=1.13"></script>
 </body>
 </html>
