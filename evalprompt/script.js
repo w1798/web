@@ -25,12 +25,13 @@ const defaultConfig = {
     grade: "1", 
     wordCount: "100", 
     students: "姓名1\n姓名2\n姓名3\n姓名4\n姓名5\n姓名6\n姓名7\n姓名8\n姓名9\n姓名10\n姓名11\n姓名12\n姓名13\n姓名14\n姓名15\n姓名16\n姓名17\n姓名18\n姓名19\n姓名20\n姓名21\n姓名22\n姓名23\n姓名24\n姓名25\n姓名26\n姓名27\n姓名28\n姓名29\n姓名30",
-    traitsRaw: "班級幹部類\n班長\n副班長\n風紀\n學藝\n衛生長\n國語小老師\n數學小老師\n品學兼優類\n才德兼備\n勤學篤行\n嚴於律己\n尊師重道\n慎思明辨\n知行合一\n進退有度\n謙遜自持\n恪守本分\n潛力待發類\n深藏不露\n大器晚成\n韜光養晦\n靜觀其變\n厚積薄發\n蓄勢待發\n後發先至\n不鳴則已\n沉潛剛克\n活躍社交類\n左右逢源\n樂群敬業\n談吐不凡\n妙語如珠\n熱情洋溢\n應對得體\n廣結善緣\n幽默風趣\n靈活變通\n創意無限類\n別出心裁\n獨具匠心\n標新立異\n天馬行空\n奇思妙想\n不拘一格\n推陳出新\n自出機杼\n匠心獨運\n穩扎穩打類\n腳踏實地\n按部就班\n循序漸進\n一絲不苟\n兢兢業業\n穩健踏實\n步步為營\n實事求是\n專心致志\n領導魅力類\n遠見卓識\n知人善任\n決策果斷\n統籌全局\n以身作則\n公正無私\n膽識過人\n運籌帷幄\n高瞻遠矚\n藝術表達類\n才華橫溢\n情感豐沛\n觀察入微\n風格獨特\n表現力強\n審美獨到\n敏感細膩\n意境深遠\n妙筆生花\n邏輯分析類\n條理清晰\n推理嚴密\n分析透徹\n思維縝密\n客觀冷靜\n洞見癥結\n辯才無礙\n明察秋毫\n抽絲剝繭\n運動健將類\n體魄強健\n身手敏捷\n協調自如\n爆發力強\n意志堅定\n團隊合作\n反應迅速\n耐力過人\n追求卓越\n同理心強類\n將心比心\n善解人意\n體貼入微\n關懷備至\n寬厚仁慈\n樂於助人\n雪中送炭\n感同身受\n設身處地\n獨立自主類\n自立自強\n自給自足\n獨當一面\n特立獨行\n自我驅動\n目標明確\n自學成才\n冷靜沉著\n獨立思考\n團隊協作類\n同心協力\n分工合作\n配合無間\n群策群力\n和衷共濟\n攜手並進\n齊心合力\n眾志成城\n相輔相成\n好奇探索類\n追根究底\n求知若渴\n學而不厭\n勇於嘗試\n開拓進取\n挑戰未知\n舉一反三\n好學不倦\n格物致知\n務實執行類\n實事求是\n腳踏實地\n言行一致\n雷厲風行\n立竿見影\n注重實效\n勤勉懇切\n埋頭苦幹\n使命必達\n多才多藝類\n文武雙全\n才藝兼備\n博學多才\n多才多藝\n能文能武\n動靜皆宜\n融會貫通\n學以致用\n全知全能",
+    traitsRaw: "班級幹部類\n班長\n副班長\n風紀\n學藝\n衛生長\n國語小老師\n數學小老師\n生活常規類\n自理有序\n作息穩定\n生活自律\n整潔到位\n守時守序\n習慣未定\n偶有鬆散\n作息不穩\n自理待練\n需再提醒\n作業態度類\n準時繳交\n用心書寫\n作業確實\n態度認真\n品質穩定\n偶有拖延\n書寫潦草\n完成不足\n需人督促\n細節待強\n學習態度類\n主動求知\n學習投入\n態度積極\n樂於嘗試\n專注認真\n被動學習\n專注不穩\n投入不足\n動機待強\n易受分心\n課堂表現類\n積極參與\n專心聆聽\n回應得宜\n表現穩定\n勇於發言\n參與不足\n發言保守\n注意力弱\n互動被動\n需多投入\n行為表現類\n守規有禮\n行止得體\n態度端正\n表現穩重\n自我約束\n偶有違規\n行為衝動\n情緒外顯\n規範待強\n需再提醒\n責任感類\n勇於承擔\n負責盡職\n使命必達\n值得信賴\n交辦到位\n責任感弱\n容易推託\n任務延宕\n依賴提醒\n自覺不足\n合作互動類\n合作順暢\n樂於配合\n溝通良好\n互動自然\n團隊意識\n配合不足\n互動保守\n溝通待強\n合作被動\n團隊意識弱\n友誼人際類\n友善體貼\n相處融洽\n關懷同學\n待人和善\n人緣良好\n表達直接\n易生誤會\n互動衝突\n情緒影響\n需學體諒\n情緒管理類\n情緒穩定\n冷靜應對\n能自調節\n表現理性\n情緒成熟\n情緒起伏\n外顯明顯\n易受影響\n調適不足\n需人安撫\n自我管理類\n自我要求\n行事自律\n目標明確\n安排得宜\n自我掌控\n自控不足\n依賴提醒\n計畫鬆散\n目標不清\n執行待強",
     tones: "正向\n溫暖\n鼓勵\n關懷\n期許\n肯定\n真誠\n包容\n感性\n讚賞\n活潑\n俏皮\n親切",
     prePrompt: "我是一名專業的導師，",
     promptTemplate: "請給{grade}年級的{name}寫一段期末的話。希望從學生的特質{traits}出發，用{tone}的語氣來描述，內容長度約{wordCount}字。",
     fontSize: "1.4",
     studentFontSize: "1.4",
+    includeCatName: false,
     themeIdx: 0, gridCount: 7, traitCols: 4, lastTones: []
 };
 
@@ -101,6 +102,8 @@ function loadConfigToUI() {
     document.getElementById('traitColSet').value = config.traitCols || 5;
     document.getElementById('fontSizeSet').value = config.fontSize || "1.4";
     document.getElementById('studentFontSizeSet').value = config.studentFontSize || "1.2";
+    document.getElementById('includeCatNameSet').checked = config.includeCatName || false;
+
 }
 
 function saveSettings() {
@@ -116,6 +119,7 @@ function saveSettings() {
     config.fontSize = document.getElementById('fontSizeSet').value;
     config.studentFontSize = document.getElementById('studentFontSizeSet').value;
     config.themeIdx = document.getElementById('themeSelect').value;
+    config.includeCatName = document.getElementById('includeCatNameSet').checked;
     
     applyTheme(config.themeIdx);
     applyFontSize(config.fontSize, config.studentFontSize);
@@ -215,18 +219,46 @@ function confirmStudentSelection() {
     saveToLocal(); renderStudentGrid(); closeStudentModal();
 }
 
+
 function generatePrompts() {
     const selectedNames = Object.keys(studentStates);
     if(selectedNames.length === 0) return alert("請先設定學生的特質！");
+
+    // 預先解析類別與特質的對照表 (Map: 特質名稱 -> 類別名稱)
+    let traitToCatMap = {};
+    if (config.includeCatName) {
+        const lines = config.traitsRaw.split('\n');
+        let currentCat = "";
+        lines.forEach(line => {
+            const trimmed = line.trim();
+            if (trimmed.endsWith("類")) {
+                currentCat = trimmed.replace("類", ""); // 去除"類"字
+            } else if (trimmed && currentCat) {
+                traitToCatMap[trimmed] = currentCat;
+            }
+        });
+    }
+
     let result = (config.prePrompt ? config.prePrompt + "\n\n" : "");
     selectedNames.forEach(name => {
         const data = studentStates[name];
+        
+        // 處理特質文字
+        let processedTraits = data.traits.map(t => {
+            if (config.includeCatName && traitToCatMap[t]) {
+                return traitToCatMap[t] + t; // 例如：生活常規 + 自理有序
+            }
+            return t;
+        }).join('、');
+
         let p = config.promptTemplate
             .replace(/{grade}/g, config.grade).replace(/{name}/g, name)
-            .replace(/{tone}/g, data.tones.join('、')).replace(/{traits}/g, data.traits.join('、'))
+            .replace(/{tone}/g, data.tones.join('、'))
+            .replace(/{traits}/g, processedTraits) // 使用處理過的特質
             .replace(/{wordCount}/g, config.wordCount);
         result += p + "\n";
     });
+    
     document.getElementById('outputText').innerText = result;
     document.getElementById('output-area').style.display = 'block';
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
