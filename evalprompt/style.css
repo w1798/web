@@ -18,6 +18,35 @@ header {
 header h1 { font-size: 1.8rem; margin: 0; color: var(--accent-color);}
 
 
+/* 右上角按鈕容器與基礎按鈕 */
+.nav-btns {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nav-btns button {
+    padding: 5px 10px;    /* 一般按鈕適中即可 */
+    font-size: 0.9rem;
+    border-radius: 6px;
+}
+
+/* 針對最後一個按鈕（設定）進行放大與強調 */
+.nav-btns button:last-child {
+    padding: 8px 20px;    /* 增加肉感 */
+    font-size: 1.15rem;   /* 字體明顯變大 */
+    font-weight: 900;     /* 特粗 */
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    transition: transform 0.2s;
+}
+
+.nav-btns button:last-child:hover {
+    transform: scale(1.05); /* 摸到時會微微放大 */
+}
+
 .sub-title {
     font-size: 0.9rem;    /* 字體大小（1.8rem 的一半左右） */
     color: #64748b;       /* 顏色改淺一點，增加層次感 */
