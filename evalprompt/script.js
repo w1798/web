@@ -25,6 +25,7 @@ const defaultConfig = {
     tones: "正向\n溫暖\n鼓勵\n關懷\n期許\n肯定\n真誠\n包容\n感性\n讚賞\n活潑\n俏皮\n親切",
     prePrompt: "我是一名專業的導師，",
     promptTemplate: "請給{grade}年級的{name}寫一段期末的話。希望從學生的特質{traits}出發，用{tone}的語氣來描述，內容長度約{wordCount}字。",
+    fontSize: "1.4",
     themeIdx: 0, gridCount: 7, traitCols: 4, lastTones: []
 };
 
@@ -44,9 +45,27 @@ function init() {
     const tcSelect = document.getElementById('traitColSet');
     for(let i=1; i<=6; i++) tcSelect.add(new Option(i + '組', i));
 
+    const fsSelect = document.getElementById('fontSizeSet');
+    fsSelect.innerHTML = ''; // 清空
+    [0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0].forEach(v => {
+        // 使用 String(v) 確保值對應正確
+        const opt = new Option(v + 'x', String(v.toFixed(1))); 
+        fsSelect.add(opt);
+    });
+
     loadConfigToUI();
+
+
+    applyFontSize(config.fontSize || "1.0");
     applyTheme(config.themeIdx);
     renderStudentGrid();
+}
+
+// 套用字體的函式
+function applyFontSize(size) {
+    // 透過 CSS 變數控制
+    document.documentElement.style.setProperty('--trait-font-scale', size + 'rem');
+    config.fontSize = size;
 }
 
 function applyTheme(idx) {
@@ -68,6 +87,8 @@ function loadConfigToUI() {
     document.getElementById('themeSelect').value = config.themeIdx;
     document.getElementById('gridCountSet').value = config.gridCount;
     document.getElementById('traitColSet').value = config.traitCols || 5;
+    document.getElementById('fontSizeSet').value = config.fontSize || "1.0";
+
 }
 
 function saveSettings() {
@@ -80,6 +101,9 @@ function saveSettings() {
     config.promptTemplate = document.getElementById('promptTemplateSet').value;
     config.gridCount = document.getElementById('gridCountSet').value;
     config.traitCols = document.getElementById('traitColSet').value;
+    saveToLocal(); renderStudentGrid(); closeSettings();
+    config.fontSize = document.getElementById('fontSizeSet').value;
+    applyFontSize(config.fontSize); // 立即套用
     saveToLocal(); renderStudentGrid(); closeSettings();
 }
 
@@ -303,7 +327,7 @@ function renderVisualEditor() {
             <div class="v-item-list"></div>
             <div class="v-add-group">
                 <input type="text" 
-                       placeholder="新增特質或類別(以'類'結尾)" 
+                       placeholder="新增特質或類別" 
                        id="v-input-${cIdx}"
                        onkeydown="if(event.key==='Enter') addTraitVisual(${cIdx})">
                 <button class="btn-main btn-sm" style="padding:2px 10px" onclick="addTraitVisual(${cIdx})">+</button>
