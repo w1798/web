@@ -5,6 +5,7 @@
     --text-color: #1e293b; 
     --border-radius: 12px; 
     --card-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    --trait-font-scale: 1rem;
 }
 
 * { box-sizing: border-box; font-family: "Microsoft JhengHei", sans-serif; }
@@ -112,7 +113,20 @@ main { padding: 15px; max-width: 1600px; margin: auto; }
 .settings-box textarea { flex: 1; width: 100%; resize: none; margin-top: 5px; font-size: 1rem; padding: 8px; border: 1px solid #ccc; border-radius: 8px; }
 
 .inline-group { display: flex; align-items: center; margin-bottom: 5px; gap: 8px; }
-.inline-group label { margin: 0; min-width: 45px; font-size: 0.95rem; }
+/* 調整設定區的標籤寬度與選單長度 */
+.inline-group label { 
+    margin: 0; 
+    min-width: 75px;   /* 增加寬度以容納四個中文字 */
+    font-size: 0.95rem; 
+    white-space: nowrap;
+}
+
+.inline-group select {
+    flex: none;        /* 取消自動填滿 */
+    width: 80px;       /* 統一縮小選單寬度 */
+    padding: 2px 4px;
+    font-size: 0.9rem;
+}
 
 label { font-weight: bold; font-size: 1.05rem; color: var(--accent-color); }
 select, input { font-size: 1rem; padding: 5px; border-radius: 6px; border: 1px solid #ccc; width: 100%; }
@@ -322,4 +336,14 @@ select, input { font-size: 1rem; padding: 5px; border-radius: 6px; border: 1px s
     display: flex;
     gap: 5px;
 }
-.v-add-group input { flex: 1; padding: 5px; border: 1px solid #ddd; border-radius: 4px; }
+.v-add-group input { flex: 1; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: calc(0.9 * var(--trait-font-scale));}
+
+.trait-item, .v-trait-item {
+    font-size: calc(0.95 * var(--trait-font-scale)) !important;
+}
+
+.trait-title, .v-cat-title {
+    font-size: calc(0.9 * var(--trait-font-scale)) !important;
+}
+
+
