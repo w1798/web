@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>評語提詞自造佳 by Charles Nextime</title>
-    <link rel="stylesheet" href="style.css?ver=1.13">
+    <link rel="stylesheet" href="style.css?ver=1.15">
 </head>
 <body>
 
@@ -59,16 +59,21 @@
         <div class="settings-layout">
             <div class="settings-top">
 <div class="settings-box zone-a">
-    <div class="inline-group"><label>介面風格</label><select id="themeSelect" onchange="applyTheme(this.value)"></select></div>
+    <div class="inline-group"><label>主介面風格</label><select id="themeSelect" onchange="applyTheme(this.value)"></select></div>
     <div class="inline-group"><label>學生年級</label><select id="gradeSet"></select></div>
     <div class="inline-group"><label>評語字數</label><select id="wordCountSet"></select></div>
-    <div class="inline-group"><label>每行學生</label><select id="gridCountSet"></select></div>
-    <div class="inline-group"><label>每列類別</label><select id="traitColSet"></select></div>
-    <div class="inline-group"><label>字體大小</label><select id="fontSizeSet" onchange="applyFontSize(this.value)"></select></div>
+    <div class="inline-group"><label>每行學生數</label><select id="gridCountSet"></select></div>
+    <div class="inline-group"><label>每列類別數</label><select id="traitColSet"></select></div>
+    <div class="inline-group"><label>特質字大小</label><select id="fontSizeSet" onchange="applyFontSize(this.value)"></select></div>
+<div class="inline-group">
+            <label>姓名字大小</label>
+            <select id="studentFontSizeSet"></select>
+        </div>
 </div>
                 <div class="settings-box zone-b">
-                    <label>學生清單</label>
-                    <textarea id="studentListSet" placeholder="一行一個姓名"></textarea>
+
+            <label>學生清單<button class="btn-sm-reset" onclick="resetField('studentListSet')">重置</button></label>
+            <textarea id="studentListSet" rows="5"></textarea>
                 </div>
                 <div class="settings-box zone-c">
 <label>類別和特質 
@@ -88,12 +93,12 @@
                     <textarea id="traitsSet"></textarea>
                 </div>
                 <div class="settings-box zone-d">
-                    <label>語氣清單</label>
-                    <textarea id="tonesSet" placeholder="一行一個語氣"></textarea>
+ 	    	<label>語氣清單 <button class="btn-sm-reset" onclick="resetField('tonesSet')">重置</button></label>
+            <textarea id="tonesSet" rows="3"></textarea>
                 </div>
                 <div class="settings-box zone-e">
-                    <label>提詞先置詞</label>
-                    <textarea id="prePromptSet"></textarea>
+		<label>提詞先置詞 <button class="btn-sm-reset" onclick="resetField('prePromptSet')">重置</button></label>
+            <textarea id="prePromptSet" rows="2"></textarea>
                 </div>
             </div>
 
@@ -119,7 +124,7 @@
 <div id="visualTraitsModal" class="overlay">
     <div class="modal">
         <div class="modal-header compact-header">
-            <h3>視覺化類別與特質編輯 (可直接拖拉移動類別或特質改變位置，**新增類別以"類"結尾即可**)</h3>
+            <h3>視覺化類別與特質編輯 <span style="color: red;">(可直接拖拉移動類別或特質改變位置，**新增類別以"類"結尾即可**)</span></h3>
             <div class="header-btns">
                 <button onclick="closeVisualModal()">取消</button>
                 <button class="btn-main btn-sm" onclick="saveVisualTraits()">確定並套用</button>
@@ -168,6 +173,6 @@
 
 <button id="backToTop" onclick="scrollToTop()" title="回到頂端">↑</button>
 
-<script src="script.js?ver=1.14"></script>
+<script src="script.js?ver=1.15"></script>
 </body>
 </html>
