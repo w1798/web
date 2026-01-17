@@ -31,7 +31,7 @@ const defaultConfig = {
     promptTemplate: "請給{grade}年級的{name}寫一段期末的話。希望從學生的特質{traits}出發，用{tone}的語氣來描述，內容長度約{wordCount}字。",
     fontSize: "1.4",
     studentFontSize: "1.4",
-    themeIdx: 0, gridCount: 8, traitCols: 4, lastTones: []
+    themeIdx: 0, gridCount: 7, traitCols: 4, lastTones: []
 };
 
 let config = JSON.parse(localStorage.getItem('eval_v6_config')) || { ...defaultConfig };
@@ -137,10 +137,10 @@ function renderStudentGrid() {
         // 如果未選取，給予隨機輔助色邊框增加活潑感
         if(!isSelected) {
             const randomColor = secondaryColors[index % secondaryColors.length];
-            div.style.borderColor = randomColor + "44"; // 亂數半透明邊框	
-//div.style.borderColor = "color-mix(in srgb, var(--accent-color), transparent 70%)"; // 風格淡色
-            div.style.color = randomColor; // 亂數色
-// div.style.color = "#333333";
+//            div.style.borderColor = randomColor + "44"; // 亂數半透明邊框	
+              div.style.borderColor = "color-mix(in srgb, var(--accent-color), transparent 70%)"; // 風格淡色
+//           div.style.color = randomColor; // 亂數色
+            div.style.color = "#333333";
         } else {
             div.style.borderColor = "var(--accent-color)";
             div.style.color = "var(--text-color)";
