@@ -4,7 +4,7 @@ const themes = [
     { name: "夕陽橘", bg: "#fff7ed", accent: "#f97316" },
     { name: "薰衣草紫", bg: "#f5f3ff", accent: "#8b5cf6" },
     { name: "玫瑰粉", bg: "#fff1f2", accent: "#f43f5e" },
-    { name: "午夜藍", bg: "#1e293b", accent: "#38bdf8", text: "#383afc" },
+    { name: "午夜藍", bg: "#1e293b", accent: "#38bdf8", text: "#082afc" },
     { name: "薄荷涼", bg: "#ecfdf5", accent: "#10b981" },
     { name: "檸檬黃", bg: "#fefce8", accent: "#eab308" },
     { name: "大地色", bg: "#fafaf9", accent: "#78716c" },
@@ -21,17 +21,18 @@ const defaultConfig = {
     wordCount: "100", 
     students: "姓名1\n姓名2\n姓名3\n姓名4\n姓名5\n姓名6\n姓名7\n姓名8\n姓名9\n姓名10\n姓名11\n姓名12\n姓名13\n姓名14\n姓名15\n姓名16\n姓名17\n姓名18\n姓名19\n姓名20\n姓名21\n姓名22\n姓名23\n姓名24\n姓名25\n姓名26\n姓名27\n姓名28\n姓名29\n姓名30",
     traitsRaw: "班級幹部類\n班長\n副班長\n風紀\n學藝\n衛生長\n國語小老師\n數學小老師\n品學兼優類\n才德兼備\n勤學篤行\n嚴於律己\n尊師重道\n慎思明辨\n知行合一\n進退有度\n謙遜自持\n恪守本分\n潛力待發類\n深藏不露\n大器晚成\n韜光養晦\n靜觀其變\n厚積薄發\n蓄勢待發\n後發先至\n不鳴則已\n沉潛剛克\n活躍社交類\n左右逢源\n樂群敬業\n談吐不凡\n妙語如珠\n熱情洋溢\n應對得體\n廣結善緣\n幽默風趣\n靈活變通\n創意無限類\n別出心裁\n獨具匠心\n標新立異\n天馬行空\n奇思妙想\n不拘一格\n推陳出新\n自出機杼\n匠心獨運\n穩扎穩打類\n腳踏實地\n按部就班\n循序漸進\n一絲不苟\n兢兢業業\n穩健踏實\n步步為營\n實事求是\n專心致志\n領導魅力類\n遠見卓識\n知人善任\n決策果斷\n統籌全局\n以身作則\n公正無私\n膽識過人\n運籌帷幄\n高瞻遠矚\n藝術表達類\n才華橫溢\n情感豐沛\n觀察入微\n風格獨特\n表現力強\n審美獨到\n敏感細膩\n意境深遠\n妙筆生花\n邏輯分析類\n條理清晰\n推理嚴密\n分析透徹\n思維縝密\n客觀冷靜\n洞見癥結\n辯才無礙\n明察秋毫\n抽絲剝繭\n運動健將類\n體魄強健\n身手敏捷\n協調自如\n爆發力強\n意志堅定\n團隊合作\n反應迅速\n耐力過人\n追求卓越\n同理心強類\n將心比心\n善解人意\n體貼入微\n關懷備至\n寬厚仁慈\n樂於助人\n雪中送炭\n感同身受\n設身處地\n獨立自主類\n自立自強\n自給自足\n獨當一面\n特立獨行\n自我驅動\n目標明確\n自學成才\n冷靜沉著\n獨立思考\n團隊協作類\n同心協力\n分工合作\n配合無間\n群策群力\n和衷共濟\n攜手並進\n齊心合力\n眾志成城\n相輔相成\n好奇探索類\n追根究底\n求知若渴\n學而不厭\n勇於嘗試\n開拓進取\n挑戰未知\n舉一反三\n好學不倦\n格物致知\n務實執行類\n實事求是\n腳踏實地\n言行一致\n雷厲風行\n立竿見影\n注重實效\n勤勉懇切\n埋頭苦幹\n使命必達\n多才多藝類\n文武雙全\n才藝兼備\n博學多才\n多才多藝\n能文能武\n動靜皆宜\n融會貫通\n學以致用\n全知全能",
-
     tones: "正向\n溫暖\n鼓勵\n關懷\n期許\n肯定\n真誠\n包容\n感性\n讚賞\n活潑\n俏皮\n親切",
     prePrompt: "我是一名專業的導師，",
     promptTemplate: "請給{grade}年級的{name}寫一段期末的話。希望從學生的特質{traits}出發，用{tone}的語氣來描述，內容長度約{wordCount}字。",
     fontSize: "1.4",
-    themeIdx: 0, gridCount: 7, traitCols: 4, lastTones: []
+    studentFontSize: "1.4",
+    themeIdx: 0, gridCount: 8, traitCols: 4, lastTones: []
 };
 
 let config = JSON.parse(localStorage.getItem('eval_v6_config')) || { ...defaultConfig };
 let studentStates = JSON.parse(localStorage.getItem('eval_v6_states')) || {}; 
 let activeStudent = null;
+let secondaryColors = []; // 儲存當前主題隨機抽取的5種輔助色
 
 function init() {
     const gSelect = document.getElementById('gradeSet');
@@ -46,26 +47,28 @@ function init() {
     for(let i=1; i<=6; i++) tcSelect.add(new Option(i + '組', i));
 
     const fsSelect = document.getElementById('fontSizeSet');
-    fsSelect.innerHTML = ''; // 清空
+    fsSelect.innerHTML = '';
     [0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0].forEach(v => {
-        // 使用 String(v) 確保值對應正確
         const opt = new Option(v + 'x', String(v.toFixed(1))); 
         fsSelect.add(opt);
     });
 
+    const sfsSelect = document.getElementById('studentFontSizeSet');
+    [0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0].forEach(v => {
+        sfsSelect.add(new Option(v + 'x', String(v.toFixed(1))));
+    });
+
     loadConfigToUI();
-
-
-    applyFontSize(config.fontSize || "1.0");
     applyTheme(config.themeIdx);
+    applyFontSize(config.fontSize || "1.4", config.studentFontSize || "1.2");
     renderStudentGrid();
 }
 
-// 套用字體的函式
-function applyFontSize(size) {
-    // 透過 CSS 變數控制
-    document.documentElement.style.setProperty('--trait-font-scale', size + 'rem');
-    config.fontSize = size;
+function applyFontSize(traitSize, studentSize) {
+    document.documentElement.style.setProperty('--trait-font-scale', traitSize + 'rem');
+    document.documentElement.style.setProperty('--student-font-scale', studentSize + 'rem');
+    config.fontSize = traitSize;
+    config.studentFontSize = studentSize;
 }
 
 function applyTheme(idx) {
@@ -74,6 +77,10 @@ function applyTheme(idx) {
     document.documentElement.style.setProperty('--accent-color', t.accent);
     document.documentElement.style.setProperty('--text-color', t.text || '#1e293b');
     config.themeIdx = idx;
+
+    // 隨機選取 5 種輔助色（排除當前主題色）
+    const otherColors = themes.filter((_, i) => i != idx).map(item => item.accent);
+    secondaryColors = otherColors.sort(() => 0.5 - Math.random()).slice(0, 5);
 }
 
 function loadConfigToUI() {
@@ -87,8 +94,8 @@ function loadConfigToUI() {
     document.getElementById('themeSelect').value = config.themeIdx;
     document.getElementById('gridCountSet').value = config.gridCount;
     document.getElementById('traitColSet').value = config.traitCols || 5;
-    document.getElementById('fontSizeSet').value = config.fontSize || "1.0";
-
+    document.getElementById('fontSizeSet').value = config.fontSize || "1.4";
+    document.getElementById('studentFontSizeSet').value = config.studentFontSize || "1.2";
 }
 
 function saveSettings() {
@@ -101,10 +108,40 @@ function saveSettings() {
     config.promptTemplate = document.getElementById('promptTemplateSet').value;
     config.gridCount = document.getElementById('gridCountSet').value;
     config.traitCols = document.getElementById('traitColSet').value;
-    saveToLocal(); renderStudentGrid(); closeSettings();
     config.fontSize = document.getElementById('fontSizeSet').value;
-    applyFontSize(config.fontSize); // 立即套用
+    config.studentFontSize = document.getElementById('studentFontSizeSet').value;
+    config.themeIdx = document.getElementById('themeSelect').value;
+    
+    applyTheme(config.themeIdx);
+    applyFontSize(config.fontSize, config.studentFontSize);
     saveToLocal(); renderStudentGrid(); closeSettings();
+}
+
+function renderStudentGrid() {
+    const container = document.getElementById('studentContainer');
+    container.innerHTML = '';
+    container.style.gridTemplateColumns = `repeat(${config.gridCount}, 1fr)`;
+    const names = config.students.split('\n').filter(n => n.trim() !== "");
+    
+    names.forEach((name, index) => {
+        const div = document.createElement('div');
+        const isSelected = !!studentStates[name];
+        div.className = 'student-card' + (isSelected ? ' selected' : '');
+        div.innerText = name;
+        
+        // 如果未選取，給予隨機輔助色邊框增加活潑感
+        if(!isSelected) {
+            const randomColor = secondaryColors[index % secondaryColors.length];
+            div.style.borderColor = randomColor + "44"; // 半透明邊框
+            div.style.color = randomColor;
+        } else {
+            div.style.borderColor = "var(--accent-color)";
+            div.style.color = "var(--text-color)";
+        }
+
+        div.onclick = () => openStudentModal(name);
+        container.appendChild(div);
+    });
 }
 
 function openStudentModal(name) {
@@ -119,29 +156,31 @@ function openStudentModal(name) {
     
     const lines = config.traitsRaw.split('\n');
     let currentGroup = null;
+    let groupIdx = 0;
 
-// 在 openStudentModal 函式內尋找並替換此段落
-lines.forEach(line => {
-    const trimmed = line.trim();
-    if (!trimmed) return; // 跳過空行
+    lines.forEach(line => {
+        const trimmed = line.trim();
+        if (!trimmed) return;
 
-    // 規則 1：判別最後一個字為「類」的當作類別開頭
-    if (trimmed.endsWith("類")) {
-        currentGroup = document.createElement('div');
-        currentGroup.className = 'trait-box';
-        currentGroup.innerHTML = `<div class="trait-title">${trimmed}</div>`;
-        picker.appendChild(currentGroup);
-    } 
-    // 規則 2：其他的內容不論字數，皆視為該類別下的特質
-    else if (currentGroup) {
-        const span = document.createElement('span');
-        span.className = 'trait-item';
-        span.innerText = trimmed;
-        if (studentStates[name]?.traits.includes(trimmed)) span.classList.add('active');
-        span.onclick = () => span.classList.toggle('active');
-        currentGroup.appendChild(span);
-    }
-});
+        if (trimmed.endsWith("類")) {
+            currentGroup = document.createElement('div');
+            currentGroup.className = 'trait-box';
+            // 標題使用隨機輔助色
+            const boxColor = secondaryColors[groupIdx % secondaryColors.length];
+            currentGroup.style.borderColor = boxColor;
+            currentGroup.innerHTML = `<div class="trait-title" style="background:${boxColor}">${trimmed}</div>`;
+            picker.appendChild(currentGroup);
+            groupIdx++;
+        } 
+        else if (currentGroup) {
+            const span = document.createElement('span');
+            span.className = 'trait-item';
+            span.innerText = trimmed;
+            if (studentStates[name]?.traits.includes(trimmed)) span.classList.add('active');
+            span.onclick = () => span.classList.toggle('active');
+            currentGroup.appendChild(span);
+        }
+    });
 
     const toneDiv = document.getElementById('tonePicker');
     toneDiv.innerHTML = '';
@@ -185,29 +224,18 @@ function generatePrompts() {
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
 }
 
-function renderStudentGrid() {
-    const container = document.getElementById('studentContainer');
-    container.innerHTML = '';
-    container.style.gridTemplateColumns = `repeat(${config.gridCount}, 1fr)`;
-    const names = config.students.split('\n').filter(n => n.trim() !== "");
-    names.forEach(name => {
-        const div = document.createElement('div');
-        div.className = 'student-card' + (studentStates[name] ? ' selected' : '');
-        div.innerText = name;
-        div.onclick = () => openStudentModal(name);
-        container.appendChild(div);
-    });
-}
-
 function saveToLocal() {
     localStorage.setItem('eval_v6_config', JSON.stringify(config));
     localStorage.setItem('eval_v6_states', JSON.stringify(studentStates));
 }
 
 function resetField(id) {
-    if(!confirm("重置此項？")) return;
+    if(!confirm("確定要將此項重置為預設值嗎？")) return;
     if(id === 'traitsSet') document.getElementById(id).value = defaultConfig.traitsRaw;
     if(id === 'promptTemplateSet') document.getElementById(id).value = defaultConfig.promptTemplate;
+    if(id === 'studentListSet') document.getElementById(id).value = defaultConfig.students;
+    if(id === 'tonesSet') document.getElementById(id).value = defaultConfig.tones;
+    if(id === 'prePromptSet') document.getElementById(id).value = defaultConfig.prePrompt;
 }
 
 function openSettings() { document.getElementById('settingsModal').style.display = 'flex'; }
@@ -234,7 +262,6 @@ function importData(e) {
     reader.readAsText(e.target.files[0]);
 }
 
-// 監聽滾動事件，超過 300px 才顯示按鈕
 window.onscroll = function() {
     const btn = document.getElementById("backToTop");
     if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
@@ -244,15 +271,11 @@ window.onscroll = function() {
     }
 };
 
-// 回到頂端函式
 function scrollToTop() {
-    window.scrollTo({
-        top: 0,
-        behavior: 'smooth' // 平滑滾動
-    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// --- 視覺編輯器全域暫存資料 ---
+// --- 視覺編輯器 ---
 let tempTraitsData = []; 
 
 function openVisualTraitsEditor() {
@@ -281,6 +304,7 @@ function parseTraitsText(text) {
     return data;
 }
 
+
 function renderVisualEditor() {
     const container = document.getElementById('visualTraitEditor');
     container.innerHTML = '';
@@ -290,151 +314,161 @@ function renderVisualEditor() {
         box.className = 'v-category-box';
         box.draggable = true;
         box.dataset.index = cIdx;
+        
+        const boxColor = secondaryColors[cIdx % secondaryColors.length];
+        box.style.borderColor = boxColor;
 
-        // --- 類別拖曳邏輯 ---
+        // --- 類別方塊拖曳開始 ---
         box.ondragstart = (e) => {
-            e.stopPropagation();
             box.classList.add('dragging');
             e.dataTransfer.setData('text/type', 'category');
             e.dataTransfer.setData('text/index', cIdx);
         };
-        box.ondragover = (e) => e.preventDefault();
+
+        box.ondragover = (e) => {
+            e.preventDefault();
+            // 強制設定放下的效果
+            e.dataTransfer.dropEffect = "move";
+            box.style.background = boxColor + "22"; 
+        };
+
+        box.ondragleave = () => {
+            box.style.background = "";
+        };
+
         box.ondrop = (e) => {
             e.preventDefault();
+            e.stopPropagation(); // 阻止事件傳給底層
+            box.style.background = "";
+            
             const type = e.dataTransfer.getData('text/type');
             const fromIdx = parseInt(e.dataTransfer.getData('text/index'));
-            
-            if (type === 'category' && fromIdx !== cIdx) {
-                const movedItem = tempTraitsData.splice(fromIdx, 1)[0];
-                tempTraitsData.splice(cIdx, 0, movedItem);
-                renderVisualEditor();
-            } else if (type === 'trait') {
+
+            // 優先處理類別交換：如果拖過來的是「類別」，不論丟在 Box 的哪裡都執行交換
+            if (type === 'category') {
+                if (fromIdx !== cIdx) {
+                    const movedItem = tempTraitsData.splice(fromIdx, 1)[0];
+                    tempTraitsData.splice(cIdx, 0, movedItem);
+                    renderVisualEditor();
+                }
+            } 
+            // 如果拖過來的是「特質」，則是移動特質到此類別的末尾
+            else if (type === 'trait') {
                 const fromCatIdx = parseInt(e.dataTransfer.getData('text/fromCat'));
                 const traitIdx = parseInt(e.dataTransfer.getData('text/traitIdx'));
-                const movedTrait = tempTraitsData[fromCatIdx].items.splice(traitIdx, 1)[0];
-                tempTraitsData[cIdx].items.push(movedTrait);
-                renderVisualEditor();
+                
+                // 避免在同一個類別內重複移動到末尾
+                if (fromCatIdx !== cIdx) {
+                    const movedTrait = tempTraitsData[fromCatIdx].items.splice(traitIdx, 1)[0];
+                    tempTraitsData[cIdx].items.push(movedTrait);
+                    renderVisualEditor();
+                }
             }
         };
+
         box.ondragend = () => box.classList.remove('dragging');
 
-        // --- 介面渲染 ---
+        // 渲染結構
         box.innerHTML = `
-            <div class="v-cat-header">
+            <div class="v-cat-header" style="background:${boxColor}">
                 <span class="v-cat-title">${cat.category}</span>
                 <span style="cursor:pointer" onclick="deleteCategory(${cIdx})">🗑️</span>
             </div>
             <div class="v-item-list"></div>
             <div class="v-add-group">
-                <input type="text" 
-                       placeholder="新增特質或類別" 
-                       id="v-input-${cIdx}"
-                       onkeydown="if(event.key==='Enter') addTraitVisual(${cIdx})">
-                <button class="btn-main btn-sm" style="padding:2px 10px" onclick="addTraitVisual(${cIdx})">+</button>
+                <input type="text" placeholder="新增類別和特質" id="v-input-${cIdx}" onkeydown="if(event.key==='Enter') addTraitVisual(${cIdx})">
+                <button class="btn-main btn-sm" style="background:${boxColor}" onclick="addTraitVisual(${cIdx})">+</button>
             </div>
         `;
 
         const itemList = box.querySelector('.v-item-list');
-// 在 renderVisualEditor 函式內
-cat.items.forEach((item, tIdx) => {
-    const itemDiv = document.createElement('div');
-    itemDiv.className = 'v-trait-item';
-    itemDiv.draggable = true;
-    itemDiv.innerHTML = `<span>${item}</span><span class="v-trait-del" onclick="deleteTraitVisual(${cIdx}, ${tIdx})">×</span>`;
-    
-    // 修改 1: 讓特質項目也能接收放置事件，以記錄目標位置
-    itemDiv.ondragover = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        itemDiv.style.borderTop = "2px solid var(--accent-color)"; // 視覺提示：插入在此處上方
-    };
-    
-    itemDiv.ondragleave = () => {
-        itemDiv.style.borderTop = ""; // 移除提示
-    };
+        cat.items.forEach((item, tIdx) => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'v-trait-item';
+            itemDiv.draggable = true;
+            itemDiv.innerHTML = `<span>${item}</span><span class="v-trait-del" onclick="deleteTraitVisual(${cIdx}, ${tIdx})">×</span>`;
+            
+            itemDiv.ondragstart = (e) => {
+                e.stopPropagation(); 
+                e.dataTransfer.setData('text/type', 'trait');
+                e.dataTransfer.setData('text/fromCat', cIdx);
+                e.dataTransfer.setData('text/traitIdx', tIdx);
+            };
 
-    itemDiv.ondragstart = (e) => {
-        e.stopPropagation();
-        e.dataTransfer.setData('text/type', 'trait');
-        e.dataTransfer.setData('text/fromCat', cIdx);
-        e.dataTransfer.setData('text/traitIdx', tIdx);
-    };
+            // 修正特質間的排序觸發
+            itemDiv.ondragover = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                // 只有當拖曳物也是「特質」時，才顯示排序條
+                if (e.dataTransfer.types.includes('text/type')) {
+                    itemDiv.style.borderTop = `3px solid ${boxColor}`;
+                }
+            };
 
-    // 修改 2: 在特質上放下時，執行插入動作
-    itemDiv.ondrop = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        itemDiv.style.borderTop = "";
-        
-        const type = e.dataTransfer.getData('text/type');
-        if (type === 'trait') {
-            const fromCatIdx = parseInt(e.dataTransfer.getData('text/fromCat'));
-            const fromTraitIdx = parseInt(e.dataTransfer.getData('text/traitIdx'));
-            
-            // 取出移動的項目
-            const movedTrait = tempTraitsData[fromCatIdx].items.splice(fromTraitIdx, 1)[0];
-            
-            // 插入到當前類別 (cIdx) 的指定位置 (tIdx)
-            tempTraitsData[cIdx].items.splice(tIdx, 0, movedTrait);
-            
-            renderVisualEditor();
-        }
-    };
-    
-    itemList.appendChild(itemDiv);
-});
+            itemDiv.ondragleave = () => {
+                itemDiv.style.borderTop = "";
+            };
+
+            itemDiv.ondrop = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const type = e.dataTransfer.getData('text/type');
+                
+                // 如果在特質上放下的是「類別」，依然執行類別交換邏輯
+                if (type === 'category') {
+                    const fromIdx = parseInt(e.dataTransfer.getData('text/index'));
+                    if (fromIdx !== cIdx) {
+                        const movedItem = tempTraitsData.splice(fromIdx, 1)[0];
+                        tempTraitsData.splice(cIdx, 0, movedItem);
+                        renderVisualEditor();
+                    }
+                } 
+                // 如果是特質，執行特質排序
+                else if (type === 'trait') {
+                    const fromCatIdx = parseInt(e.dataTransfer.getData('text/fromCat'));
+                    const fromTraitIdx = parseInt(e.dataTransfer.getData('text/traitIdx'));
+                    const movedTrait = tempTraitsData[fromCatIdx].items.splice(fromTraitIdx, 1)[0];
+                    tempTraitsData[cIdx].items.splice(tIdx, 0, movedTrait);
+                    renderVisualEditor();
+                }
+            };
+            itemList.appendChild(itemDiv);
+        });
         container.appendChild(box);
     });
 }
 
-// 核心功能：新增
+
+
 function addTraitVisual(cIdx) {
     const input = document.getElementById(`v-input-${cIdx}`);
     const val = input.value.trim();
     if (!val) return;
-
     if (val.endsWith("類")) {
-        // 在該模組之後插入
         tempTraitsData.splice(cIdx + 1, 0, { category: val, items: [] });
-        renderVisualEditor();
-        // 自動聚焦到新生成的類別輸入框
-        setTimeout(() => {
-            const nextInput = document.getElementById(`v-input-${cIdx + 1}`);
-            if(nextInput) nextInput.focus();
-        }, 50);
     } else {
         tempTraitsData[cIdx].items.push(val);
-        renderVisualEditor();
-        // 保持在原輸入框繼續輸入下一個特質
-        const sameInput = document.getElementById(`v-input-${cIdx}`);
-        if(sameInput) sameInput.focus();
     }
+    renderVisualEditor();
 }
 
-// 核心功能：刪除（加入確認）
 function deleteCategory(cIdx) {
-    if (confirm(`確定要刪除「${tempTraitsData[cIdx].category}」及其所有特質嗎？`)) {
+    if (confirm(`確定要刪除「${tempTraitsData[cIdx].category}」嗎？`)) {
         tempTraitsData.splice(cIdx, 1);
         renderVisualEditor();
     }
 }
 
 function deleteTraitVisual(cIdx, tIdx) {
-    const traitName = tempTraitsData[cIdx].items[tIdx];
-    if (confirm(`確定要刪除特質「${traitName}」嗎？`)) {
-        tempTraitsData[cIdx].items.splice(tIdx, 1);
-        renderVisualEditor();
-    }
+    tempTraitsData[cIdx].items.splice(tIdx, 1);
+    renderVisualEditor();
 }
 
-// 最終寫入
 function saveVisualTraits() {
     let output = "";
     tempTraitsData.forEach(cat => {
         output += cat.category + "\n";
-        cat.items.forEach(item => {
-            output += item + "\n";
-        });
+        cat.items.forEach(item => { output += item + "\n"; });
     });
     document.getElementById('traitsSet').value = output.trim();
     closeVisualModal();
