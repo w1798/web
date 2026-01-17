@@ -228,4 +228,153 @@ function scrollToTop() {
     });
 }
 
+// --- 視覺編輯器全域暫存資料 ---
+let tempTraitsData = []; 
+
+function openVisualTraitsEditor() {
+    const rawText = document.getElementById('traitsSet').value;
+    tempTraitsData = parseTraitsText(rawText);
+    renderVisualEditor();
+    document.getElementById('visualTraitsModal').style.display = 'flex';
+}
+
+function closeVisualModal() {
+    document.getElementById('visualTraitsModal').style.display = 'none';
+}
+
+function parseTraitsText(text) {
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+    const data = [];
+    let currentCat = null;
+    lines.forEach(line => {
+        if (line.endsWith("類")) {
+            currentCat = { category: line, items: [] };
+            data.push(currentCat);
+        } else if (currentCat) {
+            currentCat.items.push(line);
+        }
+    });
+    return data;
+}
+
+function renderVisualEditor() {
+    const container = document.getElementById('visualTraitEditor');
+    container.innerHTML = '';
+
+    tempTraitsData.forEach((cat, cIdx) => {
+        const box = document.createElement('div');
+        box.className = 'v-category-box';
+        box.draggable = true;
+        box.dataset.index = cIdx;
+
+        // --- 類別拖曳邏輯 ---
+        box.ondragstart = (e) => {
+            e.stopPropagation();
+            box.classList.add('dragging');
+            e.dataTransfer.setData('text/type', 'category');
+            e.dataTransfer.setData('text/index', cIdx);
+        };
+        box.ondragover = (e) => e.preventDefault();
+        box.ondrop = (e) => {
+            e.preventDefault();
+            const type = e.dataTransfer.getData('text/type');
+            const fromIdx = parseInt(e.dataTransfer.getData('text/index'));
+            
+            if (type === 'category' && fromIdx !== cIdx) {
+                const movedItem = tempTraitsData.splice(fromIdx, 1)[0];
+                tempTraitsData.splice(cIdx, 0, movedItem);
+                renderVisualEditor();
+            } else if (type === 'trait') {
+                const fromCatIdx = parseInt(e.dataTransfer.getData('text/fromCat'));
+                const traitIdx = parseInt(e.dataTransfer.getData('text/traitIdx'));
+                const movedTrait = tempTraitsData[fromCatIdx].items.splice(traitIdx, 1)[0];
+                tempTraitsData[cIdx].items.push(movedTrait);
+                renderVisualEditor();
+            }
+        };
+        box.ondragend = () => box.classList.remove('dragging');
+
+        // --- 介面渲染 ---
+        box.innerHTML = `
+            <div class="v-cat-header">
+                <span class="v-cat-title">${cat.category}</span>
+                <span style="cursor:pointer" onclick="deleteCategory(${cIdx})">🗑️</span>
+            </div>
+            <div class="v-item-list"></div>
+            <div class="v-add-group">
+                <input type="text" 
+                       placeholder="新增特質或類別(以'類'結尾)" 
+                       id="v-input-${cIdx}"
+                       onkeydown="if(event.key==='Enter') addTraitVisual(${cIdx})">
+                <button class="btn-main btn-sm" style="padding:2px 10px" onclick="addTraitVisual(${cIdx})">+</button>
+            </div>
+        `;
+
+        const itemList = box.querySelector('.v-item-list');
+        cat.items.forEach((item, tIdx) => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'v-trait-item';
+            itemDiv.draggable = true;
+            itemDiv.innerHTML = `<span>${item}</span><span class="v-trait-del" onclick="deleteTraitVisual(${cIdx}, ${tIdx})">×</span>`;
+            
+            itemDiv.ondragstart = (e) => {
+                e.stopPropagation();
+                e.dataTransfer.setData('text/type', 'trait');
+                e.dataTransfer.setData('text/fromCat', cIdx);
+                e.dataTransfer.setData('text/traitIdx', tIdx);
+            };
+            itemList.appendChild(itemDiv);
+        });
+        container.appendChild(box);
+    });
+}
+
+// 核心功能：新增
+function addTraitVisual(cIdx) {
+    const input = document.getElementById(`v-input-${cIdx}`);
+    const val = input.value.trim();
+    if (!val) return;
+
+    if (val.endsWith("類")) {
+        // 在當前模組之後插入新類別
+        tempTraitsData.splice(cIdx + 1, 0, { category: val, items: [] });
+    } else {
+        tempTraitsData[cIdx].items.push(val);
+    }
+    renderVisualEditor();
+    
+    // 如果是新增特質，自動聚焦回原輸入框；如果是新類別，會重新渲染
+    const nextInput = document.getElementById(`v-input-${cIdx}`);
+    if(nextInput) nextInput.focus();
+}
+
+// 核心功能：刪除（加入確認）
+function deleteCategory(cIdx) {
+    if (confirm(`確定要刪除「${tempTraitsData[cIdx].category}」及其所有特質嗎？`)) {
+        tempTraitsData.splice(cIdx, 1);
+        renderVisualEditor();
+    }
+}
+
+function deleteTraitVisual(cIdx, tIdx) {
+    const traitName = tempTraitsData[cIdx].items[tIdx];
+    if (confirm(`確定要刪除特質「${traitName}」嗎？`)) {
+        tempTraitsData[cIdx].items.splice(tIdx, 1);
+        renderVisualEditor();
+    }
+}
+
+// 最終寫入
+function saveVisualTraits() {
+    let output = "";
+    tempTraitsData.forEach(cat => {
+        output += cat.category + "\n";
+        cat.items.forEach(item => {
+            output += item + "\n";
+        });
+    });
+    document.getElementById('traitsSet').value = output.trim();
+    closeVisualModal();
+}
+
 init();
