@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>評語提詞自造佳 by Charles Nextime</title>
-    <link rel="stylesheet" href="style.css?ver=1.10">
+    <link rel="stylesheet" href="style.css?ver=1.11">
 </head>
 <body>
 
@@ -70,8 +70,18 @@
                     <textarea id="studentListSet" placeholder="一行一個姓名"></textarea>
                 </div>
                 <div class="settings-box zone-c">
-                    <label>類別和特質 <button class="reset-link" onclick="resetField('traitsSet')">[重置]</button>
-<button class="reset-link" style="color: #f97316; margin-left:8px; font-weight: bold;" onclick="openVisualTraitsEditor()">[視覺修改]</button>
+<label>類別和特質 
+    <button class="reset-link" onclick="resetField('traitsSet')">[重置]</button>
+    
+    <button class="reset-link" 
+            style="color: #f97316; 
+                   margin-left: 10px; 
+                   font-weight: 900; 
+                   font-size: 1.1rem; 
+                   text-decoration: underline;" 
+            onclick="openVisualTraitsEditor()">
+        [視覺修改]
+    </button>
 </label>
                     <span class="help-text-mini">以"類"字結尾為各類別的開頭，其他為特質</span>
                     <textarea id="traitsSet"></textarea>
@@ -108,7 +118,7 @@
 <div id="visualTraitsModal" class="overlay">
     <div class="modal">
         <div class="modal-header compact-header">
-            <h3>視覺化類別與特質編輯 (可直接拖拉移動類別或特質)</h3>
+            <h3>視覺化類別與特質編輯 (可直接拖拉移動類別或特質改變位置)</h3>
             <div class="header-btns">
                 <button onclick="closeVisualModal()">取消</button>
                 <button class="btn-main btn-sm" onclick="saveVisualTraits()">確定並套用</button>
@@ -157,6 +167,6 @@
 
 <button id="backToTop" onclick="scrollToTop()" title="回到頂端">↑</button>
 
-<script src="script.js?ver=1.10"></script>
+<script src="script.js?ver=1.11"></script>
 </body>
 </html>
