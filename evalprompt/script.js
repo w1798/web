@@ -1,20 +1,25 @@
 const themes = [
-    { name: "柔和藍", bg: "#f0f4f8", accent: "#3b82f6" },
-    { name: "森林綠", bg: "#f1f8f1", accent: "#22c55e" },
-    { name: "夕陽橘", bg: "#fff7ed", accent: "#f97316" },
-    { name: "薰衣草紫", bg: "#f5f3ff", accent: "#8b5cf6" },
-    { name: "玫瑰粉", bg: "#fff1f2", accent: "#f43f5e" },
-    { name: "午夜藍", bg: "#1e293b", accent: "#38bdf8", text: "#082afc" },
-    { name: "薄荷涼", bg: "#ecfdf5", accent: "#10b981" },
-    { name: "檸檬黃", bg: "#fefce8", accent: "#eab308" },
-    { name: "大地色", bg: "#fafaf9", accent: "#78716c" },
-    { name: "櫻草紅", bg: "#fef2f2", accent: "#dc2626" },
-    { name: "深海綠", bg: "#f0fdfa", accent: "#0d9488" },
-    { name: "葡萄紫", bg: "#faf5ff", accent: "#9333ea" },
-    { name: "灰金屬", bg: "#f8fafc", accent: "#475569" },
-    { name: "櫻花粉", bg: "#fdf2f8", accent: "#db2777" },
-    { name: "高雅灰", bg: "#f3f4f6", accent: "#374151" }
-];
+    { name: "沉靜藍", bg: "#eff6ff", accent: "#1d4ed8" },
+    { name: "焙茶棕", bg: "#fffaf3", accent: "#92400e" },
+    { name: "雲朵白藍", bg: "#f8fafc", accent: "#64748b" },
+    { name: "抹茶青草", bg: "#f7fee7", accent: "#65a30d" },
+    { name: "莫蘭迪紫", bg: "#f8fafc", accent: "#818cf8" },
+    { name: "鼠尾草綠", bg: "#f0fdf4", accent: "#16a34a" },
+    { name: "灰湖綠", bg: "#f0f9ff", accent: "#0891b2" },
+    { name: "丁香灰", bg: "#faf5ff", accent: "#a855f7" },
+    { name: "霧霾藍", bg: "#f1f5f9", accent: "#475569" },
+    { name: "燕麥奶", bg: "#fafaf9", accent: "#a8a29e" },
+    { name: "暖陽杏", bg: "#fffbeb", accent: "#d97706" },
+    { name: "煙燻玫瑰", bg: "#fff1f2", accent: "#be123c" },
+    { name: "亞麻灰", bg: "#f9fafb", accent: "#6b7280" },
+    { name: "珊瑚砂", bg: "#fff7ed", accent: "#ea580c" },
+    { name: "森林深處", bg: "#f0fdf4", accent: "#166534" },
+    { name: "冰川灰", bg: "#f1f5f9", accent: "#1e293b" },
+    { name: "炭灰藍", bg: "#f8fafc", accent: "#334155" },
+    { name: "橄欖綠", bg: "#f7fee7", accent: "#4d7c0f" },
+    { name: "紫蘇灰", bg: "#fdf4ff", accent: "#701a75" },
+    { name: "晨曦灰", bg: "#f9fafb", accent: "#111827" }
+]
 
 const defaultConfig = {
     grade: "1", 
@@ -80,7 +85,7 @@ function applyTheme(idx) {
 
     // 隨機選取 5 種輔助色（排除當前主題色）
     const otherColors = themes.filter((_, i) => i != idx).map(item => item.accent);
-    secondaryColors = otherColors.sort(() => 0.5 - Math.random()).slice(0, 5);
+    secondaryColors = otherColors.sort(() => 0.5 - Math.random()).slice(0, 18);
 }
 
 function loadConfigToUI() {
@@ -132,11 +137,14 @@ function renderStudentGrid() {
         // 如果未選取，給予隨機輔助色邊框增加活潑感
         if(!isSelected) {
             const randomColor = secondaryColors[index % secondaryColors.length];
-            div.style.borderColor = randomColor + "44"; // 半透明邊框
-            div.style.color = randomColor;
+            div.style.borderColor = randomColor + "44"; // 亂數半透明邊框	
+//div.style.borderColor = "color-mix(in srgb, var(--accent-color), transparent 70%)"; // 風格淡色
+            div.style.color = randomColor; // 亂數色
+// div.style.color = "#333333";
         } else {
             div.style.borderColor = "var(--accent-color)";
             div.style.color = "var(--text-color)";
+
         }
 
         div.onclick = () => openStudentModal(name);
