@@ -31,7 +31,7 @@ const defaultConfig = {
     promptTemplate: "請給{grade}年級的{name}寫一段期末的話。希望從學生的特質{traits}出發，用{tone}的語氣來描述，內容長度約{wordCount}字。",
     fontSize: "1.4",
     studentFontSize: "1.4",
-    includeCatName: false,
+    includeCatName: true,
     themeIdx: 0, gridCount: 7, traitCols: 4, lastTones: []
 };
 
