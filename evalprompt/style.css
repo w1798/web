@@ -178,7 +178,7 @@ select, input { font-size: 1rem; padding: 5px; border-radius: 6px; border: 1px s
 .trait-item.active { background: var(--accent-color); color: white; border-color: var(--accent-color); }
 
 /* 頁尾與按鈕樣式 */
-.action-center { display: flex; justify-content: center; align-items: center; padding: 20px; }
+.action-center { display: flex; justify-content: center; gap: 10px; align-items: center; padding: 20px; }
 .output-btns.centered { display: flex; justify-content: center; gap: 15px; padding: 10px 0; }
 
 .student-modal-footer-combined { border-top: 1px solid #eee; padding-top: 10px; display: flex; justify-content: space-between; align-items: center; gap: 15px; }
@@ -369,3 +369,9 @@ select, input { font-size: 1rem; padding: 5px; border-radius: 6px; border: 1px s
     font-size: calc(0.9 * var(--trait-font-scale)) !important;
 }
 
+.prompt-tools { display: flex; flex-direction: column; gap: 5px; margin-bottom: 5px; }
+.help-text-tags {color: #ff748b; }
+.help-text-tags code {
+    background: #a2f890; padding: 2px 4px; border-radius: 4px; cursor: pointer; color: #1e293b; transition: background 0.2s;
+}
+.help-text-tags code:hover { background: #4bd5e1; }
