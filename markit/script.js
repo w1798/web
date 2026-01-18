@@ -7,7 +7,8 @@ let state = {
         sortOrder: 'desc',
         quickTasks: "國習,數習,生字,圈詞",
 	studentFontSize: 18,
-        appendMode: false
+        appendMode: false,
+	dateOffset: 1
     },
     assignments: []
 };
@@ -41,6 +42,16 @@ function initSelectors() {
       
     }
    
+// 新增：初始化預設日期選單
+    const dateOffsetSel = document.getElementById('dateOffsetSelect');
+    if (dateOffsetSel) {
+        dateOffsetSel.add(new Option("+3 天(大後天)", 3));
+        dateOffsetSel.add(new Option("+2 天(後天)", 2));
+        dateOffsetSel.add(new Option("+1 天 (明天)", 1));
+        dateOffsetSel.add(new Option("0 天 (今天)", 0));
+        dateOffsetSel.value = state.settings.dateOffset || 1;
+    }
+
     const sizes = [95, 90, 80, 70, 60, 50, 40, 30];
     document.querySelectorAll('.size-sel').forEach(sel => {
         sizes.forEach(s => sel.add(new Option(`${s}%`, s)));
@@ -74,10 +85,20 @@ function moveCursorToEnd(el) {
     el.setSelectionRange(len, len);
 }
 
+
+
+// 新增：獲取偏移後的日期字串 (MMDD)
+function getOffsetDateStr() {
+    const d = new Date();
+    const offset = parseInt(state.settings.dateOffset || 0);
+    d.setDate(d.getDate() + offset);
+    return (d.getMonth() + 1).toString().padStart(2, '0') + d.getDate().toString().padStart(2, '0');
+}
+
+// 修改 fillTaskName 函式
 function fillTaskName(task) {
     const input = document.getElementById('assignmentNameInput');
-    const d = new Date();
-    const dateStr = (d.getMonth() + 1).toString().padStart(2, '0') + d.getDate().toString().padStart(2, '0');
+    const dateStr = getOffsetDateStr(); // 使用新函式
     
     let currentVal = input.value.trim();
     if (state.settings.appendMode && currentVal !== "") {
@@ -87,6 +108,19 @@ function fillTaskName(task) {
     }
     moveCursorToEnd(input);
 }
+
+// 修改 openAddModal 函式
+function openAddModal() {
+    const input = document.getElementById('assignmentNameInput');
+    // 使用新函式獲取預設日期
+    input.value = state.settings.autoDate ? getOffsetDateStr() : "";
+    initQuickTags();
+    openModal('addAssignmentModal');
+    setTimeout(() => { moveCursorToEnd(input); }, 200);
+}
+
+
+
 
 function applySettings() {
     const s = state.settings;
@@ -117,6 +151,7 @@ function saveSettings() {
     s.quickTasks = document.getElementById('quickTasksConfig').value.trim();
     s.studentList = document.getElementById('studentListConfig').value.trim() || FULL_30;
     s.studentFontSize = parseInt(document.getElementById('studentFontSizeSelect').value);
+    s.dateOffset = parseInt(document.getElementById('dateOffsetSelect').value);
     
     saveData();
     applySettings();
@@ -167,6 +202,7 @@ function openModal(id) {
         document.getElementById('sizeReport').value = s.sizeReport || 70;
         document.getElementById('sizeTotal').value = s.sizeTotal || 70;
         document.getElementById('studentFontSizeSelect').value = s.studentFontSize || 18;
+	document.getElementById('dateOffsetSelect').value = s.dateOffset || 1;
     }
 }
 
@@ -176,14 +212,7 @@ function closeModal(id) {
     renderAssignments(); 
 }
 
-function openAddModal() {
-    const input = document.getElementById('assignmentNameInput');
-    const d = new Date();
-    input.value = state.settings.autoDate ? (d.getMonth() + 1).toString().padStart(2, '0') + d.getDate().toString().padStart(2, '0') : "";
-    initQuickTags();
-    openModal('addAssignmentModal');
-    setTimeout(() => { moveCursorToEnd(input); }, 200);
-}
+
 
 function openDetail(id) {
     const work = state.assignments.find(a => a.id === id);
