@@ -6,9 +6,9 @@ let state = {
         studentList: FULL_30, sizeDetail: 95, sizeReport: 70, sizeTotal: 70,
         sortOrder: 'desc',
         quickTasks: "國習,數習,生字,圈詞",
-	studentFontSize: 18,
+        studentFontSize: 18,
         appendMode: false,
-	dateOffset: 1
+        dateOffset: 1
     },
     assignments: []
 };
@@ -24,25 +24,16 @@ function initSelectors() {
     const layoutSel = document.getElementById('layoutSelect');
     if(layoutSel) for(let i=1; i<=10; i++) layoutSel.add(new Option(`${i} 個`, i));
  
-
     const fontSel = document.getElementById('studentFontSizeSelect');
     if (fontSel) {
-	fontSel.innerHTML = '';
-        
+        fontSel.innerHTML = '';
         let i = 14;
         while (i <= 150) {
             fontSel.add(new Option(`${i} px`, i));
-            
-            if (i < 30) {
-                i += 2;
-            } else {
-                i += 4;
-            }
+            if (i < 30) { i += 2; } else { i += 4; }
         }
-      
     }
    
-// 新增：初始化預設日期選單
     const dateOffsetSel = document.getElementById('dateOffsetSelect');
     if (dateOffsetSel) {
         dateOffsetSel.add(new Option("+3 天(大後天)", 3));
@@ -69,7 +60,7 @@ function initQuickTags() {
     const container = document.getElementById('quickTags');
     if(!container) return;
     container.innerHTML = '';
-    const tasks = state.settings.quickTasks.split(',').map(t => t.trim()).filter(t => t);
+    const tasks = parseList(state.settings.quickTasks);
     tasks.forEach(task => {
         const btn = document.createElement('button');
         btn.className = 'tag-btn';
@@ -79,49 +70,101 @@ function initQuickTags() {
     });
 }
 
+// 渲染日期快捷標籤 (含星期)
+function renderDateQuickSelect() {
+    const container = document.getElementById('dateQuickSelect');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    const baseOffset = parseInt(state.settings.dateOffset || 0);
+    const dayNames = ["日", "一", "二", "三", "四", "五", "六"];
+    
+    // 生成 前後兩天 + 當天，共五個
+    for (let i = baseOffset - 2; i <= baseOffset + 2; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() + i);
+        const mmdd = (d.getMonth() + 1).toString().padStart(2, '0') + d.getDate().toString().padStart(2, '0');
+        const dayName = dayNames[d.getDay()];
+        const label = `${mmdd}(${dayName})`;
+        
+        const btn = document.createElement('button');
+        btn.className = 'tag-btn';
+        // 預設日期(當天偏移量)使用主色調
+        btn.style.background = (i === baseOffset) ? 'var(--primary)' : '#888';
+        btn.innerText = label;
+        btn.onclick = () => {
+	    const input = document.getElementById('assignmentNameInput');
+	    const datePattern = /^\d{4}\([\u4e00-\u9fa5]\)/;
+
+            // 如果開頭已經是日期格式(4位數字)，替換掉；否則插入最前面
+            if (datePattern.test(input.value)) {
+                input.value = input.value.replace(datePattern, label);
+            } else {
+                input.value = label + input.value;
+            }
+            moveCursorToEnd(input);
+        };
+        container.appendChild(btn);
+    }
+}
+
+// 整合後的 openAddModal
+function openAddModal() {
+    const input = document.getElementById('assignmentNameInput');
+    input.value = state.settings.autoDate ? getOffsetDateStr() : "";
+    initQuickTags();
+    renderDateQuickSelect(); // 確保呼叫此處來顯示日期標籤
+    openModal('addAssignmentModal');
+    setTimeout(() => { moveCursorToEnd(input); }, 200);
+}
+
 function moveCursorToEnd(el) {
     el.focus();
     const len = el.value.length;
     el.setSelectionRange(len, len);
 }
 
-
-
-// 新增：獲取偏移後的日期字串 (MMDD)
 function getOffsetDateStr() {
     const d = new Date();
     const offset = parseInt(state.settings.dateOffset || 0);
     d.setDate(d.getDate() + offset);
-    return (d.getMonth() + 1).toString().padStart(2, '0') + d.getDate().toString().padStart(2, '0');
+    
+    const mm = (d.getMonth() + 1).toString().padStart(2, '0');
+    const dd = d.getDate().toString().padStart(2, '0');
+    const dayNames = ["日", "一", "二", "三", "四", "五", "六"];
+    const dayName = dayNames[d.getDay()];
+    
+    return `${mm}${dd}(${dayName})`; // 回傳格式如 0119(一)
 }
 
-// 修改 fillTaskName 函式
 function fillTaskName(task) {
     const input = document.getElementById('assignmentNameInput');
-    const dateStr = getOffsetDateStr(); // 使用新函式
-    
     let currentVal = input.value.trim();
+    
     if (state.settings.appendMode && currentVal !== "") {
+        // 累加模式：直接加在後面
         input.value = currentVal + task;
     } else {
-        input.value = state.settings.autoDate ? `${dateStr}${task}` : task;
+        // 非累加模式：
+        // 1. 檢查目前輸入框開頭是否已經有日期格式 0000(X)
+        const datePattern = /^\d{4}\([\u4e00-\u9fa5]\)/;
+        const match = currentVal.match(datePattern);
+        
+        if (state.settings.autoDate) {
+            if (match) {
+                // 如果目前輸入框已經有日期（可能是使用者點選上方日期標籤選的），保留該日期並接上任務
+                input.value = match[0] + task;
+            } else {
+                // 如果完全沒日期，才使用系統計算的預設日期
+                input.value = getOffsetDateStr() + task;
+            }
+        } else {
+            // 不自動加日期模式
+            input.value = task;
+        }
     }
     moveCursorToEnd(input);
 }
-
-// 修改 openAddModal 函式
-function openAddModal() {
-    const input = document.getElementById('assignmentNameInput');
-    // 使用新函式獲取預設日期
-    input.value = state.settings.autoDate ? getOffsetDateStr() : "";
-    initQuickTags();
-    openModal('addAssignmentModal');
-    setTimeout(() => { moveCursorToEnd(input); }, 200);
-}
-
-
-
-
 function applySettings() {
     const s = state.settings;
     document.body.setAttribute('data-theme', s.theme);
@@ -172,7 +215,7 @@ function renderAssignments() {
         return;
     }
 
-    const totalCount = state.settings.studentList.split(',').length;
+    const totalCount = parseList(state.settings.studentList).length;
     const sorted = getSortedList();
     sorted.forEach(item => {
         const undone = totalCount - item.doneList.length;
@@ -184,14 +227,21 @@ function renderAssignments() {
     });
 }
 
+function parseList(input) {
+    // 支援換行與逗號分隔
+    return input.split(/[\n,]/).map(s => s.trim()).filter(s => s);
+}
+
 function openModal(id) {
     const modal = document.getElementById(id);
     if (!modal) return;
     modal.style.display = 'block'; 
     if(id === 'settingsModal') {
         const s = state.settings;
-        document.getElementById('studentListConfig').value = s.studentList;
-        document.getElementById('quickTasksConfig').value = s.quickTasks;
+        // 進入設定頁時，將儲存的逗號字串轉回換行顯示
+        document.getElementById('studentListConfig').value = s.studentList.split(',').join('\n');
+        document.getElementById('quickTasksConfig').value = s.quickTasks.split(',').join('\n');
+        
         document.getElementById('autoDate').checked = s.autoDate;
         document.getElementById('appendModeSetting').checked = s.appendMode || false;
         document.getElementById('themeSelect').value = s.theme;
@@ -202,7 +252,7 @@ function openModal(id) {
         document.getElementById('sizeReport').value = s.sizeReport || 70;
         document.getElementById('sizeTotal').value = s.sizeTotal || 70;
         document.getElementById('studentFontSizeSelect').value = s.studentFontSize || 18;
-	document.getElementById('dateOffsetSelect').value = s.dateOffset || 1;
+        document.getElementById('dateOffsetSelect').value = s.dateOffset || 1;
     }
 }
 
@@ -212,17 +262,16 @@ function closeModal(id) {
     renderAssignments(); 
 }
 
-
-
 function openDetail(id) {
     const work = state.assignments.find(a => a.id === id);
     if(!work) return;
     document.getElementById('detailTitle').innerText = work.name;
     const grid = document.getElementById('studentGrid'); grid.innerHTML = '';
-    state.settings.studentList.split(',').map(s => s.trim()).filter(s => s).forEach(n => {
+    parseList(state.settings.studentList).forEach(n => {
         const div = document.createElement('div');
         div.className = `student-item ${work.doneList.includes(n) ? 'done' : ''}`;
         div.innerText = n;
+
         div.onmousedown = () => { isDragging = true; toggleStudent(n, div, work); };
         div.onmouseenter = () => { if (isDragging) toggleStudent(n, div, work); };
         grid.appendChild(div);
@@ -243,7 +292,8 @@ function toggleStudent(n, el, work) {
 function openReportModal() {
     const select = document.getElementById('reportStudentSelect');
     if(!select) return;
-    select.innerHTML = state.settings.studentList.split(',').map(s => `<option value="${s.trim()}">${s.trim()}</option>`).join('');
+    const names = parseList(state.settings.studentList);
+    select.innerHTML = names.map(s => `<option value="${s}">${s}</option>`).join('');
     generateStudentReport();
     openModal('studentReportModal');
 }
@@ -260,16 +310,16 @@ function generateStudentReport() {
 function openTotalListModal() {
     const sorted = getSortedList();
     const container = document.getElementById('totalListContent');
-    const totalStudentCount = state.settings.studentList.split(',').map(s => s.trim()).filter(s => s).length;
+    const studentList = parseList(state.settings.studentList);
+    const totalStudentCount = studentList.length;
     
-    // 只過濾出「尚未全班完成」的任務
     const unfinishedAssignments = sorted.filter(a => a.doneList.length < totalStudentCount);
 
     if (unfinishedAssignments.length === 0) {
         container.innerHTML = `<div class="all-done-msg">✨ 任務都完成！ ✨</div>`;
     } else {
         container.innerHTML = unfinishedAssignments.map(a => {
-            const undone = state.settings.studentList.split(',').map(s => s.trim()).filter(s => s && !a.doneList.includes(s));
+            const undone = studentList.filter(s => !a.doneList.includes(s));
             return `<div style="padding:10px; border-bottom:1px solid #eee">
                 <span class="clickable-task" onclick="closeModal('totalListModal'); openDetail(${a.id})">${a.name}</span>: 
                 <span>${undone.join(', ') || '無'}</span>
@@ -281,7 +331,7 @@ function openTotalListModal() {
 
 function copyTotalList() {
     const content = document.getElementById('totalListContent');
-    if (content.querySelector('.all-done-msg')) return; // 如果全完成就不執行複製
+    if (content.querySelector('.all-done-msg')) return;
     const text = content.innerText;
     navigator.clipboard.writeText(text).then(() => alert("名單已複製！"));
 }
@@ -304,7 +354,7 @@ function addAssignment() {
 }
 
 function cleanFinishedAssignments() {
-    const totalCount = state.settings.studentList.split(',').map(s => s.trim()).filter(s => s).length;
+    const totalCount = parseList(state.settings.studentList).length;
     const finishedCount = state.assignments.filter(a => a.doneList.length >= totalCount).length;
     if (finishedCount === 0) return alert("目前沒有已完成的任務。");
     if (confirm(`確定刪除 ${finishedCount} 個已完成任務？`)) {
@@ -313,6 +363,24 @@ function cleanFinishedAssignments() {
         closeModal('settingsModal');
     }
 }
+
+
+// 新增：重置快速標籤功能
+function resetQuickTasks() {
+    if(confirm("確定要將快速標籤恢復為預設值嗎？")) {
+        const defaultTasks = "國習,數習,生字,圈詞";
+        document.getElementById('quickTasksConfig').value = defaultTasks.split(',').join('\n');
+    }
+}
+
+// 新增：重置座號名單功能
+function resetStudentList() {
+    if(confirm("確定要將名單恢復為 1-30 號嗎？")) {
+        document.getElementById('studentListConfig').value = FULL_30.split(',').join('\n');
+    }
+}
+
+
 
 function saveData() { localStorage.setItem('MarkIt', JSON.stringify(state)); renderAssignments(); }
 function saveDataQuietly() { localStorage.setItem('MarkIt', JSON.stringify(state)); }
