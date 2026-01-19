@@ -45,7 +45,7 @@ header { display: flex; justify-content: space-between; align-items: center; bac
 
 /* 針對電腦版寬度控制 */
 @media (min-width: 769px) {
-    .modal-fixed-70 { width: 70% !important; max-width: 800px; }
+    .modal-fixed-70 { width: 90% !important; max-width: 1200px; }
     /* 此處讓 JS 設定的 width 生效 */
     .dynamic-size { width: auto; } 
 }
@@ -69,8 +69,17 @@ header { display: flex; justify-content: space-between; align-items: center; bac
 .student-item.done { background: var(--primary); color: white; border-color: var(--primary); }
 
 /* 設定頁面佈局 */
-.settings-grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 10px; }
-.settings-column { display: flex; flex-direction: column; gap: 15px; }
+.settings-grid-container { 
+    display: grid; 
+    grid-template-columns: 2fr 2fr 1fr 1fr; 
+    gap: 15px; 
+    padding: 10px; 
+}
+.settings-column { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 12px; 
+}
 .settings-full-row { grid-column: 1 / span 2; margin-top: 10px; }
 .settings-row { font-weight: bold; font-size: 1.1rem; }
 .settings-row label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
@@ -106,16 +115,20 @@ header { display: flex; justify-content: space-between; align-items: center; bac
         gap: 10px;
     }
     
-    /* 手機版彈窗內部改為單欄 */
-    .settings-grid-container { grid-template-columns: 1fr; }
+    /* 手機版彈窗內部改為單欄 (A,B,C,D 區垂直排列) */
+    .settings-grid-container { 
+        grid-template-columns: 1fr !important; 
+    }
+    
     .settings-full-row { grid-column: 1; }
     
     /* 手機版座號幾欄 */
-.student-grid { 
-    grid-template-columns: repeat(var(--student-cols), 1fr); 
-}
+    .student-grid { 
+        grid-template-columns: repeat(var(--student-cols), 1fr); 
+    }
     
     .modal-content { padding: 15px; padding-top: 60px; }
     .modal-header-btns { width: 100%; justify-content: flex-end; left: 0; padding-right: 15px; }
     .large-input { font-size: 1.5rem; }
 }
+
