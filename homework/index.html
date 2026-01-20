@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>作業動態曆 by Charles Nextime</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?ver=1.01">
 </head>
 <body class="theme-ocean">
     <header class="header-bar">
@@ -50,16 +50,11 @@
                         <option value="5">5天</option><option value="7">7天</option>
                         <option value="10">10天</option><option value="14">14天</option>
                     </select></div>
-
                     <div class="s-row"><span>作業高度</span><select id="cardHeightSelect">                       
-    			  <option value="small">小</option>
-
-  		      <option value="medium">中</option>
-
-  		      <option value="large">大</option>
-
-       	             </select></div>
-
+                        <option value="small">小</option>
+                        <option value="medium">中</option>
+                        <option value="large">大</option>
+                    </select></div>
                     <div class="s-row"><span>編修排版</span><select id="editColsSelect"></select></div>
                     <div class="s-row"><span>編修顯示</span><select id="editShowSelect">
                         <option value="7">7天</option><option value="14">14天</option>
@@ -68,31 +63,20 @@
                         <option value="49">49天</option><option value="56">56天</option>
                         <option value="63">63天</option><option value="70">70天</option>
                     </select></div>
-
-
                     <div class="s-row"><span>主頁字體</span><select id="fsMainSelect"></select></div>
                     <div class="s-row"><span>設定字體</span><select id="fsSetSelect"></select></div>
                     <div class="s-row"><span>編修字體</span><select id="fsEditSelect"></select></div>
-
-
-
                 </div>
                 <div class="col-b">
-
-
-
                     <div class="s-row"><span>作業方向</span><select id="dirSelect"><option value="ltr">左到右</option><option value="rtl">右到左</option></select></div>
                     <div class="s-row"><span>顯示六日</span><select id="weekendSelect">
                         <option value="both">顯示六日</option><option value="sat">顯示六</option><option value="none">不顯示</option>
                     </select></div>
-
-
                     <div class="s-row"><span>開始星期</span><select id="startDayTypeSelect">
-                          <option value="monday">星期一</option>
-      			  <option value="sunday">星期日</option>
-       			  <option value="today">當天</option>
+                        <option value="monday">星期一</option>
+                        <option value="sunday">星期日</option>
+                        <option value="today">當天</option>
                     </select></div>
-
                     <div class="s-row">
                         <span>自動刪除舊作業</span>
                         <select id="autoDeleteSelect">
@@ -101,36 +85,27 @@
                             <option value="0">無</option>
                         </select>
                     </div>
-
-
-
                 </div>
                 <div class="col-c">
                     <span>前置詞 <a href="javascript:void(0)" class="reset-link" onclick="resetField('pre')">(重置)</a></span>
                     <textarea id="preTasksText" class="set-font-target"></textarea>
                 </div>
                 <div class="col-d">
-                    <span>預設功課 <a href="javascript:void(0)" class="reset-link" onclick="resetField('main')">(重置)</a></span>
+                    <span>唯一作業 <a href="javascript:void(0)" class="reset-link" onclick="resetField('main')">(重置)</a></span>
                     <textarea id="defaultTasksText" class="set-font-target"></textarea>
                 </div>
                 <div class="col-e">
                     <span>後置詞 <a href="javascript:void(0)" class="reset-link" onclick="resetField('post')">(重置)</a></span>
                     <textarea id="postTasksText" class="set-font-target"></textarea>
                 </div>
-
-
             </div>
-  
-
- 	<div class="modal-footer-zone">
-            <div class="btn-group-right">
-                <button onclick="closeModal('settingsModal')">取消</button>
-                <button class="confirm-btn" onclick="saveSettings()">確定</button>
+            <div class="modal-footer-zone">
+                <div class="btn-group-right">
+                    <button onclick="closeModal('settingsModal')">取消</button>
+                    <button class="confirm-btn" onclick="saveSettings()">確定</button>
+                </div>
             </div>
         </div>
-
-
-      </div>
     </div>
 
     <div id="editModal" class="modal">
@@ -155,18 +130,35 @@
         <div class="modal-content prompt-box" style="margin-top: 5vh;">
             <div class="modal-header-zone"><span>新增作業項目</span></div>
             <div class="modal-body-zone">
-                <div class="prompt-sec"><span>前置詞</span><div id="preTags" class="tag-row"></div></div>
-                <div class="prompt-sec" style="margin-top:10px;"><span>功課名稱</span><div id="mainTags" class="tag-row"></div></div>
-                <div class="prompt-sec" style="margin-top:10px;"><span>後置詞</span><div id="postTags" class="tag-row"></div></div>
-                <div class="prompt-final-row" style="margin-top:20px; display:flex; gap:10px;">
-                    <input type="text" id="taskFinalInput" style="flex:1; height:45px; font-size:1.2rem;">
-                    <button class="confirm-btn" onclick="confirmAddTask()">確定加入</button>
-                    <button onclick="closeModal('taskPromptModal')">取消</button>
+                <div class="prompt-row">
+                    <div class="prompt-label">前置詞</div>
+                    <div id="preTags" class="tag-row"></div>
                 </div>
-            </div>
+                <div class="prompt-row" style="margin-top:15px;">
+                    <div class="prompt-label">唯一作業</div>
+                    <div id="mainTags" class="tag-row"></div>
+                </div>
+                <div class="prompt-row" style="margin-top:15px;">
+                    <div class="prompt-label">後置詞</div>
+                    <div id="postTags" class="tag-row"></div>
+                </div>
+                
+<div class="prompt-final-row">
+    <div class="final-input-container">
+        <input type="text" id="taskFinalInput" placeholder="點擊標籤累加或手動輸入...">
+        
+        <div class="prompt-btn-group">
+            <button class="clear-btn" onclick="document.getElementById('taskFinalInput').value=''">清除</button>
+            <button onclick="closeModal('taskPromptModal')">取消</button>
+            <button class="confirm-btn" onclick="confirmAddTask()">確定加入</button>
+        </div>
+    </div>
+</div>
+
+
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="script.js?ver=1.01"></script>
 </body>
 </html>
