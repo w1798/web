@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>作業動態曆 by Charles Nextime</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-ocean">
+    <header class="header-bar">
+        <div class="logo-large">作業動態曆</div>
+        <div class="nav-center">
+            <span class="nav-label">顯示起點:</span>
+            <input type="date" id="mainStartDatePicker" onchange="updateMainStartDate()">
+        </div>
+        <div class="nav-right">
+            <button class="small-btn" onclick="exportJSON()">匯出</button>
+            <button class="small-btn" onclick="document.getElementById('fileInput').click()">匯入</button>
+            <input type="file" id="fileInput" style="display:none" onchange="importJSON(event)">
+            <button class="small-btn" onclick="resetApp()">重置</button>
+            <button class="small-btn" onclick="openSettings()">設定</button>
+            <button class="small-btn" onclick="openEdit()">編修作業</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="mainBoard"></main>
+
+    <footer class="footer-bar">
+        <div class="author-info">
+            <a href="https://w1798.github.io/web/" target="_blank" class="author-link">
+                Completed by Charles Nextime with AI assistance, 20260120
+            </a>
+        </div>
+    </footer>
+
+    <div id="settingsModal" class="modal">
+        <div class="modal-content size-80 no-padding-flex">
+            <div class="modal-header-zone">
+                <span class="zone-title">相關設定</span>
+                <div class="btn-group-right">
+                    <button onclick="closeModal('settingsModal')">取消</button>
+                    <button class="confirm-btn" onclick="saveSettings()">確定</button>
+                </div>
+            </div>
+            <div class="modal-body-zone settings-five-cols">
+                <div class="col-a">
+                    <div class="s-row"><span>介面風格</span><select id="themeSelect"></select></div>
+                    <div class="s-row"><span>主頁排版</span><select id="colsSelect"></select></div>
+                    <div class="s-row"><span>主頁顯示</span><select id="mainShowSelect">
+                        <option value="5">5天</option><option value="7">7天</option>
+                        <option value="10">10天</option><option value="14">14天</option>
+                    </select></div>
+
+                    <div class="s-row"><span>作業高度</span><select id="cardHeightSelect">                       
+    			  <option value="small">小</option>
+
+  		      <option value="medium">中</option>
+
+  		      <option value="large">大</option>
+
+       	             </select></div>
+
+                    <div class="s-row"><span>編修排版</span><select id="editColsSelect"></select></div>
+                    <div class="s-row"><span>編修顯示</span><select id="editShowSelect">
+                        <option value="7">7天</option><option value="14">14天</option>
+                        <option value="21">21天</option><option value="28" selected>28天</option>
+                        <option value="35">35天</option><option value="42">42天</option>
+                        <option value="49">49天</option><option value="56">56天</option>
+                        <option value="63">63天</option><option value="70">70天</option>
+                    </select></div>
+
+
+                    <div class="s-row"><span>主頁字體</span><select id="fsMainSelect"></select></div>
+                    <div class="s-row"><span>設定字體</span><select id="fsSetSelect"></select></div>
+                    <div class="s-row"><span>編修字體</span><select id="fsEditSelect"></select></div>
+
+
+
+                </div>
+                <div class="col-b">
+
+
+
+                    <div class="s-row"><span>作業方向</span><select id="dirSelect"><option value="ltr">左到右</option><option value="rtl">右到左</option></select></div>
+                    <div class="s-row"><span>顯示六日</span><select id="weekendSelect">
+                        <option value="both">顯示六日</option><option value="sat">顯示六</option><option value="none">不顯示</option>
+                    </select></div>
+
+
+                    <div class="s-row"><span>開始星期</span><select id="startDayTypeSelect">
+                          <option value="monday">星期一</option>
+      			  <option value="sunday">星期日</option>
+       			  <option value="today">當天</option>
+                    </select></div>
+
+                    <div class="s-row">
+                        <span>自動刪除舊作業</span>
+                        <select id="autoDeleteSelect">
+                            <option value="30">30天</option><option value="60">60天</option>
+                            <option value="1">1天</option><option value="7">7天</option>
+                            <option value="0">無</option>
+                        </select>
+                    </div>
+
+
+
+                </div>
+                <div class="col-c">
+                    <span>前置詞 <a href="javascript:void(0)" class="reset-link" onclick="resetField('pre')">(重置)</a></span>
+                    <textarea id="preTasksText" class="set-font-target"></textarea>
+                </div>
+                <div class="col-d">
+                    <span>預設功課 <a href="javascript:void(0)" class="reset-link" onclick="resetField('main')">(重置)</a></span>
+                    <textarea id="defaultTasksText" class="set-font-target"></textarea>
+                </div>
+                <div class="col-e">
+                    <span>後置詞 <a href="javascript:void(0)" class="reset-link" onclick="resetField('post')">(重置)</a></span>
+                    <textarea id="postTasksText" class="set-font-target"></textarea>
+                </div>
+
+
+            </div>
+  
+
+ 	<div class="modal-footer-zone">
+            <div class="btn-group-right">
+                <button onclick="closeModal('settingsModal')">取消</button>
+                <button class="confirm-btn" onclick="saveSettings()">確定</button>
+            </div>
+        </div>
+
+
+      </div>
+    </div>
+
+    <div id="editModal" class="modal">
+        <div class="modal-content full no-padding-flex">
+            <div class="modal-header-zone">
+                <span class="edit-title-text">編修管理 (拖曳標題換天 / 拖曳作業換項)</span>
+                <div class="edit-center-controls">
+                    顯示起點：<input type="date" id="editStartDatePicker" onchange="renderEdit()">
+                </div>
+                <div class="btn-group-right">
+                    <button onclick="addDayAtStart()">開頭加一天</button>
+                    <button onclick="addDayAtEnd()">末尾加一天</button>
+                    <button onclick="closeModal('editModal')">取消</button>
+                    <button class="confirm-btn" onclick="saveEdit()">確定</button>
+                </div>
+            </div>
+            <div id="editBoard" class="modal-body-zone edit-grid-area"></div>
+        </div>
+    </div>
+
+    <div id="taskPromptModal" class="modal">
+        <div class="modal-content prompt-box" style="margin-top: 5vh;">
+            <div class="modal-header-zone"><span>新增作業項目</span></div>
+            <div class="modal-body-zone">
+                <div class="prompt-sec"><span>前置詞</span><div id="preTags" class="tag-row"></div></div>
+                <div class="prompt-sec" style="margin-top:10px;"><span>功課名稱</span><div id="mainTags" class="tag-row"></div></div>
+                <div class="prompt-sec" style="margin-top:10px;"><span>後置詞</span><div id="postTags" class="tag-row"></div></div>
+                <div class="prompt-final-row" style="margin-top:20px; display:flex; gap:10px;">
+                    <input type="text" id="taskFinalInput" style="flex:1; height:45px; font-size:1.2rem;">
+                    <button class="confirm-btn" onclick="confirmAddTask()">確定加入</button>
+                    <button onclick="closeModal('taskPromptModal')">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
