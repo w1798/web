@@ -1,9 +1,9 @@
 
 
 const DEFAULT_VALS = {
-    preTasks: ["訂簽", "簽名", "交", "發"],
-    mainTasks: ["假日","國習", "生字", "圈詞", "數習", "作文", "國卷", "數卷"],
-    postTasks: ["一頁", "兩頁", "一張"]
+    preTasks: ["訂簽", "訂正", "簽名", "交", "發", "收"],
+    mainTasks: ["假日","國習", "生字", "圈詞", "數習", "作文", "國卷", "數卷", "閱心"],
+    postTasks: ["學習單", "通知單", "一頁", "兩頁", "一張"]
 };
 
 let appData = {
@@ -442,9 +442,17 @@ function renderTags() {
 }
 
 function clickTag(type, val) {
-    if(type==='pre') selectedPre.has(val)?selectedPre.delete(val):selectedPre.add(val);
-    else if(type==='main') selectedMain.has(val)?selectedMain.delete(val):selectedMain.add(val);
-    else document.getElementById('taskFinalInput').value = val;
+    if(type==='pre') {
+        selectedPre.has(val) ? selectedPre.delete(val) : selectedPre.add(val);
+    } else if(type==='main') {
+        selectedMain.has(val) ? selectedMain.delete(val) : selectedMain.add(val);
+    } else if(type==='post') {
+        // --- 修改這裡：從 = 改成 += (累加) ---
+        const input = document.getElementById('taskFinalInput');
+        // 如果原本已經有字，先加個空格再累加
+        input.value = input.value + val; 
+ 
+    }
     renderTags();
 }
 
