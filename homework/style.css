@@ -1,3 +1,6 @@
+/* ============================================================
+   1. 基礎變數與全局設定
+   ============================================================ */
 :root { 
     --fs-main: 18px; --fs-set: 16px; --fs-edit: 16px; 
     --bg: #e1f5fe; --btn: #0277bd; 
@@ -23,7 +26,9 @@
 * { box-sizing: border-box; }
 body, html { height: 100vh; margin: 0; display: flex; flex-direction: column; overflow: hidden; font-family: "Microsoft JhengHei", sans-serif; }
 
-/* 頂部導航 */
+/* ============================================================
+   2. 主頁面佈局
+   ============================================================ */
 .header-bar { 
     flex: 0 0 10%; background: #1a252f; display: flex; align-items: center; justify-content: space-between; 
     padding: 0 20px; position: relative; border-bottom: 5px solid var(--btn);
@@ -33,180 +38,122 @@ body, html { height: 100vh; margin: 0; display: flex; flex-direction: column; ov
 .nav-label { color: white; font-size: 1.5rem; font-weight: bold; }
 .nav-right { display: flex; gap: 6px; }
 
-/* 縮小按鈕 */
 .small-btn { padding: 4px 10px; font-size: 1.2rem; cursor: pointer; border-radius: 4px; border: 1px solid #ccc; background: #fff; min-width: 60px; }
 .small-btn:hover { background: #eee; }
 
-/* 主頁內容 */
 .main-content { flex: 0 0 85%; overflow-y: auto; padding: 25px; background: var(--bg); display: grid; gap: 20px; align-content: start; }
-.day-card { background: #fff; border: 3px solid var(--btn); border-radius: 10px; 1adding: 35px; height: var(--card-height, 500px);; display: flex; flex-direction: column; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+.day-card { background: #fff; border: 3px solid var(--btn); border-radius: 10px; padding: 20px; height: var(--card-height, 500px); display: flex; flex-direction: column; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+.day-card h3 { font-size: var(--fs-main); text-align: center; margin: 0 0 10px 0; border-bottom: 2px solid #eee; padding-bottom: 5px; color: var(--btn); }
+.day-card ul { list-style-type: none; flex: 1; overflow-y: auto; font-size: var(--fs-main); line-height: 1.4; margin: 10px 0 0 0; padding-left: 0.5rem; }
+.day-card li { margin-bottom: 5px; position: relative; padding-left: 1.2rem; }
+.day-card li::before { content: "•"; position: absolute; left: 0; color: var(--btn); }
 
+.footer-bar { flex: 0 0 5%; background: #f0f0f0; border-top: 1px solid #ccc; display: flex; align-items: center; justify-content: center; }
+.author-link { color: #666; text-decoration: none; font-size: 0.9rem; font-weight: bold; }
 
-.day-card h3 { font-size: calc(var(--fs-main) * 1); text-align: center; margin: 0 0 10px 0; border-bottom: 2px solid #eee; padding-bottom: 5px; color: var(--btn); }
-.day-card ul { list-style-position: outside; list-style-type: "• "; flex: 1; overflow-y: auto; font-size: var(--fs-main); line-height: 1.2;  margin: 0; margin: 10px 0 0 0;
-padding-left: 0.4rem; list-style-position: inside;}
-
-
-
-/* 設定視窗 */
-#settingsModal {font-size: var(--fs-set, 16px);
-}
-
-/* 設定視窗內的標籤 (Label) */
-#settingsModal .setting-item label {
-    font-size: var(--fs-set, 16px);
-}
-
-/* 設定視窗內的下拉選單與輸入框 */
-#settingsModal select, 
-#settingsModal input, 
-#settingsModal textarea {
-    font-size: var(--fs-set, 16px);
-    padding: 4px;
-}
-
-
-/* 彈窗樣式 */
+/* ============================================================
+   3. 彈窗通用樣式
+   ============================================================ */
 .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); }
 .modal-content { background: white; margin: 2% auto; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; }
 .size-80 { width: 95%; height: 95%; }
 .full { width: 96%; height: 96%; margin: 1% auto; }
 .no-padding-flex { padding: 0 !important; }
 
-.modal-header-zone { flex: 0 0 65px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background: #eee; border-bottom: 1px solid #ccc; }
+.modal-header-zone { flex: 0 0 65px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background: #eee; border-bottom: 1px solid #ccc; position: relative; }
 .modal-body-zone { flex: 1; padding: 20px; overflow-y: auto; }
+.modal-footer-zone { flex: 0 0 auto; display: flex; justify-content: flex-end; align-items: center; padding: 15px 20px; background: #f9f9f9; border-top: 1px solid #ccc; }
 
-.settings-five-cols { display: flex; gap: 15px; height: 100%; }
-.col-a, .col-b { flex: 3; min-width: 0;}
-.col-c, .col-d, .col-e { flex: 1; min-width: 0; display: flex; flex-direction: column;  font-size: var(--fs-set)}
-.settings-five-cols textarea { flex: 1; margin-top: 8px; font-size: var(--fs-set); padding: 10px; resize: none; border: 1px solid #ccc; }
-
-.reset-link { font-size: var(--fs-set, 16px); color: #0277bd; text-decoration: none; margin-left: 5px; cursor: pointer; }
-.reset-link:hover { text-decoration: underline; }
-
-/* 編修卡片 */
-.edit-grid-area { display: grid; gap: 15px; }
-.edit-card { border: 2px dashed var(--btn); padding: 10px; background: #fff; border-radius: 8px; height: 280px; display: flex; flex-direction: column; }
-
-
-.edit-header {
-    background: var(--btn);
-    color: white;
-    padding: 8px;
-    cursor: move;
-    border-radius: 4px;
-    display: flex;
-
-    align-items: center;
-    position: relative;
-    font-size: var(--fs-edit, 16px);
+/* 統一彈窗按鈕基礎 */
+.modal-header-zone button, .modal-footer-zone button { 
+    font-size: calc(var(--fs-set) * 0.9); padding: 8px 16px; min-width: 80px; cursor: pointer; border-radius: 6px; border: 1px solid #ccc; background: #fff;
 }
+.confirm-btn { background: var(--btn) !important; color: white !important; font-weight: bold; border: none !important; }
 
+/* ============================================================
+   4. 設定視窗 (Settings)
+   ============================================================ */
+.settings-five-cols { display: flex; gap: 15px; height: 100%; }
+.col-a, .col-b { flex: 3; min-width: 0; }
+.col-c, .col-d, .col-e { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: var(--fs-set); }
+.settings-five-cols textarea { flex: 1; margin-top: 8px; font-size: var(--fs-set); padding: 10px; resize: none; border: 1px solid #ccc; border-radius: 4px; }
+.s-row { display: flex; align-items: center; margin-bottom: 8px; font-size: var(--fs-set); }
+.s-row span { min-width: 130px; flex-shrink: 0; }
+.s-row select { width: 110px; height: calc(var(--fs-set) * 2); border-radius: 4px; font-size: var(--fs-set); }
+.reset-link { color: var(--btn); text-decoration: none; margin-left: 5px; cursor: pointer; }
+
+/* ============================================================
+   5. 編修管理視窗 (Edit)
+   ============================================================ */
+.edit-grid-area { display: grid; gap: 15px; }
+.edit-card { border: 2px dashed var(--btn); padding: 10px; background: #fff; border-radius: 8px; height: 300px; display: flex; flex-direction: column; }
+.edit-header { 
+    background: var(--btn); color: white; padding: 8px 12px; cursor: move; border-radius: 4px; 
+    display: flex; align-items: center; justify-content: flex-start; /* 標題靠左 */
+    position: relative; font-size: var(--fs-edit); 
+}
+.edit-header-title { font-weight: bold; margin-right: auto; }
+.edit-del-btn { position: absolute; right: 8px; cursor: pointer !important; font-size: 1.2rem; opacity: 0.8; z-index: 10; color: white; line-height: 1; }
+.edit-del-btn:hover { opacity: 1; color: #ffeb3b; }
 
 .task-box { background: #f1f1f1; border: 1px solid #ddd; margin-top: 5px; padding: 8px; cursor: grab; display: flex; justify-content: space-between; font-size: var(--fs-edit); border-radius: 4px; }
+.task-box span { cursor: pointer !important; padding-left: 10px; font-weight: bold; }
+.edit-title-text, .edit-center-controls { font-size: var(--fs-edit); font-weight: bold; }
 
-/* 標籤新增器 */
-.tag-row { display: flex; flex-wrap: wrap; gap: 8px; background: #f5f5f5; padding: 10px; border-radius: 5px; }
-.clickable-tag { width: 120px; height: 40px; line-height: 40px; text-align: center; border: 1px solid #999; background: #fff; cursor: pointer; border-radius: 4px; }
-.clickable-tag.active { background: var(--btn) !important; color: white; }
+/* 編修頂部按鈕 */
+#editModal .modal-header-zone button { font-size: var(--fs-edit); padding: 8px 16px; }
 
-.confirm-btn { background: var(--btn) !important; color: white !important; font-weight: bold; border: none !important; padding: 6px 15px; border-radius: 4px; cursor: pointer; }
-.footer-bar { flex: 0 0 5%; background: #f0f0f0; border-top: 1px solid #ccc; display: flex; align-items: center; justify-content: center; }
-.author-link { color: #666; text-decoration: none; font-size: 0.9rem; font-weight: bold; }
+/* 編修卡片內按鈕 */
+.edit-card button { 
+    font-size: calc(var(--fs-edit) * 0.9); padding: 5px 0; margin-top: 5px; cursor: pointer; 
+    border-radius: 4px; border: 1px solid var(--btn); background: #fff; color: var(--btn); transition: 0.2s;
+}
+.edit-card button:hover { background: var(--btn); color: #fff; }
 
-.s-row { 
-    display: flex; 
-    justify-content: flex-start;
-    align-items: center; 
-    margin-bottom: 6px; /* 行距 */
-    font-size: var(--fs-set); 
+/* ============================================================
+   6. 新增作業項目視窗 (Task Prompt)
+   ============================================================ */
+#taskPromptModal .modal-content { max-height: 90vh; display: flex; flex-direction: column; }
+#taskPromptModal .modal-header-zone span { font-size: calc(var(--fs-edit) * 1.2); font-weight: bold; }
+
+.prompt-row { display: flex; align-items: flex-start; margin-bottom: 15px; gap: 15px; }
+.prompt-label { flex: 0 0 100px; font-weight: bold; font-size: var(--fs-set); padding-top: 10px; color: var(--btn); text-align: right; }
+.tag-row { flex: 1; display: flex; flex-wrap: wrap; gap: 8px; background: #f5f5f5; padding: 10px; border-radius: 5px; max-height: 200px; overflow-y: auto; }
+
+.clickable-tag { 
+    width: auto; min-width: 40px; padding: 0 15px; height: 40px; line-height: 40px; text-align: center; 
+    border: 1px solid #999; background: #fff; cursor: pointer; border-radius: 4px; 
+    white-space: nowrap; font-size: var(--fs-edit); 
+}
+.clickable-tag:hover { background: #eee; }
+.clickable-tag.active { background: var(--btn) !important; color: white; border-color: var(--btn); }
+
+/* 底部 3/4 佈局設計 */
+.prompt-final-row { 
+    position: sticky; bottom: 0; background: white; padding: 20px 20px 10px 20px; 
+    border-top: 2px solid #eee; width: 100%; 
+}
+.final-input-container { display: flex; align-items: center; gap: 15px; width: 100%; }
+
+#taskFinalInput { 
+    flex: 0 0 75%; /* 佔據 3/4 */
+    height: 50px; font-size: 1.3rem; padding: 0 15px; border: 2px solid var(--btn); border-radius: 8px; 
 }
 
-.s-row span {
-    min-width: 130px; /* 固定標題寬度，讓右邊的選單能對齊整齊 */
-    flex-shrink: 0;   /* 防止標題被擠壓 */
+.prompt-btn-group { 
+    flex: 1; /* 佔據剩餘 1/4 */
+    display: flex; gap: 8px; justify-content: flex-end; 
 }
-
-.s-row select { 
-    width: 110px; 
-    height: calc(var(--fs-set) * 2); 
-    border-radius: 4px;
+.prompt-btn-group button { 
+    flex: 1; height: 50px; padding: 0 5px; white-space: nowrap; 
+    font-size: calc(var(--fs-set) * 0.9); cursor: pointer; border-radius: 6px; border: 1px solid #ccc; background: #fff;
 }
+.prompt-btn-group .confirm-btn { flex: 1.5; } /* 確定按鈕稍寬 */
+.prompt-btn-group .clear-btn:hover { background: #ffebee; color: #d32f2f; border-color: #d32f2f; }
 
-
-
-/* 統一設定視窗「右上」與「右下」所有按鈕的大小 */
-.modal-header-zone button, 
-.modal-footer-zone button {
-    font-size: calc(var(--fs-set, 16px)*0.9);/* 強制兩邊字體一樣 */
-    padding: 6px 15px ;            /* 強制兩邊內距一樣 */
-    height: auto; 
-    min-width: 80px;  
-                   
-}
-
-
-
-.modal-footer-zone {
-    flex: 0 0 auto;
-    display: flex;
-    justify-content: flex-end; /* 【關鍵】這會將內部的 btn-group-right 推到最右邊 */
-    align-items: center;
-    padding: 15px 20px;
-    background: #f9f9f9;
-    border-top: 1px solid #ccc;
-    width: 100%; /* 確保寬度百分之百 */
-}
-
-
-.edit-title-text {
-    /* 連動「設定字體」變數，並稍微放大 (1.2倍) */
-    font-size: var(--fs-edit, 16px);
-    font-weight: bold;
-    color: #333; /* 您可以根據主題調整顏色 */
-}
-
-
-
-
-/* 編修視窗中央控制區 (包含 顯示起點 文字) */
-.edit-center-controls {
-    /* 連結至編修字體變數 */
-    font-size: var(--fs-edit, 16px); 
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-
-/* 針對編修管理視窗頂部的按鈕群 */
-#editModal .modal-header-zone button {
-    /* 連結至「設定字體」，並稍微縮小一點點 (0.9倍) 避免擠成一團 */
-    font-size: calc(var(--fs-edit, 16px) * 0.9); 
-    padding: 6px 12px;
-    cursor: pointer;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-    background: #fff;
-    white-space: nowrap; /* 確保按鈕文字不換行 */
-}
-
-
-
-/* 日期標題上的 X 按鈕 */
-.edit-del-btn {
-    position: absolute;
-    right: 8px;
-    cursor: pointer !important; /* 強制變更為手指符號 */
-    font-weight: normal;
-    font-size: 1.1rem; /* 稍微加大一點更好點擊 */
-    opacity: 0.7;
-    transition: opacity 0.2s;
-    user-select: none; /* 防止點擊時選取到文字 */
-}
-
-.edit-del-btn:hover {
-    opacity: 1;
-    color: #ffc107; /* 滑鼠移上去可以變個顏色，視覺回饋更好 */
-}
+/* ============================================================
+   7. 其他美化
+   ============================================================ */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #aaa; }
