@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>教學清點小幫手 by Charles Nextime</title>
-    <link rel="stylesheet" href="style.css?ver=1.08">
+    <link rel="stylesheet" href="style.css?ver=1.08a">
     <style>
         .quick-select-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 15px; }
         .tag-btn { background: var(--primary); opacity: 0.8; color: white; padding: 6px 12px; border-radius: 15px; cursor: pointer; font-size: 0.9rem; border: none; transition: 0.2s; }
@@ -20,16 +20,29 @@
 
 <header>
     <div class="logo">教學清點小幫手 - 任務總覽</div>
-    <div class="nav-buttons">
+
+
+
+<div class="nav-buttons">
+    <div class="nav-group">
         <button class="nav-btn" onclick="exportData()">匯出</button>
         <button class="nav-btn" onclick="triggerImport()">匯入</button>
         <input type="file" id="importInput" style="display:none" accept=".json" onchange="importData(event)">
+    </div>
+
+    <div class="nav-group danger-zone">
         <button class="nav-btn" onclick="resetSystem()">重置</button>
+    </div>
+
+    <div class="nav-group">
         <button class="nav-btn" onclick="openModal('settingsModal')">設定</button>
-        <button class="nav-btn" onclick="openReportModal()">個人任務查詢</button>
+        <button class="nav-btn" onclick="openReportModal()">個人查詢</button>
         <button class="nav-btn" onclick="openTotalListModal()">總任務清單</button>
         <button class="nav-btn btn-primary" onclick="openAddModal()">新增任務</button>
     </div>
+</div>
+
+
 </header>
 
 <main id="assignmentContainer" class="main-layout"></main>
