@@ -2,9 +2,13 @@
 
 const DEFAULT_VALS = {
     preTasks: ["訂簽", "訂正", "簽名", "交", "發", "收"],
-    mainTasks: ["假日","國習", "生字", "圈詞", "數習", "作文", "國卷", "數卷", "閱心"],
-    postTasks: ["學習單", "通知單", "一頁", "兩頁", "一張"]
+    mainTasks: ["國習", "生字", "圈詞", "數習", "作文", "國卷", "數卷", "閱心","假日", "評量日", "親職教育日", "校外教學日", "運動會日"],
+    postTasks: ["學習單", "通知單", "一頁", "兩頁", "一張"],
+    writingMode: 'horizontal-tb',
+    displayMode: 'text',
+    bopoMap: "國:ㄍㄨㄛˊ\n習:ㄒㄧˊ\n生:ㄕㄥ\n字:ㄗˋ\n圈:ㄑㄩㄢ\n詞:ㄘˊ\n數:ㄕㄨˋ\n作:ㄗㄨㄛˋ\n文:ㄨㄣˊ\n卷:ㄐㄩㄢˋ\n閱:ㄩㄝˋ\n心:ㄒㄧㄣ\n假:ㄐㄧㄚˋ\n日:ㄖˋ\n評:ㄆㄧㄥˊ\n量:ㄌㄧㄤˊ\n親:ㄑㄧㄣ\n職:ㄓˊ\n教:ㄐㄧㄠˋ\n育:ㄩˋ\n校:ㄒㄧㄠˋ\n外:ㄨㄞˋ\n學:ㄒㄩㄝˊ\n運:ㄩㄣˋ\n動:ㄉㄨㄥˋ\n會:ㄏㄨㄟˋ\n學:ㄒㄩㄝˊ\n習:ㄒㄧˊ\n單:ㄉㄢ\n通:ㄊㄨㄥ\n知:ㄓ\n頁:ㄧㄝˋ\n一:ㄧ\n兩:ㄌㄧㄤˇ\n張:ㄓㄤ\n訂:ㄉㄧㄥˋ\n簽:ㄑㄧㄢ\n正:ㄓㄥˋ\n名:ㄇㄧㄥˊ\n交:ㄐㄧㄠ\n發:ㄈㄚ\n收:ㄕㄡ" 
 };
+
 
 let appData = {
     theme: 'theme-ocean', cols: 5, mainShowCount: 7, editCols: 7, editShowCount: 28,
@@ -47,6 +51,68 @@ function init() {
 }
 
 const themeChineseNames = { 'theme-ocean': '海洋', 'theme-forest': '森林', 'theme-sakura': '櫻花', 'theme-sunset': '夕陽', 'theme-lavender': '薰衣草', 'theme-lemon': '檸檬', 'theme-slate': '岩石', 'theme-mint': '薄荷', 'theme-rose': '玫瑰', 'theme-cocoa': '可可', 'theme-deepsea': '深海', 'theme-cream': '奶油', 'theme-grape': '葡萄', 'theme-silver': '銀白', 'theme-fire': '火焰' };
+
+
+function applyBopoTransform(text) {
+    if (appData.displayMode !== 'bopomofo') return text;
+    
+    const lines = (appData.bopoMap || "").split('\n');
+    const map = {};
+    lines.forEach(line => {
+        const [char, bopo] = line.split(':');
+        if (char && bopo) map[char.trim()] = bopo.trim();
+    });
+
+    const tones = ["ˊ", "ˇ", "ˋ", "˙"];
+    const isRTL = appData.direction === 'rtl';
+    const isVertical = appData.writingMode === 'vertical-rl';
+    const isBopomofoMode = appData.displayMode === 'bopomofo';
+
+    // 只在注音模式且 RTL 直書時反轉文字
+    if (isBopomofoMode && isRTL && isVertical) {
+        text = text.split('').reverse().join('');
+    }
+    
+    return text.split('').map(char => {
+        const bopo = map[char];
+        
+        if (!bopo) {
+            if (isVertical) {
+                return `<span class="plain-char">${char}</span>`;
+            }
+            return char;
+        }
+
+        if (isVertical) {
+            let tone = "";
+            let mainBopo = bopo;
+            const lastChar = bopo.slice(-1);
+            if (tones.includes(lastChar)) {
+                tone = lastChar;
+                mainBopo = bopo.slice(0, -1);
+            }
+
+            const bopoChars = mainBopo.split('').map(c => `<span>${c}</span>`).join('');
+            
+            // 注音模式下的 RTL 直書
+            if (isRTL && isBopomofoMode) {
+                return `<span class="bopo-vertical-item">
+                            <span class="bopo-chars">${bopoChars}</span>
+                            <span class="bopo-tone">${tone}</span>
+                        </span>`;
+            } else {
+                return `<span class="bopo-vertical-item">
+                            <span class="bopo-tone">${tone}</span>
+                            <span class="bopo-chars">${bopoChars}</span>
+                        </span>`;
+            }
+        }
+        
+        return bopo;
+    }).join('');
+}
+
+
 
 // 修改 performAutoDelete，使其回傳過濾後的陣列而不只是修改全域
 function performAutoDelete() {
@@ -93,7 +159,7 @@ function getCalculatedStartDate() {
 }
 
 
-function renderMain() {
+function renderMain(isManual = false) {
     document.body.className = appData.theme;
 
     const heightMap = { 'small': '240px', 'medium': '330px', 'large': '500px' };
@@ -106,10 +172,15 @@ function renderMain() {
     mb.style.gridTemplateColumns = `repeat(${appData.cols}, 1fr)`;
     mb.dir = appData.direction;
 
-// --- 核心修正：自動連動起點日期 ---
-    const calculatedStart = getCalculatedStartDate();
-    appData.mainStartDate = calculatedStart; 
-    document.getElementById('mainStartDatePicker').value = calculatedStart;
+// --- 修正點：只有在非手動調整時才自動計算起點 ---
+    if (!isManual) {
+        const calculatedStart = getCalculatedStartDate();
+        appData.mainStartDate = calculatedStart; 
+        document.getElementById('mainStartDatePicker').value = calculatedStart;
+    } else {
+        // 如果是手動選取的，確保 picker 顯示的是手動選的那天
+        document.getElementById('mainStartDatePicker').value = appData.mainStartDate;
+    }
 
     const filtered = appData.tasks.filter(t => {
         if(t.date < appData.mainStartDate) return false;
@@ -118,13 +189,27 @@ function renderMain() {
         return true;
     }).slice(0, appData.mainShowCount);
 
-    mb.innerHTML = filtered.map(item => `
-        <div class="day-card">
-            <h3>${item.date.split('-').slice(1).join('/')}(${item.day})</h3>
-            <ul>${item.list.map(t => `<li>${t}</li>`).join('')}</ul>
-        </div>
-    `).join('');
+mb.innerHTML = filtered.map(item => {
+        const isVertical = appData.writingMode === 'vertical-rl';
+        const listClass = isVertical ? 'writing-vertical' : '';
+        
+        return `
+            <div class="day-card">
+                <h3>${item.date.split('-').slice(1).join('/')}(${item.day})</h3>
+                <ul class="${listClass}">${item.list.map(t => 
+                    // 注意：這裡直接輸出 HTML，不需要另外處理文字對齊
+                    `<li>${applyBopoTransform(t)}</li>`
+                ).join('')}</ul>
+            </div>
+        `;
+    }).join('');
+
+    
+    // 應用方向
+    mb.dir = appData.direction;
 }
+    
+
 
 // 編修核心函數
 function openEdit() {
@@ -243,85 +328,6 @@ function addDayAtEnd() {
 
 
 
-function updateDateChainAndReorder(startIndex) {
-    let originalHolidays = new Set();
-    let pool = [];
-    // 紀錄原本資料的最末端日期
-    const originalLastDate = tempTasks.length > 0 ? tempTasks[tempTasks.length - 1].date : "";
-
-    // A. 提取資料
-    for (let i = 0; i < tempTasks.length; i++) {
-        const item = tempTasks[i];
-        const hasHoliday = item.list.some(t => t.includes("假日"));
-        if (hasHoliday) originalHolidays.add(item.date);
-
-        if (i >= startIndex) {
-            if (!hasHoliday) {
-                const normalTasks = item.list.filter(t => t && t.trim() !== "");
-                // 【修正點】改為放入整個陣列 (normalTasks)，如果是空的則放入 null 占位
-                pool.push(normalTasks.length > 0 ? normalTasks : null);
-            }
-            tempTasks[i].list = []; // 清空準備重新分配
-        }
-    }
-
-    // B. 重新校正日期與星期
-    for (let i = Math.max(0, startIndex); i < tempTasks.length; i++) {
-        if (i > 0) {
-            let prev = new Date(tempTasks[i-1].date);
-            prev.setDate(prev.getDate() + 1);
-            tempTasks[i].date = prev.toISOString().split('T')[0];
-            tempTasks[i].day = "日一二三四五六"[prev.getDay()];
-        }
-        
-        // 假日判定
-        const isNewDate = tempTasks[i].date > originalLastDate;
-        if (originalHolidays.has(tempTasks[i].date) || (isNewDate && (tempTasks[i].day === '六' || tempTasks[i].day === '日'))) {
-            tempTasks[i].list = ["假日"];
-        }
-    }
-
-    // C. 將作業池填回非假日的格子
-    let poolIdx = 0;
-    for (let i = startIndex; i < tempTasks.length; i++) {
-        if (tempTasks[i].list.some(t => t.includes("假日"))) continue;
-        
-        if (poolIdx < pool.length) {
-            const tasksForThisDay = pool[poolIdx];
-            // 【修正點】如果是陣列，則整捆填入
-            if (tasksForThisDay !== null) {
-                tempTasks[i].list = [...tasksForThisDay];
-            }
-            poolIdx++;
-        }
-    }
-
-    // D. 處理溢出區
-    while (poolIdx < pool.length) {
-        let last = tempTasks[tempTasks.length - 1];
-        let d = new Date(last.date);
-        d.setDate(d.getDate() + 1);
-        
-        let newDayDate = d.toISOString().split('T')[0];
-        let newDayWeek = "日一二三四五六"[d.getDay()];
-        let newList = [];
-        
-        if (newDayWeek === '六' || newDayWeek === '日') {
-            newList.push("假日");
-        } else {
-            const tasksForThisDay = pool[poolIdx];
-            if (tasksForThisDay !== null) newList = [...tasksForThisDay];
-            poolIdx++;
-        }
-        
-        tempTasks.push({
-            date: newDayDate,
-            day: newDayWeek,
-            list: newList
-        });
-    }
-}
-
 
 
 
@@ -376,12 +382,108 @@ function dropT(e, toMi, toTi) {
     renderEdit(); dragInfo = null;
 }
 
-// 關鍵字推移邏輯
+
+
+function updateDateChainAndReorder(startIndex) {
+    let pool = [];
+    // 紀錄原本所有「日」結尾的作業與其日期的對應關係
+    let lockedDays = {}; 
+    
+    // A. 提取資料：區分「固定項」與「待分配池」
+    for (let i = 0; i < tempTasks.length; i++) {
+        const item = tempTasks[i];
+        const holidayTask = item.list.find(t => t && t.endsWith("日"));
+
+        if (holidayTask) {
+            // 如果這天有「日」結尾作業，記錄這天的日期內容，不放進 pool
+            lockedDays[item.date] = holidayTask;
+        }
+
+        // 只有在操作起點之後的「普通作業」才需要重新分配
+        if (i >= startIndex) {
+            if (!holidayTask) {
+                const normalTasks = item.list.filter(t => t && t.trim() !== "");
+                pool.push(normalTasks.length > 0 ? normalTasks : null);
+            }
+            // 先清空，後面根據鎖定狀態或 pool 重新填入
+            tempTasks[i].list = [];
+        }
+    }
+
+    // B. 重新校正日期與星期，並填回「鎖定項」
+    for (let i = Math.max(0, startIndex); i < tempTasks.length; i++) {
+        if (i > 0) {
+            let prev = new Date(tempTasks[i-1].date);
+            prev.setDate(prev.getDate() + 1);
+            tempTasks[i].date = prev.toISOString().split('T')[0];
+            tempTasks[i].day = "日一二三四五六"[prev.getDay()];
+        }
+        
+        const currentDate = tempTasks[i].date;
+        const currentDay = tempTasks[i].day;
+
+        // 檢查此日期是否有原本鎖定的作業
+        if (lockedDays[currentDate]) {
+            tempTasks[i].list = [lockedDays[currentDate]];
+        } 
+        // 如果是新日期且為六日，且該處無鎖定，則補預設「假日」
+        else if ((currentDay === '六' || currentDay === '日') && tempTasks[i].list.length === 0) {
+            tempTasks[i].list = ["假日"];
+        }
+    }
+
+    // C. 將作業池填回「非鎖定」且「非假日」的格子
+    let poolIdx = 0;
+    for (let i = startIndex; i < tempTasks.length; i++) {
+        // 如果這格已經有「日」結尾的作業（包含原本鎖定的或剛補的假日），跳過不填入作業
+        if (tempTasks[i].list.some(t => t && t.endsWith("日"))) continue;
+        
+        if (poolIdx < pool.length) {
+            const tasksForThisDay = pool[poolIdx];
+            if (tasksForThisDay !== null) {
+                tempTasks[i].list = [...tasksForThisDay];
+            }
+            poolIdx++;
+        }
+    }
+
+    // D. 處理溢出區 (如果作業池還有剩，自動長出新日期)
+    while (poolIdx < pool.length) {
+        let last = tempTasks[tempTasks.length - 1];
+        let d = new Date(last.date);
+        d.setDate(d.getDate() + 1);
+        
+        let newDayDate = d.toISOString().split('T')[0];
+        let newDayWeek = "日一二三四五六"[d.getDay()];
+        let newList = [];
+        
+        // 檢查新日期是否剛好碰到原本記錄的鎖定日
+        if (lockedDays[newDayDate]) {
+            newList = [lockedDays[newDayDate]];
+        } else if (newDayWeek === '六' || newDayWeek === '日') {
+            newList = ["假日"];
+        } else {
+            const tasksForThisDay = pool[poolIdx];
+            if (tasksForThisDay !== null) newList = [...tasksForThisDay];
+            poolIdx++;
+        }
+        
+        tempTasks.push({
+            date: newDayDate,
+            day: newDayWeek,
+            list: newList
+        });
+    }
+}
+
+
+
+// 修改 executeFullShift 函數
 function executeFullShift(startIdx, taskName, keyword) {
     let currentCarrier = taskName; 
     for (let i = startIdx; i < tempTasks.length; i++) {
-        // 1. 遇到假日排除 (保持原有的判斷邏輯，但不再主動補假日)
-        if (tempTasks[i].list.some(t => t.includes("假日"))) continue;
+        // --- 修改點：遇到最後一個字為 "日" 的項目排除推移 ---
+        if (tempTasks[i].list.some(t => t && t.endsWith("日"))) continue;
 
         let list = tempTasks[i].list;
         let foundIdx = list.findIndex(t => t && t.includes(keyword));
@@ -405,7 +507,6 @@ function executeFullShift(startIdx, taskName, keyword) {
         let newDayWeek = "日一二三四五六"[lastDate.getDay()];
         let newList = [];
         
-        // 只有在此時（產生新日期時）才判斷六日並自動填入「假日」
         if (newDayWeek === '六' || newDayWeek === '日') {
             newList.push("假日");
         }
@@ -417,10 +518,10 @@ function executeFullShift(startIdx, taskName, keyword) {
         };
         
         tempTasks.push(newDay);
-        // 遞迴處理剩餘的作業
         executeFullShift(tempTasks.length - 1, currentCarrier, keyword);
     }
 }
+
 
 
 
@@ -472,6 +573,10 @@ function resetField(type) {
     if(type === 'pre') document.getElementById('preTasksText').value = DEFAULT_VALS.preTasks.join('\n');
     else if(type === 'main') document.getElementById('defaultTasksText').value = DEFAULT_VALS.mainTasks.join('\n');
     else if(type === 'post') document.getElementById('postTasksText').value = DEFAULT_VALS.postTasks.join('\n');
+    else if(type === 'bopo') {
+        document.getElementById('bopoMap').value = DEFAULT_VALS.bopoMap;
+    }
+    
 }
 
 function saveSettings() {
@@ -492,6 +597,11 @@ function saveSettings() {
     appData.postTasks = d.getElementById('postTasksText').value.split('\n').filter(x=>x.trim());
     appData.cardHeight = d.getElementById('cardHeightSelect').value;
     appData.startDayType = d.getElementById('startDayTypeSelect').value;
+    appData.writingMode = document.getElementById('writingModeSelect').value;
+    appData.displayMode = document.getElementById('displayModeSelect').value;
+    appData.bopoMap = document.getElementById('bopoMap').value;
+
+
     performAutoDelete();
     localStorage.setItem('homework_v2026', JSON.stringify(appData));
     renderMain(); closeModal('settingsModal');
@@ -516,6 +626,10 @@ function openSettings() {
     d.getElementById('cardHeightSelect').value = appData.cardHeight || 'large';
     d.getElementById('startDayTypeSelect').value = appData.startDayType || 'monday';
     d.getElementById('settingsModal').style.display = 'block';
+    document.getElementById('writingModeSelect').value = appData.writingMode || 'horizontal-tb';
+    document.getElementById('displayModeSelect').value = appData.displayMode || 'text';
+    d.getElementById('bopoMap').value = appData.bopoMap || DEFAULT_VALS.bopoMap;
+    
 }
 
 function saveEdit() { 
@@ -539,7 +653,15 @@ function saveEdit() {
 
 
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-function updateMainStartDate() { appData.mainStartDate = document.getElementById('mainStartDatePicker').value; renderMain(); }
+
+// 尋找 script.js 中的 updateMainStartDate 並修改如下
+function updateMainStartDate() { 
+    const selectedDate = document.getElementById('mainStartDatePicker').value;
+    appData.mainStartDate = selectedDate; 
+    // 強制執行渲染
+    renderMain(true); 
+}
+
 function resetApp() { if(confirm("完全重置資料？")) { localStorage.clear(); location.reload(); } }
 function exportJSON() {
     const blob = new Blob([JSON.stringify(appData, null, 2)], {type: 'application/json'});
