@@ -4,16 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>教學清點小幫手 by Charles Nextime</title>
-    <link rel="stylesheet" href="style.css?ver=1.08a">
+    <link rel="stylesheet" href="style.css?ver=1.08b">
     <style>
-        .quick-select-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 15px; }
-        .tag-btn { background: var(--primary); opacity: 0.8; color: white; padding: 6px 12px; border-radius: 15px; cursor: pointer; font-size: 0.9rem; border: none; transition: 0.2s; }
+        .quick-select-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 15px; 
+
+}
+        .tag-btn { background: var(--primary); opacity: 0.8; color: white; padding: 6px 
+
+12px; border-radius: 15px; cursor: pointer; font-size: 0.9rem; border: none; transition: 
+
+0.2s; }
         .tag-btn:hover { opacity: 1; transform: scale(1.05); }
-        .clickable-task { text-decoration: underline; cursor: pointer; color: var(--primary); font-weight: bold; }
+        .clickable-task { text-decoration: underline; cursor: pointer; color: var(--
+
+primary); font-weight: bold; }
         .clickable-task:hover { filter: brightness(0.8); }
-        .empty-hint { grid-column: 1 / -1; text-align: center; padding: 100px 20px; color: #888; font-size: 1.5rem; font-weight: bold; }
+        .empty-hint { grid-column: 1 / -1; text-align: center; padding: 100px 20px; 
+
+color: #888; font-size: 1.5rem; font-weight: bold; }
         /* 總名單全完成樣式 */
-        .all-done-msg { text-align: center; font-size: 1.8rem; color: #28a745; padding: 50px 0; font-weight: bold; }
+        .all-done-msg { text-align: center; font-size: 1.8rem; color: #28a745; padding: 
+
+50px 0; font-weight: bold; }
     </style>
 </head>
 <body data-theme="soft">
@@ -27,7 +39,9 @@
     <div class="nav-group">
         <button class="nav-btn" onclick="exportData()">匯出</button>
         <button class="nav-btn" onclick="triggerImport()">匯入</button>
-        <input type="file" id="importInput" style="display:none" accept=".json" onchange="importData(event)">
+        <input type="file" id="importInput" style="display:none" accept=".json" 
+
+onchange="importData(event)">
     </div>
 
     <div class="nav-group danger-zone">
@@ -58,40 +72,100 @@
             <button class="btn-confirm" onclick="saveSettings()">確定儲存</button>
         </div>
         <h2 class="settings-title">系統設定</h2>
-        <div class="settings-grid-container scroll-box" style="grid-template-columns: 1.5fr 1.5fr 1fr 1fr;">
+        <div class="settings-grid-container scroll-box" style="grid-template-columns: 
+
+1.5fr 1.5fr 1fr 1fr;">
             <div class="settings-column">
-                <div class="settings-row"><label>介面風格：<select id="themeSelect" class="select-short-width"><option value="soft">柔和藍</option><option value="tech">科技黑</option><option value="girl">粉嫩色</option><option value="forest">森林綠</option><option value="ocean">海洋藍</option><option value="sunset">夕陽橘</option><option value="lavender">薰衣草</option><option value="minimal">極簡灰</option><option value="sakura">櫻花粉</option><option value="coffee">咖啡棕</option><option value="mint">薄荷綠</option><option value="lemon">檸檬黃</option><option value="grape">葡萄紫</option><option value="chocolate">巧克力</option><option value="midnight">午夜藍</option></select></label></div>
-                <div class="settings-row"><label>主頁任務數：<select id="layoutSelect" class="select-short-width"></select></label></div>
-                <div class="settings-row"><label>座號每行：<select id="studentColsSelect" class="select-short-width"><option value="3">3 個</option><option value="4">4 個</option><option value="5">5 個</option><option value="6">6 個</option><option value="7">7 個</option><option value="8">8 個</option><option value="9">9 個</option><option value="10">10 個</option></select></label></div>
-                <div class="settings-row"><label>座號字體：<select id="studentFontSizeSelect" class="select-short-width"></select></label></div>
-                <div class="settings-row"><label>自動加日期：<input type="checkbox" id="autoDate" style="width:20px;height:20px;"></label></div>
-                <div class="settings-row"><label>任務標籤累加模式：<input type="checkbox" id="appendModeSetting" style="width:20px;height:20px;"></label></div>
+                <div class="settings-row"><label>介面風格：<select id="themeSelect" 
+
+class="select-short-width"><option value="soft">柔和藍</option><option value="tech">科技
+
+黑</option><option value="girl">粉嫩色</option><option value="forest">森林綠
+
+</option><option value="ocean">海洋藍</option><option value="sunset">夕陽橘
+
+</option><option value="lavender">薰衣草</option><option value="minimal">極簡灰
+
+</option><option value="sakura">櫻花粉</option><option value="coffee">咖啡棕
+
+</option><option value="mint">薄荷綠</option><option value="lemon">檸檬黃
+
+</option><option value="grape">葡萄紫</option><option value="chocolate">巧克力
+
+</option><option value="midnight">午夜藍</option></select></label></div>
+                <div class="settings-row"><label>主頁任務數：<select id="layoutSelect" 
+
+class="select-short-width"></select></label></div>
+                <div class="settings-row"><label>座號每行：<select 
+
+id="studentColsSelect" class="select-short-width"><option value="3">3 個</option><option 
+
+value="4">4 個</option><option value="5">5 個</option><option value="6">6 個
+
+</option><option value="7">7 個</option><option value="8">8 個</option><option 
+
+value="9">9 個</option><option value="10">10 個</option></select></label></div>
+                <div class="settings-row"><label>座號字體：<select 
+
+id="studentFontSizeSelect" class="select-short-width"></select></label></div>
+                <div class="settings-row"><label>自動加日期：<input type="checkbox" 
+
+id="autoDate" style="width:20px;height:20px;"></label></div>
+                <div class="settings-row"><label>任務標籤累加模式：<input 
+
+type="checkbox" id="appendModeSetting" style="width:20px;height:20px;"></label></div>
             </div>
             <div class="settings-column">
-                <div class="settings-row"><label>點座號視窗大小：<select id="sizeDetail" class="select-short-width size-sel"></select></label></div>
-                <div class="settings-row"><label>個人任務視窗大小：<select id="sizeReport" class="select-short-width size-sel"></select></label></div>
-                <div class="settings-row"><label>總清單視窗大小：<select id="sizeTotal" class="select-short-width size-sel"></select></label></div>
-                <div class="settings-row"><label>任務排序：<select id="sortOrderSelect" class="select-short-width"><option value="desc">新 → 舊</option><option value="asc">舊 → 新</option></select></label></div>
-                <div class="settings-row"><label>預設日期：<select id="dateOffsetSelect" class="select-short-width"></select></label></div>
-                <div class="settings-row"><button class="btn-danger btn-small" onclick="cleanFinishedAssignments()">🗑️ 清除已完成任務</button></div>
+                <div class="settings-row"><label>點座號視窗大小：<select id="sizeDetail" 
+
+class="select-short-width size-sel"></select></label></div>
+                <div class="settings-row"><label>個人任務視窗大小：<select 
+
+id="sizeReport" class="select-short-width size-sel"></select></label></div>
+                <div class="settings-row"><label>總清單視窗大小：<select id="sizeTotal" 
+
+class="select-short-width size-sel"></select></label></div>
+                <div class="settings-row"><label>任務排序：<select id="sortOrderSelect" 
+
+class="select-short-width"><option value="desc">新 → 舊</option><option value="asc">舊 
+
+→ 新</option></select></label></div>
+                <div class="settings-row"><label>預設日期：<select id="dateOffsetSelect" 
+
+class="select-short-width"></select></label></div>
+                <div class="settings-row"><button class="btn-danger btn-small" 
+
+onclick="cleanFinishedAssignments()">🗑️ 清除已完成任務</button></div>
             </div>
 
 
 
 <div class="settings-column">
-    <div style="display: flex; justify-content: flex-start; align-items: center; gap: 10px;">
+    <div style="display: flex; justify-content: flex-start; align-items: center; gap: 
+
+10px;">
         <label>快速任務標籤：</label>
-        <a href="javascript:void(0)" onclick="resetQuickTasks()" style="font-size: 1rem; color: var(--primary); text-decoration: none;">(重置)</a>
+        <a href="javascript:void(0)" onclick="resetQuickTasks()" style="font-size: 1rem; 
+
+color: var(--primary); text-decoration: none;">(重置)</a>
     </div>
-    <textarea id="quickTasksConfig" class="input-triple" style="flex:1; margin-top:5px;"></textarea>
+    <textarea id="quickTasksConfig" class="input-triple" style="flex:1; margin-
+
+top:5px;"></textarea>
 </div>
 
 <div class="settings-column">
-    <div style="display: flex; justify-content: flex-start; align-items: center; gap: 10px;">
+    <div style="display: flex; justify-content: flex-start; align-items: center; gap: 
+
+10px;">
         <label>全班座號或名稱：</label>
-        <a href="javascript:void(0)" onclick="resetStudentList()" style="font-size: 1rem; color: var(--primary); text-decoration: none;">(重置)</a>
+        <a href="javascript:void(0)" onclick="resetStudentList()" style="font-size: 
+
+1rem; color: var(--primary); text-decoration: none;">(重置)</a>
     </div>
-    <textarea id="studentListConfig" class="input-triple" style="flex:1; margin-top:5px;"></textarea>
+    <textarea id="studentListConfig" class="input-triple" style="flex:1; margin-
+
+top:5px;"></textarea>
 </div>
 
 
@@ -104,12 +178,18 @@
 <div id="addAssignmentModal" class="modal">
     <div class="modal-content" style="max-width: 500px;">
         <div class="modal-header-btns">
-            <button class="nav-btn" onclick="closeModal('addAssignmentModal')">取消</button>
+            <button class="nav-btn" onclick="closeModal('addAssignmentModal')">取消
+
+</button>
             <button class="btn-confirm" onclick="addAssignment()">確定</button>
         </div>
         <h2 style="margin-top:10px;">新增任務名稱</h2>
-        <div id="dateQuickSelect" class="quick-select-tags" style="margin-bottom: 10px;"></div>
-        <input type="text" id="assignmentNameInput" class="large-input" placeholder="輸入或點選標籤">
+        <div id="dateQuickSelect" class="quick-select-tags" style="margin-bottom: 
+
+10px;"></div>
+        <input type="text" id="assignmentNameInput" class="large-input" placeholder="輸
+
+入或點選標籤">
         <div class="quick-select-tags" id="quickTags"></div>
     </div>
 </div>
@@ -120,8 +200,12 @@
 <div id="detailModal" class="modal">
     <div class="modal-content modal-full dynamic-size" id="detailModalContent">
         <div class="modal-header-btns">
-            <button class="btn-danger" id="deleteBtn">刪除任務</button>
-            <button class="btn-confirm" onclick="closeModal('detailModal')">完成</button>
+            <button class="btn-danger" id="deleteBtn">刪除任務</button>　　　　　　　　
+
+　　　
+            <button class="btn-confirm" onclick="closeModal('detailModal')">完成
+
+</button>
         </div>
         <h2 id="detailTitle"></h2>
         <div id="studentGrid" class="student-grid scroll-box"></div>
@@ -130,10 +214,14 @@
 
 <div id="studentReportModal" class="modal">
     <div class="modal-content modal-full dynamic-size" id="reportModalContent">
-        <div class="modal-header-btns"><button class="nav-btn" onclick="closeModal('studentReportModal')">關閉</button></div>
+        <div class="modal-header-btns"><button class="nav-btn" onclick="closeModal
+
+('studentReportModal')">關閉</button></div>
         <div class="report-header-left">
             <h2>個人任務查詢</h2>
-            <select id="reportStudentSelect" class="select-short" onchange="generateStudentReport()"></select>
+            <select id="reportStudentSelect" class="select-short" 
+
+onchange="generateStudentReport()"></select>
         </div>
         <div id="reportResult" class="scroll-box"></div>
     </div>
@@ -151,7 +239,9 @@
 </div>
 
 <footer class="author-info">
-    <a href="https://w1798.github.io/web/" target="_blank" class="author-link">Completed by Charles Nextime with AI assistance, 20260119</a>
+    <a href="https://w1798.github.io/web/" target="_blank" class="author-link">Completed 
+
+by Charles Nextime with AI assistance, 20260119</a>
 </footer>
 
 <script src="script.js?ver=1.08"></script>
