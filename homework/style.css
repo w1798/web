@@ -100,7 +100,7 @@ width: 100%;       /* 讓它填滿 Grid 欄位 */
 left; }
 .day-card li::before { content: "•"; position: absolute; left: 0; color: var(--btn); }
 
-
+.footer-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; border-top: 1px solid #eee; padding: 2px 0; text-align: center; z-index: 1000; }
 
 /* ============================================================
    5. 彈窗與設定 (支援手機全螢幕)
