@@ -16,7 +16,7 @@
 </div>
     <div class="container">
         <h1>Puti-AI學生期末評語提示詞生成器 V8 加強版</h1>
-            <h1>★ 強力推薦：功能更強、操作更直觀的「<a href="https://w1798.github.io/web/evalprompt/" target="_blank">評語提詞自造佳</a>』</h1>
+            <h1>★ 強力推薦：功能更強、操作更直觀的「<a href="https://w1798.github.io/web/evalprompt/" target="_blank">評語提詞架構師</a>』</h1>
         <h2>貼切個別學生版(加強版功能：能編修類別、適性詞和提示詞，可存檔客制化)</h2>
 
         <div class="input-section">
@@ -126,9 +126,13 @@
 
         <footer>
             <p>屏東縣後庄國小黃朝榮老師作品</p>
-	    <a href="https://w1798.github.io/web/" target="_blank">
+	    <a href="https://nextime5.blogspot.com/" target="_blank">
             <p>加強版修改 by Charles Nextime</p> 
-	    </a></p>
+	    </a>
+<span id="busuanzi_container_page_pv">
+    本頁閱讀量 <span id="busuanzi_value_page_pv"></span> 次
+</span>
+</p>
             <p>免費分享，歡迎擴散推廣</p>
             <p>嚴禁商用與任何侵權、不尊重著作權的行為</p>
             <p>更多 Puti-AI 教學工具 <a href="https://padlet.com/clongwh/puti_ai_tools" target="_blank">https://padlet.com/clongwh/puti_ai_tools</a></p>
@@ -136,5 +140,57 @@
     </div>
     <script src="script.js"></script>
 <button id="scrollToTop" title="回到頂部">↑</button>
+
+
+
+<style>
+#busuanzi_container_page_pv {
+    color: rgba(255, 255, 255, 0.7); /* 讓顏色跟作者資訊一致 */
+    font-size: 0.9rem;
+    margin-left: 15px; /* 與左邊文字隔開 */
+    border-left: 1px solid rgba(128, 128, 128, 0.5) /* 加一條細細的分隔線 */
+    padding-left: 15px;
+}
+
+#busuanzi_container_page_pv {
+    color: #0984e3; 
+    font-weight: bold;
+}
+</style>
+
+<script>
+    (function() {
+        const primary = "https://events.vercount.one/js";
+        const fallback = "https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js";
+        let isSwitched = false;
+
+        function load(src, isBackup = false) {
+            if (isSwitched && !isBackup) return; // 避免重複觸發
+            
+            const script = document.createElement('script');
+            script.src = src;
+            script.async = true;
+
+            // 觸發備援的機制
+            const triggerFallback = () => {
+                if (!isSwitched) {
+                    isSwitched = true;
+                    console.warn("切換至備援計數器...");
+                    load(fallback, true);
+                }
+            };
+
+            script.onerror = triggerFallback; // 載入失敗時
+            const timer = setTimeout(triggerFallback, 3000); // 3秒沒反應時
+            script.onload = () => clearTimeout(timer); // 成功則取消計時器
+
+            document.head.appendChild(script);
+        }
+
+        load(primary);
+    })();
+</script>
+
+
 </body>
 </html>
