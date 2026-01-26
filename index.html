@@ -2,43 +2,6 @@
 <html lang="zh-TW">
 <head>
 
-<script>
-    (function() {
-        const primary = "https://events.vercount.one/js";
-        const fallback = "https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js";
-        let isSwitched = false;
-
-        function load(src, isBackup = false) {
-            if (isSwitched && !isBackup) return; // 避免重複觸發
-            
-            const script = document.createElement('script');
-            script.src = src;
-            script.async = true;
-
-            // 觸發備援的機制
-            const triggerFallback = () => {
-                if (!isSwitched) {
-                    isSwitched = true;
-                    console.warn("切換至備援計數器...");
-                    load(fallback, true);
-                }
-            };
-
-            script.onerror = triggerFallback; // 載入失敗時
-            const timer = setTimeout(triggerFallback, 3000); // 3秒沒反應時
-            script.onload = () => clearTimeout(timer); // 成功則取消計時器
-
-            document.head.appendChild(script);
-        }
-
-        load(primary);
-    })();
-</script>
-
-
-
-
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Charles Nextime 的網頁程式</title>
@@ -153,18 +116,7 @@ body {
         }
 
 
-#busuanzi_container_page_pv {
-    color: rgba(255, 255, 255, 0.7); /* 讓顏色跟作者資訊一致 */
-    font-size: 0.9rem;
-    margin-left: 15px; /* 與左邊文字隔開 */
-    border-left: 1px solid rgba(0, 0, 0, 0.15); /* 加一條細細的分隔線 */
-    padding-left: 15px;
-}
 
-#busuanzi_container_page_pv {
-    color: #0984e3;
-    font-weight: bold;
-}
 
     </style>
 </head>
@@ -214,5 +166,53 @@ body {
         
         renderLinks();
     </script>
+
+   <style>
+#busuanzi_container_page_pv {
+    color: rgba(255, 255, 255, 0.7); /* 讓顏色跟作者資訊一致 */
+    font-size: 0.9rem;
+    margin-left: 15px; /* 與左邊文字隔開 */
+    border-left: 1px solid rgba(0, 0, 0, 0.15); /* 加一條細細的分隔線 */
+    padding-left: 15px;
+}
+
+#busuanzi_container_page_pv {
+    color: #0984e3;
+    font-weight: bold;
+}
+   </style>
+
+<script>
+    (function() {
+        const primary = "https://events.vercount.one/js";
+        const fallback = "https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js";
+        let isSwitched = false;
+
+        function load(src, isBackup = false) {
+            if (isSwitched && !isBackup) return; // 避免重複觸發
+            
+            const script = document.createElement('script');
+            script.src = src;
+            script.async = true;
+
+            // 觸發備援的機制
+            const triggerFallback = () => {
+                if (!isSwitched) {
+                    isSwitched = true;
+                    console.warn("切換至備援計數器...");
+                    load(fallback, true);
+                }
+            };
+
+            script.onerror = triggerFallback; // 載入失敗時
+            const timer = setTimeout(triggerFallback, 3000); // 3秒沒反應時
+            script.onload = () => clearTimeout(timer); // 成功則取消計時器
+
+            document.head.appendChild(script);
+        }
+
+        load(primary);
+    })();
+</script>
 </body>
 </html>
