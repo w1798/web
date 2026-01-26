@@ -12,8 +12,3 @@
 
 ★ 專業JSON編輯器
 
-
-    <div align="center">
-        <img alt="Visitor Stats" 
-            src="https://widgetbite.com/stats/w1798"/>  
-    </div>
