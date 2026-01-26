@@ -2,20 +2,32 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>專業JSON編輯器 by Charles Nextime</title>
+    <title>專業JSON編輯器 be Charles Nextime</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
+        /* 核心置底關鍵：讓 body 變為 flex 容器 */
+        body { 
+            display: flex; 
+            flex-direction: column; 
+            min-height: 100vh; 
+        }
+        /* 讓內容區自動撐開，填滿剩餘空間 */
+        main { flex: 1; }
+        
         .drag-handle { cursor: grab; }
         .drag-handle:active { cursor: grabbing; }
         .ghost { border: 2px dashed #6366f1; background: #f5f3ff; opacity: 0.5; }
         textarea { resize: vertical; min-height: 40px; }
     </style>
 </head>
-<body class="bg-slate-100 min-h-screen pb-20 font-sans text-slate-900">
+<body class="bg-slate-100 font-sans text-slate-900">
 
     <nav class="bg-slate-900 text-white p-4 sticky top-0 z-50 shadow-xl flex justify-between items-center">
-        <h1 class="font-bold text-indigo-400 flex items-center gap-2">📂 專業JSON編輯器 <span id="fileType" class="text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-400 font-normal">等待匯入</span></h1>
+        <h1 class="font-bold text-indigo-400 flex items-center gap-2">
+            💎 專業JSON編輯器 
+            <span id="fileType" class="text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-400 font-normal ml-2">等待匯入</span>
+        </h1>
         <div class="flex gap-3">
             <input type="file" id="fileInput" accept=".json" class="hidden">
             <button onclick="document.getElementById('fileInput').click()" class="bg-slate-700 hover:bg-slate-600 px-5 py-2 rounded-lg text-sm transition">匯入檔案</button>
@@ -23,11 +35,24 @@
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto p-6" id="mainCanvas">
+    <main class="max-w-7xl mx-auto p-6 w-full" id="mainCanvas">
         <div class="text-center py-32 text-slate-400 border-4 border-dashed rounded-3xl bg-white/50 border-slate-200">
             請點擊「匯入檔案」按鈕開始編輯。
         </div>
     </main>
+
+    <footer class="footer-bar flex flex-col justify-center items-center p-0 bg-slate-900 border-t border-slate-800 gap-0">
+        <div class="author-info">
+            <a href="https://w1798.github.io/web/" target="_blank" class="author-link text-slate-400 hover:text-indigo-400 text-sm transition">
+                Completed by Charles Nextime with AI assistance, 20260126
+            </a>
+
+
+            <span id="busuanzi_container_page_pv">
+                本頁閱讀量 <span id="busuanzi_value_page_pv"></span> 次
+            </span>
+        </div>
+    </footer>
 
     <script>
         let rawData = {};
@@ -54,7 +79,6 @@
                 const data = rawData[key];
                 const section = document.createElement('section');
                 section.className = "mb-10";
-                // 使用 dataset 存儲原始的 Key，確保匯出時抓得到
                 section.dataset.sectionKey = key;
                 section.innerHTML = `
                     <div class="flex items-center gap-3 mb-4">
@@ -145,22 +169,19 @@
             sections.forEach(sec => {
                 const sectionKey = sec.dataset.sectionKey;
                 const container = sec.querySelector('.module-container');
+                if(!container) return;
                 const cardIds = Array.from(container.children).map(c => c.dataset.id);
                 
-                // 檢查原始資料中這一項是 陣列 還是 物件
                 const originalData = rawData[sectionKey];
 
                 if (Array.isArray(originalData)) {
-                    // 按照卡片新順序重新排列陣列
                     finalObj[sectionKey] = cardIds.map(id => originalData[id]);
                 } else if (typeof originalData === 'object' && originalData !== null) {
-                    // 按照卡片新順序重新組裝物件
                     finalObj[sectionKey] = {};
                     cardIds.forEach(id => {
                         finalObj[sectionKey][id] = originalData[id];
                     });
                 } else {
-                    // 處理最外層的單一屬性 (Root)
                     cardIds.forEach(id => {
                         finalObj[id] = rawData[id];
                     });
@@ -170,19 +191,62 @@
             const blob = new Blob([JSON.stringify(finalObj, null, 2)], {type: 'application/json'});
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = `fixed_export_${Date.now()}.json`;
+            a.download = `JSON_export_${Date.now()}.json`;
             a.click();
         }
     </script>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+<style>
+#busuanzi_container_page_pv {
+    color: rgba(255, 255, 255, 0.7); /* 讓顏色跟作者資訊一致 */
+    font-size: 0.9rem;
+    margin-left: 15px; /* 與左邊文字隔開 */
+    border-left: 1px solid rgba(128, 128, 128, 0.5) /* 加一條細細的分隔線 */
+    padding-left: 15px;
+}
+
+#busuanzi_container_page_pv {
+    color: #0984e3; 
+    font-weight: bold;
+}
+</style>
+
+<script>
+    (function() {
+        const primary = "https://events.vercount.one/js";
+        const fallback = "https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js";
+        let isSwitched = false;
+
+        function load(src, isBackup = false) {
+            if (isSwitched && !isBackup) return; // 避免重複觸發
+            
+            const script = document.createElement('script');
+            script.src = src;
+            script.async = true;
+
+            // 觸發備援的機制
+            const triggerFallback = () => {
+                if (!isSwitched) {
+                    isSwitched = true;
+                    console.warn("切換至備援計數器...");
+                    load(fallback, true);
+                }
+            };
+
+            script.onerror = triggerFallback; // 載入失敗時
+            const timer = setTimeout(triggerFallback, 3000); // 3秒沒反應時
+            script.onload = () => clearTimeout(timer); // 成功則取消計時器
+
+            document.head.appendChild(script);
+        }
+
+        load(primary);
+    })();
+</script>
+
+
 </body>
-
-<footer class="footer-bar flex justify-center p-3 bg-slate-900 border-t border-slate-800">
-        <div class="author-info">
-            <a href="https://w1798.github.io/web/" target="_blank" class="author-link text-slate-400 hover:text-indigo-400 text-sm transition">
-                Completed by Charles Nextime with AI assistance, 20260126
-            </a>
-        </div>
-    </footer>
-
-
 </html>
