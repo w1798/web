@@ -12,3 +12,4 @@
 
 ★ 專業JSON編輯器
 
+![Visitor Count](https://komarev.com/ghpvc/?username=w1798)
