@@ -253,7 +253,7 @@ by Charles Nextime with AI assistance, 20260119</a>
 
 <style>
 #busuanzi_container_page_pv {
-    color: #0984e3; 
+    color: #888;
     font-size: 0.9rem;
     margin-left: 15px; /* 與左邊文字隔開 */
     border-left: 1px solid rgba(128, 128, 128, 0.5); /* 加一條細細的分隔線 */
@@ -261,43 +261,12 @@ by Charles Nextime with AI assistance, 20260119</a>
 }
 
 #busuanzi_value_page_pv {
-    color: #0984e3; 
+    color: #00b894;
     font-weight: bold;
 }
 </style>
 
-<script>
-    (function() {
-        const primary = "https://events.vercount.one/js";
-        const fallback = "https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js";
-        let isSwitched = false;
-
-        function load(src, isBackup = false) {
-            if (isSwitched && !isBackup) return; // 避免重複觸發
-            
-            const script = document.createElement('script');
-            script.src = src;
-            script.async = true;
-
-            // 觸發備援的機制
-            const triggerFallback = () => {
-                if (!isSwitched) {
-                    isSwitched = true;
-                    console.warn("切換至備援計數器...");
-                    load(fallback, true);
-                }
-            };
-
-            script.onerror = triggerFallback; // 載入失敗時
-            const timer = setTimeout(triggerFallback, 3000); // 3秒沒反應時
-            script.onload = () => clearTimeout(timer); // 成功則取消計時器
-
-            document.head.appendChild(script);
-        }
-
-        load(primary);
-    })();
-</script>
+<script defer src="https://events.vercount.one/js"></script>
 
 </body>
 </html>
