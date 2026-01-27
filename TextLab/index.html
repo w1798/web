@@ -30,7 +30,6 @@
             border-bottom: 2px solid var(--border);
         }
 
-        /* 第一層：標題與按鈕 */
         .top-bar {
             display: flex;
             align-items: center;
@@ -41,7 +40,6 @@
         .brand { font-weight: 900; font-size: 1.8rem; color: var(--primary); white-space: nowrap; }
         .btn-group { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; }
 
-        /* 第二層：執行區（輸入框） */
         .exec-zone {
             display: flex;
             flex-wrap: wrap;
@@ -83,7 +81,8 @@
         .toolbar-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; font-size: 16px; }
 
         footer { height: 35px; display: flex; justify-content: center; align-items: center; background: var(--card-bg); border-top: 1px solid var(--border); font-size: 14px; }
-        #busuanzi_container_page_pv { margin-left: 15px; color: rgba(255, 255, 255, 0.6); }
+        #busuanzi_container_page_pv { margin-left: 15px; color: #0984e3; border-left: 1px solid rgba(128,128,128,0.5); padding-left: 15px; }
+        #busuanzi_value_page_pv { font-weight: bold; }
 
         @media (max-width: 1000px) {
             header { height: auto; overflow-y: auto; }
@@ -113,7 +112,7 @@
                 <button class="secondary" onclick="process('upper')">全大寫</button>
                 <button class="secondary" onclick="process('lower')">全小寫</button>
                 <button class="secondary" onclick="process('findDup')">找重複</button>
-                　　　<button class="red" onclick="undo()">⟲ 復原</button>
+
             </div>
         </div>
         
@@ -124,8 +123,15 @@
             <div class="tool-item">首加 <input type="text" id="prefix" style="width:40px"> 尾加 <input type="text" id="suffix" style="width:40px"> <button onclick="process('addEdge')">執行</button></div>
             <div class="tool-item">刪除字元 <input type="text" id="delChar" style="width:40px"> <button onclick="process('delete')">執行</button></div>
             <div class="tool-item">含有 <input type="text" id="filterText" style="width:40px">行 <button onclick="process('keepLine')">保留</button> <button onclick="process('delLine')">刪除</button></div>
+            <div class="tool-item">
+                頭<select id="headCount"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select>
+                尾<select id="tailCount"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select>
+                <button onclick="process('sliceKeep')">保留</button>
+                <button onclick="process('sliceDel')">刪除</button>
+            </div>
             <div class="tool-item">編號 <select id="numPad"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select> <button onclick="process('autoNum')">執行</button></div>
-            　　　<button class="secondary" style="background:#dc2626" onclick="resetTools()">重置</button>
+            <button class="secondary" style="background:#dc2626" onclick="resetTools()">重置設定</button>
+            <button class="red" onclick="undo()">⟲ 復原更改</button>
         </div>
     </header>
 
@@ -151,7 +157,7 @@
     </main>
 
     <footer>
-        <a href="https://w1798.github.io/web/" target="_blank" style="color:var(--text)">Completed by Charles Nextime with AI assistance, 2026</a>
+        <a href="https://w1798.github.io/web/" target="_blank" style="color:var(--text)">Completed by Charles Nextime with AI assistance, 20260127</a>
         <span id="busuanzi_container_page_pv">本頁閱讀量 <span id="busuanzi_value_page_pv"></span> 次</span>
     </footer>
 </div>
@@ -174,6 +180,8 @@
         document.getElementById('suffix').value = '';
         document.getElementById('regFind').value = '';
         document.getElementById('regRep').value = '';
+        document.getElementById('headCount').value = '0';
+        document.getElementById('tailCount').value = '0';
     }
 
     function updateStats() {
@@ -230,6 +238,23 @@
             case 'autoNum':
                 const pad = parseInt(document.getElementById('numPad').value);
                 text = lines.map((l, i) => (i + 1).toString().padStart(pad, '0') + l).join('\n'); break;
+            case 'sliceKeep':
+                const hK = parseInt(document.getElementById('headCount').value);
+                const tK = parseInt(document.getElementById('tailCount').value);
+                text = lines.map(l => {
+                    let head = hK > 0 ? l.substring(0, hK) : "";
+                    let tail = tK > 0 ? l.substring(l.length - tK) : "";
+                    return head + tail;
+                }).join('\n');
+                break;
+            case 'sliceDel':
+                const hD = parseInt(document.getElementById('headCount').value);
+                const tD = parseInt(document.getElementById('tailCount').value);
+                text = lines.map(l => {
+                    // 從索引 hD 開始切到倒數第 tD 位
+                    return l.substring(hD, l.length - tD);
+                }).join('\n');
+                break;
             case 'regex': 
                 try {
                     const re = new RegExp(document.getElementById('regFind').value, 'g');
@@ -247,21 +272,6 @@
     }
 </script>
 
-
-<style>
-#busuanzi_container_page_pv {
-    color: #0984e3; 
-    font-size: 0.9rem;
-    margin-left: 15px; /* 與左邊文字隔開 */
-    border-left: 1px solid rgba(128, 128, 128, 0.5); /* 加一條細細的分隔線 */
-    padding-left: 15px;
-}
-
-#busuanzi_value_page_pv {
-    color: #0984e3; 
-    font-weight: bold;
-}
-</style>
 
 <script>
     (function() {
