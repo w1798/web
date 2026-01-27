@@ -268,16 +268,30 @@
             fetchStats(filteredData);
         }
 
-        function fetchStats(dataList) {
-            dataList.forEach(item => {
+
+        // 使用 async/await 讓請求乖乖排隊
+        async function fetchStats(dataList) {
+            for (const item of dataList) {
                 const el = document.getElementById(`count-${item.id}`);
-                // 移除 url.includes('github.io') 的限制，讓所有連結都去抓取
-                fetch(`https://events.vercount.one/log?url=${item.url}`)
-                    .then(res => res.json())
-                    .then(d => { if(el) el.innerText = d.page_pv || 0; })
-                    .catch(() => { if(el) el.innerText = '-'; });
-            });
+                if (!el) continue;
+        
+                try {
+                    // 每抓一個網址，休息 0.15 秒，避免被 Vercount 阻擋
+                    await new Promise(resolve => setTimeout(resolve, 100)); 
+                    
+                    const response = await fetch(`https://events.vercount.one/log?url=${item.url}`);
+                    const data = await response.json();
+                    
+                    // 確保有抓到數值才更新，若回傳為 0 則顯示實際數值
+                    const num = data.page_pv !== undefined ? data.page_pv : 0;
+                    el.innerText = num.toLocaleString();
+                } catch (error) {
+                    console.error('抓取失敗:', item.id, error);
+                    el.innerText = '-';
+                }
+            }
         }
+
 
         function filterLinks(category, element) {
             if (currentCategory === category) return;
