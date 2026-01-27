@@ -268,14 +268,11 @@
         function fetchStats(dataList) {
             dataList.forEach(item => {
                 const el = document.getElementById(`count-${item.id}`);
-                if (item.url.includes('github.io')) {
-                    fetch(`https://events.vercount.one/log?url=${item.url}`)
-                        .then(res => res.json())
-                        .then(d => { if(el) el.innerText = d.page_pv || 0; })
-                        .catch(() => { if(el) el.innerText = '-'; });
-                } else {
-                    if(el) el.innerText = 'N/A';
-                }
+                // 移除 url.includes('github.io') 的限制，讓所有連結都去抓取
+                fetch(`https://events.vercount.one/log?url=${item.url}`)
+                    .then(res => res.json())
+                    .then(d => { if(el) el.innerText = d.page_pv || 0; })
+                    .catch(() => { if(el) el.innerText = '-'; });
             });
         }
 
