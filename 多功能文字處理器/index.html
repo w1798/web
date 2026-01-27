@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多功能文字處理器 by Charles Nextime</title>
+    <style>
+        :root {
+            --primary: #818cf8;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f1f5f9;
+            --border: #334155;
+            --accent: #22c55e;
+            --danger: #e11d48;
+        }
+
+        body, html {
+            margin: 0; padding: 0; height: 100%;
+            font-family: 'Inter', 'Microsoft JhengHei', sans-serif;
+            background-color: var(--bg); color: var(--text);
+            overflow: hidden;
+        }
+
+        .container { display: flex; flex-direction: column; height: 100vh; }
+
+        header {
+            padding: 12px 20px;
+            background: var(--card-bg);
+            border-bottom: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .brand { font-weight: 900; font-size: 1.5rem; color: var(--primary); min-width: 140px; line-height: 1.1; }
+
+        /* 左側執行區 */
+        .exec-zone { display: flex; flex-direction: column; gap: 8px; min-width: 350px; }
+        .tool-row { display: flex; align-items: center; gap: 8px; }
+
+        /* 右側按鈕區 */
+        .buttons-zone {
+            flex: 1;
+            display: flex;
+            flex-direction: column; /* 改為兩行排列 */
+            gap: 8px;
+            padding-left: 15px;
+            border-left: 2px solid var(--border);
+        }
+
+        .btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+        .tool-item { 
+            display: flex; align-items: center; gap: 5px; 
+            background: var(--bg); padding: 5px 8px; 
+            border-radius: 6px; border: 1px solid var(--border); 
+            font-size: 15px; 
+        }
+        
+        /* 輸入框限制約2個字元寬度 */
+        .tool-item input { 
+            background: #000; color: var(--primary); 
+            border: 1px solid var(--border); padding: 3px; 
+            width: 35px; border-radius: 4px; outline: none; font-size: 15px;
+            text-align: center;
+        }
+        
+        button {
+            padding: 6px 14px; cursor: pointer; background: var(--primary); color: white;
+            border: none; border-radius: 6px; font-size: 16px; /* 字體加大 */
+            font-weight: 600; transition: 0.2s;
+            white-space: nowrap;
+        }
+        button:hover { filter: brightness(1.2); transform: translateY(-1px); }
+        button.secondary { background: #475569; }
+        button.green { background: var(--accent); }
+        button.red { background: var(--danger); }
+
+        /* 編輯區 */
+        main { flex: 1; display: flex; padding: 15px; gap: 15px; box-sizing: border-box; min-height: 0; }
+        .editor-box { flex: 1; display: flex; flex-direction: column; }
+        textarea {
+            flex: 1; padding: 18px; border: 1px solid var(--border); border-radius: 12px;
+            resize: none; font-size: 18px; line-height: 1.6; outline: none;
+            background: #000; color: #adbac7; font-family: 'Consolas', monospace;
+        }
+        .toolbar-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; font-size: 15px; }
+
+        footer { height: 35px; display: flex; justify-content: center; align-items: center; background: var(--card-bg); border-top: 1px solid var(--border); }
+        footer a { text-decoration: none; color: var(--text); font-size: 12px; opacity: 0.6; }
+
+        @media (max-width: 1200px) {
+            header { flex-direction: column; align-items: flex-start; }
+            .exec-zone { min-width: 100%; }
+            .buttons-zone { border-left: none; padding-left: 0; border-top: 2px solid var(--border); padding-top: 10px; }
+            main { min-height: 600px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="brand">多功能<br>文字處理器</div>
+        
+        <div class="exec-zone">
+            <div class="tool-row">
+                <div class="tool-item">以 <input type="text" id="joinChar" placeholder=" "> 串接 <button onclick="process('join')">執行</button></div>
+                <div class="tool-item">以 <input type="text" id="splitChar" value=","> 分割 <button onclick="process('split')">執行</button></div>
+            </div>
+            <div class="tool-row">
+                <div class="tool-item">刪除 <input type="text" id="delChar"> <button onclick="process('delete')">執行</button></div>
+                <div class="tool-item">Regex <input type="text" id="regFind" placeholder="找"> 換 <input type="text" id="regRep"> <button onclick="process('regex')">執行</button></div>
+            </div>
+        </div>
+
+        <div class="buttons-zone">
+            <div class="btn-row">
+                <button class="secondary" onclick="process('indent')">增加縮排</button>
+                <button class="secondary" onclick="process('outdent')">減少縮排</button>
+                <button class="secondary" onclick="process('noEng')">去英文</button>
+                <button class="secondary" onclick="process('noNum')">去數字</button>
+                <button class="secondary" onclick="process('noSym')">去符號</button>
+                <button class="secondary" onclick="process('noEmptyLine')">去空白行</button>
+                <button class="secondary" onclick="process('addEmptyLine')">加空白行</button>
+            </div>
+            <div class="btn-row">
+                <button class="secondary" onclick="process('trimSpace')">去頭尾空格</button>
+                <button class="secondary" onclick="process('upper')">全大寫</button>
+                <button class="secondary" onclick="process('lower')">全小寫</button>
+                <button class="secondary" onclick="process('capitalize')">首字大寫</button>
+                <button class="green" onclick="process('findDup')">🔍 找重複</button>
+                <button class="red" onclick="undo()">⟲ 復原</button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="editor-box">
+            <div class="toolbar-top">
+                <span>原始資料 <small id="statIn"></small></span>
+                <div>
+                    <button class="secondary" onclick="pasteIn()">貼上</button>
+                    <button class="secondary" onclick="clearIn()">清空</button>
+                </div>
+            </div>
+            <textarea id="inputArea" oninput="updateStats()" placeholder="貼上原始資料..."></textarea>
+        </div>
+        <div class="editor-box">
+            <div class="toolbar-top">
+                <span>處理結果 <small id="statOut"></small></span>
+                <div>
+                    <button class="green" onclick="copyOut()">一鍵複製 Copy</button>
+                    <button class="secondary" onclick="clearOut()">清空</button>
+                    <button class="green" onclick="downloadTxt()">📥 下載 .txt</button>
+                </div>
+            </div>
+            <textarea id="outputArea" placeholder="累加運算結果..."></textarea>
+        </div>
+    </main>
+
+    <footer>
+        <a href="https://w1798.github.io/web/" target="_blank">
+            Completed by Charles Nextime with AI assistance, 20260127
+        </a>
+<span id="busuanzi_container_page_pv">
+    本頁閱讀量 <span id="busuanzi_value_page_pv"></span> 次
+</span>
+
+    </footer>
+</div>
+
+<script>
+    let history = [];
+    const input = document.getElementById('inputArea');
+    const output = document.getElementById('outputArea');
+
+    function saveHistory() {
+        history.push(output.value);
+        if (history.length > 30) history.shift();
+    }
+
+    function undo() {
+        if (history.length > 0) output.value = history.pop();
+        updateStats();
+    }
+
+    function updateStats() {
+        document.getElementById('statIn').innerText = `| 字: ${input.value.length} 行: ${input.value.split('\n').filter(s => s).length}`;
+        document.getElementById('statOut').innerText = `| 字: ${output.value.length} 行: ${output.value.split('\n').filter(s => s).length}`;
+    }
+
+    async function pasteIn() {
+        try {
+            const text = await navigator.clipboard.readText();
+            input.value = text;
+            updateStats();
+        } catch(e) { alert("請使用 Ctrl+V 貼上。"); }
+    }
+
+    function clearIn() { input.value = ''; updateStats(); }
+    function clearOut() { saveHistory(); output.value = ''; updateStats(); }
+
+    function copyOut() {
+        navigator.clipboard.writeText(output.value);
+        alert('已複製到剪貼簿！');
+    }
+
+    function downloadTxt() {
+        const blob = new Blob([output.value], {type: 'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `Export_${new Date().getTime()}.txt`;
+        a.click();
+    }
+
+    function process(type) {
+        saveHistory();
+        let text = output.value || input.value;
+        if (!text && input.value) text = input.value;
+
+        switch(type) {
+            case 'join': text = text.split(/\r?\n/).join(document.getElementById('joinChar').value); break;
+            case 'split': text = text.split(document.getElementById('splitChar').value).join('\n'); break;
+            case 'delete': text = text.split(document.getElementById('delChar').value).join(''); break;
+            case 'noEng': text = text.replace(/[a-zA-Z]/g, ''); break;
+            case 'noNum': text = text.replace(/[0-9]/g, ''); break;
+            case 'noSym': text = text.replace(/[^\w\s\u4e00-\u9fa5]/gi, ''); break;
+            case 'noEmptyLine': text = text.split('\n').filter(line => line.trim() !== '').join('\n'); break;
+            case 'addEmptyLine': text = text.split('\n').join('\n\n'); break;
+            case 'indent': text = text.split('\n').map(l => '    ' + l).join('\n'); break;
+            case 'outdent': text = text.split('\n').map(l => l.replace(/^    |^  |^\t/, '')).join('\n'); break;
+            case 'trimSpace': text = text.split('\n').map(l => l.trim().replace(/\s+/g, ' ')).join('\n'); break;
+            case 'upper': text = text.toUpperCase(); break;
+            case 'lower': text = text.toLowerCase(); break;
+            case 'capitalize': 
+                text = text.split('\n').map(line => line.charAt(0).toUpperCase() + line.slice(1)).join('\n');
+                break;
+            case 'regex': 
+                try {
+                    const re = new RegExp(document.getElementById('regFind').value, 'g');
+                    text = text.replace(re, document.getElementById('regRep').value);
+                } catch(e) { alert('Regex 語法錯誤'); }
+                break;
+            case 'findDup':
+                const lines = input.value.split('\n').filter(l => l !== '');
+                const counts = {};
+                lines.forEach(l => counts[l] = (counts[l] || 0) + 1);
+                text = Object.keys(counts).filter(l => counts[l] > 1).join('\n');
+                if(!text) text = "無重複內容";
+                break;
+        }
+        output.value = text;
+        updateStats();
+    }
+</script>
+
+
+<style>
+#busuanzi_container_page_pv {
+    color: rgba(255, 255, 255, 0.7); /* 讓顏色跟作者資訊一致 */
+    font-size: 0.9rem;
+    margin-left: 15px; /* 與左邊文字隔開 */
+    border-left: 1px solid rgba(128, 128, 128, 0.5) /* 加一條細細的分隔線 */
+    padding-left: 15px;
+}
+
+#busuanzi_container_page_pv {
+    color: #0984e3; 
+    font-weight: bold;
+}
+</style>
+
+<script>
+    (function() {
+        const primary = "https://events.vercount.one/js";
+        const fallback = "https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js";
+        let isSwitched = false;
+
+        function load(src, isBackup = false) {
+            if (isSwitched && !isBackup) return; // 避免重複觸發
+            
+            const script = document.createElement('script');
+            script.src = src;
+            script.async = true;
+
+            // 觸發備援的機制
+            const triggerFallback = () => {
+                if (!isSwitched) {
+                    isSwitched = true;
+                    console.warn("切換至備援計數器...");
+                    load(fallback, true);
+                }
+            };
+
+            script.onerror = triggerFallback; // 載入失敗時
+            const timer = setTimeout(triggerFallback, 3000); // 3秒沒反應時
+            script.onload = () => clearTimeout(timer); // 成功則取消計時器
+
+            document.head.appendChild(script);
+        }
+
+        load(primary);
+    })();
+</script>
+
+
+</body>
+</html>
