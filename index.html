@@ -307,7 +307,7 @@
    
 <style>
 #busuanzi_container_page_pv {
-    color: rgba(255, 255, 255, 0.7); /* 讓顏色跟作者資訊一致 */
+    color: rgba(255, 255, 255, 0.8); /* 讓顏色跟作者資訊一致 */
     font-size: 0.9rem;
     margin-left: 15px; /* 與左邊文字隔開 */
     border-left: 1px solid rgba(128, 128, 128, 0.5); /* 加一條細細的分隔線 */
@@ -318,6 +318,13 @@
     color: #0984e3; 
     font-weight: bold;
 }
+
+@media (prefers-color-scheme: light) {
+    #busuanzi_container_page_pv {
+        color: #555; /* 在淺色模式下顯示深灰色 */
+    }
+}
+
 </style>
 
 <script>
