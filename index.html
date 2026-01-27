@@ -93,6 +93,8 @@
             border-radius: 8px;
             cursor: pointer;
             transition: 0.3s;
+	    font-size: 1rem;   /* 預設通常是 0.9rem~1rem，你可以改成 1.1rem 或 14px */
+    	    font-weight: 500;  /* 增加一點粗細可以讓文字更清晰 */
         }
 
         .view-btn.active {
@@ -152,6 +154,7 @@
             font-size: 0.95rem;
             color: #555;
             line-height: 1.5;
+	    text-align: justify; /* 讓文字左右兩端對齊 */
         }
 
         /* 卡片內的數據標籤 */
@@ -220,7 +223,7 @@
             <a href="https://nextime5.blogspot.com" target="_blank" class="main-title">Charles Nextime 網頁程式集</a>
             <div class="toolbar">
                 <button id="btn-detail" class="view-btn" onclick="changeView('detail', this)">詳細模式</button>
-                <button id="btn-simple" class="view-btn" onclick="changeView('simple', this)">精簡模式</button>
+                <button id="btn-simple" class="view-btn active" onclick="changeView('simple', this)">精簡模式</button>
             </div>
         </header>
         <div id="link-container" class="simple-view"></div>
