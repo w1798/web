@@ -6,63 +6,46 @@
     <title>多功能文字處理器 by Charles Nextime</title>
     <style>
         :root {
-            --primary: #818cf8;
-            --bg: #0f172a;
-            --card-bg: #1e293b;
-            --text: #f1f5f9;
-            --border: #334155;
-            --accent: #22c55e;
-            --danger: #e11d48;
+            --primary: #818cf8; --bg: #0f172a; --card-bg: #1e293b;
+            --text: #f1f5f9; --border: #334155; --accent: #22c55e; --danger: #e11d48;
         }
 
         body, html {
             margin: 0; padding: 0; height: 100%;
             font-family: 'Inter', 'Microsoft JhengHei', sans-serif;
-            background-color: var(--bg); color: var(--text);
-            overflow: hidden;
+            background-color: var(--bg); color: var(--text); overflow: hidden;
         }
 
         .container { display: flex; flex-direction: column; height: 100vh; }
 
         header {
-            padding: 15px 20px;
-            background: var(--card-bg);
-            border-bottom: 2px solid var(--border);
+            padding: 12px 20px; background: var(--card-bg);
+            border-bottom: 2px solid var(--border); flex-shrink: 0;
         }
 
-        .top-bar {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            margin-bottom: 5px;
-            flex-wrap: wrap;
-        }
-        .brand { font-weight: 900; font-size: 1.8rem; color: var(--primary); white-space: nowrap; }
-        .btn-group { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; }
+        .top-bar { display: flex; align-items: center; gap: 15px; margin-bottom: 8px; flex-wrap: wrap; }
+        .brand { font-weight: 900; font-size: 1.6rem; color: var(--primary); white-space: nowrap; }
+        .btn-group { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
 
         .exec-zone {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            padding-top: 5px;
-            border-top: 1px solid var(--border);
+            display: flex; flex-wrap: wrap; gap: 8px;
+            padding-top: 8px; border-top: 1px solid var(--border);
         }
 
         .tool-item { 
-            display: flex; align-items: center; gap: 6px; 
-            background: var(--bg); padding: 5px 10px; 
+            display: flex; align-items: center; gap: 4px; 
+            background: var(--bg); padding: 4px 8px; 
             border-radius: 6px; border: 1px solid var(--border); font-size: 16px; 
         }
         
-        .tool-item input, .tool-item select { 
+        input, select { 
             background: #000; color: var(--primary); 
             border: 1px solid var(--border); padding: 4px; 
-            border-radius: 4px; outline: none; font-size: 16px;
-            text-align: center;
+            border-radius: 4px; outline: none; font-size: 16px; text-align: center;
         }
         
         button {
-            padding: 4px 14px; cursor: pointer; background: var(--primary); color: white;
+            padding: 5px 12px; cursor: pointer; background: var(--primary); color: white;
             border: none; border-radius: 6px; font-size: 16px; 
             font-weight: 600; transition: 0.2s; white-space: nowrap;
         }
@@ -70,21 +53,28 @@
         button.secondary { background: #475569; }
         button.green { background: var(--accent); }
         button.red { background: var(--danger); }
+        button.purple { background: #a855f7; }
 
-        main { flex: 1; display: flex; padding: 15px; gap: 15px; box-sizing: border-box; min-height: 0; }
-        .editor-box { flex: 1; display: flex; flex-direction: column; }
+        .m-left { margin-left: 15px; }
+
+        main { flex: 1; display: flex; padding: 10px; gap: 10px; box-sizing: border-box; min-height: 0; }
+        
+        /* 比例設定 2.5:2.5:5 */
+        .box-25 { flex: 2.5; display: flex; flex-direction: column; min-width: 0; }
+        .box-50 { flex: 5; display: flex; flex-direction: column; min-width: 0; }
+        
         textarea {
-            flex: 1; padding: 18px; border: 1px solid var(--border); border-radius: 12px;
-            resize: none; font-size: 18px; line-height: 1.6; outline: none;
+            flex: 1; padding: 15px; border: 1px solid var(--border); border-radius: 8px;
+            resize: none; font-size: 18px; line-height: 1.5; outline: none;
             background: #000; color: #adbac7; font-family: 'Consolas', monospace;
         }
-        .toolbar-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; font-size: 16px; }
+        .toolbar-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 16px; }
 
         footer { height: 35px; display: flex; justify-content: center; align-items: center; background: var(--card-bg); border-top: 1px solid var(--border); font-size: 14px; }
 
-        @media (max-width: 1000px) {
-            header { height: auto; overflow-y: auto; }
-            main { flex-direction: column; }
+        @media (max-width: 1100px) {
+            main { flex-direction: column; overflow-y: auto; }
+            .box-25, .box-50 { height: 350px; flex: none; width: 100%; }
         }
     </style>
 </head>
@@ -95,116 +85,159 @@
         <div class="top-bar">
             <div class="brand">多功能文字處理器</div>
             <div class="btn-group">
-                <button class="secondary" onclick="process('indent')">增加縮排</button>
-                <button class="secondary" onclick="process('outdent')">減少縮排</button>
-                <button class="secondary" onclick="process('noEng')">去英文</button>
-                <button class="secondary" onclick="process('noNum')">去數字</button>
-                <button class="secondary" onclick="process('noSym')">去符號</button>
-                <button class="secondary" onclick="process('noEmptyLine')">去空白行</button>
-                <button class="secondary" onclick="process('addEmptyLine')">加空白行</button>
-                <button class="secondary" onclick="process('trimSpace')">去頭尾空格</button>
-                <button class="secondary" onclick="process('sort')">A-Z排序</button>
-                <button class="secondary" onclick="process('noHTML')">去HTML</button>
-                <button class="secondary" onclick="process('shuffle')">隨機打亂</button>
+                <button class="purple" onclick="dualProcess('join')">資1接資2</button>
+                <button class="purple" onclick="dualProcess('interleave')">資1插資2</button>
+                <button class="purple" onclick="dualProcess('compare')">資12比對</button>
+                <span style="color:var(--border); margin:0 5px;">|</span>
+                <button class="secondary" onclick="process('findDup')">資1找重複</button>
+                <span style="color:var(--border); margin:0 5px;">|</span>
+                <button class="secondary" onclick="process('indent')">增縮排</button>
+                <button class="secondary" onclick="process('outdent')">減縮排</button>
+                <span style="color:var(--border); margin:0 5px;">|</span>
+                <button class="secondary" onclick="process('noEng')">刪英文</button>
+                <button class="secondary" onclick="process('noNum')">刪數字</button>
+                <button class="secondary" onclick="process('noSym')">刪符號</button>
+                <button class="secondary" onclick="process('noHTML')">刪HTML</button>
+                <button class="secondary" onclick="process('trimSpace')">刪空格</button>
+<div style="flex-basis: 100%; height: 0;"></div>
+                <button class="secondary" onclick="process('noEmptyLine')">刪空行</button>
+                <button class="secondary" onclick="process('addEmptyLine')">加空行</button>
+                <span style="color:var(--border); margin:0 5px;">|</span>
+                <button class="secondary" onclick="process('sort')">排序</button>
+                <button class="secondary" onclick="process('shuffle')">隨機排</button>
+                <span style="color:var(--border); margin:0 5px;">|</span>
                 <button class="secondary" onclick="process('capitalize')">首字大寫</button>
                 <button class="secondary" onclick="process('upper')">全大寫</button>
                 <button class="secondary" onclick="process('lower')">全小寫</button>
-                <button class="secondary" onclick="process('findDup')">找重複</button>
 
             </div>
         </div>
         
-        <div class="exec-zone" id="execZone">
+        <div class="exec-zone">
             <div class="tool-item">以 <input type="text" id="joinChar" style="width:30px" placeholder=" "> 串接 <button onclick="process('join')">執行</button></div>
             <div class="tool-item">以 <input type="text" id="splitChar" style="width:30px" value=","> 分割 <button onclick="process('split')">執行</button></div>
+                <span style="color:var(--border); margin:0 5px;">|</span>
             <div class="tool-item">取代 <input type="text" id="regFind" style="width:40px" placeholder="找"> 換 <input type="text" id="regRep" style="width:40px"> <button onclick="process('regex')">執行</button></div>
+                <span style="color:var(--border); margin:0 5px;">|</span>
             <div class="tool-item">首加 <input type="text" id="prefix" style="width:40px"> 尾加 <input type="text" id="suffix" style="width:40px"> <button onclick="process('addEdge')">執行</button></div>
+                <span style="color:var(--border); margin:0 5px;">|</span>
             <div class="tool-item">刪除字元 <input type="text" id="delChar" style="width:40px"> <button onclick="process('delete')">執行</button></div>
-            <div class="tool-item">含有 <input type="text" id="filterText" style="width:40px">行 <button onclick="process('keepLine')">保留</button> <button onclick="process('delLine')">刪除</button></div>
+                <span style="color:var(--border); margin:0 5px;">|</span>
+            <div class="tool-item">含有 <input type="text" id="filterText" style="width:50px"> <button onclick="process('keepLine')">保留行</button> <button onclick="process('delLine')">刪除行</button></div>
+                <span style="color:var(--border); margin:0 5px;">|</span>
             <div class="tool-item">
-                頭<select id="headCount"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select>
-                尾<select id="tailCount"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select>
-                <button onclick="process('sliceKeep')">保留</button>
-                <button onclick="process('sliceDel')">刪除</button>
+                頭<select id="headCount"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select>
+                尾<select id="tailCount"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select>
+                <button onclick="process('sliceKeep')">保留</button> <button onclick="process('sliceDel')">刪除</button>
             </div>
-            <div class="tool-item">編號 <select id="numPad"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select> <button onclick="process('autoNum')">執行</button></div>
-            <button class="secondary" style="background:#dc2626" onclick="resetTools()">重置設定</button>
-            <button class="red" onclick="undo()">⟲ 復原更改</button>
+                <span style="color:var(--border); margin:0 5px;">|</span>
+            <div class="tool-item">編號 <select id="numPad"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select> <button onclick="process('autoNum')">執行</button></div>
+                 <span style="color:var(--border); margin:0 5px;">|</span>           
+            <button class="secondary" style="background:#dc2626; margin-left: 10px;" onclick="resetTools()">重置參數</button>
+            <button class="red" onclick="undo()">⟲ 上一步</button>
         </div>
     </header>
 
     <main>
-        <div class="editor-box">
-            <div class="toolbar-top">
-                <span>原始資料 <small id="statIn"></small></span>
-                <div><button class="secondary" onclick="pasteIn()">貼上</button> <button class="secondary" onclick="clearIn()">清空</button></div>
+        <div class="box-25">
+            <div class="toolbar-top"><span>原始資料 1 <small id="stat1"></small></span>
+                <div><button class="secondary" onclick="pasteTo('inputArea')">貼上</button> <button class="secondary m-left" onclick="clearArea('inputArea')">清空</button></div>
             </div>
-            <textarea id="inputArea" oninput="updateStats()" placeholder="貼上資料..."></textarea>
+            <textarea id="inputArea" oninput="updateStats()" placeholder="資料源 1..."></textarea>
         </div>
-        <div class="editor-box">
-            <div class="toolbar-top">
-                <span>處理結果 <small id="statOut"></small></span>
+        <div class="box-25">
+            <div class="toolbar-top"><span>原始資料 2 <small id="stat2"></small></span>
+                <div><button class="secondary" onclick="pasteTo('inputArea2')">貼上</button> <button class="secondary m-left" onclick="clearArea('inputArea2')">清空</button></div>
+            </div>
+            <textarea id="inputArea2" oninput="updateStats()" placeholder="資料源 2 (用於資1+資2功能)..."></textarea>
+        </div>
+        <div class="box-50">
+            <div class="toolbar-top"><span>處理結果 <small id="statOut"></small></span>
                 <div>
-                    <button class="green" onclick="copyOut()">一鍵複製 Copy</button>
-                    <button class="secondary" onclick="clearOut()">清空</button>
-                    <button class="green" onclick="downloadTxt()">📥 下載 .txt</button>
+                    <button class="green" onclick="copyOut()">一鍵複製</button> 
+                    <button class="green m-left" onclick="downloadTxt()">📥 下載</button>
+                    <button class="secondary m-left" onclick="clearArea('outputArea')">清空</button>
                 </div>
             </div>
-            <textarea id="outputArea" placeholder="結果..."></textarea>
+            <textarea id="outputArea" placeholder="處理結果將顯示在此..."></textarea>
         </div>
     </main>
 
     <footer>
-        <a href="https://w1798.github.io/web/" target="_blank" style="color:var(--text)">Completed by Charles Nextime with AI assistance, 20260127</a>
-        <span id="busuanzi_container_page_pv">本頁使用量 <span id="busuanzi_value_page_pv"></span> 次</span>
+        <a href="https://w1798.github.io/web/" target="_blank" style="color:var(--text); text-decoration:none">Completed by Charles Nextime with AI assistance, 20260128</a>
+        <span id="busuanzi_container_page_pv" style="margin-left:15px; color:#888; border-left: 1px solid var(--border); padding-left:15px;">本頁使用量 <span id="busuanzi_value_page_pv" style="color:#00b894; font-weight:bold;"></span> 次</span>
     </footer>
 </div>
 
 <script>
     let history = [];
-    const input = document.getElementById('inputArea');
-    const output = document.getElementById('outputArea');
+    const in1 = document.getElementById('inputArea');
+    const in2 = document.getElementById('inputArea2');
+    const out = document.getElementById('outputArea');
 
-    function saveHistory() { history.push(output.value); if (history.length > 30) history.shift(); }
-    function undo() { if (history.length > 0) { output.value = history.pop(); updateStats(); } }
+    function saveHistory() { history.push(out.value); if (history.length > 30) history.shift(); }
+    function undo() { if (history.length > 0) { out.value = history.pop(); updateStats(); } }
     
     function resetTools() {
-        document.getElementById('joinChar').value = '';
-        document.getElementById('splitChar').value = ',';
-        document.getElementById('numPad').value = '1';
-        document.getElementById('filterText').value = '';
-        document.getElementById('delChar').value = '';
-        document.getElementById('prefix').value = '';
-        document.getElementById('suffix').value = '';
-        document.getElementById('regFind').value = '';
-        document.getElementById('regRep').value = '';
-        document.getElementById('headCount').value = '0';
-        document.getElementById('tailCount').value = '0';
+        ['joinChar','splitChar','filterText','prefix','suffix','regFind','regRep','delChar'].forEach(id => document.getElementById(id).value = (id==='splitChar'?',':''));
+        ['numPad','headCount','tailCount'].forEach(id => document.getElementById(id).value = (id==='numPad'?'1':'0'));
     }
 
     function updateStats() {
-        document.getElementById('statIn').innerText = `| 字: ${input.value.length} 行: ${input.value.split('\n').filter(s => s).length}`;
-        document.getElementById('statOut').innerText = `| 字: ${output.value.length} 行: ${output.value.split('\n').filter(s => s).length}`;
+        const s = (el) => `| 字:${el.value.length} 行:${el.value.split('\n').filter(x=>x.trim()).length}`;
+        document.getElementById('stat1').innerText = s(in1);
+        document.getElementById('stat2').innerText = s(in2);
+        document.getElementById('statOut').innerText = s(out);
     }
 
-    async function pasteIn() { try { input.value = await navigator.clipboard.readText(); updateStats(); } catch(e) { alert("請手動貼上。"); } }
-    function clearIn() { input.value = ''; updateStats(); }
-    function clearOut() { saveHistory(); output.value = ''; updateStats(); }
-    function copyOut() { navigator.clipboard.writeText(output.value); alert('已複製！'); }
+    async function pasteTo(id) { try { document.getElementById(id).value = await navigator.clipboard.readText(); updateStats(); } catch(e) { alert("請手動貼上"); } }
+    function clearArea(id) { 
+        if (id === 'outputArea') saveHistory();
+        document.getElementById(id).value = ''; 
+        updateStats(); 
+    }
+    function copyOut() { navigator.clipboard.writeText(out.value); alert('已複製到剪貼簿！'); }
     function downloadTxt() {
-        const blob = new Blob([output.value], {type: 'text/plain'});
+        const blob = new Blob([out.value], {type: 'text/plain'});
         const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `Export_${new Date().getTime()}.txt`;
-        a.click();
+        a.href = URL.createObjectURL(blob); a.download = `Result_${new Date().getTime()}.txt`; a.click();
+    }
+
+    function dualProcess(type) {
+        saveHistory();
+        let lines1 = in1.value.split(/\r?\n/);
+        let lines2 = in2.value.split(/\r?\n/);
+        let res = [];
+
+        if (type === 'join') {
+            let max = Math.max(lines1.length, lines2.length);
+            for(let i=0; i<max; i++) res.push((lines1[i] || "") + (lines2[i] || ""));
+        } 
+        else if (type === 'interleave') {
+            let max = Math.max(lines1.length, lines2.length);
+            for(let i=0; i<max; i++) {
+                if(i < lines1.length) res.push(lines1[i]);
+                if(i < lines2.length) res.push(lines2[i]);
+            }
+        }
+        else if (type === 'compare') {
+            let s1 = new Set(lines1.filter(x => x.trim()));
+            let s2 = new Set(lines2.filter(x => x.trim()));
+            let common = [...s1].filter(x => s2.has(x));
+            let only1 = [...s1].filter(x => !s2.has(x));
+            let only2 = [...s2].filter(x => !s1.has(x));
+            res = ["【共同擁有】", ...common, "", "【只有資1有】", ...only1, "", "【只有資2有】", ...only2];
+        }
+        out.value = res.join('\n');
+        updateStats();
     }
 
     function process(type) {
         saveHistory();
-        let text = output.value || input.value;
-        if (!text && input.value) text = input.value;
+        let text = out.value.trim() !== "" ? out.value : in1.value;
+        if (!text) return;
         let lines = text.split(/\r?\n/);
-
+        
         switch(type) {
             case 'join': text = lines.join(document.getElementById('joinChar').value); break;
             case 'split': text = text.split(document.getElementById('splitChar').value).join('\n'); break;
@@ -215,78 +248,40 @@
             case 'noHTML': text = text.replace(/<\/?[^>]+(>|$)/g, ""); break;
             case 'noEmptyLine': text = lines.filter(l => l.trim() !== '').join('\n'); break;
             case 'addEmptyLine': text = lines.join('\n\n'); break;
-            case 'trimSpace': text = lines.map(l => l.trim().replace(/\s+/g, ' ')).join('\n'); break;
-            case 'upper': text = text.toUpperCase(); break;
-            case 'lower': text = text.toLowerCase(); break;
-            case 'capitalize': text = lines.map(l => l.charAt(0).toUpperCase() + l.slice(1)).join('\n'); break;
+            case 'trimSpace': text = lines.map(l => l.trim()).join('\n'); break;
             case 'indent': text = lines.map(l => '    ' + l).join('\n'); break;
             case 'outdent': text = lines.map(l => l.replace(/^    |^  |^\t/, '')).join('\n'); break;
             case 'sort': text = lines.sort((a,b) => a.localeCompare(b, 'zh-Hant')).join('\n'); break;
             case 'shuffle': text = lines.sort(() => Math.random() - 0.5).join('\n'); break;
-            case 'keepLine': 
-                const kTerm = document.getElementById('filterText').value;
-                text = lines.filter(l => l.includes(kTerm)).join('\n'); break;
-            case 'delLine': 
-                const dTerm = document.getElementById('filterText').value;
-                text = lines.filter(l => !l.includes(dTerm)).join('\n'); break;
-            case 'addEdge': 
-                const pre = document.getElementById('prefix').value;
-                const suf = document.getElementById('suffix').value;
-                text = lines.map(l => pre + l + suf).join('\n'); break;
-            case 'autoNum':
-                const pad = parseInt(document.getElementById('numPad').value);
-                text = lines.map((l, i) => (i + 1).toString().padStart(pad, '0') + l).join('\n'); break;
-            case 'sliceKeep':
-                const hK = parseInt(document.getElementById('headCount').value);
-                const tK = parseInt(document.getElementById('tailCount').value);
-                text = lines.map(l => {
-                    let head = hK > 0 ? l.substring(0, hK) : "";
-                    let tail = tK > 0 ? l.substring(l.length - tK) : "";
-                    return head + tail;
-                }).join('\n');
-                break;
-            case 'sliceDel':
-                const hD = parseInt(document.getElementById('headCount').value);
-                const tD = parseInt(document.getElementById('tailCount').value);
-                text = lines.map(l => {
-                    // 從索引 hD 開始切到倒數第 tD 位
-                    return l.substring(hD, l.length - tD);
-                }).join('\n');
-                break;
-            case 'regex': 
-                try {
-                    const re = new RegExp(document.getElementById('regFind').value, 'g');
-                    text = text.replace(re, document.getElementById('regRep').value);
-                } catch(e) { alert('Regex 錯誤'); }
-                break;
+            case 'upper': text = text.toUpperCase(); break;
+            case 'lower': text = text.toLowerCase(); break;
+            case 'capitalize': text = lines.map(l => l.charAt(0).toUpperCase() + l.slice(1)).join('\n'); break;
             case 'findDup':
-                const counts = {};
-                lines.filter(l => l !== '').forEach(l => counts[l] = (counts[l] || 0) + 1);
-                text = Object.keys(counts).filter(l => counts[l] > 1).join('\n');
-                if(!text) text = "無重複"; break;
+                let c = {}; lines.forEach(l => { if(l.trim()) c[l] = (c[l]||0)+1 });
+                text = Object.keys(c).filter(k => c[k]>1).join('\n'); break;
+            case 'addEdge': 
+                let p = document.getElementById('prefix').value, s = document.getElementById('suffix').value;
+                text = lines.map(l => p + l + s).join('\n'); break;
+            case 'sliceKeep':
+                let hK = parseInt(document.getElementById('headCount').value), tK = parseInt(document.getElementById('tailCount').value);
+                text = lines.map(l => l.substring(0, hK) + l.substring(l.length - tK)).join('\n'); break;
+            case 'sliceDel':
+                let hD = parseInt(document.getElementById('headCount').value), tD = parseInt(document.getElementById('tailCount').value);
+                text = lines.map(l => l.substring(hD, l.length - tD)).join('\n'); break;
+            case 'autoNum':
+                let pad = parseInt(document.getElementById('numPad').value);
+                text = lines.map((l, i) => (i + 1).toString().padStart(pad, '0') + l).join('\n'); break;
+            case 'regex': 
+                let re = new RegExp(document.getElementById('regFind').value, 'g');
+                text = text.replace(re, document.getElementById('regRep').value); break;
+            case 'keepLine': text = lines.filter(l => l.includes(document.getElementById('filterText').value)).join('\n'); break;
+            case 'delLine': text = lines.filter(l => !l.includes(document.getElementById('filterText').value)).join('\n'); break;
         }
-        output.value = text;
+        out.value = text;
         updateStats();
     }
 </script>
 
-
-<style>
-#busuanzi_container_page_pv {
-    color: #888;
-    font-size: 0.9rem;
-    margin-left: 15px; /* 與左邊文字隔開 */
-    border-left: 1px solid rgba(128, 128, 128, 0.5); /* 加一條細細的分隔線 */
-    padding-left: 15px;
-}
-
-#busuanzi_value_page_pv {
-    color: #00b894;
-    font-weight: bold;
-}
-</style>
-
 <script defer src="https://events.vercount.one/js"></script>
-
 </body>
 </html>
