@@ -12,4 +12,6 @@
 
 ★ 專業JSON編輯器
 
+★ 多功能文字處理器
+
 ![Visitor Count](https://komarev.com/ghpvc/?username=w1798)
