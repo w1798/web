@@ -5,14 +5,14 @@
     <title>Charles Nextime 數據儀表板</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #4834d4; --success: #00b894; --info: #0984e3; --danger: #ff7675; --gray: #95a5a6; --warning: #f1c40f; }
+        :root { --primary: #4834d4; --success: #00b894; --info: #0984e3; --danger: #ff7675; --gray: #95a5a6; }
         body { font-family: -apple-system, system-ui, sans-serif; background: #f0f2f5; padding: 20px; }
         .container { max-width: 1200px; margin: 0 auto; background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f1f2f6; padding-bottom: 15px; }
         .btn-group { display: flex; gap: 8px; }
         .btn-json { background: #636e72; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: 0.2s; }
-        .btn-json:hover { opacity: 0.8; }
         .btn-key { background: #a29bfe; }
+        .btn-sync { background: #00b894; display: none; }
         table { width: 100%; border-collapse: collapse; }
         th { text-align: left; padding: 12px; color: #7f8c8d; font-size: 0.75rem; border-bottom: 2px solid #eee; }
         td { padding: 14px 12px; border-bottom: 1px solid #f1f2f6; white-space: nowrap; }
@@ -22,28 +22,25 @@
         .num-main { font-family: monospace; font-weight: 800; color: var(--success); font-size: 1.1rem; }
         .num-prev { font-size: 0.7rem; color: var(--gray); margin-left: 4px; }
         .trend-box { width: 160px; height: 45px; }
-        
-        /* 錯誤警告樣式 */
         .error-banner { display: none; background: #fab1a0; color: #d63031; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; text-align: center; border: 1px solid #ff7675; }
-        
-        footer { text-align: center; padding: 30px 0; margin-top: 20px; border-top: 1px solid #eee; }
-        footer a { color: var(--gray); text-decoration: none; font-size: 0.85rem; }
+        footer { text-align: center; padding: 30px 0; margin-top: 20px; border-top: 1px solid #eee; font-size: 0.85rem; color: var(--gray); }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div id="error-banner" class="error-banner">⚠️ 金鑰錯誤，請清除金鑰再執行！</div>
+    <div id="error-banner" class="error-banner">⚠️ 金鑰驗證失敗，請檢查或清除金鑰！</div>
 
     <div class="header">
         <div>
             <h1 style="margin:0; font-size: 1.4rem;">📊 Charles Nextime 數據儀表板</h1>
             <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
-                <p id="status" style="font-size:0.8rem; color:var(--gray); margin:0;">狀態：初始化中...</p>
-                <span id="mode-badge" style="font-size: 0.65rem; padding: 2px 6px; border-radius: 10px; background: #eee; color: #666;">檢查權限中</span>
+                <p id="status" style="font-size:0.8rem; color:var(--gray); margin:0;">狀態：載入中...</p>
+                <span id="mode-badge" style="font-size: 0.65rem; padding: 2px 6px; border-radius: 10px; background: #eee; color: #666;">檢查中</span>
             </div>
         </div>
         <div class="btn-group">
+            <button id="btn-sync" class="btn-json btn-sync" onclick="forceSync()">⚡ 強制完全同步 (更新 PV)</button>
             <button class="btn-json btn-key" onclick="manageKey()">🔑 設定金鑰</button>
             <button class="btn-json" onclick="exportJSON()">📤 匯出備份 JSON</button>
         </div>
@@ -64,9 +61,7 @@
 </div>
 
 <footer>
-    <a href="https://w1798.github.io/web/" target="_blank">
-        Completed by Charles Nextime with AI assistance, 2026
-    </a>
+    <p>Completed by Charles Nextime with AI assistance, 2026</p>
 </footer>
 
 <script>
@@ -74,7 +69,6 @@
     const BIN_ID = '697aee71d0ea881f408f5c54';
     const BIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
     const DEFAULT_READ_KEY = '$2a$10$FZ1PlHvMFsdY9owgPFrBJeBFRKsIO5kHKXjjcramkaVXdJ5im754G';
-    
     const SAVED_KEY = localStorage.getItem('CHARLES_MASTER_KEY');
     const FINAL_KEY = SAVED_KEY || DEFAULT_READ_KEY;
     const CAN_WRITE = !!(SAVED_KEY && SAVED_KEY !== DEFAULT_READ_KEY);
@@ -92,135 +86,113 @@
     ];
 
     const STORAGE_KEY = 'CHARLES_STATS_V6';
-    const TIME_KEY = 'CHARLES_LAST_FETCH';
-    const MAX_HISTORY = 30;
-    const COOLDOWN = 3600000; 
+    const CLOUD_TIME_KEY = 'CHARLES_CLOUD_FETCH'; // 控制 JSONBin 的時間
+    const PV_TIME_KEY = 'CHARLES_PV_FETCH';       // 控制 Vercount 的時間
+    
+    // 設定冷卻時間 (毫秒)
+    const CLOUD_COOLDOWN = 3600000; // 1 小時讀一次雲端
+    const PV_COOLDOWN = 3600000;    // 1 小時更新一次 PV
 
-    // 顯示錯誤橫幅
-    function showError(msg) {
-        const banner = document.getElementById('error-banner');
-        if(msg) banner.innerText = "⚠️ " + msg;
-        banner.style.display = 'block';
-        document.getElementById('status').innerText = "❌ 同步終止";
-        document.getElementById('status').style.color = "var(--danger)";
-    }
-
-    // 管理並驗證金鑰
-    async function manageKey() {
-        const input = prompt("請輸入具備寫入權限的 API Key\n(輸入後將自動驗證有效性):", SAVED_KEY || "");
-        
+    // 管理金鑰
+    function manageKey() {
+        const input = prompt("輸入 Master Key:", SAVED_KEY || "");
         if (input === null) return;
-        const val = input.trim();
-
-        if (val === "") {
-            localStorage.removeItem('CHARLES_MASTER_KEY');
-            alert("已清除金鑰，恢復預設模式。");
-            location.reload();
-            return;
-        }
-
-        // --- 驗證邏輯 ---
-        document.getElementById('status').innerText = "⏳ 正在驗證金鑰...";
-        try {
-            const res = await fetch(`${BIN_URL}/latest`, { headers: { 'X-Access-Key': val } });
-            if (res.ok) {
-                localStorage.setItem('CHARLES_MASTER_KEY', val);
-                alert("✅ 金鑰驗證通過！已開啟編輯同步模式。");
-                location.reload();
-            } else {
-                alert("❌ 金鑰驗證失敗 (錯誤碼: " + res.status + ")\n請確認金鑰是否正確。");
-            }
-        } catch (e) {
-            alert("❌ 無法連接至雲端伺服器，請檢查網路。");
-        }
+        if (input.trim() === "") localStorage.removeItem('CHARLES_MASTER_KEY');
+        else localStorage.setItem('CHARLES_MASTER_KEY', input.trim());
+        location.reload();
     }
 
-    async function loadCloudData() {
-        try {
-            const res = await fetch(`${BIN_URL}/latest`, { headers: { 'X-Access-Key': FINAL_KEY } });
-            if (res.status === 401 || res.status === 403) {
-                showError("金鑰錯誤，請清除金鑰再執行！");
-                throw new Error("Invalid Key");
-            }
-            const result = await res.json();
-            return result.record || {};
-        } catch (e) {
-            console.warn("Cloud access error:", e.message);
-            return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-        }
+    // 強制同步
+    function forceSync() {
+        localStorage.removeItem(CLOUD_TIME_KEY);
+        localStorage.removeItem(PV_TIME_KEY);
+        startFlow();
     }
 
-    async function saveAllData(history) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
-        if (!CAN_WRITE) return;
-
-        try {
-            const res = await fetch(BIN_URL, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'X-Access-Key': FINAL_KEY },
-                body: JSON.stringify(history)
-            });
-            if (res.status === 401 || res.status === 403) {
-                showError("儲存失敗：金鑰權限不足！");
-            }
-        } catch (e) { console.error("Cloud Save Error"); }
-    }
-
-    async function autoFetch() {
+    async function startFlow() {
         const statusText = document.getElementById('status');
         const modeBadge = document.getElementById('mode-badge');
-        const now = new Date();
-        const lastFetch = localStorage.getItem(TIME_KEY);
-        const todayStr = `${now.getFullYear()}/${now.getMonth() + 1}/${now.getDate()}`;
+        const syncBtn = document.getElementById('btn-sync');
+        const now = new Date().getTime();
 
         modeBadge.innerText = CAN_WRITE ? "編輯模式" : "唯讀模式";
         modeBadge.style.background = CAN_WRITE ? "#d1fae5" : "#f1f2f6";
+        if (CAN_WRITE) syncBtn.style.display = "inline-block";
 
-        if (lastFetch && (now.getTime() - lastFetch < COOLDOWN)) {
-            const history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-            statusText.innerText = "🕒 顯示快取數據";
-            if (Object.keys(history).length > 0) {
-                targetUrls.forEach((url, i) => { if(history[url]) renderRow(url, history[url], i); });
-                return;
-            }
-        }
+        let history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+        const lastCloud = localStorage.getItem(CLOUD_TIME_KEY);
 
-        statusText.innerText = "🔄 同步中...";
-        let rawCloudData = await loadCloudData();
-        
-        // 如果載入失敗（金鑰錯），則不執行後續動作
-        if (Object.keys(rawCloudData).length === 0 && SAVED_KEY) return;
-
-        let history = {};
-        targetUrls.forEach(url => { history[url] = rawCloudData[url] || []; });
-
-        for (let i = 0; i < targetUrls.length; i++) {
-            const url = targetUrls[i];
+        // --- 第一層：JSONBin 讀取判斷 ---
+        if (!lastCloud || (now - lastCloud > CLOUD_COOLDOWN)) {
+            statusText.innerText = "🌐 正在從雲端同步歷史紀錄...";
             try {
-                const res = await fetch(`https://events.vercount.one/log?url=${url}`);
-                const data = await res.json();
-                const newEntry = {
-                    time: now.toLocaleString('zh-TW', { hour12: true }),
-                    pv: data.page_pv || 0,
-                    site_pv: data.site_pv || 0,
-                    uv: data.site_uv || 0
-                };
-                const lastIdx = history[url].length - 1;
-                const lastDatePart = lastIdx >= 0 ? history[url][lastIdx].time.split(' ')[0] : null;
-
-                if (lastDatePart === todayStr) {
-                    history[url][lastIdx] = newEntry; 
-                } else {
-                    history[url].push(newEntry);
-                    if (history[url].length > MAX_HISTORY) history[url].shift(); 
-                }
-                renderRow(url, history[url], i);
-            } catch (e) { console.error("Fetch error:", url); }
+                const res = await fetch(`${BIN_URL}/latest`, { headers: { 'X-Access-Key': FINAL_KEY } });
+                if (!res.ok) throw new Error("Key Error");
+                const result = await res.json();
+                history = result.record || {};
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+                localStorage.setItem(CLOUD_TIME_KEY, now);
+                statusText.innerText = "✅ 雲端同步完成";
+            } catch (e) {
+                document.getElementById('error-banner').style.display = 'block';
+                statusText.innerText = "❌ 雲端連接失敗，使用本地快取";
+            }
+        } else {
+            statusText.innerText = "🕒 讀取雲端快取";
         }
 
-        await saveAllData(history);
-        localStorage.setItem(TIME_KEY, now.getTime());
-        statusText.innerText = `✅ 最後同步：${now.toLocaleTimeString()}`;
+        // 渲染初步資料 (不論是否有抓即時 PV)
+        targetUrls.forEach((url, i) => renderRow(url, history[url] || [], i));
+
+        // --- 第二層：Vercount 即時 PV 判斷 ---
+        const lastPV = localStorage.getItem(PV_TIME_KEY);
+        if (!lastPV || (now - lastPV > PV_COOLDOWN)) {
+            statusText.innerText = "🔄 正在抓取最新 PV...";
+            const todayStr = new Date().toLocaleDateString('zh-TW');
+
+            for (let i = 0; i < targetUrls.length; i++) {
+                const url = targetUrls[i];
+                try {
+                    const res = await fetch(`https://events.vercount.one/log?url=${url}`);
+                    const data = await res.json();
+                    const newEntry = {
+                        time: new Date().toLocaleString('zh-TW', { hour12: true }),
+                        pv: data.page_pv || 0,
+                        site_pv: data.site_pv || 0,
+                        uv: data.site_uv || 0
+                    };
+                    
+                    if (!history[url]) history[url] = [];
+                    const lastIdx = history[url].length - 1;
+                    const lastDatePart = lastIdx >= 0 ? history[url][lastIdx].time.split(' ')[0] : null;
+
+                    if (lastDatePart === todayStr) history[url][lastIdx] = newEntry;
+                    else {
+                        history[url].push(newEntry);
+                        if (history[url].length > 30) history[url].shift();
+                    }
+                    renderRow(url, history[url], i);
+                } catch (e) { console.error("PV Fetch Fail:", url); }
+            }
+
+            // 更新時間與儲存
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+            localStorage.setItem(PV_TIME_KEY, now);
+
+            // 如果有寫入權限，同步回雲端
+            if (CAN_WRITE) {
+                await fetch(BIN_URL, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'X-Access-Key': FINAL_KEY },
+                    body: JSON.stringify(history)
+                });
+                statusText.innerText = "✅ PV 更新並上傳成功";
+            } else {
+                statusText.innerText = "✅ PV 已更新 (唯讀模式未上傳)";
+            }
+        } else {
+            statusText.innerText += " (PV 快取中)";
+        }
     }
 
     function renderRow(url, logs, idx) {
@@ -273,7 +245,7 @@
         a.click();
     }
 
-    window.onload = autoFetch;
+    window.onload = startFlow;
 </script>
 </body>
 </html>
