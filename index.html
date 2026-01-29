@@ -272,7 +272,7 @@
         // 使用 async/await 讓請求乖乖排隊
 	async function fetchStats(dataList) {
             const CACHE_KEY_PREFIX = 'vc_cache_';
-            const CACHE_TIME = 5 * 60 * 1000; // 5 分鐘 (毫秒)
+            const CACHE_TIME = 60 * 60 * 1000; // 60 分鐘 (毫秒)
             const now = Date.now();
 
             for (const item of dataList) {
