@@ -2,14 +2,17 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Charles Nextime 數據儀表板 (智能同步版)</title>
+    <title>Charles Nextime 數據儀表板</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --primary: #4834d4; --success: #00b894; --info: #0984e3; --danger: #ff7675; --gray: #95a5a6; }
         body { font-family: -apple-system, system-ui, sans-serif; background: #f0f2f5; padding: 20px; }
         .container { max-width: 1200px; margin: 0 auto; background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f1f2f6; padding-bottom: 15px; }
-        .btn-json { background: #636e72; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+        .btn-group { display: flex; gap: 8px; }
+        .btn-json { background: #636e72; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: 0.2s; }
+        .btn-json:hover { opacity: 0.8; }
+        .btn-key { background: #a29bfe; }
         table { width: 100%; border-collapse: collapse; }
         th { text-align: left; padding: 12px; color: #7f8c8d; font-size: 0.75rem; border-bottom: 2px solid #eee; }
         td { padding: 14px 12px; border-bottom: 1px solid #f1f2f6; white-space: nowrap; }
@@ -29,9 +32,15 @@
     <div class="header">
         <div>
             <h1 style="margin:0; font-size: 1.4rem;">📊 Charles Nextime 數據儀表板</h1>
-            <p id="status" style="font-size:0.8rem; color:var(--gray); margin-top:5px;">狀態：自動同步中...</p>
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                <p id="status" style="font-size:0.8rem; color:var(--gray); margin:0;">狀態：初始化中...</p>
+                <span id="mode-badge" style="font-size: 0.65rem; padding: 2px 6px; border-radius: 10px; background: #eee; color: #666;">檢查權限中</span>
+            </div>
         </div>
-        <button class="btn-json" onclick="exportJSON()">📤 匯出備份 JSON</button>
+        <div class="btn-group">
+            <button class="btn-json btn-key" onclick="manageKey()">🔑 設定金鑰</button>
+            <button class="btn-json" onclick="exportJSON()">📤 匯出備份 JSON</button>
+        </div>
     </div>
 
     <table>
@@ -57,8 +66,15 @@
 <script>
     // === 配置區 ===
     const BIN_ID = '697aee71d0ea881f408f5c54';
-    const API_KEY = '$2a$10$FZ1PlHvMFsdY9owgPFrBJeBFRKsIO5kHKXjjcramkaVXdJ5im754G';
     const BIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+    const DEFAULT_READ_KEY = '$2a$10$FZ1PlHvMFsdY9owgPFrBJeBFRKsIO5kHKXjjcramkaVXdJ5im754G';
+    
+    // 優先從本地獲取 Key，否則使用預設
+    const SAVED_KEY = localStorage.getItem('CHARLES_MASTER_KEY');
+    const FINAL_KEY = SAVED_KEY || DEFAULT_READ_KEY;
+    
+    // 判斷是否具備寫入權限 (只要有手動存過 Key 且非預設，就試試看更新)
+    const CAN_WRITE = !!(SAVED_KEY && SAVED_KEY !== DEFAULT_READ_KEY);
 
     const targetUrls = [
         "https://nextime5.blogspot.com/",
@@ -77,54 +93,81 @@
     const MAX_HISTORY = 30;
     const COOLDOWN = 3600000; 
 
+    // 管理金鑰功能
+    function manageKey() {
+        const input = prompt("請輸入具備寫入權限的 API Key\n(留空則恢復預設唯讀模式):", SAVED_KEY || "");
+        if (input !== null) {
+            const val = input.trim();
+            if (val === "") {
+                localStorage.removeItem('CHARLES_MASTER_KEY');
+                alert("已清除自訂金鑰，恢復唯讀模式。");
+            } else {
+                localStorage.setItem('CHARLES_MASTER_KEY', val);
+                alert("金鑰已存至本地！頁面將重整以套用權限。");
+            }
+            location.reload();
+        }
+    }
+
     async function loadCloudData() {
         try {
-            const res = await fetch(`${BIN_URL}/latest`, { headers: { 'X-Access-Key': API_KEY } });
+            const res = await fetch(`${BIN_URL}/latest`, { headers: { 'X-Access-Key': FINAL_KEY } });
             const result = await res.json();
             return result.record || {};
         } catch (e) {
+            console.warn("Cloud read failed, using local storage fallback.");
             return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
         }
     }
 
     async function saveAllData(history) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+        
+        if (!CAN_WRITE) {
+            console.log("ℹ️ 唯讀模式：數據僅儲存於本地，未上傳雲端。");
+            return;
+        }
+
         try {
-            await fetch(BIN_URL, {
+            const res = await fetch(BIN_URL, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'X-Access-Key': API_KEY },
+                headers: { 'Content-Type': 'application/json', 'X-Access-Key': FINAL_KEY },
                 body: JSON.stringify(history)
             });
-        } catch (e) { console.error("Cloud Save Error"); }
+            if(res.ok) console.log("✅ 雲端同步完成");
+        } catch (e) { 
+            console.error("❌ 雲端更新失敗", e); 
+        }
     }
 
     async function autoFetch() {
         const statusText = document.getElementById('status');
+        const modeBadge = document.getElementById('mode-badge');
         const now = new Date();
         const lastFetch = localStorage.getItem(TIME_KEY);
         const todayStr = `${now.getFullYear()}/${now.getMonth() + 1}/${now.getDate()}`;
 
+        // 更新 UI 權限標記
+        modeBadge.innerText = CAN_WRITE ? "編輯模式 (可同步雲端)" : "唯讀模式 (僅讀取)";
+        modeBadge.style.background = CAN_WRITE ? "#d1fae5" : "#f1f2f6";
+        modeBadge.style.color = CAN_WRITE ? "#065f46" : "#666";
+
         if (lastFetch && (now.getTime() - lastFetch < COOLDOWN)) {
             const history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-            statusText.innerText = "🕒 目前顯示快取數據 (每小時自動同步)";
+            statusText.innerText = "🕒 顯示快取數據 (每小時自動更新)";
             if (Object.keys(history).length > 0) {
                 targetUrls.forEach((url, i) => { if(history[url]) renderRow(url, history[url], i); });
                 return;
             }
         }
 
-        statusText.innerText = "🔄 正在同步並執行清理...";
+        statusText.innerText = "🔄 正在同步並整理數據...";
         let rawCloudData = await loadCloudData();
         let history = {};
 
-        // --- 自動偵測與清理邏輯 ---
-        // 只保留存在於 targetUrls 清單中的數據
+        // 數據清理與初始化
         targetUrls.forEach(url => {
-            if (rawCloudData[url]) {
-                history[url] = rawCloudData[url]; // 保留有效的歷史
-            } else {
-                history[url] = []; // 初始化新加入的網址
-            }
+            history[url] = rawCloudData[url] || [];
         });
 
         for (let i = 0; i < targetUrls.length; i++) {
