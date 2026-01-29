@@ -2,29 +2,34 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Charles Nextime Analytics Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Charles Nextime 雲端數據儀表板</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --primary: #4834d4; --success: #00b894; --info: #0984e3; --danger: #ff7675; --gray: #95a5a6; }
-        body { font-family: -apple-system, system-ui, sans-serif; background: #f0f2f5; padding: 20px; min-height: 100vh; display: flex; flex-direction: column; }
-        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); flex: 1; }
+        body { font-family: -apple-system, system-ui, sans-serif; background: #f0f2f5; padding: 20px; color: #2d3436; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f1f2f6; padding-bottom: 15px; }
-        .btn-group { display: flex; gap: 8px; }
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
         button { border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: 0.2s; }
         .btn-update { background: var(--primary); color: white; }
-        .btn-sync { background: #6c5ce7; color: white; }
         .btn-json { background: #636e72; color: white; }
         .btn-reset { background: var(--danger); color: white; }
-        table { width: 100%; border-collapse: collapse; }
-        th { text-align: left; padding: 12px; color: #7f8c8d; font-size: 0.75rem; border-bottom: 2px solid #eee; }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th { text-align: left; padding: 12px; color: #7f8c8d; font-size: 0.75rem; border-bottom: 2px solid #eee; text-transform: uppercase; }
         td { padding: 14px 12px; border-bottom: 1px solid #f1f2f6; white-space: nowrap; }
+        
         .badge { padding: 3px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; margin-right: 5px; }
         .bg-gh { background: #e3f2fd; color: #0d47a1; }
         .bg-bs { background: #fff3e0; color: #e65100; }
-        .num-main { font-family: monospace; font-weight: 800; color: var(--success); font-size: 1.1rem; }
+        .num-main { font-family: 'Courier New', monospace; font-weight: 800; color: var(--success); font-size: 1.1rem; }
         .num-prev { font-size: 0.7rem; color: var(--gray); margin-left: 4px; }
         .trend-box { width: 160px; height: 45px; }
-        
+        #fileInput { display: none; }
+
         footer { text-align: center; padding: 30px 0; margin-top: 20px; border-top: 1px solid #eee; }
         footer a { color: var(--gray); text-decoration: none; font-size: 0.85rem; transition: 0.3s; }
         footer a:hover { color: var(--primary); text-decoration: underline; }
@@ -35,29 +40,32 @@
 <div class="container">
     <div class="header">
         <div>
-            <h1 style="margin:0; font-size: 1.4rem;">📊 Charles Nextime 數據儀表板</h1>
-            <p id="status" style="font-size:0.8rem; color:var(--gray); margin-top:5px;">狀態：正在連接雲端數據中心...</p>
+            <h1 style="margin:0; font-size: 1.4rem;">📊 Charles Nextime 數據儀表板 (Cloud)</h1>
+            <p id="status" style="font-size:0.8rem; color:var(--gray); margin-top:5px;">狀態：準備中...</p>
         </div>
         <div class="btn-group">
-            <button class="btn-update" onclick="fetchData(true)">🔄 強制更新數據</button>
-            <button class="btn-sync" onclick="syncToCloud()">☁️ 同步至雲端</button>
-            <button class="btn-json" onclick="exportJSON()">📤 匯出 JSON</button>
-            <button class="btn-reset" onclick="resetData()">🧹 重置</button>
+            <button class="btn-update" onclick="fetchData()">🔄 強制同步雲端</button>
+            <button class="btn-json" onclick="exportJSON()">📤 備份 JSON</button>
+            <button class="btn-json" onclick="document.getElementById('fileInput').click()">📥 覆蓋雲端</button>
+            <button class="btn-reset" onclick="resetData()">🧹 重置所有</button>
+            <input type="file" id="fileInput" accept=".json" onchange="importJSON(event)">
         </div>
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th style="width: 20%;">專案路徑</th>
-                <th>即時 PV (對比)</th>
-                <th style="text-align:right;">全站 PV (對比)</th>
-                <th style="text-align:right;">訪客 UV (對比)</th>
-                <th style="text-align:center;">PV 歷史趨勢 (30天)</th>
-            </tr>
-        </thead>
-        <tbody id="stats-body"></tbody>
-    </table>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 20%;">專案路徑</th>
+                    <th>即時 PV (對比)</th>
+                    <th style="text-align:right;">全站 PV (對比)</th>
+                    <th style="text-align:right;">訪客 UV (對比)</th>
+                    <th style="text-align:center;">PV 歷史趨勢 (30天)</th>
+                </tr>
+            </thead>
+            <tbody id="stats-body"></tbody>
+        </table>
+    </div>
 </div>
 
 <footer>
@@ -67,157 +75,188 @@
 </footer>
 
 <script>
-    const NPOINT_URL = "https://api.npoint.io/790212105f8ff985f25b";
-    const SYNC_PASSWORD = "1234"; // 您可以在這裡修改您的同步密碼
-
     const targetUrls = [
-        "https://nextime5.blogspot.com/", "https://w1798.github.io/web/homework",
-        "https://w1798.github.io/web/evalprompt", "https://w1798.github.io/web/TextLab",
-        "https://w1798.github.io/web/examboard", "https://w1798.github.io/web/markit",
-        "https://w1798.github.io/web/jsonEditor", "https://w1798.github.io/web/comment",
+        "https://nextime5.blogspot.com/",
+        "https://w1798.github.io/web/homework",
+        "https://w1798.github.io/web/evalprompt",
+        "https://w1798.github.io/web/TextLab",
+        "https://w1798.github.io/web/examboard",
+        "https://w1798.github.io/web/markit",
+        "https://w1798.github.io/web/jsonEditor",
+        "https://w1798.github.io/web/comment",
         "https://w1798.github.io/web/"
     ];
 
-    const STORAGE_KEY = 'CHARLES_STATS_V6';
-    const TIME_KEY = 'CHARLES_LAST_FETCH';
+    // npoint API 設定
+    const NPOINT_URL = 'https://api.npoint.io/790212105f8ff985f25b';
     const MAX_HISTORY = 30;
-    const COOLDOWN = 3600000; 
 
-    function getHistory() { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
-
-    // 從雲端載入
-    async function initDashboard() {
-        const statusText = document.getElementById('status');
+    // 從 npoint 獲取資料
+    async function getHistory() {
         try {
             const res = await fetch(NPOINT_URL);
-            const cloudData = await res.json();
-            if (cloudData && typeof cloudData === 'object') {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudData));
-                statusText.innerText = "✅ 已同步雲端最新數據";
-                // 載入後執行一次自動更新檢查
-                fetchData(false);
-            }
+            if (!res.ok) throw new Error("Cloud fetch failed");
+            return await res.json();
         } catch (e) {
-            statusText.innerText = "⚠️ 無法連線雲端，顯示本地快取。";
-            fetchData(false);
+            console.warn("無法取得雲端資料，使用本地備份");
+            return JSON.parse(localStorage.getItem('STATS_BACKUP') || '{}');
         }
     }
 
-    // 同步回雲端
-    async function syncToCloud() {
-        const pwd = prompt("請輸入同步密碼：");
-        if (pwd !== SYNC_PASSWORD) return alert("密碼錯誤，拒絕同步！");
-
-        const statusText = document.getElementById('status');
-        const history = getHistory();
-        statusText.innerText = "⏳ 正在同步至雲端...";
-
+    // 將資料推送到 npoint
+    async function saveHistory(history) {
         try {
+            // 同時備份到 localStorage 增加安全性
+            localStorage.setItem('STATS_BACKUP', JSON.stringify(history));
+            
             const res = await fetch(NPOINT_URL, {
-                method: 'PUT',
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(history)
             });
-            if (res.ok) {
-                statusText.innerText = `✅ 雲端同步成功！(${new Date().toLocaleTimeString()})`;
-                alert("數據已成功推送到 npoint.io！");
-            }
+            return res.ok;
         } catch (e) {
-            statusText.innerText = "❌ 同步失敗：" + e.message;
+            console.error("Save failed:", e);
+            return false;
         }
     }
 
-    async function fetchData(force = false) {
-        const history = getHistory();
+    async function fetchData() {
         const statusText = document.getElementById('status');
         const now = new Date();
-        const lastFetch = localStorage.getItem(TIME_KEY);
-
-        if (!force && lastFetch && (now.getTime() - lastFetch < COOLDOWN)) {
-            statusText.innerText = "🕒 目前為快取數據 (1小時內)";
-            targetUrls.forEach((url, i) => { if(history[url]) renderRow(url, history[url], i); });
-            return;
-        }
-
         const todayStr = `${now.getFullYear()}/${now.getMonth() + 1}/${now.getDate()}`;
-        statusText.innerText = `🔄 正在抓取數據...`;
+
+        statusText.innerText = `🔄 正在連線雲端資料庫...`;
+        
+        let history = await getHistory();
 
         for (let i = 0; i < targetUrls.length; i++) {
             const url = targetUrls[i];
+            statusText.innerText = `⏳ 正在更新 (${i+1}/${targetUrls.length}): ${url.split('/').pop() || 'Blog'}`;
+            
             try {
                 const res = await fetch(`https://events.vercount.one/log?url=${url}`);
                 const data = await res.json();
+                
                 if (!history[url]) history[url] = [];
+                
                 const newEntry = {
                     time: now.toLocaleString('zh-TW', { hour12: true }),
-                    pv: data.page_pv || 0, site_pv: data.site_pv || 0, uv: data.site_uv || 0
+                    pv: data.page_pv || 0,
+                    site_pv: data.site_pv || 0,
+                    uv: data.site_uv || 0
                 };
+
                 const lastIdx = history[url].length - 1;
-                if (lastIdx >= 0 && history[url][lastIdx].time.split(' ')[0] === todayStr) {
-                    history[url][lastIdx] = newEntry;
+                let isSameDay = false;
+
+                if (lastIdx >= 0) {
+                    const lastDatePart = history[url][lastIdx].time.split(' ')[0];
+                    if (lastDatePart === todayStr) isSameDay = true;
+                }
+
+                if (isSameDay) {
+                    history[url][lastIdx] = newEntry; // 同天覆蓋
                 } else {
                     history[url].push(newEntry);
                     if (history[url].length > MAX_HISTORY) history[url].shift();
                 }
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+                
                 renderRow(url, history[url], i);
-            } catch (e) { console.error(url); }
+                
+            } catch (e) { console.error("Error fetching:", url); }
         }
-        localStorage.setItem(TIME_KEY, now.getTime());
-        statusText.innerText = `✅ 本地更新完成：${now.toLocaleTimeString()}，請記得同步雲端。`;
+
+        const success = await saveHistory(history);
+        statusText.innerText = success ? `✅ 雲端同步完成：${now.toLocaleTimeString()}` : `⚠️ 數據已更新但雲端儲存失敗`;
     }
 
     function renderRow(url, logs, idx) {
         const body = document.getElementById('stats-body');
         let row = document.getElementById(`row-${idx}`);
-        if (!row) { row = document.createElement('tr'); row.id = `row-${idx}`; body.appendChild(row); }
-        const curr = logs[logs.length - 1];
+        if (!row) {
+            row = document.createElement('tr');
+            row.id = `row-${idx}`;
+            body.appendChild(row);
+        }
+
+        const curr = logs[logs.length - 1] || {pv:0, site_pv:0, uv:0};
         const prev = logs.length > 1 ? logs[logs.length - 2] : curr;
         const isBlogspot = url.includes('blogspot');
         const displayName = url.replace('https://w1798.github.io/web/', '/').replace('https://nextime5.blogspot.com/', 'Blogspot');
 
         row.innerHTML = `
-            <td><span class="badge ${isBlogspot ? 'bg-bs' : 'bg-gh'}">${isBlogspot ? 'BLOG' : 'GHPG'}</span><span style="font-size:0.9rem;">${displayName}</span></td>
+            <td>
+                <span class="badge ${isBlogspot ? 'bg-bs' : 'bg-gh'}">${isBlogspot ? 'BLOG' : 'GHPG'}</span>
+                <span style="font-size:0.9rem; font-weight:500;">${displayName}</span>
+            </td>
             <td><span class="num-main">${curr.pv}</span><span class="num-prev">(原 ${prev.pv})</span></td>
             <td style="text-align:right;"><span style="color:var(--info); font-weight:600;">${curr.site_pv}</span><span class="num-prev">(原 ${prev.site_pv})</span></td>
             <td style="text-align:right;"><span style="color:#6c5ce7; font-weight:700;">${curr.uv}</span><span class="num-prev">(原 ${prev.uv})</span></td>
             <td><div class="trend-box"><canvas id="chart-${idx}"></canvas></div></td>
         `;
-        setTimeout(() => drawChart(idx, logs), 0);
+        
+        // 渲染圖表
+        setTimeout(() => {
+            const canvas = document.getElementById(`chart-${idx}`);
+            if(!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (window[`chartObj_${idx}`]) window[`chartObj_${idx}`].destroy();
+            window[`chartObj_${idx}`] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: logs.map(l => l.time),
+                    datasets: [{ 
+                        data: logs.map(l => l.pv), 
+                        borderColor: '#4834d4', 
+                        borderWidth: 2, 
+                        pointRadius: 0, 
+                        tension: 0.3, 
+                        fill: true, 
+                        backgroundColor: 'rgba(72, 52, 212, 0.1)' 
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    animation: false,
+                    plugins: { legend: { display: false } }, 
+                    scales: { x: { display: false }, y: { display: false } } 
+                }
+            });
+        }, 0);
     }
 
-    function drawChart(idx, logs) {
-        const ctx = document.getElementById(`chart-${idx}`).getContext('2d');
-        if (window[`chartObj_${idx}`]) window[`chartObj_${idx}`].destroy();
-        window[`chartObj_${idx}`] = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: logs.map(l => l.time),
-                datasets: [{ data: logs.map(l => l.pv), borderColor: '#4834d4', borderWidth: 2, pointRadius: 0, tension: 0.3, fill: true, backgroundColor: 'rgba(72, 52, 212, 0.1)' }]
-            },
-            options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }
-        });
+    async function exportJSON() {
+        const history = await getHistory();
+        const blob = new Blob([JSON.stringify(history, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `stats_backup_${new Date().getTime()}.json`;
+        a.click();
     }
 
-    function exportJSON() {
-        const history = getHistory();
-        let jsonParts = ["{"];
-        const urls = Object.keys(history);
-        urls.forEach((url, uIdx) => {
-            jsonParts.push(`  "${url}": [`);
-            const records = history[url].map(r => `    ${JSON.stringify(r)}`);
-            jsonParts.push(records.join(",\n"));
-            jsonParts.push(uIdx === urls.length - 1 ? "  ]" : "  ],");
-        });
-        jsonParts.push("}");
-        const blob = new Blob([jsonParts.join("\n")], { type: 'application/json' });
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-        a.download = `stats_export.json`; a.click();
+    function importJSON(event) {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const history = JSON.parse(e.target.result);
+                if(confirm("確定要將此檔案內容覆蓋到雲端嗎？")) {
+                    await saveHistory(history);
+                    location.reload();
+                }
+            } catch (err) { alert("無效的 JSON 檔案"); }
+        };
+        reader.readAsText(event.target.files[0]);
     }
 
-    function resetData() { if(confirm("確定重置？")) { localStorage.clear(); location.reload(); } }
+    function resetData() { 
+        if(confirm("⚠ 注意：這將清空雲端上所有的歷史數據！確定嗎？")) { 
+            saveHistory({}).then(() => location.reload()); 
+        } 
+    }
 
-    window.onload = initDashboard;
+    window.onload = () => { fetchData(); };
 </script>
 </body>
 </html>
