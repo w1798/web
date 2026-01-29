@@ -164,7 +164,7 @@
     </main>
 
     <footer>
-        <a href="https://w1798.github.io/web/" target="_blank" style="color:var(--text); text-decoration:none">Completed by Charles Nextime with AI assistance, 20260128</a>
+        <a href="https://w1798.github.io/web/" target="_blank" style="color:var(--text); text-decoration:none">Completed by Charles Nextime with AI assistance, 20260129</a>
         <span id="busuanzi_container_page_pv" style="margin-left:15px; color:#888; border-left: 1px solid var(--border); padding-left:15px;">本頁使用量 <span id="busuanzi_value_page_pv" style="color:#00b894; font-weight:bold;"></span> 次</span>
     </footer>
 </div>
@@ -174,6 +174,25 @@
     const in1 = document.getElementById('inputArea');
     const in2 = document.getElementById('inputArea2');
     const out = document.getElementById('outputArea');
+
+// 新增：只要原始資料變動，就清空結果區（並記錄歷史）
+    function clearOutputIfInputChanged() {
+        if (out.value !== "") {
+            saveHistory(); // 清空前先存入歷史，萬一按錯可以 undo
+            out.value = "";
+            updateStats();
+        }
+    }
+
+    // 綁定事件：監控資料源 1 & 2
+    in1.addEventListener('input', () => {
+        updateStats();
+        clearOutputIfInputChanged();
+    });
+    in2.addEventListener('input', () => {
+        updateStats();
+        clearOutputIfInputChanged();
+    });
 
     function saveHistory() { history.push(out.value); if (history.length > 30) history.shift(); }
     function undo() { if (history.length > 0) { out.value = history.pop(); updateStats(); } }
@@ -190,12 +209,30 @@
         document.getElementById('statOut').innerText = s(out);
     }
 
-    async function pasteTo(id) { try { document.getElementById(id).value = await navigator.clipboard.readText(); updateStats(); } catch(e) { alert("請手動貼上"); } }
+    async function pasteTo(id) { 
+        try { 
+            document.getElementById(id).value = await navigator.clipboard.readText(); 
+            // 貼上後也要觸發清空結果
+            if (id === 'inputArea' || id === 'inputArea2') clearOutputIfInputChanged();
+            updateStats(); 
+        } catch(e) { 
+            alert("請手動貼上"); 
+        } 
+    }
+
     function clearArea(id) { 
-        if (id === 'outputArea') saveHistory();
-        document.getElementById(id).value = ''; 
+        // 如果清空的是資料源 1 或 2，連帶清空結果區
+        if (id === 'inputArea' || id === 'inputArea2') {
+            document.getElementById(id).value = '';
+            clearOutputIfInputChanged();
+        } else {
+            // 如果單獨清空結果區
+            saveHistory();
+            document.getElementById(id).value = '';
+        }
         updateStats(); 
     }
+
     function copyOut() { navigator.clipboard.writeText(out.value); alert('已複製到剪貼簿！'); }
     function downloadTxt() {
         const blob = new Blob([out.value], {type: 'text/plain'});
