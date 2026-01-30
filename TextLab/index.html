@@ -182,16 +182,16 @@
 
     <main>
         <div class="box-25">
-            <div class="toolbar-top"><span>原始資料 1 <small id="stat1"></small></span>
+            <div class="toolbar-top"><span>原始資料1 <small id="stat1"></small></span>
                 <div><button class="secondary" onclick="pasteTo('inputArea')">貼上</button> <button class="secondary m-left" onclick="clearArea('inputArea')">清空</button></div>
             </div>
-            <textarea id="inputArea" oninput="updateStats()" placeholder="資料源 1..."></textarea>
+            <textarea id="inputArea" oninput="updateStats()" placeholder="資料源1..."></textarea>
         </div>
         <div class="box-25">
-            <div class="toolbar-top"><span>原始資料 2 <small id="stat2"></small></span>
+            <div class="toolbar-top"><span>原始資料2 <small id="stat2"></small></span>
                 <div><button class="secondary" onclick="pasteTo('inputArea2')">貼上</button> <button class="secondary m-left" onclick="clearArea('inputArea2')">清空</button></div>
             </div>
-            <textarea id="inputArea2" oninput="updateStats()" placeholder="資料源 2 (用於資1+資2功能)..."></textarea>
+            <textarea id="inputArea2" oninput="updateStats()" placeholder="資料源2(用於左上資1資2功能)..."></textarea>
         </div>
         <div class="box-50">
             <div class="toolbar-top"><span>處理結果 <small id="statOut"></small></span>
@@ -278,7 +278,39 @@
         updateStats(); 
     }
 
-    function copyOut() { navigator.clipboard.writeText(out.value); alert('已複製到剪貼簿！'); }
+    function copyOut() {
+        // 執行複製
+        navigator.clipboard.writeText(out.value);
+    
+        // 建立 Toast 元素
+        const toast = document.createElement('div');
+        toast.innerText = '已複製到剪貼簿！';
+        
+        // 設定樣式 (也可以寫在 CSS 裡)
+        Object.assign(toast.style, {
+            position: 'fixed',
+            bottom: '300px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'rgba(0, 0, 0, 0.8)',
+            color: '#fff',
+            padding: '10px 20px',
+            borderRadius: '20px',
+            zIndex: '10000',
+            fontSize: '20px',
+            transition: 'opacity 0.5s ease'
+        });
+    
+        document.body.appendChild(toast);
+    
+        // 1秒後開始淡出，淡出完成後移除元素
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 500); // 確保動畫跑完再刪除
+        }, 1000);
+    }
+
+
     function downloadTxt() {
         const blob = new Blob([out.value], {type: 'text/plain'});
         const a = document.createElement('a');
