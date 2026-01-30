@@ -136,34 +136,71 @@ display: inline-block; font-weight: bold; }
 .author-link { color: #888; text-decoratimary); /* 若想讓顏色跟隨主題色，可加上這行 */
 }
 
-/* 手機版響應式微調 */
-@media (max-width: 767px) {
-    header { padding: 0.5rem 1rem; flex-direction: column; gap: 10px; }
-    .settings-top { flex-direction: column; height: auto; }
-    .settings-box { flex: 1 1 auto !important; }
+/* --- 手機版 RWD 調整 --- */
+@media (max-width: 768px) {
+    body { padding: 8px; }
     
-    /* 修正手機版語氣選擇器過高的問題 */
-    .student-modal-footer-combined { 
+    header { 
+        padding: 10px; 
         flex-direction: column; 
-        align-items: stretch; 
-        gap: 8px; 
-        padding-top: 5px;
+        text-align: center;
+        width: 100%;
+        overflow-x: hidden; /* 防止標頭撐寬螢幕 */
     }
-    .tone-bar {
-        padding: 5px 10px;
-        border-radius: 10px;
-        flex-direction: row; /* 保持橫向排列 */
-        flex-wrap: wrap;     /* 容許換行 */
+
+    .logo { font-size: 1.4rem; margin-bottom: 10px; width: 100%; }
+
+    /* 修正導覽列在手機版溢出的問題 */
+    .nav-buttons {
+        width: 100%;
+        justify-content: center !important; /* 手機版強制置中 */
+        flex-wrap: wrap;
+        gap: 5px;
     }
-    .tone-list {
-        gap: 4px;
-    }
-    .tone-list .trait-item {
-        padding: 2px 8px;    /* 縮小按鈕內距 */
-        font-size: 0.85rem;  /* 稍微縮小文字 */
-    }
-    .footer-btns-group {
+
+    .nav-group {
+        width: 100%;
         justify-content: center;
+        margin: 2px 0 !important; /* 移除 danger-zone 的大間距 */
+    }
+
+    .danger-zone {
+        margin: 5px 0 !important; 
+        background: transparent; /* 移除背景色避免視覺太亂 */
+    }
+
+    /* 修正主畫面與彈窗寬度 */
+    .main-layout { 
+        grid-template-columns: repeat(2, 1fr) !important; 
+        gap: 8px;
+    }
+
+    .modal-content { 
+        padding: 15px; 
+        padding-top: 60px; 
+        width: 95% !important; /* 強制寬度不超過螢幕 */
+        margin: 2vh auto;
+        box-sizing: border-box;
+    }
+
+    /* 讓設定視窗在手機上能完整顯示 */
+    .settings-grid-container { 
+        grid-template-columns: 1fr !important; 
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* 針對各個 Modal 內容進行微調 */
+    .modal-full {
+        height: 96vh;
+        width: 98% !important;
+    }
+
+    .large-input { font-size: 1.3rem; padding: 8px; }
+
+    /* 調整座號字體在手機上的最大上限，避免擠出格子 */
+    .student-item {
+        font-size: clamp(14px, 4vw, 24px) !important; 
     }
 }
 
