@@ -136,76 +136,63 @@ display: inline-block; font-weight: bold; }
 .author-link { color: #888; text-decoratimary); /* 若想讓顏色跟隨主題色，可加上這行 */
 }
 
-/* --- 手機版 RWD 調整 --- */
+/* --- 手機版 RWD 修正版 --- */
 @media (max-width: 768px) {
-    body { padding: 8px; }
-    
+    body { padding: 10px; }
     header { 
         padding: 10px; 
         flex-direction: column; 
-        text-align: center;
-        width: 100%;
-        overflow-x: hidden; /* 防止標頭撐寬螢幕 */
+        text-align: center; 
     }
-
-    .logo { font-size: 1.4rem; margin-bottom: 10px; width: 100%; }
-
-    /* 修正導覽列在手機版溢出的問題 */
+    .logo { font-size: 1.5rem; margin-bottom: 10px; }
+    
+    /* 讓導覽按鈕容器置中並允許並排 */
     .nav-buttons {
-        width: 100%;
-        justify-content: center !important; /* 手機版強制置中 */
+        justify-content: center !important; 
         flex-wrap: wrap;
-        gap: 5px;
-    }
-
-    .nav-group {
+        gap: 8px; /* 設定按鈕之間的間距 */
         width: 100%;
-        justify-content: center;
-        margin: 2px 0 !important; /* 移除 danger-zone 的大間距 */
     }
 
+    /* 關鍵：取消群組的 100% 寬度，讓它們在同一行 */
+    .nav-group {
+        width: auto !important; 
+        display: flex;
+        gap: 5px;
+        margin: 0 !important; /* 移除外邊距 */
+    }
+
+    /* 修正重置按鈕區塊，移除大間距與強制寬度 */
     .danger-zone {
-        margin: 0 5px !important;
-	margin-left: 5px !important; 
-        margin-right: 5px !important; 
-        background: transparent; /* 移除背景色避免視覺太亂 */
+        margin: 0 !important;
+        padding: 0;
+        background-color: transparent !important; /* 移除底色避免佔滿整行感 */
+        border: none !important;
     }
 
-    /* 修正主畫面與彈窗寬度 */
-    .main-layout { 
-        grid-template-columns: repeat(2, 1fr) !important; 
-        gap: 8px;
-    }
-
+    /* 確保彈窗不會過大 */
     .modal-content { 
         padding: 15px; 
         padding-top: 60px; 
-        width: 95% !important; /* 強制寬度不超過螢幕 */
-        margin: 2vh auto;
+        width: 95% !important; 
         box-sizing: border-box;
     }
 
-    /* 讓設定視窗在手機上能完整顯示 */
     .settings-grid-container { 
         grid-template-columns: 1fr !important; 
-        display: flex;
-        flex-direction: column;
     }
 
-    /* 針對各個 Modal 內容進行微調 */
-    .modal-full {
-        height: 96vh;
-        width: 98% !important;
+    .main-layout { 
+        grid-template-columns: repeat(2, 1fr) !important; 
+        gap: 10px;
     }
 
-    .large-input { font-size: 1.3rem; padding: 8px; }
-
-    /* 調整座號字體在手機上的最大上限，避免擠出格子 */
-    .student-item {
-        font-size: clamp(14px, 4vw, 24px) !important; 
+    /* 縮小按鈕文字避免太擠 */
+    .nav-btn {
+        padding: 6px 10px;
+        font-size: 0.9rem;
     }
 }
-
 /* 讓導覽列容器內的內容全部向右靠齊 */
 .nav-buttons {
     display: flex;
