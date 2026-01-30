@@ -7,56 +7,34 @@
     <style>
         :root { --primary: #4834d4; --success: #00b894; --info: #0984e3; --danger: #ff7675; --gray: #95a5a6; --dark: #2d3436; }
         body { font-family: -apple-system, system-ui, sans-serif; background: #f0f2f5; color: var(--dark); margin: 0; padding: 0; }
-        
-        /* 凍結區塊 */
         .top-bar { position: sticky; top: 0; z-index: 1000; background: #f0f2f5; padding: 15px 2.5% 5px 2.5%; }
         .container-header { background: white; padding: 20px 25px; border-radius: 16px 16px 0 0; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-width: 95%; margin: 0 auto; }
         .header { display: flex; justify-content: space-between; align-items: center; }
-        
         .main-content { padding: 0 2.5%; max-width: 95%; margin: 0 auto; }
         .table-wrapper { background: white; border-radius: 0 0 16px 16px; box-shadow: 0 10px 20px rgba(0,0,0,0.08); margin-bottom: 30px; }
         table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
-        
-        thead th { 
-            position: sticky; 
-            top: 102px; 
-            z-index: 900; 
-            background: #f8f9fa; 
-            font-size: 1rem; 
-            font-weight: 800;
-            color: #2d3436;
-            padding: 18px 15px;
-            border-bottom: 3px solid #eee;
-            text-align: left;
-        }
-
+        thead th { position: sticky; top: 102px; z-index: 900; background: #f8f9fa; font-size: 1rem; font-weight: 800; color: #2d3436; padding: 18px 15px; border-bottom: 3px solid #eee; text-align: left; }
         td { padding: 16px 15px; border-bottom: 1px solid #f1f2f6; word-break: break-all; vertical-align: middle; }
         .project-name { font-weight: 800; color: var(--primary); font-size: 1.1rem; }
         .project-url { font-size: 0.8rem; color: #999; margin-top: 3px; }
-        .url-link { text-decoration: none; display: block; }
         .num-main { font-family: monospace; font-weight: 800; color: var(--success); font-size: 1.25rem; }
-        .num-sub { font-size: 0.85rem; color: #95a5a6; margin-left: 5px; }
-
+        .num-sub { font-size: 0.85rem; color: #95a5a6; margin-left: 5px; font-weight: normal; }
         .btn { border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: 0.2s; color: white; display: inline-flex; align-items: center; gap: 5px; }
         .btn-config { background: var(--dark); }
         .btn-sync { background: var(--success); }
-        .btn-import { background: var(--info); }
         .btn-export { background: #636e72; }
+        .btn-import { background: var(--info); }
         .btn-danger { background: var(--danger); }
         .btn-reset { background: #ff7675; padding: 4px 8px; font-size: 0.7rem; margin-left: 8px; }
-
-        /* 設定視窗 */
         #settings-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; backdrop-filter: blur(5px); }
         .settings-card { background: white; width: 90%; max-width: 900px; margin: 3vh auto; border-radius: 16px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; }
-        .settings-header { padding: 15px 25px; border-bottom: 1px solid #eee; flex-shrink: 0; }
         .settings-body { padding: 20px 25px; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .settings-footer { padding: 15px 25px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 12px; background: #fafafa; }
-        
         .form-control { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        textarea.form-control { height: 300px; font-size: 1.1rem; line-height: 1.5; font-family: monospace; }
+        textarea.form-control { height: 350px; font-size: 1.15rem; line-height: 1.6; font-family: monospace; }
         .footer { text-align: center; padding: 40px 20px; font-size: 0.9rem; color: #7f8c8d; }
         .badge { padding: 4px 10px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; }
         .trend-box { width: 100%; height: 55px; }
+        #busuanzi_container_page_pv { color: #888; font-size: 0.9rem; margin-left: 15px; border-left: 1px solid #ccc; padding-left: 15px; }
     </style>
 </head>
 <body>
@@ -100,42 +78,35 @@
     <a href="https://w1798.github.io/web/" target="_blank" style="color:var(--primary); text-decoration:none; font-weight:600;">
         Completed by Charles Nextime with AI assistance, 20260130
     </a>
-<span id="busuanzi_container_page_pv">
-    本頁使用量 <span id="busuanzi_value_page_pv"></span> 次
-</span>
-
+    <span id="busuanzi_container_page_pv">
+        本頁使用量 <span id="busuanzi_value_page_pv"></span> 次
+    </span>
 </div>
 
 <div id="settings-overlay">
     <div class="settings-card">
-        <div class="settings-header"><h2 style="margin:0; font-size: 1.2rem;">⚙️ 系統進階配置</h2></div>
+        <div style="padding:15px 25px; border-bottom:1px solid #eee;"><h2>⚙️ 系統進階配置</h2></div>
         <div class="settings-body">
             <div>
-                <label style="font-weight:700; font-size:0.9rem; display:block; margin-bottom:8px;">監控網址清單 <button class="btn btn-reset" onclick="resetField('set-urls')">重置</button></label>
-                <textarea id="set-urls" class="form-control"  placeholder="每行輸入一個網址..."></textarea>
+                <label style="font-weight:700; display:block; margin-bottom:8px;">監控網址清單 <button class="btn btn-reset" onclick="resetField('set-urls')">重置</button></label>
+                <textarea id="set-urls" class="form-control" placeholder="每行輸入一個網址..."></textarea>
             </div>
             <div>
                 <div style="margin-bottom:15px;">
-                    <label style="font-weight:700; font-size:0.9rem; display:block; margin-bottom:5px;">JSONBin ID</label>
+                    <label style="font-weight:700; display:block; margin-bottom:5px;">JSONBin ID <button class="btn btn-reset" onclick="resetField('set-bin-id')">重置</button></label>
                     <input type="text" id="set-bin-id" class="form-control">
                 </div>
                 <div style="margin-bottom:15px;">
-                    <label style="font-weight:700; font-size:0.9rem; display:block; margin-bottom:5px;">JSONBin API Key <span style="color:var(--primary)">(只能用 X-Access-Key)</span></label>
+                    <label style="font-weight:700; display:block; margin-bottom:5px;">JSONBin API Key <button class="btn btn-reset" onclick="resetField('set-api-key')">重置</button></label>
                     <input type="text" id="set-api-key" class="form-control">
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div>
-                        <label style="font-weight:700; font-size:0.9rem; display:block; margin-bottom:5px;">雲端緩衝 (分)</label>
-                        <input type="number" id="set-cloud-cd" class="form-control" min="0">
-                    </div>
-                    <div>
-                        <label style="font-weight:700; font-size:0.9rem; display:block; margin-bottom:5px;">PV 抓取緩衝 (分)</label>
-                        <input type="number" id="set-pv-cd" class="form-control" min="0">
-                    </div>
+                    <div><label>雲端緩衝 (分)</label><input type="number" id="set-cloud-cd" class="form-control"></div>
+                    <div><label>PV 抓取緩衝 (分)</label><input type="number" id="set-pv-cd" class="form-control"></div>
                 </div>
             </div>
         </div>
-        <div class="settings-footer">
+        <div style="padding:15px 25px; border-top:1px solid #eee; text-align:right;">
             <button class="btn" style="background:#eee; color:#333;" onclick="toggleSettings(false)">取消</button>
             <button class="btn btn-sync" onclick="saveSettings()">💾 儲存並同步</button>
         </div>
@@ -147,7 +118,7 @@
 <script>
     const STORAGE_KEY = 'CHARLES_SETTINGS_V3';
     const DATA_KEY = 'CHARLES_STATS_V3';
-    // 預設值
+    const PENDING_KEY = 'PUSH_PENDING';
     let appData = { settings: { binId: '', apiKey: '', urls: [], cloudCD: 60, pvCD: 60 }, stats: {} };
 
     async function init() {
@@ -157,75 +128,67 @@
         if (savedStats) appData.stats = JSON.parse(savedStats);
 
         const lastCloud = localStorage.getItem('LAST_CLOUD_LOAD');
-        const now = Date.now();
-        
-        // 核心邏輯：如果是剛存完設定（forceSync 標記存在），則跳過 loadFromCloud
-        const forceSync = localStorage.getItem('FORCE_SYNC_PENDING');
-        
-        const needsSync = !appData.settings.urls.length || 
-                          !lastCloud || 
-                          (appData.settings.cloudCD === 0) || 
-                          (now - lastCloud > appData.settings.cloudCD * 60000);
+        const isPushPending = localStorage.getItem(PENDING_KEY) === 'true';
+        const isUrlEmpty = !appData.settings.urls || appData.settings.urls.length === 0;
 
-        if (appData.settings.binId && appData.settings.apiKey && needsSync && !forceSync) {
-            await loadFromCloud();
-        } else if (appData.settings.binId && appData.settings.apiKey) {
-            updateStatusUI(forceSync ? 'online' : 'cache');
+        if (appData.settings.binId && appData.settings.apiKey) {
+            if (isUrlEmpty) {
+                await loadFromCloud();
+                localStorage.removeItem(PENDING_KEY);
+            } 
+            else if (isPushPending) {
+                updateStatusUI('syncing');
+                await refreshPV(true); 
+                localStorage.removeItem(PENDING_KEY);
+            } 
+            else if (!lastCloud || (Date.now() - lastCloud > appData.settings.cloudCD * 60000)) {
+                await loadFromCloud();
+            } else {
+                updateStatusUI('cache');
+            }
         } else {
             updateStatusUI('offline');
         }
         
         renderUI();
         
-        // 處理自動 PV 抓取
-        const lastSync = localStorage.getItem('LAST_SYNC_TIME');
-        if (forceSync || !lastSync || (appData.settings.pvCD === 0) || (now - lastSync > appData.settings.pvCD * 60000)) {
-            refreshPV(forceSync ? true : false);
-            localStorage.removeItem('FORCE_SYNC_PENDING');
+        if (!isUrlEmpty) {
+            const lastSync = localStorage.getItem('LAST_SYNC_TIME');
+            if (!lastSync || (appData.settings.pvCD === 0) || (Date.now() - lastSync > appData.settings.pvCD * 60000)) {
+                refreshPV(false);
+            }
         }
     }
 
     async function loadFromCloud() {
         try {
+            updateStatusUI('syncing');
             const res = await fetch(`https://api.jsonbin.io/v3/b/${appData.settings.binId}/latest`, {
                 headers: { 'X-Access-Key': appData.settings.apiKey }
             });
             if (res.ok) {
                 const cloud = await res.json();
                 appData.stats = cloud.record.stats || {};
-                // 雲端載入時，不應覆蓋本地的金鑰
                 if (cloud.record.settings) {
-                    const { binId, apiKey, ...otherSettings } = cloud.record.settings;
-                    appData.settings = { ...appData.settings, ...otherSettings };
+                    const { binId, apiKey, ...other } = cloud.record.settings;
+                    appData.settings = { ...appData.settings, ...other };
                 }
                 localStorage.setItem(DATA_KEY, JSON.stringify(appData.stats));
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(appData.settings));
                 localStorage.setItem('LAST_CLOUD_LOAD', Date.now());
                 updateStatusUI('online');
+                return true;
             }
-        } catch (e) { updateStatusUI('offline'); }
+        } catch (e) {}
+        updateStatusUI('offline');
+        return false;
     }
 
-    function updateStatusUI(mode) {
-        const statusEl = document.getElementById('status-bar');
-        const map = {
-            'offline': { bg: '#ff7675', text: '雲端斷線' },
-            'cache': { bg: '#0984e3', text: '雲端緩衝' },
-            'readonly': { bg: '#e65100', text: '寫入失敗' },
-            'online': { bg: '#065f46', text: '同步成功' }
-        };
-        const s = map[mode] || map.offline;
-        statusEl.innerHTML = `模式：<span class="badge" style="background:${s.bg}; color:white">${s.text}</span>`;
-    }
-
-    async function refreshPV(force = false) {
-        if (!force) {
-            const lastSync = localStorage.getItem('LAST_SYNC_TIME');
-            if (lastSync && appData.settings.pvCD !== 0 && (Date.now() - lastSync < appData.settings.pvCD * 60000)) return;
-        }
+    async function refreshPV(isManualUpload = false) {
+        if (!appData.settings.urls || appData.settings.urls.length === 0) return;
         const todayStr = new Date().toLocaleDateString('zh-TW');
-
         try {
+            if(isManualUpload) updateStatusUI('syncing');
             for (const url of appData.settings.urls) {
                 try {
                     const res = await fetch(`https://events.vercount.one/log?url=${encodeURIComponent(url)}`);
@@ -242,26 +205,28 @@
 
             if (appData.settings.binId && appData.settings.apiKey) {
                 const { binId, apiKey, ...safeSettings } = appData.settings;
-                const writeRes = await fetch(`https://api.jsonbin.io/v3/b/${appData.settings.binId}`, {
+                await fetch(`https://api.jsonbin.io/v3/b/${appData.settings.binId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'X-Access-Key': appData.settings.apiKey },
                     body: JSON.stringify({ settings: safeSettings, stats: appData.stats })
                 });
-                updateStatusUI(writeRes.ok ? 'online' : 'readonly');
+                updateStatusUI('online');
             }
-        } catch (e) { updateStatusUI('offline'); } finally { renderUI(); }
+        } catch (e) {} finally { renderUI(); }
     }
 
     function renderUI() {
         const tbody = document.getElementById('stats-body');
         tbody.innerHTML = "";
+        if (!appData.settings.urls) return;
         appData.settings.urls.forEach((url, i) => {
             const logs = appData.stats[url] || [];
             const curr = logs[logs.length - 1] || {pv:0, site_pv:0, uv:0};
             const prev = logs.length > 1 ? logs[logs.length - 2] : {pv:0, site_pv:0, uv:0};
+            
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><a href="${url}" target="_blank" class="url-link"><div class="project-name">${url.split('/').filter(p=>p).pop() || url}</div><div class="project-url">${url}</div></a></td>
+                <td><a href="${url}" target="_blank" class="url-link" style="text-decoration:none;"><div class="project-name">${url.split('/').filter(p=>p).pop() || url}</div><div class="project-url">${url}</div></a></td>
                 <td><span class="num-main">${curr.pv}</span><span class="num-sub">(原${prev.pv})</span></td>
                 <td style="text-align:right;"><span class="num-main" style="color:var(--info)">${curr.site_pv}</span><span class="num-sub">(原${prev.site_pv})</span></td>
                 <td style="text-align:right;"><span class="num-main" style="color:#6c5ce7">${curr.uv}</span><span class="num-sub">(原${prev.uv})</span></td>
@@ -273,19 +238,32 @@
     }
 
     function drawChart(id, logs) {
-        const ctx = document.getElementById(id).getContext('2d');
-        new Chart(ctx, {
+        const el = document.getElementById(id);
+        if(!el) return;
+        new Chart(el.getContext('2d'), {
             type: 'line',
             data: { labels: logs.map(l => l.time), datasets: [{ data: logs.map(l => l.pv), borderColor: '#4834d4', borderWidth: 2, pointRadius: 0, tension: 0.3 }] },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: false }, scales: { x: { display: false }, y: { display: false } } }
         });
     }
 
+    function updateStatusUI(mode) {
+        const statusEl = document.getElementById('status-bar');
+        const map = {
+            'offline': { bg: '#ff7675', text: '尚未設定/離線' },
+            'cache': { bg: '#0984e3', text: '緩衝讀取中' },
+            'online': { bg: '#065f46', text: '同步完成' },
+            'syncing': { bg: '#f1c40f', text: '雲端同步中...' }
+        };
+        const s = map[mode] || map.offline;
+        statusEl.innerHTML = `模式：<span class="badge" style="background:${s.bg}; color:white">${s.text}</span>`;
+    }
+
     function toggleSettings(show) {
         if (show) {
-            document.getElementById('set-urls').value = appData.settings.urls.join('\n');
-            document.getElementById('set-bin-id').value = appData.settings.binId;
-            document.getElementById('set-api-key').value = appData.settings.apiKey;
+            document.getElementById('set-urls').value = (appData.settings.urls || []).join('\n');
+            document.getElementById('set-bin-id').value = appData.settings.binId || '';
+            document.getElementById('set-api-key').value = appData.settings.apiKey || '';
             document.getElementById('set-cloud-cd').value = appData.settings.cloudCD;
             document.getElementById('set-pv-cd').value = appData.settings.pvCD;
             document.getElementById('settings-overlay').style.display = 'block';
@@ -293,27 +271,21 @@
     }
 
     function saveSettings() {
-        const cVal = document.getElementById('set-cloud-cd').value;
-        const pVal = document.getElementById('set-pv-cd').value;
-        
         const s = {
             urls: document.getElementById('set-urls').value.split('\n').map(u => u.trim()).filter(u => u),
             binId: document.getElementById('set-bin-id').value.trim(),
             apiKey: document.getElementById('set-api-key').value.trim(),
-            // 強制轉型數字，確保 0 不會失效
-            cloudCD: cVal === "" ? 60 : parseInt(cVal),
-            pvCD: pVal === "" ? 60 : parseInt(pVal)
+            cloudCD: parseInt(document.getElementById('set-cloud-cd').value) || 0,
+            pvCD: parseInt(document.getElementById('set-pv-cd').value) || 0
         };
-        
-        // 儲存到本地
+        if (s.urls.length > 0) localStorage.setItem(PENDING_KEY, 'true');
+        else localStorage.removeItem(PENDING_KEY);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
-        // 標記：目前本地才是最新的，下次 init 跳過雲端抓取設定，直接推送到雲端
-        localStorage.setItem('FORCE_SYNC_PENDING', 'true');
-        
+        localStorage.removeItem('LAST_CLOUD_LOAD');
         location.reload();
     }
 
-    function fullSystemReset() { if(confirm("🗑️ 確定要清空所有資料嗎？")) { localStorage.clear(); location.reload(); } }
+    function fullSystemReset() { if(confirm("確定重置嗎？")) { localStorage.clear(); location.reload(); } }
     function resetField(id) { if(confirm("確定清空嗎？")) document.getElementById(id).value = ""; }
     function exportData() {
         const blob = new Blob([JSON.stringify({ settings: appData.settings, stats: appData.stats }, null, 2)], { type: 'application/json' });
@@ -322,36 +294,18 @@
     function triggerImport() { document.getElementById('import-file').click(); }
     function handleFileImport(event) {
         const reader = new FileReader();
-        reader.onload = async (e) => {
-            const imported = JSON.parse(e.target.result);
-            appData.stats = imported.stats || {}; appData.settings = { ...appData.settings, ...imported.settings };
-            localStorage.setItem(DATA_KEY, JSON.stringify(appData.stats)); localStorage.setItem(STORAGE_KEY, JSON.stringify(appData.settings));
-            localStorage.setItem('FORCE_SYNC_PENDING', 'true');
+        reader.onload = (e) => {
+            const d = JSON.parse(e.target.result);
+            appData.stats = d.stats || {}; appData.settings = d.settings || appData.settings;
+            localStorage.setItem(DATA_KEY, JSON.stringify(appData.stats));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appData.settings));
+            localStorage.setItem(PENDING_KEY, 'true'); 
             location.reload();
         };
         reader.readAsText(event.target.files[0]);
     }
     window.onload = init;
 </script>
-
-
-<style>
-#busuanzi_container_page_pv {
-    color: #888;
-    font-size: 0.9rem;
-    margin-left: 15px;
-    border-left: 1px solid rgba(128, 128, 128, 0.5); /* 加一條細細的分隔線 */
-    padding-left: 15px;
-}
-
-#busuanzi_value_page_pv {
-    color: #00b894;
-    font-weight: bold;
-}
-</style>
-
 <script defer src="https://events.vercount.one/js"></script>
-
-
 </body>
 </html>
