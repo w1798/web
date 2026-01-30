@@ -14,4 +14,6 @@
 
 ★ 多功能文字處理器
 
+★ Vercount 數據儀表板
+
 ![Visitor Count](https://komarev.com/ghpvc/?username=w1798)
