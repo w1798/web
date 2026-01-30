@@ -222,7 +222,7 @@ display: inline-block; font-weight: bold; }
 
 /* 關鍵：利用左右 margin 在重置按鈕旁留白 */
 .danger-zone {
-    margin-left: 50px;  /* 增加左側間距，與「匯入」拉開距離 */
+    margin-left: 5px;  /* 增加左側間距，與「匯入」拉開距離 */
     margin-right: 50px; /* 增加右側間距，與「設定」拉開距離 */
     background-color: #fff1f0; /* 選用：給重置按鈕淡淡的底色作為視覺提醒 */
     border-color: #ffa39e;     /* 選用：淡紅色邊框 *
