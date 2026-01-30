@@ -10,6 +10,21 @@
             --text: #f1f5f9; --border: #334155; --accent: #22c55e; --danger: #e11d48;
         }
 
+        /* 淺色模式變數 */
+        .light-theme {
+            --bg: #DDDDFF; 
+            --card-bg: 	#D0D0D0;
+            --text: #1e293b;
+            --border: #cbd5e1;
+            --primary: #4f46e5;
+        }
+        
+        /* 讓 textarea 在淺色模式下背景變白、文字變黑 */
+        .light-theme textarea, .light-theme input, .light-theme select {
+            background: #ECECFF !important;
+            color: #334155 !important;
+        }
+
         body, html {
             margin: 0; padding: 0; height: 100%;
             font-family: 'Inter', 'Microsoft JhengHei', sans-serif;
@@ -70,6 +85,26 @@
         }
         .toolbar-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 16px; }
 
+        /* 全屏模式下的容器樣式 */
+        .fullscreen-mode {
+            position: fixed !important;
+            top: 0; left: 0;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 9999;
+            padding: 20px !important;
+            background: var(--bg) !important;
+            box-sizing: border-box;
+        }
+        
+        /* 隱藏全屏時不需要的元素 */
+        .hidden { display: none !important; }
+        
+        /* 全屏按鈕在全屏狀態下的特殊樣式（例如變成紅色退出） */
+        .btn-exit-full {
+            background: var(--danger) !important;
+        }
+
         footer { height: 35px; display: flex; justify-content: center; align-items: center; background: var(--card-bg); border-top: 1px solid var(--border); font-size: 14px; }
 
         @media (max-width: 1100px) {
@@ -89,26 +124,30 @@
                 <button class="purple" onclick="dualProcess('interleave')">資1插資2</button>
                 <button class="purple" onclick="dualProcess('compare')">資12比對</button>
                 <span style="color:var(--border); margin:0 5px;">|</span>
-                <button class="secondary" onclick="process('findDup')">資1找重複</button>
-                <span style="color:var(--border); margin:0 5px;">|</span>
-                <button class="secondary" onclick="process('indent')">增縮排</button>
-                <button class="secondary" onclick="process('outdent')">減縮排</button>
-                <span style="color:var(--border); margin:0 5px;">|</span>
+                <button class="green" onclick="process('trimSpace')">刪空格</button>
                 <button class="secondary" onclick="process('noEng')">刪英文</button>
                 <button class="secondary" onclick="process('noNum')">刪數字</button>
                 <button class="secondary" onclick="process('noSym')">刪符號</button>
                 <button class="secondary" onclick="process('noHTML')">刪HTML</button>
-                <button class="secondary" onclick="process('trimSpace')">刪空格</button>
+
+                <span style="color:var(--border); margin:0 5px;">|</span>
+                <button class="green" onclick="process('indent')">增縮排</button>
+                <button class="secondary" onclick="process('outdent')">減縮排</button>
+                <span style="color:var(--border); margin:0 5px;">|</span>
+                <button class="secondary" onclick="process('findDup')">資1找重複</button>
 <div style="flex-basis: 100%; height: 0;"></div>
-                <button class="secondary" onclick="process('noEmptyLine')">刪空行</button>
+                <button class="green" onclick="process('noEmptyLine')">刪空行</button>
                 <button class="secondary" onclick="process('addEmptyLine')">加空行</button>
                 <span style="color:var(--border); margin:0 5px;">|</span>
-                <button class="secondary" onclick="process('sort')">排序</button>
+                <button class="green" onclick="process('sort')">排序</button>
                 <button class="secondary" onclick="process('shuffle')">隨機排</button>
                 <span style="color:var(--border); margin:0 5px;">|</span>
                 <button class="secondary" onclick="process('capitalize')">首字大寫</button>
                 <button class="secondary" onclick="process('upper')">全大寫</button>
                 <button class="secondary" onclick="process('lower')">全小寫</button>
+		<span style="color:var(--border); margin:0 5px;">|</span>
+		<button class="purple" onclick="process('jsonSmart')">JSON 格式/壓縮</button>
+		<button class="purple" onclick="process('cssSmart')">CSS 格式/壓縮</button>
 
             </div>
         </div>
@@ -134,7 +173,10 @@
             <div class="tool-item">編號 <select id="numPad"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select> <button onclick="process('autoNum')">執行</button></div>
                  <span style="color:var(--border); margin:0 5px;">|</span>           
             <button class="secondary" style="background:#dc2626; margin-left: 10px;" onclick="resetTools()">重置參數</button>
+                <span style="color:var(--border); margin:0 5px;">|</span>  
             <button class="red" onclick="undo()">⟲ 上一步</button>
+                <span style="color:var(--border); margin:0 5px;">|</span>  
+	    <button class="secondary" id="themeBtn" onclick="toggleTheme()">☀️ 淺色模式</button>
         </div>
     </header>
 
@@ -154,9 +196,12 @@
         <div class="box-50">
             <div class="toolbar-top"><span>處理結果 <small id="statOut"></small></span>
                 <div>
-                    <button class="green" onclick="copyOut()">一鍵複製</button> 
-                    <button class="green m-left" onclick="downloadTxt()">📥 下載</button>
+                    <button class="green" onclick="copyOut()">複製</button> 
+                    <button class="green m-left" onclick="downloadTxt()">下載</button>
                     <button class="secondary m-left" onclick="clearArea('outputArea')">清空</button>
+		    <button id="fullBtn" class="secondary m-left" onclick="toggleFullScreen()">⛶ 全屏</button>
+                    <button class="secondary m-left" onclick="scrollArea('outputArea', 'top')">▲頂</button>
+                    <button class="secondary" onclick="scrollArea('outputArea', 'bottom')">▼底</button>
                 </div>
             </div>
             <textarea id="outputArea" placeholder="處理結果將顯示在此..."></textarea>
@@ -164,7 +209,7 @@
     </main>
 
     <footer>
-        <a href="https://w1798.github.io/web/" target="_blank" style="color:var(--text); text-decoration:none">Completed by Charles Nextime with AI assistance, 20260129</a>
+        <a href="https://w1798.github.io/web/" target="_blank" style="color:var(--text); text-decoration:none">Completed by Charles Nextime with AI assistance, 20260130</a>
         <span id="busuanzi_container_page_pv" style="margin-left:15px; color:#888; border-left: 1px solid var(--border); padding-left:15px;">本頁使用量 <span id="busuanzi_value_page_pv" style="color:#00b894; font-weight:bold;"></span> 次</span>
     </footer>
 </div>
@@ -313,10 +358,136 @@
                 text = text.replace(re, document.getElementById('regRep').value); break;
             case 'keepLine': text = lines.filter(l => l.includes(document.getElementById('filterText').value)).join('\n'); break;
             case 'delLine': text = lines.filter(l => !l.includes(document.getElementById('filterText').value)).join('\n'); break;
+
+
+            case 'jsonSmart':
+                try {
+                    const obj = JSON.parse(text);
+                    const lines = text.trim().split('\n');
+                    
+                    // 狀態 A: 只有一行 -> 切換到「全展開」
+                    if (lines.length <= 1) {
+                        text = JSON.stringify(obj, null, 4);
+                    } 
+                    // 狀態 B: 多行，且第一行扣除空格後剛好只有 "{" -> 切換到「半壓縮」
+                    else if (lines[0].trim() === '{') {
+                        let temp = JSON.stringify(obj, null, 2);
+                        text = temp.replace(/\{\s*\n\s*([\s\S]*?)\n\s*\}/g, (match, content) => {
+                            const compact = content.replace(/\s+/g, ' ').trim();
+                            return `{ ${compact} }`;
+                        });
+                    } 
+                    // 狀態 C: 其他情況（目前是半壓縮） -> 切換回「精簡一行」
+                    else {
+                        text = JSON.stringify(obj);
+                    }
+                } catch (e) {
+                    alert('JSON 格式錯誤！');
+                }
+                break;
+
+
+
+        
+            case 'cssSmart':
+                const cssLines = text.trim().split('\n');
+                // 判定狀態：包含 "{ " 代表目前是半壓縮，大於一行且不含 "{ " 代表全展開
+                const isCssSemi = text.includes('{ ') && text.includes(' }');
+        
+                if (cssLines.length <= 1) {
+                    // 1. 精簡 -> 全展開 (標準格式)
+                    text = text
+                        .replace(/\s*\{\s*/g, ' {\n    ')
+                        .replace(/\s*;\s*/g, ';\n    ')
+                        .replace(/\s*\}\s*/g, '\n}\n\n');
+                } 
+                else if (!isCssSemi) {
+                    // 2. 全展開 -> 半壓縮 (一個選擇器一行)
+                    text = text
+                        .replace(/\s*\n\s*/g, ' ')
+                        .replace(/\s*\{\s*/g, ' { ')
+                        .replace(/\s*;\s*/g, '; ')
+                        .replace(/\s*\}\s*/g, ' }\n');
+                } 
+                else {
+                    // 3. 半壓縮 -> 全精簡 (一行到底)
+                    text = text.replace(/\s*\n\s*/g, '').replace(/\s+/g, ' ');
+                }
+                text = text.trim();
+                break;
+
         }
         out.value = text;
         updateStats();
     }
+
+
+
+    function scrollArea(id, pos) {
+        const el = document.getElementById(id);
+        if (pos === 'top') {
+            el.scrollTop = 0;
+        } else {
+            el.scrollTop = el.scrollHeight;
+        }
+    }
+
+
+    function toggleFullScreen() {
+        const box = document.querySelector('.box-50'); // 取得結果區容器
+        const btn = document.getElementById('fullBtn');
+        const isFull = box.classList.toggle('fullscreen-mode');
+    
+        // 切換全屏時，隱藏其他無關元素（header, footer, 其他 box）
+        document.querySelectorAll('header, footer, .box-25').forEach(el => {
+            el.classList.toggle('hidden', isFull);
+        });
+    
+        if (isFull) {
+            btn.innerText = "✕ 退出全屏";
+            btn.classList.add('btn-exit-full');
+            // 自動聚焦，方便直接編輯
+            document.getElementById('outputArea').focus();
+        } else {
+            btn.innerText = "⛶ 全屏";
+            btn.classList.remove('btn-exit-full');
+        }
+    }
+    
+    // 貼心功能：按下 Esc 鍵也能退出全屏
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && document.querySelector('.fullscreen-mode')) {
+            toggleFullScreen();
+        }
+    });
+
+
+
+    function toggleTheme() {
+        const body = document.body;
+        const btn = document.getElementById('themeBtn');
+        
+        // 切換 class
+        const isLight = body.classList.toggle('light-theme');
+        
+        // 修改按鈕文字與圖示
+        if (isLight) {
+            btn.innerText = "🌙 深色模式";
+        } else {
+            btn.innerText = "☀️ 淺色模式";
+        }
+        
+        // 儲存偏好到瀏覽器，下次開啟會記住
+        localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    }
+    
+    // 頁面載入時檢查上次的佈景主題設定
+    window.onload = () => {
+        if (localStorage.getItem('theme') === 'light') {
+            toggleTheme();
+        }
+    };
+
 </script>
 
 <script defer src="https://events.vercount.one/js"></script>
