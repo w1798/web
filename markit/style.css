@@ -136,6 +136,35 @@ display: inline-block; font-weight: bold; }
 .author-link { color: #888; text-decoratimary); /* 若想讓顏色跟隨主題色，可加上這行 */
 }
 
+/* 讓導覽列容器內的內容全部向右靠齊 */
+.nav-buttons {
+    display: flex;
+    flex: 1;
+    justify-content: flex-end; /* 關鍵：所有元素靠右 */
+    align-items: center;
+    gap: 10px;
+}
+
+
+
+/* 按鈕群組基礎樣式 */
+.nav-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* 關鍵：利用左右 margin 在重置按鈕旁留白 */
+.danger-zone {
+    margin-left: 50px;  /* 增加左側間距，與「匯入」拉開距離 */
+    margin-right: 50px; /* 增加右側間距，與「設定」拉開距離 */
+    background-color: #fff1f0; /* 選用：給重置按鈕淡淡的底色作為視覺提醒 */
+    border-color: #ffa39e;     /* 選用：淡紅色邊框 *
+}
+
+
+
+
 /* --- 手機版 RWD 最終修正 --- */
 @media (max-width: 768px) {
     body { padding: 8px; }
@@ -208,30 +237,6 @@ display: inline-block; font-weight: bold; }
         grid-template-columns: repeat(2, 1fr) !important; 
         gap: 8px;
     }
-}
-
-/* 讓導覽列容器內的內容全部向右靠齊 */
-.nav-buttons {
-    display: flex;
-    flex: 1;
-    justify-content: flex-end; /* 關鍵：所有元素靠右 */
-    align-items: center;
-    gap: 10px;
-}
-
-/* 按鈕群組基礎樣式 */
-.nav-group {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
-/* 關鍵：利用左右 margin 在重置按鈕旁留白 */
-.danger-zone {
-    margin-left: 50px;  /* 增加左側間距，與「匯入」拉開距離 */
-    margin-right: 50px; /* 增加右側間距，與「設定」拉開距離 */
-    background-color: #fff1f0; /* 選用：給重置按鈕淡淡的底色作為視覺提醒 */
-    border-color: #ffa39e;     /* 選用：淡紅色邊框 *
 }
 
 /* 手機版適應：回到置中排列，並縮小間距防止溢出螢幕 */
