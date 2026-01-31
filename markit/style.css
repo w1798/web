@@ -8,7 +8,7 @@
     --student-cols: 7; 
 }
 
-/* 主題設定 (保留您原本的所有主題) */
+/* 主題設定 */
 body[data-theme="soft"] { --primary: #8fb1e9; --bg: #f0f4f8; --text: #333; --card: #fff; }
 body[data-theme="tech"] { --primary: #00d4ff; --bg: #0b1e3b; --text: #eee; --card: #162a4a; }
 body[data-theme="girl"] { --primary: #ff9a9e; --bg: #fff0f3; --text: #7c4d52; --card: #fff; }
@@ -26,226 +26,120 @@ body[data-theme="chocolate"] { --primary: #432818; --bg: #fdf0d5; --text: #3c221
 body[data-theme="midnight"] { --primary: #1d3557; --bg: #f1faee; --text: #1d3557; --card: #fff; }
 
 * { box-sizing: border-box; }
-body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; min-height: 100vh; display: flex; 
+body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; min-height: 100vh; display: flex; flex-direction: column; }
 
-flex-direction: column; }
+/* --- 電腦版標頭樣式 --- */
+header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    background: var(--card); 
+    padding: 15px 30px; 
+    border-radius: 15px; 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+    margin-bottom: 25px; 
+    flex-wrap: wrap; 
+    gap: 10px; 
+}
 
-/* 標頭響應式 */
-header { display: flex; justify-content: space-between; align-items: center; background: var(--card); padding: 15px 30px; border-
-
-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 25px; flex-wrap: wrap; gap: 10px; }
 .logo { font-size: 2.2rem; font-weight: bold; color: var(--primary); }
 
-/* 主佈局網格 */
-.main-layout { flex: 1; display: grid; gap: 15px; grid-template-columns: repeat(var(--grid-cols), minmax(0, 1fr)); align-content: 
-
-start; }
-.card { background: var(--card); border-radius: 12px; cursor: pointer; height: 110px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 
-
-1px solid rgba(0,0,0,0.08); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 10px; 
-
-transition: transform 0.2s; }
-.card:hover { transform: translateY(-3px); border-color: var(--primary); }
-.card h3 { font-size: 1.1rem; margin: 0; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: 
-
-center; }
-
-/* 彈窗核心邏輯 (修正重點) */
-.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999; }
-.modal-content { background: var(--card); margin: 2vh auto; padding: 30px; border-radius: 20px; position: relative; max-width: 95%; }
-.modal-full { height: 92vh; display: flex; flex-direction: column; margin-left: auto; margin-right: auto; }
-
-/* 針對電腦版寬度控制 */
-@media (min-width: 769px) {
-    .modal-fixed-70 { width: 90% !important; max-width: 1200px; }
-    /* 此處讓 JS 設定的 width 生效 */
-    .dynamic-size { width: auto; } 
-}
-
-/* 滾動區域與內容 */
-.scroll-box { flex: 1; overflow-y: auto; background: rgba(0,0,0,0.03); border-radius: 12px; padding: 15px; }
-.student-grid { display: grid; grid-template-columns: repeat(var(--student-cols), 1fr); gap: 8px; align-content: start; }
-.student-item { 
-    aspect-ratio: 1.8 / 1; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    border: 1px solid rgba(0,0,0,0.1); 
-    border-radius: 6px; 
-    font-size: var(--student-font-size); /* 使用變數控制大小 */
-    cursor: pointer; 
-    font-weight: bold; 
-    background: var(--card); 
-}
-
-.student-item.done { background: var(--primary); color: white; border-color: var(--primary); }
-
-/* 設定頁面佈局 */
-.settings-grid-container { 
-    display: grid; 
-    grid-template-columns: 2fr 2fr 1fr 1fr; 
-    gap: 15px; 
-    padding: 10px; 
-}
-.settings-column { 
-    display: flex; 
-    flex-direction: column; 
-    gap: 12px; 
-}
-.settings-full-row { grid-column: 1 / span 2; margin-top: 10px; }
-.settings-row { font-weight: bold; font-size: 1.1rem; }
-.settings-row label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
-
-
-/* 調整詳情視窗左上角的任務名稱大小 */
-#detailTitle {
-    font-size: 2.5em;       /* 這裡可以調整大小，數字越大字越大 */
-    margin-top: 10px;      /* 調整與頂部的距離 */
-    margin-bottom: 15px;   /* 調整與下方座號格子的距離 */
-    color: var(--primary); /* 若想讓顏色跟隨主題色，可加上這行 */
-}
-
-
-/* 其他組件樣式 (保留) */
-.modal-header-btns { position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; }
-.select-short-width { width: auto; min-width: 90px; font-size: 1rem; padding: 3px; border-radius: 6px; border: 1px solid #ccc; }
-.input-triple { width: 100%; font-size: 1.1rem; padding: 10px; border-radius: 8px; min-height: 80px; border: 1px solid #ccc; margin-
-
-top: 8px; }
-.large-input { width: 100%; font-size: 2.2rem; padding: 12px; border-radius: 10px; border: 2px solid #ddd; margin-top: 15px; font-
-
-weight: bold; }
-.nav-btn { font-size: 1rem; padding: 8px 15px; border: none; border-radius: 8px; cursor: pointer; background: rgba(150,150,150,0.1); 
-
-color: var(--text); }
-.btn-primary { background: var(--primary) !important; color: white !important; }
-.btn-confirm { background: #28a745; color: white; border: none; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-weight: 
-
-bold; }
-.btn-danger { background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-.btn-small { padding: 8px 15px; font-size: 0.9rem; }
-.report-header-left { display: flex; align-items: center; gap: 30px; margin-bottom: 10px; padding-left: 20px; }
-.report-header-left h2 { margin: 0; font-size: 1.8rem; color: var(--primary); }
-.report-header-left .select-box { display: flex; align-items: center; gap: 10px; font-size: 1.4rem; font-weight: bold; }
-.report-link { color: var(--primary); text-decoration: underline; cursor: pointer; font-size: 1.4rem; margin: 10px 15px 10px 0; 
-
-display: inline-block; font-weight: bold; }
-.report-link:hover { filter: brightness(0.8); color: #000; }
-.select-short { font-size: 1.5rem; padding: 5px 15px; border-radius: 8px; cursor: pointer; border: 2px solid var(--primary); }
-.author-info { margin-top: 30px; padding: 20px; text-align: center; }
-.author-link { color: #888; text-decoratimary); /* 若想讓顏色跟隨主題色，可加上這行 */
-}
-
-/* 讓導覽列容器內的內容全部向右靠齊 */
 .nav-buttons {
     display: flex;
     flex: 1;
-    justify-content: flex-end; /* 關鍵：所有元素靠右 */
+    justify-content: flex-end; 
     align-items: center;
     gap: 10px;
 }
 
-
-
-/* 按鈕群組基礎樣式 */
 .nav-group {
     display: flex;
     gap: 10px;
     align-items: center;
 }
 
-/* 關鍵：利用左右 margin 在重置按鈕旁留白 */
+/* 電腦版重置按鈕旁的間距 (從 50px 縮小為 15px 避免太鬆散) */
 .danger-zone {
-    margin-left: 50px;  /* 增加左側間距，與「匯入」拉開距離 */
-    margin-right: 50px; /* 增加右側間距，與「設定」拉開距離 */
-    background-color: #fff1f0; /* 選用：給重置按鈕淡淡的底色作為視覺提醒 */
-    border-color: #ffa39e;     /* 選用：淡紅色邊框 *
+    margin-left: 50px;
+    margin-right: 50px;
+    background-color: #fff1f0;
+    border-radius: 8px;
+    padding: 2px;
 }
 
+/* 主佈局 */
+.main-layout { flex: 1; display: grid; gap: 15px; grid-template-columns: repeat(var(--grid-cols), minmax(0, 1fr)); align-content: start; }
+.card { background: var(--card); border-radius: 12px; cursor: pointer; height: 110px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.08); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 10px; transition: transform 0.2s; }
+.card:hover { transform: translateY(-3px); border-color: var(--primary); }
+.card h3 { font-size: 1.1rem; margin: 0; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
 
+/* 彈窗核心 */
+.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999; }
+.modal-content { background: var(--card); margin: 2vh auto; padding: 30px; border-radius: 20px; position: relative; max-width: 95%; }
+.modal-full { height: 92vh; display: flex; flex-direction: column; margin-left: auto; margin-right: auto; }
 
+@media (min-width: 769px) {
+    .modal-fixed-70 { width: 90% !important; max-width: 1200px; }
+    .dynamic-size { width: auto; } 
+}
 
-/* --- 手機版 RWD 最終修正 --- */
+.scroll-box { flex: 1; overflow-y: auto; background: rgba(0,0,0,0.03); border-radius: 12px; padding: 15px; }
+.student-grid { display: grid; grid-template-columns: repeat(var(--student-cols), 1fr); gap: 8px; align-content: start; }
+.student-item { aspect-ratio: 1.8 / 1; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; font-size: var(--student-font-size); cursor: pointer; font-weight: bold; background: var(--card); }
+.student-item.done { background: var(--primary); color: white; border-color: var(--primary); }
+
+.settings-grid-container { display: grid; grid-template-columns: 2fr 2fr 1fr 1fr; gap: 15px; padding: 10px; }
+.settings-column { display: flex; flex-direction: column; gap: 12px; }
+.settings-full-row { grid-column: 1 / span 2; margin-top: 10px; }
+
+#detailTitle { font-size: 2.5em; margin-top: 10px; margin-bottom: 15px; color: var(--primary); }
+
+/* 按鈕與組件樣式 */
+.modal-header-btns { position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; }
+.nav-btn { font-size: 1rem; padding: 8px 15px; border: none; border-radius: 8px; cursor: pointer; background: rgba(150,150,150,0.1); color: var(--text); }
+.btn-primary { background: var(--primary) !important; color: white !important; }
+.btn-danger { background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+.large-input { width: 100%; font-size: 2.2rem; padding: 12px; border-radius: 10px; border: 2px solid #ddd; margin-top: 15px; font-weight: bold; }
+
+/* --- 手機版 RWD 修正 (放在最後面確保優先級) --- */
 @media (max-width: 768px) {
     body { padding: 8px; }
-    
-    header { 
-        padding: 10px; 
-        flex-direction: column; 
-        text-align: center;
-    }
+    header { padding: 10px; flex-direction: column; text-align: center; }
+    .logo { font-size: 1.5rem; margin-bottom: 10px; width: 100%; }
 
-    .logo { 
-        font-size: 1.3rem; 
-        margin-bottom: 8px; 
+    /* 導覽列：全部置中，且讓所有按鈕盡量擠在同一行 */
+    .nav-buttons { 
         width: 100%; 
-    }
-
-    /* 讓所有按鈕容器置中並緊密排列 */
-    .nav-buttons {
-        width: 100%;
         justify-content: center !important; 
-        display: flex;
-        flex-wrap: wrap; /* 寬度不夠時才換行 */
-        gap: 4px; /* 極小間距以擠進更多按鈕 */
+        flex-wrap: wrap; 
+        gap: 5px; 
     }
 
-    /* 取消群組的區隔感，讓所有按鈕像是在同一個容器內 */
-    .nav-group {
-        width: auto !important;
-        display: flex;
-        gap: 4px;
-        margin: 0 !important;
+    .nav-group { 
+        width: auto !important; 
+        margin: 0 !important; 
+        gap: 5px;
     }
 
-    /* 移除重置按鈕區塊的特殊間距與底色 */
-    .danger-zone {
-        margin: 0 !important;
-        background: transparent !important;
+    .danger-zone { 
+        margin: 0 !important; 
+        background-color: transparent !important; 
         border: none !important;
+        padding: 0 !important;
     }
 
-    /* 縮小按鈕尺寸，確保設定也能擠上去 */
-    .nav-btn {
-        padding: 5px 8px;
-        font-size: 0.85rem;
-        white-space: nowrap; /* 防止按鈕文字換行 */
-    }
+    .nav-btn { padding: 6px 8px; font-size: 0.85rem; white-space: nowrap; }
 
-    /* 新增任務按鈕在手機版可以稍微顯眼一點，但不要太寬 */
-    .btn-primary {
-        padding: 5px 12px;
-    }
-
-    /* 彈窗寬度控制 */
+    /* 彈窗與排版優化 */
     .modal-content { 
         padding: 15px; 
         padding-top: 60px; 
-        width: 96% !important; 
-        box-sizing: border-box;
+        width: 95% !important; 
+        box-sizing: border-box; 
     }
 
-    /* 設定頁面內容垂直排列 */
-    .settings-grid-container { 
-        grid-template-columns: 1fr !important; 
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .main-layout { 
-        grid-template-columns: repeat(2, 1fr) !important; 
-        gap: 8px;
-    }
-}
-
-/* 手機版適應：回到置中排列，並縮小間距防止溢出螢幕 */
-@media (max-width: 768px) {
-    .nav-buttons {
-        justify-content: center; /* 手機版改回置中 */
-        flex-wrap: wrap;
-    }
-    .danger-zone {
-        margin: 5px; /* 手機版不需要超大間距 */
-    }
+    .settings-grid-container { grid-template-columns: 1fr !important; }
+    .main-layout { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
+    
+    .large-input { font-size: 1.5rem; }
 }
