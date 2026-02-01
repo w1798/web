@@ -92,14 +92,14 @@
                 <textarea id="set-urls" class="form-control" placeholder="每行輸入一個網址..."></textarea>
             </div>
             <div>
-<p> 雲端備份 ID 和 Key 設定</p>
+<p> 雲端備份設定 (<a href="https://w1798.github.io/web/JsonCloudGuide" target="_blank">申請說明</a>)</p>
                 <div style="margin-bottom:15px;">
-                     <input type="text" id="set-bin-id" class="form-control" style="width:200px" placeholder="JSONBinID or URL"><button class="btn btn-reset" onclick="resetField('set-bin-id')">重置</button>
+                     <input type="text" id="set-bin-id" class="form-control" style="width:200px" placeholder="URL or JSONBinID"><button class="btn btn-reset" onclick="resetField('set-bin-id')">重置</button>
                 </div>
                 <div style="margin-bottom:15px;">                    
-                    <input type="text" id="set-api-key" class="form-control" style="width:200px" placeholder="X-Access-Key or Token">
+                    <input type="text" id="set-api-key" class="form-control" style="width:200px" placeholder="Token or X-Access-Key">
 <button class="btn btn-reset" onclick="resetField('set-api-key')">重置</button>
-        <p style="font-size: 1rem; color: #666;">輕量簡單：<a href="https://jsonbin.io" target="_blank">https://jsonbin.io</a><br>重度專業：<a href="https://upstash.com" target="_blank">https://upstash.com</a></p>
+        
                 </div>
                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div><label>雲端緩衝 (分)</label><input type="number" id="set-cloud-cd" style="width:60px" class="form-control"></div>
