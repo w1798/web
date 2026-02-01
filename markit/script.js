@@ -398,75 +398,93 @@ function resetBinField(targetId) {
 
 // 雲端同步核心：自動辨別服務商
 async function cloudSync(method = 'UPLOAD') {
-    // 修正：從 state.settings 抓取設定
+    // 從 state.settings 抓取設定
     const { binId, apiKey } = state.settings;
-    if (!binId || !apiKey) return alert("請先填寫雲端設定 (JSONBinID/URL 與 X-Access-Key/Token)");
+    if (!binId || !apiKey) return alert("請先填寫雲端設定 (URL 與 Token)");
 
     const isUpstash = binId.includes('upstash.io');
-    const storageKey = 'MarkIt_v1'; // 雲端存檔的名字
+    const storageKey = 'MarkIt_v1'; 
 
     try {
         if (method === 'UPLOAD') {
             if (!confirm("確定要將【本地資料】上傳至雲端嗎？\n注意：這會覆蓋雲端的資料。")) return;
             
-            // 準備上傳資料 (排除敏感金鑰)
+            // 準備上傳副本
             const uploadData = JSON.parse(JSON.stringify(state));
             delete uploadData.settings.binId;
             delete uploadData.settings.apiKey;
 
             let response;
             if (isUpstash) {
-                // Upstash POST 模式 (必須將物件轉為字串存入)
                 response = await fetch(`${binId}/set/${storageKey}`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${apiKey}` },
                     body: JSON.stringify(uploadData)
                 });
             } else {
-                // JSONBin PUT 模式
                 response = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
                     method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Access-Key': apiKey
-                    },
+                    headers: { 'Content-Type': 'application/json', 'X-Access-Key': apiKey },
                     body: JSON.stringify(uploadData)
                 });
             }
 
             if (response.ok) alert("✅ 雲端備份成功！");
-            else alert("❌ 上傳失敗，請檢查 Key 權限。");
+            else alert("❌ 上傳失敗，請檢查 Token。");
 
         } else if (method === 'DOWNLOAD') {
-            if (!confirm("確定從雲端下載資料嗎？\n這將覆蓋現在的所有資料。")) return;
+            if (!confirm("確定要從雲端下載資料嗎？\n這將覆蓋現有內容。")) return;
 
-            let cloudData = null;
+            let fetchedData = null;
 
             if (isUpstash) {
                 const response = await fetch(`${binId}/get/${storageKey}`, {
                     headers: { 'Authorization': `Bearer ${apiKey}` }
                 });
                 const res = await response.json();
-                // 修正：Upstash 的資料存在 res.result 裡，且是字串格式，需要再次解析
-                if (res.result) {
-                    cloudData = JSON.parse(res.result);
+                if (res && res.result) {
+                    try {
+                        fetchedData = JSON.parse(res.result);
+                    } catch (e) {
+                        // 如果解析失敗，可能是字串格式有問題，嘗試清理
+                        console.error("解析失敗，嘗試二度清理");
+                    }
                 }
             } else {
                 const response = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
                     headers: { 'X-Access-Key': apiKey }
                 });
                 const res = await response.json();
-                cloudData = res.record;
+                fetchedData = res.record;
             }
 
-            if (cloudData) {
-                // 修正：確保下載後保留原本填好的 binId 和 apiKey
-                cloudData.settings.binId = binId;
-                cloudData.settings.apiKey = apiKey;
-                
-                state = cloudData;
-                saveData(); // 儲存到 localStorage
-                alert("✨ 載入成功！");
+            if (fetchedData) {
+                let finalData = {};
+
+                if (fetchedData.assignments) {
+                    finalData = fetchedData;
+                } else if (fetchedData.tasks) {
+                    finalData = {
+                        settings: fetchedData.settings || {},
+                        assignments: fetchedData.tasks
+                    };
+                } else {
+                    finalData = {
+                        settings: {},
+                        assignments: Array.isArray(fetchedData) ? fetchedData : []
+                    };
+                }
+
+                // 確保 settings 存在並保留目前的連線金鑰
+                finalData.settings = finalData.settings || {};
+                finalData.settings.binId = binId;
+                finalData.settings.apiKey = apiKey;
+
+                // 使用 Object.assign 確保 state 結構完整
+                state = Object.assign({}, state, finalData);
+
+                saveData(); // 存入 localStorage
+                alert("✨ 載入完成！");
                 location.reload();
             } else {
                 alert("❌ 載入失敗：雲端查無資料。");
@@ -474,7 +492,7 @@ async function cloudSync(method = 'UPLOAD') {
         }
     } catch (e) {
         console.error(e);
-        alert("連線出錯：" + e.message);
+        alert("⚠️ 格式錯誤或連線問題：" + e.message);
     }
 }
 
