@@ -28,7 +28,7 @@ let selectedPre = new Set(), selectedMain = new Set();
 
 function init() {
     try {
-        const saved = localStorage.getItem('homework_v2026');
+        const saved = localStorage.getItem('homework_v1');
 	
 	if (saved) {
             appData = JSON.parse(saved);
@@ -124,7 +124,7 @@ function applyBopoTransform(text) {
 
 
 
-// 修改 performAutoDelete，使其回傳過濾後的陣列而不只是修改全域
+// 使其回傳過濾後的陣列而不只是修改全域
 function performAutoDelete() {
     const days = parseInt(appData.autoDeleteDays);
     if (days === 0) return; // 0 代表不自動刪除
@@ -615,7 +615,7 @@ function saveSettings() {
 
 
     performAutoDelete();
-    localStorage.setItem('homework_v2026', JSON.stringify(appData));
+    localStorage.setItem('homework_v1', JSON.stringify(appData));
     renderMain(); closeModal('settingsModal');
 }
 
@@ -659,77 +659,85 @@ function saveEdit() {
     performAutoDelete();
     
     // 4. 正式寫入資料庫並渲染
-    localStorage.setItem('homework_v2026', JSON.stringify(appData)); 
+    localStorage.setItem('homework_v1', JSON.stringify(appData)); 
     renderMain(); 
     closeModal('editModal'); 
 }
 
 
-
-async function uploadToCloud() {
+// 雲端同步核心：自動辨別服務商
+async function cloudSync(method = 'UPLOAD') {
     const { binId, apiKey } = appData;
-    if (!binId || !apiKey) return alert("請先在「設定」中填寫 https://jsonbin.io 的 Bin ID 與 API Key");
-    
-    if (!confirm("確定要將【本地資料】上傳至雲端嗎？\n注意：這會覆蓋雲端的資料。")) return;
+    if (!binId || !apiKey) return alert("請先填寫雲端設定 (JSONBinID/URL 與 X-Access-Key/Token)");
 
-    // 排除敏感資訊
-    const uploadData = JSON.parse(JSON.stringify(appData));
-    delete uploadData.binId;
-    delete uploadData.apiKey;
+    const isUpstash = binId.includes('upstash.io');
+    const storageKey = 'homework_v1'; // 雲端存檔的名字
 
     try {
-        const response = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Access-Key': apiKey
-            },
-            body: JSON.stringify(uploadData)
-        });
-
-        if (response.ok) {
-            alert("雲端同步成功！");
-        } else {
-            const err = await response.json();
-            alert("上傳失敗：" + (err.message || "請檢查 Bin ID 與 API Key。"));
-        }
-    } catch (e) {
-        alert("網路錯誤：" + e.message);
-    }
-}
-
-async function downloadFromCloud() {
-    const { binId, apiKey } = appData;
-    if (!binId || !apiKey) return alert("請先在「設定」中填寫 https://jsonbin.io 的 Bin ID 與 API Key");
-
-    if (!confirm("確定從雲端下載資料嗎？\n這將覆蓋現在的所有資料。")) return;
-
-    try {
-        const response = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
-            method: 'GET',
-            headers: { 'X-Access-Key': apiKey }
-        });
-
-        if (response.ok) {
-            const resData = await response.json();
-            const cloudData = resData.record;
+        if (method === 'UPLOAD') {
+            if (!confirm("確定要將【本地資料】上傳至雲端嗎？\n注意：這會覆蓋雲端的資料。")) return;
             
-            // 合併：更新資料但保留本地的 API 設定
-            appData = cloudData;
-            appData.binId = binId;
-            appData.apiKey = apiKey;
+            // 準備乾淨的資料 (不含密鑰)
+            const uploadData = JSON.parse(JSON.stringify(appData));
+            delete uploadData.binId;
+            delete uploadData.apiKey;
 
-            localStorage.setItem('homework_v2026', JSON.stringify(appData));
-            alert("雲端下載完成！頁面即將重新整理。");
-            location.reload();
-        } else {
-            alert("下載失敗，請檢查 Bin ID 與 API Key。");
+            let response;
+            if (isUpstash) {
+                // Upstash POST 模式
+                response = await fetch(`${binId}/set/${storageKey}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${apiKey}` },
+                    body: JSON.stringify(uploadData)
+                });
+            } else {
+                // JSONBin PUT 模式
+                response = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Access-Key': apiKey
+                    },
+                    body: JSON.stringify(uploadData)
+                });
+            }
+
+            if (response.ok) alert("✅ 雲端備份成功！");
+            else alert("❌ 上傳失敗，請檢查 Key 權限。");
+
+        } else if (method === 'DOWNLOAD') {
+            if (!confirm("確定從雲端下載資料嗎？\n這將覆蓋現在的所有資料。")) return;
+
+            let response;
+            let cloudData;
+
+            if (isUpstash) {
+                response = await fetch(`${binId}/get/${storageKey}`, {
+                    headers: { 'Authorization': `Bearer ${apiKey}` }
+                });
+                const res = await response.json();
+                cloudData = res.result ? JSON.parse(res.result) : null;
+            } else {
+                response = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+                    headers: { 'X-Access-Key': apiKey }
+                });
+                const res = await response.json();
+                cloudData = res.record;
+            }
+
+            if (cloudData) {
+                appData = { ...cloudData, binId, apiKey };
+                localStorage.setItem('homework_v1', JSON.stringify(appData));
+                alert("✨ 載入成功！");
+                location.reload();
+            } else {
+                alert("找不到資料。");
+            }
         }
     } catch (e) {
-        alert("網路連線錯誤：" + e.message);
+        alert("連線出錯：" + e.message);
     }
 }
-
 
 
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
@@ -752,7 +760,7 @@ function importJSON(e) {
     const file = e.target.files[0]; if (!file) return;
     const reader = new FileReader();
     reader.onload = function(evt) {
-        try { appData = JSON.parse(evt.target.result); localStorage.setItem('homework_v2026', JSON.stringify(appData)); renderMain(); alert("匯入成功"); }
+        try { appData = JSON.parse(evt.target.result); localStorage.setItem('homework_v1', JSON.stringify(appData)); renderMain(); alert("匯入成功"); }
         catch(err) { alert("格式錯誤"); }
     };
     reader.readAsText(file);
