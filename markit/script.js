@@ -397,7 +397,6 @@ function resetBinField(targetId) {
 
 
 // 雲端同步核心：自動辨別服務商
-a// 雲端同步核心：自動辨別服務商
 async function cloudSync(method = 'UPLOAD') {
     // 修正：從 state.settings 抓取設定
     const { binId, apiKey } = state.settings;
