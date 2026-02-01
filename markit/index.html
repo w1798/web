@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>教學清點小幫手 by Charles Nextime</title>
-    <link rel="stylesheet" href="style.css?ver=1.08c">
+    <link rel="stylesheet" href="style.css?ver=1.08d">
     <style>
         .quick-select-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 15px; 
 
@@ -31,7 +31,7 @@ color: #888; font-size: 1.5rem; font-weight: bold; }
 <body data-theme="soft">
 
 <header>
-    <div class="logo">教學清點小幫手 - 任務總覽</div>
+    <div class="logo">教學清點小幫手</div>
 
 
 
@@ -39,10 +39,13 @@ color: #888; font-size: 1.5rem; font-weight: bold; }
     <div class="nav-group">
         <button class="nav-btn" onclick="exportData()">匯出</button>
         <button class="nav-btn" onclick="triggerImport()">匯入</button>
-        <input type="file" id="importInput" style="display:none" accept=".json" 
-
-onchange="importData(event)">
+        <input type="file" id="importInput" style="display:none" accept=".json" onchange="importData(event)">
     </div>
+
+<div class="nav-group" style="background: #e6f7ff; padding: 5px 10px; border-radius: 8px;">
+    <button class="nav-btn" onclick="uploadToCloud()">上傳雲端</button>
+    <button class="nav-btn" onclick="downloadFromCloud()">雲端下載</button>
+</div>
 
     <div class="nav-group danger-zone">
         <button class="nav-btn" onclick="resetSystem()">重置</button>
@@ -114,7 +117,12 @@ id="autoDate" style="width:20px;height:20px;"></label></div>
                 <div class="settings-row"><label>任務標籤累加模式：<input 
 
 type="checkbox" id="appendModeSetting" style="width:20px;height:20px;"></label></div>
-            </div>
+
+    <div class="settings-row"><label>Bin ID：<input type="text" id="binId" class="select-short-width" placeholder="JSONBin ID"></label></div>
+    <div class="settings-row"><label>API Key：<input type="text" id="apiKey" class="select-short-width" placeholder="X-Access-Key"></label></div>
+    <p style="font-size: 0.8rem; color: #666;">* 用於雲端備份同步</p>
+</div>
+
             <div class="settings-column">
                 <div class="settings-row"><label>點座號視窗大小：<select id="sizeDetail" 
 
@@ -248,7 +256,8 @@ by Charles Nextime with AI assistance, 20260119</a>
 </span>
 </footer>
 
-<script src="script.js?ver=1.08"></script>
+<script src="script.js?ver=1.08d"></script>
+
 
 
 <style>
