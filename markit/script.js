@@ -404,7 +404,7 @@ async function cloudSync(method = 'UPLOAD') {
     if (!binId || !apiKey) return alert("請先填寫雲端設定 (JSONBinID/URL 與 X-Access-Key/Token)");
 
     const isUpstash = binId.includes('upstash.io');
-    const storageKey = 'MarkIt_Cloud_v1'; // 雲端存檔的名字
+    const storageKey = 'MarkIt_v1'; // 雲端存檔的名字
 
     try {
         if (method === 'UPLOAD') {
