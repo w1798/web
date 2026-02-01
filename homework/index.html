@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>作業動態曆 by Charles Nextime</title>
-    <link rel="stylesheet" href="style.css?ver=1.02">
+    <link rel="stylesheet" href="style.css?ver=1.02a">
 </head>
 <body class="theme-ocean">
     <header class="header-bar">
@@ -115,12 +115,16 @@
 <div class="settings-column">
     <div class="settings-row">
         <label>Bin ID：
-            <input type="text" id="binId" class="select-short-width" placeholder="JSONBin ID">
+
+	    <input type="text" id="binId" style="width:100px" autocomplete="off"  placeholder="JSONBin ID">
+            <button onclick="resetBinField('binId')">重置</button>
         </label>
     </div>
     <div class="settings-row">
         <label>API Key：
-            <input type="text" id="apiKey" class="select-short-width" placeholder="X-Access-Key">
+
+	    <input type="text" id="apiKey" style="width:100px" autocomplete="off" placeholder="X-Access-Key" >
+            <button onclick="resetBinField('apiKey')">重置</button>
         </label>
     </div>
     <p style="font-size: 1rem; color: #666;">* 用於雲端 <a href="https://jsonbin.io" target="_blank">https://jsonbin.io</a> 備份同步</p>
