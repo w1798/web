@@ -758,4 +758,11 @@ function importJSON(e) {
     reader.readAsText(file);
 }
 
+// 專門重置 Bin ID 或 API Key 的畫面欄位
+function resetBinField(targetId) {
+    if(confirm("確定要清除此欄位的內容嗎？")) {
+        document.getElementById(targetId).value = '';
+    }
+}
+
 init();
