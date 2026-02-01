@@ -40,12 +40,9 @@ color: #888; font-size: 1.5rem; font-weight: bold; }
         <button class="nav-btn" onclick="exportData()">匯出</button>
         <button class="nav-btn" onclick="triggerImport()">匯入</button>
         <input type="file" id="importInput" style="display:none" accept=".json" onchange="importData(event)">
+    <button class="nav-btn" onclick="cloudSync('UPLOAD')">上傳</button>
+    <button class="nav-btn" onclick="cloudSync('DOWNLOAD')">下載</button>
     </div>
-
-<div class="nav-group" style="background: #e6f7ff; padding: 5px 10px; border-radius: 8px;">
-    <button class="nav-btn" onclick="uploadToCloud()">上傳</button>
-    <button class="nav-btn" onclick="downloadFromCloud()">下載</button>
-</div>
 
     <div class="nav-group danger-zone">
         <button class="nav-btn" onclick="resetSystem()">重置</button>
@@ -111,21 +108,26 @@ value="9">9 個</option><option value="10">10 個</option></select></label></div
                 <div class="settings-row"><label>座號字體：<select 
 
 id="studentFontSizeSelect" class="select-short-width"></select></label></div>
+
+
+
+    <div class="settings-row">
+<p> 雲端備分 ID 和 Key 設定</p>
+<label>
+<input type="text" id="binId" style="width:180px" class="select-short-width" autocomplete="off" placeholder="JSONBinID or URL">
+	<button onclick="resetBinField('binId')">重置</button></label></div>
+    <div class="settings-row"><label><input type="text" id="apiKey" style="width:180px" class="select-short-width" autocomplete="off" placeholder="X-Access-Key or Token">
+<button onclick="resetBinField('apiKey')">重置</button></label></div>
+        <p style="font-size: 1rem; color: #666;">輕量簡單：<a href="https://jsonbin.io" target="_blank">https://jsonbin.io</a><br>重度專業：<a href="https://upstash.com" target="_blank">https://upstash.com</a></p>
+</div>
+
+            <div class="settings-column">
                 <div class="settings-row"><label>自動加日期：<input type="checkbox" 
 
 id="autoDate" style="width:20px;height:20px;"></label></div>
                 <div class="settings-row"><label>任務標籤累加模式：<input 
 
 type="checkbox" id="appendModeSetting" style="width:20px;height:20px;"></label></div>
-
-    <div class="settings-row"><label>Bin ID：<input type="text" id="binId" style="width:120px" class="select-short-width" autocomplete="off" placeholder="JSONBin ID">
-	<button onclick="resetBinField('binId')">重置</button></label></div>
-    <div class="settings-row"><label>API Key：<input type="text" id="apiKey" style="width:120px" class="select-short-width" autocomplete="off" placeholder="X-Access-Key">
-<button onclick="resetBinField('apiKey')">重置</button></label></div>
-    <p style="font-size: 1rem; color: #666;">* 用於雲端 <a href="https://jsonbin.io" target="_blank">https://jsonbin.io</a> 備份同步</p>
-</div>
-
-            <div class="settings-column">
                 <div class="settings-row"><label>點座號視窗大小：<select id="sizeDetail" 
 
 class="select-short-width size-sel"></select></label></div>
@@ -258,7 +260,7 @@ by Charles Nextime with AI assistance, 20260119</a>
 </span>
 </footer>
 
-<script src="script.js?ver=1.08f"></script>
+<script src="script.js?ver=1.09a"></script>
 
 
 
