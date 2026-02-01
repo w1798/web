@@ -668,30 +668,30 @@ function saveEdit() {
 // 雲端同步核心：自動辨別服務商
 async function cloudSync(method = 'UPLOAD') {
     const { binId, apiKey } = appData;
-    if (!binId || !apiKey) return alert("請先填寫雲端設定 (JSONBinID/URL 與 X-Access-Key/Token)");
+    if (!binId || !apiKey) return alert("請先填寫雲端設定 (URL 與 Token)");
 
     const isUpstash = binId.includes('upstash.io');
-    const storageKey = 'homework_v1'; // 雲端存檔的名字
+    const storageKey = 'homework_v1'; 
 
     try {
         if (method === 'UPLOAD') {
             if (!confirm("確定要將【本地資料】上傳至雲端嗎？\n注意：這會覆蓋雲端的資料。")) return;
             
-            // 準備乾淨的資料 (不含密鑰)
+            // 複製一份資料進行清理，不要影響到目前的 appData
             const uploadData = JSON.parse(JSON.stringify(appData));
             delete uploadData.binId;
             delete uploadData.apiKey;
 
             let response;
             if (isUpstash) {
-                // Upstash POST 模式
+                // Upstash: 資料必須轉成字串存入
                 response = await fetch(`${binId}/set/${storageKey}`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${apiKey}` },
                     body: JSON.stringify(uploadData)
                 });
             } else {
-                // JSONBin PUT 模式
+                // JSONBin
                 response = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
                     method: 'PUT',
                     headers: {
@@ -708,37 +708,51 @@ async function cloudSync(method = 'UPLOAD') {
         } else if (method === 'DOWNLOAD') {
             if (!confirm("確定從雲端下載資料嗎？\n這將覆蓋現在的所有資料。")) return;
 
-            let response;
-            let cloudData;
+            let fetchedData = null;
 
             if (isUpstash) {
-                response = await fetch(`${binId}/get/${storageKey}`, {
+                const response = await fetch(`${binId}/get/${storageKey}`, {
                     headers: { 'Authorization': `Bearer ${apiKey}` }
                 });
                 const res = await response.json();
-                cloudData = res.result ? JSON.parse(res.result) : null;
+                
+                // 關鍵：Upstash 取回後需解析 result 欄位
+                if (res && res.result) {
+                    try {
+                        fetchedData = JSON.parse(res.result);
+                    } catch (e) {
+                        console.error("解析雲端 JSON 失敗", e);
+                    }
+                }
             } else {
-                response = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+                const response = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
                     headers: { 'X-Access-Key': apiKey }
                 });
                 const res = await response.json();
-                cloudData = res.record;
+                fetchedData = res.record;
             }
 
-            if (cloudData) {
-                appData = { ...cloudData, binId, apiKey };
+            if (fetchedData && typeof fetchedData === 'object') {
+                // 1. 保留目前的連線設定，避免下載後欄位變空白
+                fetchedData.binId = binId;
+                fetchedData.apiKey = apiKey;
+
+                // 2. 使用結構擴展 (Spread) 確保新舊版本欄位都能補齊
+                appData = { ...appData, ...fetchedData };
+
+                // 3. 立即存入本地端並重新整理
                 localStorage.setItem('homework_v1', JSON.stringify(appData));
                 alert("✨ 載入成功！");
                 location.reload();
             } else {
-                alert("找不到資料。");
+                alert("❌ 載入失敗：雲端似乎沒有資料，或資料格式不正確。");
             }
         }
     } catch (e) {
+        console.error(e);
         alert("連線出錯：" + e.message);
     }
 }
-
 
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
