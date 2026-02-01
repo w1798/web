@@ -118,8 +118,10 @@ id="autoDate" style="width:20px;height:20px;"></label></div>
 
 type="checkbox" id="appendModeSetting" style="width:20px;height:20px;"></label></div>
 
-    <div class="settings-row"><label>Bin ID：<input type="text" id="binId" class="select-short-width" placeholder="JSONBin ID"></label></div>
-    <div class="settings-row"><label>API Key：<input type="text" id="apiKey" class="select-short-width" placeholder="X-Access-Key"></label></div>
+    <div class="settings-row"><label>Bin ID：<input type="text" id="binId" style="width:120px" class="select-short-width" autocomplete="off" placeholder="JSONBin ID">
+	<button onclick="resetBinField('binId')">重置</button></label></div>
+    <div class="settings-row"><label>API Key：<input type="text" id="apiKey" style="width:120px" class="select-short-width" autocomplete="off" placeholder="X-Access-Key">
+<button onclick="resetBinField('apiKey')">重置</button></label></div>
     <p style="font-size: 1rem; color: #666;">* 用於雲端 <a href="https://jsonbin.io" target="_blank">https://jsonbin.io</a> 備份同步</p>
 </div>
 
@@ -256,7 +258,7 @@ by Charles Nextime with AI assistance, 20260119</a>
 </span>
 </footer>
 
-<script src="script.js?ver=1.08e"></script>
+<script src="script.js?ver=1.08f"></script>
 
 
 
