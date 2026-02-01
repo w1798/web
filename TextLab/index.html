@@ -159,8 +159,8 @@
                 <button class="secondary" onclick="process('upper')">全大寫</button>
                 <button class="secondary" onclick="process('lower')">全小寫</button>
 		<span style="color:var(--border); margin:0 5px;">|</span>
-		<button class="purple" onclick="process('jsonSmart')">JSON格式化</button>
-		<button class="purple" onclick="process('cssSmart')">CSS格式化</button>
+		<button class="purple" onclick="process('smartFormat')">JSON/CSS格式化</button>
+
 
             </div>
         </div>
@@ -404,66 +404,137 @@
             case 'keepLine': text = lines.filter(l => l.includes(document.getElementById('filterText').value)).join('\n'); break;
             case 'delLine': text = lines.filter(l => !l.includes(document.getElementById('filterText').value)).join('\n'); break;
 
+            case 'smartFormat': // 你的功能鍵呼叫這個
+            out.value = universalSmartFormat(out.value.trim() !== "" ? out.value : in1.value);
+            updateStats();
+            // 順便觸發我們之前說的 1 秒消失提示
+            showToast("格式已切換"); 
+            break;
 
-            case 'jsonSmart':
-                try {
-                    const obj = JSON.parse(text);
-                    const lines = text.trim().split('\n');
-                    
-                    // 狀態 A: 只有一行 -> 切換到「全展開」
-                    if (lines.length <= 1) {
-                        text = JSON.stringify(obj, null, 4);
-                    } 
-                    // 狀態 B: 多行，且第一行扣除空格後剛好只有 "{" -> 切換到「半壓縮」
-                    else if (lines[0].trim() === '{') {
-                        let temp = JSON.stringify(obj, null, 2);
-                        text = temp.replace(/\{\s*\n\s*([\s\S]*?)\n\s*\}/g, (match, content) => {
-                            const compact = content.replace(/\s+/g, ' ').trim();
-                            return `{ ${compact} }`;
-                        });
-                    } 
-                    // 狀態 C: 其他情況（目前是半壓縮） -> 切換回「精簡一行」
-                    else {
-                        text = JSON.stringify(obj);
-                    }
-                } catch (e) {
-                    alert('JSON 格式錯誤！');
-                }
-                break;
-
-
-
-        
-            case 'cssSmart':
-                const cssLines = text.trim().split('\n');
-                // 判定狀態：包含 "{ " 代表目前是半壓縮，大於一行且不含 "{ " 代表全展開
-                const isCssSemi = text.includes('{ ') && text.includes(' }');
-        
-                if (cssLines.length <= 1) {
-                    // 1. 精簡 -> 全展開 (標準格式)
-                    text = text
-                        .replace(/\s*\{\s*/g, ' {\n    ')
-                        .replace(/\s*;\s*/g, ';\n    ')
-                        .replace(/\s*\}\s*/g, '\n}\n\n');
-                } 
-                else if (!isCssSemi) {
-                    // 2. 全展開 -> 半壓縮 (一個選擇器一行)
-                    text = text
-                        .replace(/\s*\n\s*/g, ' ')
-                        .replace(/\s*\{\s*/g, ' { ')
-                        .replace(/\s*;\s*/g, '; ')
-                        .replace(/\s*\}\s*/g, ' }\n');
-                } 
-                else {
-                    // 3. 半壓縮 -> 全精簡 (一行到底)
-                    text = text.replace(/\s*\n\s*/g, '').replace(/\s+/g, ' ');
-                }
-                text = text.trim();
-                break;
 
         }
         out.value = text;
         updateStats();
+    }
+
+
+
+    function universalSmartFormat(text) {
+        if (!text.trim()) return "";
+    
+        // --- 步驟 A: 自動偵測語言 ---
+        let mode = "json";
+        try {
+            JSON.parse(text);
+            mode = "json";
+        } catch (e) {
+            // 如果 JSON 解析失敗，且包含 CSS 特徵符號，則判定為 CSS
+            if (text.includes('{') || text.includes(';') || text.includes('.')) {
+                mode = "css";
+            } else {
+                return text; // 既不是 JSON 也不是 CSS，不處理
+            }
+        }
+    
+        const lines = text.trim().split('\n');
+        const isSingleLine = lines.length <= 1;
+    
+        // --- 步驟 B: 執行三段式循環 ---
+        if (mode === "json") {
+            try {
+                const obj = JSON.parse(text);
+                // 狀態 1: 只有一行 -> 全展開
+                if (isSingleLine) return JSON.stringify(obj, null, 4);
+                
+                // 狀態 2: 已經展開 (判斷第一行是否只有 { ) -> 半壓縮
+                if (lines[0].trim() === '{') {
+                    let temp = JSON.stringify(obj, null, 2);
+                    return temp.replace(/\{\s*\n\s*([\s\S]*?)\n\s*\}/g, (m, content) => {
+                        return `{ ${content.replace(/\s+/g, ' ').trim()} }`;
+                    });
+                }
+                // 狀態 3: 其他情況 -> 縮回一行
+                return JSON.stringify(obj);
+            } catch (e) { return text; }
+        } 
+        
+        if (mode === "css") {
+            const isCssSemi = text.includes('{ ') && text.includes(' }');
+            // 狀態 1: 只有一行 -> 全展開
+            if (isSingleLine) {
+                // 1. 處理換行：讓 { , } , ; 後面都先換行
+                let formatted = text
+                    .replace(/\s+/g, ' ') 
+                    .replace(/\{\s*/g, '{\n')
+                    .replace(/;\s*/g, ';\n')
+                    .replace(/\s*\}\s*/g, '\n}\n');
+            
+                // 2. 【核心吸附】把「掉下去的註釋」吸上來
+                formatted = formatted.replace(/;\n\s*(\/\*[\s\S]*?\*\/)/g, '; $1\n');
+            
+                // 3. 【註釋換行】確保獨立註釋結尾 */ 之後強制換行
+                formatted = formatted.replace(/\*\/\s*/g, '*/\n');
+            
+                // 4. 最終精修
+                let depth = 0;
+                let lines = formatted.split('\n')
+                    .map(line => {
+                        const trimmed = line.trim();
+                        if (!trimmed) return null; // 移除所有空白行
+            
+                        // 遇右括號：降級
+                        if (trimmed.startsWith('}')) {
+                            depth = Math.max(0, depth - 1);
+                        }
+            
+                        const currentIndent = '    '.repeat(depth);
+                        let result;
+            
+                        // 【核心修正判斷】
+                        // 只有在最外層 (depth === 0) 時，選擇器、@規則、獨立註釋才靠左
+                        // 只要進入嵌套內部 (depth > 0)，一律縮進
+                        if (depth === 0 && (
+                            (trimmed.includes('{') && !trimmed.includes(':')) || 
+                            trimmed.startsWith('@') ||
+                            (trimmed.startsWith('/*') && !trimmed.includes(':')) ||
+                            trimmed === '}'
+                        )) {
+                            result = trimmed; 
+                        } else {
+                            result = currentIndent + trimmed; 
+                        }
+            
+                        // 遇左括號：升級
+                        if (trimmed.endsWith('{')) {
+                            depth++;
+                        }
+            
+                        return result;
+                    })
+                    .filter(line => line !== null);
+            
+                // 5. 【精確補行】重新組合後，只針對「靠左對齊的 }」補空白行
+                let output = lines.join('\n');
+                
+                return output
+                    .replace(/^\}/gm, '}\n\n') // 針對行首的 } 補空行
+                    .replace(/\n{3,}/g, '\n\n') // 確保最多只有一個空白行
+                    .trim();
+            }
+            // 狀態 2: 全展開 -> 半壓縮
+            else if (!isCssSemi) {
+                return text
+                    .replace(/\s*\n\s*/g, ' ')
+                    .replace(/\s*\{\s*/g, ' { ')
+                    .replace(/\s*;\s*/g, '; ')
+                    .replace(/\s*\}\s*/g, ' }\n')
+                    .trim();
+            } 
+            // 狀態 3: 半壓縮 -> 精簡一行
+            else {
+                return text.replace(/\s*\n\s*/g, '').replace(/\s+/g, ' ').trim();
+            }
+        }
     }
 
 
