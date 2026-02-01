@@ -389,11 +389,10 @@ function resetStudentList() {
 
 async function uploadToCloud() {
     const { binId, apiKey } = state.settings;
-    if (!binId || !apiKey) return alert("請先在「設定」中填寫 JSONBin ID 與 API Key");
+    if (!binId || !apiKey) return alert("請先在「設定」中填寫 https://jsonbin.io 的 Bin ID 與 API Key");
     
-    if (!confirm("確定要將【本地資料】上傳至雲端嗎？\n注意：這會覆蓋「雲端的資料」。")) return;
+    if (!confirm("確定要將【本地資料】上傳至雲端嗎？\n注意：這會覆蓋雲端的資料。")) return;
 
-    // --- 關鍵修改：排除敏感資訊 ---
     // 1. 深拷貝 state 避免影響本地運作
     const uploadData = JSON.parse(JSON.stringify(state));
     // 2. 移除副本中的 ID 與 Key
@@ -411,7 +410,7 @@ async function uploadToCloud() {
         });
 
         if (response.ok) {
-            alert("雲端同步成功！（敏感資訊已排除）");
+            alert("雲端同步成功！");
         } else {
             const err = await response.json();
             alert("上傳失敗：" + (err.message || "請檢查設定"));
@@ -423,9 +422,9 @@ async function uploadToCloud() {
 
 async function downloadFromCloud() {
     const { binId, apiKey } = state.settings;
-    if (!binId || !apiKey) return alert("請先在「設定」中填寫 JSONBin ID 與 API Key");
+    if (!binId || !apiKey) return alert("請先在「設定」中填寫 https://jsonbin.io 的 Bin ID 與 API Key");
 
-    if (!confirm("確定從雲端下載資料嗎？\n這將覆蓋「現在的所有資料」。")) return;
+    if (!confirm("確定從雲端下載資料嗎？\n這將覆蓋現在的所有資料。")) return;
 
     try {
         const response = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
@@ -437,7 +436,6 @@ async function downloadFromCloud() {
             const resData = await response.json();
             const cloudState = resData.record;
             
-            // --- 關鍵修改：合併設定 ---
             // 將雲端下載的內容覆蓋到 state，但強制保留目前的 API 資訊
             state = cloudState;
             state.settings.binId = binId;
@@ -447,7 +445,7 @@ async function downloadFromCloud() {
             alert("雲端下載完成！");
             location.reload();
         } else {
-            alert("下載失敗，請檢查 ID 或 Key。");
+            alert("下載失敗，請檢查 Bin ID 與 API Key。");
         }
     } catch (e) {
         alert("網路連線錯誤：" + e.message);
