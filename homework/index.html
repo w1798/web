@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>作業動態曆 by Charles Nextime</title>
-    <link rel="stylesheet" href="style.css?ver=1.01c">
+    <link rel="stylesheet" href="style.css?ver=1.02">
 </head>
 <body class="theme-ocean">
     <header class="header-bar">
@@ -17,6 +17,8 @@
             <button class="small-btn" onclick="exportJSON()">匯出</button>
             <button class="small-btn" onclick="document.getElementById('fileInput').click()">匯入</button>
             <input type="file" id="fileInput" style="display:none" onchange="importJSON(event)">
+   	    <button class="small-btn" onclick="uploadToCloud()">上傳</button>
+    	    <button class="small-btn" onclick="downloadFromCloud()">下載</button>
             <button class="small-btn" onclick="resetApp()">重置</button>
             <button class="small-btn" onclick="openSettings()">設定</button>
             <button class="small-btn" onclick="openEdit()">編修作業</button>
@@ -108,6 +110,23 @@
                             <option value="0">無</option>
                         </select>
                     </div>
+
+
+<div class="settings-column">
+    <div class="settings-row">
+        <label>Bin ID：
+            <input type="text" id="binId" class="select-short-width" placeholder="JSONBin ID">
+        </label>
+    </div>
+    <div class="settings-row">
+        <label>API Key：
+            <input type="text" id="apiKey" class="select-short-width" placeholder="X-Access-Key">
+        </label>
+    </div>
+    <p style="font-size: 1rem; color: #666;">* 用於雲端 <a href="https://jsonbin.io" target="_blank">https://jsonbin.io</a> 備份同步</p>
+</div>
+
+
                 </div>
                 <div class="col-c">
                     <span>前置詞 <a href="javascript:void(0)" class="reset-link" onclick="resetField('pre')">(重置)</a></span>
@@ -191,7 +210,8 @@
         </div>
     </div>
 
-    <script src="script.js?ver=1.01"></script>
+    <script src="script.js?ver=1.02"></script>
+
 
 
 <style>
