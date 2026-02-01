@@ -17,6 +17,8 @@ let appData = {
     tasks: [],
     startDayType: 'monday', // 新增：可選 'monday', 'sunday', 'today'
     cardHeight: 'large', // 新增：可選 'small', 'medium', 'large'
+    binId: '', 
+    apiKey: '',
     ...DEFAULT_VALS
 };
 
@@ -27,7 +29,15 @@ let selectedPre = new Set(), selectedMain = new Set();
 function init() {
     try {
         const saved = localStorage.getItem('homework_v2026');
-        if (saved) appData = JSON.parse(saved);
+	
+	if (saved) {
+            appData = JSON.parse(saved);
+            // 補強：確保舊資料載入後也有這兩個欄位
+            if (appData.binId === undefined) appData.binId = '';
+            if (appData.apiKey === undefined) appData.apiKey = '';
+        }
+
+
         performAutoDelete();
         const today = new Date().toISOString().split('T')[0];
         appData.mainStartDate = today;
@@ -600,6 +610,8 @@ function saveSettings() {
     appData.writingMode = document.getElementById('writingModeSelect').value;
     appData.displayMode = document.getElementById('displayModeSelect').value;
     appData.bopoMap = document.getElementById('bopoMap').value;
+    appData.binId = d.getElementById('binId').value.trim();
+    appData.apiKey = d.getElementById('apiKey').value.trim()
 
 
     performAutoDelete();
@@ -628,8 +640,9 @@ function openSettings() {
     d.getElementById('settingsModal').style.display = 'block';
     document.getElementById('writingModeSelect').value = appData.writingMode || 'horizontal-tb';
     document.getElementById('displayModeSelect').value = appData.displayMode || 'text';
-    d.getElementById('bopoMap').value = appData.bopoMap || DEFAULT_VALS.bopoMap;
-    
+    d.getElementById('bopoMap').value = appData.bopoMap || DEFAULT_VALS.bopoMap;    
+    document.getElementById('binId').value = appData.binId || '';
+    document.getElementById('apiKey').value = appData.apiKey || '';
 }
 
 function saveEdit() { 
@@ -650,6 +663,73 @@ function saveEdit() {
     renderMain(); 
     closeModal('editModal'); 
 }
+
+
+
+async function uploadToCloud() {
+    const { binId, apiKey } = appData;
+    if (!binId || !apiKey) return alert("請先在「設定」中填寫 https://jsonbin.io 的 Bin ID 與 API Key");
+    
+    if (!confirm("確定要將【本地資料】上傳至雲端嗎？\n注意：這會覆蓋雲端的資料。")) return;
+
+    // 排除敏感資訊
+    const uploadData = JSON.parse(JSON.stringify(appData));
+    delete uploadData.binId;
+    delete uploadData.apiKey;
+
+    try {
+        const response = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Access-Key': apiKey
+            },
+            body: JSON.stringify(uploadData)
+        });
+
+        if (response.ok) {
+            alert("雲端同步成功！");
+        } else {
+            const err = await response.json();
+            alert("上傳失敗：" + (err.message || "請檢查 Bin ID 與 API Key。"));
+        }
+    } catch (e) {
+        alert("網路錯誤：" + e.message);
+    }
+}
+
+async function downloadFromCloud() {
+    const { binId, apiKey } = appData;
+    if (!binId || !apiKey) return alert("請先在「設定」中填寫 https://jsonbin.io 的 Bin ID 與 API Key");
+
+    if (!confirm("確定從雲端下載資料嗎？\n這將覆蓋現在的所有資料。")) return;
+
+    try {
+        const response = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+            method: 'GET',
+            headers: { 'X-Access-Key': apiKey }
+        });
+
+        if (response.ok) {
+            const resData = await response.json();
+            const cloudData = resData.record;
+            
+            // 合併：更新資料但保留本地的 API 設定
+            appData = cloudData;
+            appData.binId = binId;
+            appData.apiKey = apiKey;
+
+            localStorage.setItem('homework_v2026', JSON.stringify(appData));
+            alert("雲端下載完成！頁面即將重新整理。");
+            location.reload();
+        } else {
+            alert("下載失敗，請檢查 Bin ID 與 API Key。");
+        }
+    } catch (e) {
+        alert("網路連線錯誤：" + e.message);
+    }
+}
+
 
 
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
