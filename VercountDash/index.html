@@ -92,17 +92,18 @@
                 <textarea id="set-urls" class="form-control" placeholder="每行輸入一個網址..."></textarea>
             </div>
             <div>
+<p> 雲端備份 ID 和 Key 設定</p>
                 <div style="margin-bottom:15px;">
-                    <label style="font-weight:700; display:block; margin-bottom:5px;">JSONBin ID <button class="btn btn-reset" onclick="resetField('set-bin-id')">重置</button></label>
-                    <input type="text" id="set-bin-id" class="form-control">
+                     <input type="text" id="set-bin-id" class="form-control" style="width:200px" placeholder="JSONBinID or URL"><button class="btn btn-reset" onclick="resetField('set-bin-id')">重置</button>
                 </div>
-                <div style="margin-bottom:15px;">
-                    <label style="font-weight:700; display:block; margin-bottom:5px;">JSONBin API Key <button class="btn btn-reset" onclick="resetField('set-api-key')">重置</button></label>
-                    <input type="text" id="set-api-key" class="form-control">
+                <div style="margin-bottom:15px;">                    
+                    <input type="text" id="set-api-key" class="form-control" style="width:200px" placeholder="X-Access-Key or Token">
+<button class="btn btn-reset" onclick="resetField('set-api-key')">重置</button>
+        <p style="font-size: 1rem; color: #666;">輕量簡單：<a href="https://jsonbin.io" target="_blank">https://jsonbin.io</a><br>重度專業：<a href="https://upstash.com" target="_blank">https://upstash.com</a></p>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div><label>雲端緩衝 (分)</label><input type="number" id="set-cloud-cd" class="form-control"></div>
-                    <div><label>PV 抓取緩衝 (分)</label><input type="number" id="set-pv-cd" class="form-control"></div>
+                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div><label>雲端緩衝 (分)</label><input type="number" id="set-cloud-cd" style="width:60px" class="form-control"></div>
+                    <div><label>PV 抓取緩衝 (分)</label><input type="number" id="set-pv-cd" style="width:60px" class="form-control"></div>
                 </div>
             </div>
         </div>
@@ -116,8 +117,8 @@
 <input type="file" id="import-file" style="display:none;" accept=".json" onchange="handleFileImport(event)">
 
 <script>
-    const STORAGE_KEY = 'CHARLES_SETTINGS_V3';
-    const DATA_KEY = 'CHARLES_STATS_V3';
+const STORAGE_KEY = 'CHARLES_SETTINGS_V1';
+    const DATA_KEY = 'CHARLES_STATS_V1';
     const PENDING_KEY = 'PUSH_PENDING';
     let appData = { settings: { binId: '', apiKey: '', urls: [], cloudCD: 60, pvCD: 60 }, stats: {} };
 
@@ -132,15 +133,18 @@
         const isUrlEmpty = !appData.settings.urls || appData.settings.urls.length === 0;
 
         if (appData.settings.binId && appData.settings.apiKey) {
+            // 如果本地沒網址，強制從雲端拉一次
             if (isUrlEmpty) {
                 await loadFromCloud();
                 localStorage.removeItem(PENDING_KEY);
             } 
+            // 如果有待處理的推送
             else if (isPushPending) {
                 updateStatusUI('syncing');
                 await refreshPV(true); 
                 localStorage.removeItem(PENDING_KEY);
             } 
+            // 檢查 CD 時間是否過期需要自動下載
             else if (!lastCloud || (Date.now() - lastCloud > appData.settings.cloudCD * 60000)) {
                 await loadFromCloud();
             } else {
@@ -152,6 +156,7 @@
         
         renderUI();
         
+        // 自動定時更新 PV
         if (!isUrlEmpty) {
             const lastSync = localStorage.getItem('LAST_SYNC_TIME');
             if (!lastSync || (appData.settings.pvCD === 0) || (Date.now() - lastSync > appData.settings.pvCD * 60000)) {
@@ -160,17 +165,39 @@
         }
     }
 
+    // 支援 Upstash 與 JSONBin 的通用雲端下載
     async function loadFromCloud() {
+        const { binId, apiKey } = appData.settings;
+        if (!binId || !apiKey) return false;
+
+        const isUpstash = binId.includes('upstash.io');
+        const storageKey = 'vercount_v1';
+
         try {
             updateStatusUI('syncing');
-            const res = await fetch(`https://api.jsonbin.io/v3/b/${appData.settings.binId}/latest`, {
-                headers: { 'X-Access-Key': appData.settings.apiKey }
-            });
-            if (res.ok) {
-                const cloud = await res.json();
-                appData.stats = cloud.record.stats || {};
-                if (cloud.record.settings) {
-                    const { binId, apiKey, ...other } = cloud.record.settings;
+            let cloudRecord = null;
+
+            if (isUpstash) {
+                const res = await fetch(`${binId}/get/${storageKey}`, {
+                    headers: { 'Authorization': `Bearer ${apiKey}` }
+                });
+                const data = await res.json();
+                cloudRecord = data.result ? JSON.parse(data.result) : null;
+            } else {
+                const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+                    headers: { 'X-Access-Key': apiKey }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    cloudRecord = data.record;
+                }
+            }
+
+            if (cloudRecord) {
+                appData.stats = cloudRecord.stats || {};
+                if (cloudRecord.settings) {
+                    // 保留目前的登入資訊，避免下載後被覆蓋成空的
+                    const { binId: _, apiKey: __, ...other } = cloudRecord.settings;
                     appData.settings = { ...appData.settings, ...other };
                 }
                 localStorage.setItem(DATA_KEY, JSON.stringify(appData.stats));
@@ -179,42 +206,76 @@
                 updateStatusUI('online');
                 return true;
             }
-        } catch (e) {}
+        } catch (e) {
+            console.error("雲端讀取失敗:", e);
+        }
         updateStatusUI('offline');
         return false;
     }
 
+    // 支援 Upstash 與 JSONBin 的通用雲端上傳
     async function refreshPV(isManualUpload = false) {
         if (!appData.settings.urls || appData.settings.urls.length === 0) return;
         const todayStr = new Date().toLocaleDateString('zh-TW');
+        const { binId, apiKey } = appData.settings;
+
         try {
             if(isManualUpload) updateStatusUI('syncing');
+            
+            // 1. 抓取每個網址的最新數據
             for (const url of appData.settings.urls) {
                 try {
                     const res = await fetch(`https://events.vercount.one/log?url=${encodeURIComponent(url)}`);
                     const d = await res.json();
                     const entry = { time: new Date().toLocaleString('zh-TW'), pv: d.page_pv, site_pv: d.site_pv, uv: d.site_uv };
+                    
                     if (!appData.stats[url]) appData.stats[url] = [];
                     const logs = appData.stats[url];
-                    if (logs.length > 0 && logs[logs.length-1].time.split(' ')[0] === todayStr) logs[logs.length-1] = entry;
-                    else { logs.push(entry); if (logs.length > 30) logs.shift(); }
+                    
+                    // 同一天更新最後一筆，不同天則新增
+                    if (logs.length > 0 && logs[logs.length-1].time.split(' ')[0] === todayStr) {
+                        logs[logs.length-1] = entry;
+                    } else {
+                        logs.push(entry);
+                        if (logs.length > 30) logs.shift();
+                    }
                 } catch (e) {}
             }
+            
             localStorage.setItem(DATA_KEY, JSON.stringify(appData.stats));
             localStorage.setItem('LAST_SYNC_TIME', Date.now());
 
-            if (appData.settings.binId && appData.settings.apiKey) {
-                const { binId, apiKey, ...safeSettings } = appData.settings;
-                await fetch(`https://api.jsonbin.io/v3/b/${appData.settings.binId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'X-Access-Key': appData.settings.apiKey },
-                    body: JSON.stringify({ settings: safeSettings, stats: appData.stats })
-                });
-                updateStatusUI('online');
+            // 2. 推送到雲端
+            if (binId && apiKey) {
+                const isUpstash = binId.includes('upstash.io');
+                const storageKey = 'vercount_v1';
+                const { binId: _, apiKey: __, ...safeSettings } = appData.settings;
+                const uploadBody = JSON.stringify({ settings: safeSettings, stats: appData.stats });
+
+                let res;
+                if (isUpstash) {
+                    res = await fetch(`${binId}/set/${storageKey}`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${apiKey}` },
+                        body: uploadBody
+                    });
+                } else {
+                    res = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', 'X-Access-Key': apiKey },
+                        body: uploadBody
+                    });
+                }
+                if (res.ok) updateStatusUI('online');
             }
-        } catch (e) {} finally { renderUI(); }
+        } catch (e) {
+            console.error("同步出錯:", e);
+        } finally {
+            renderUI();
+        }
     }
 
+    // --- 其餘輔助函數保持不變 ---
     function renderUI() {
         const tbody = document.getElementById('stats-body');
         tbody.innerHTML = "";
