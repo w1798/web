@@ -4,130 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>多功能文字處理器 by Charles Nextime</title>
-    <style>
-        :root {
-            --primary: #818cf8; --bg: #0f172a; --card-bg: #1e293b;
-            --text: #f1f5f9; --border: #334155; --accent: #22c55e; --danger: #e11d48;
-        }
-
-        /* 淺色模式變數 */
-        .light-theme {
-            --bg: #DDDDFF; 
-            --card-bg: 	#D0D0D0;
-            --text: #1e293b;
-            --border: #cbd5e1;
-            --primary: #4f46e5;
-        }
-        
-        /* 讓 textarea 在淺色模式下背景變白、文字變黑 */
-        .light-theme textarea, .light-theme input, .light-theme select {
-            background: #ECECFF !important;
-            color: #334155 !important;
-        }
-
-        body, html {
-            margin: 0; padding: 0; height: 100%;
-            font-family: 'Inter', 'Microsoft JhengHei', sans-serif;
-            background-color: var(--bg); color: var(--text); overflow: hidden;
-	    overflow-y: auto;
-        }
-
-        .container { display: flex; flex-direction: column; min-height: 100vh; }
-
-        header {
-            padding: 12px 20px; background: var(--card-bg);
-            border-bottom: 2px solid var(--border); flex-shrink: 0;
-        }
-
-        .top-bar { display: flex; align-items: center; gap: 15px; margin-bottom: 8px; flex-wrap: wrap; }
-        .brand { font-weight: 900; font-size: 1.6rem; color: var(--primary); white-space: nowrap; }
-        .btn-group { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
-
-        .exec-zone {
-            display: flex; flex-wrap: wrap; gap: 8px;
-            padding-top: 8px; border-top: 1px solid var(--border);
-        }
-
-        .tool-item { 
-            display: flex; align-items: center; gap: 4px; 
-            background: var(--bg); padding: 4px 8px; 
-            border-radius: 6px; border: 1px solid var(--border); font-size: 16px; 
-        }
-        
-        input, select { 
-            background: #000; color: var(--primary); 
-            border: 1px solid var(--border); padding: 4px; 
-            border-radius: 4px; outline: none; font-size: 16px; text-align: center;
-        }
-        
-        button {
-            padding: 5px 12px; cursor: pointer; background: var(--primary); color: white;
-            border: none; border-radius: 6px; font-size: 16px; 
-            font-weight: 600; transition: 0.2s; white-space: nowrap;
-        }
-        button:hover { filter: brightness(1.2); transform: translateY(-1px); }
-        button.secondary { background: #475569; }
-        button.green { background: var(--accent); }
-        button.red { background: var(--danger); }
-        button.purple { background: #a855f7; }
-
-        .m-left { margin-left: 15px; }
-
-        main { flex: 1; display: flex; padding: 10px; gap: 10px; box-sizing: border-box; min-height: 0; }
-        
-        /* 比例設定 2.5:2.5:5 */
-        .box-25 { flex: 2.5; display: flex; flex-direction: column; min-width: 0; }
-        .box-50 { flex: 5; display: flex; flex-direction: column; min-width: 0; }
-        
-        textarea {
-            flex: 1; padding: 15px; border: 1px solid var(--border); border-radius: 8px;
-            resize: none; font-size: 18px; line-height: 1.5; outline: none;
-            background: #000; color: #adbac7; font-family: 'Consolas', monospace;
-        }
-        .toolbar-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 16px; }
-
-        /* 全屏模式下的容器樣式 */
-        .fullscreen-mode {
-            position: fixed !important;
-            top: 0; left: 0;
-            width: 100vw !important;
-            height: 100vh !important;
-            z-index: 9999;
-            padding: 20px !important;
-            background: var(--bg) !important;
-            box-sizing: border-box;
-        }
-        
-        /* 隱藏全屏時不需要的元素 */
-        .hidden { display: none !important; }
-        
-        /* 全屏按鈕在全屏狀態下的特殊樣式（例如變成紅色退出） */
-        .btn-exit-full {
-            background: var(--danger) !important;
-        }
-
-        footer { height: 35px; display: flex; justify-content: center; align-items: center; background: var(--card-bg); border-top: 1px solid var(--border); font-size: 14px; }
-
-@media (max-width: 1100px) {
-    body, html { overflow-y: auto; } /* 確保手機版可以捲動 */
-    .container { height: auto; }
-    main { 
-        flex-direction: column; 
-        overflow-y: visible; /* 讓內容撐開 */
-        height: auto; 
-    }
-    /* 這裡把 350px 改小一點，或是改用 vh，讓使用者在手機上比較好操作 */
-    .box-25, .box-50 { 
-        height: 300px; 
-        flex: none; 
-        width: 100%; 
-        margin-bottom: 15px; /* 增加間距避免擠在一起 */
-    }
-}
-    </style>
+    <link rel="stylesheet" href="style.css?ver=1.01">
 </head>
 <body>
-
 <div class="container">
     <header>
         <div class="top-bar">
@@ -136,75 +15,62 @@
                 <button class="purple" onclick="dualProcess('join')">資1接資2</button>
                 <button class="purple" onclick="dualProcess('interleave')">資1插資2</button>
                 <button class="purple" onclick="dualProcess('compare')">資12比對</button>
-                <span style="color:var(--border); margin:0 5px;">|</span>
+                <span class="divider">|</span>
                 <button class="green" onclick="process('trimSpace')">刪空格</button>
                 <button class="secondary" onclick="process('noEng')">刪英文</button>
                 <button class="secondary" onclick="process('noNum')">刪數字</button>
                 <button class="secondary" onclick="process('noSym')">刪符號</button>
                 <button class="secondary" onclick="process('noHTML')">刪HTML</button>
-
-                <span style="color:var(--border); margin:0 5px;">|</span>
+                <span class="divider">|</span>
                 <button class="green" onclick="process('indent')">增縮排</button>
                 <button class="secondary" onclick="process('outdent')">減縮排</button>
-                <span style="color:var(--border); margin:0 5px;">|</span>
+                <span class="divider">|</span>
                 <button class="secondary" onclick="process('findDup')">資1找重複</button>
-<div style="flex-basis: 100%; height: 0;"></div>
+                <div class="break"></div>
                 <button class="green" onclick="process('noEmptyLine')">刪空行</button>
                 <button class="secondary" onclick="process('addEmptyLine')">加空行</button>
-                <span style="color:var(--border); margin:0 5px;">|</span>
+                <span class="divider">|</span>
                 <button class="green" onclick="process('sort')">排序</button>
                 <button class="secondary" onclick="process('shuffle')">隨機排</button>
-                <span style="color:var(--border); margin:0 5px;">|</span>
+                <span class="divider">|</span>
                 <button class="secondary" onclick="process('capitalize')">首字大寫</button>
                 <button class="secondary" onclick="process('upper')">全大寫</button>
                 <button class="secondary" onclick="process('lower')">全小寫</button>
-		<span style="color:var(--border); margin:0 5px;">|</span>
-		<button class="purple" onclick="process('smartFormat')">JSON/CSS格式化</button>
-
-
+                <span class="divider">|</span>
+                <button class="purple" onclick="process('smartFormat')">JSON/CSS格式化</button>
             </div>
         </div>
-        
         <div class="exec-zone">
             <div class="tool-item">以 <input type="text" id="joinChar" style="width:30px" placeholder=" "> 串接 <button onclick="process('join')">執行</button></div>
             <div class="tool-item">以 <input type="text" id="splitChar" style="width:30px" value=","> 分割 <button onclick="process('split')">執行</button></div>
-                <span style="color:var(--border); margin:0 5px;">|</span>
+            <span class="divider">|</span>
             <div class="tool-item">取代 <input type="text" id="regFind" style="width:40px" placeholder="找"> 換 <input type="text" id="regRep" style="width:40px"> <button onclick="process('regex')">執行</button></div>
-                <span style="color:var(--border); margin:0 5px;">|</span>
+            <span class="divider">|</span>
             <div class="tool-item">首加 <input type="text" id="prefix" style="width:40px"> 尾加 <input type="text" id="suffix" style="width:40px"> <button onclick="process('addEdge')">執行</button></div>
-                <span style="color:var(--border); margin:0 5px;">|</span>
+            <span class="divider">|</span>
             <div class="tool-item">刪除字元 <input type="text" id="delChar" style="width:40px"> <button onclick="process('delete')">執行</button></div>
-                <span style="color:var(--border); margin:0 5px;">|</span>
+            <span class="divider">|</span>
             <div class="tool-item">含有 <input type="text" id="filterText" style="width:50px"> <button onclick="process('keepLine')">保留行</button> <button onclick="process('delLine')">刪除行</button></div>
-                <span style="color:var(--border); margin:0 5px;">|</span>
-            <div class="tool-item">
-                頭<select id="headCount"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select>
-                尾<select id="tailCount"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select>
-                <button onclick="process('sliceKeep')">保留</button> <button onclick="process('sliceDel')">刪除</button>
-            </div>
-                <span style="color:var(--border); margin:0 5px;">|</span>
+            <span class="divider">|</span>
+            <div class="tool-item">頭<select id="headCount"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select>尾<select id="tailCount"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select> <button onclick="process('sliceKeep')">保留</button> <button onclick="process('sliceDel')">刪除</button></div>
+            <span class="divider">|</span>
             <div class="tool-item">編號 <select id="numPad"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select> <button onclick="process('autoNum')">執行</button></div>
-                 <span style="color:var(--border); margin:0 5px;">|</span>           
+            <span class="divider">|</span>
             <button class="secondary" style="background:#dc2626; margin-left: 10px;" onclick="resetTools()">重置參數</button>
-                <span style="color:var(--border); margin:0 5px;">|</span>  
+            <span class="divider">|</span>
             <button class="red" onclick="undo()">⟲ 上一步</button>
-                <span style="color:var(--border); margin:0 5px;">|</span>  
-	    <button class="secondary" id="themeBtn" onclick="toggleTheme()">☀️淺色模式</button>
+            <span class="divider">|</span>
+            <button class="secondary" id="themeBtn" onclick="toggleTheme()">☀️淺色模式</button>
         </div>
     </header>
-
     <main>
         <div class="box-25">
-            <div class="toolbar-top"><span>原始資料1 <small id="stat1"></small></span>
-                <div><button class="secondary" onclick="pasteTo('inputArea')">貼上</button> <button class="secondary m-left" onclick="clearArea('inputArea')">清空</button></div>
-            </div>
-            <textarea id="inputArea" oninput="updateStats()" placeholder="資料源1..."></textarea>
+            <div class="toolbar-top"><span>原始資料1 <small id="stat1"></small></span><div><button class="secondary" onclick="pasteTo('inputArea')">貼上</button> <button class="secondary m-left" onclick="clearArea('inputArea')">清空</button></div></div>
+            <textarea id="inputArea" placeholder="資料源1..."></textarea>
         </div>
         <div class="box-25">
-            <div class="toolbar-top"><span>原始資料2 <small id="stat2"></small></span>
-                <div><button class="secondary" onclick="pasteTo('inputArea2')">貼上</button> <button class="secondary m-left" onclick="clearArea('inputArea2')">清空</button></div>
-            </div>
-            <textarea id="inputArea2" oninput="updateStats()" placeholder="資料源2(用於左上資1資2功能)..."></textarea>
+            <div class="toolbar-top"><span>原始資料2 <small id="stat2"></small></span><div><button class="secondary" onclick="pasteTo('inputArea2')">貼上</button> <button class="secondary m-left" onclick="clearArea('inputArea2')">清空</button></div></div>
+            <textarea id="inputArea2" placeholder="資料源2(用於左上資1資2功能)..."></textarea>
         </div>
         <div class="box-50">
             <div class="toolbar-top"><span>處理結果 <small id="statOut"></small></span>
@@ -212,7 +78,7 @@
                     <button class="green" onclick="copyOut()">複製</button> 
                     <button class="green m-left" onclick="downloadTxt()">下載</button>
                     <button class="secondary m-left" onclick="clearArea('outputArea')">清空</button>
-		    <button id="fullBtn" class="secondary m-left" onclick="toggleFullScreen()">⛶ 全屏</button>
+                    <button id="fullBtn" class="secondary m-left" onclick="toggleFullScreen()">⛶ 全屏</button>
                     <button class="secondary m-left" onclick="scrollArea('outputArea', 'top')">▲頂</button>
                     <button class="secondary" onclick="scrollArea('outputArea', 'bottom')">▼底</button>
                 </div>
@@ -220,392 +86,12 @@
             <textarea id="outputArea" placeholder="處理結果將顯示在此..."></textarea>
         </div>
     </main>
-
     <footer>
-        <a href="https://w1798.github.io/web/" target="_blank" style="color:var(--text); text-decoration:none">Completed by Charles Nextime with AI assistance, 20260130</a>
-        <span id="busuanzi_container_page_pv" style="margin-left:15px; color:#888; border-left: 1px solid var(--border); padding-left:15px;">本頁使用量 <span id="busuanzi_value_page_pv" style="color:#00b894; font-weight:bold;"></span> 次</span>
+        <a href="https://w1798.github.io/web/" target="_blank">Completed by Charles Nextime with AI assistance, 20260201</a>
+        <span id="busuanzi_container_page_pv">本頁使用量 <span id="busuanzi_value_page_pv"></span> 次</span>
     </footer>
 </div>
-
-<script>
-    let history = [];
-    const in1 = document.getElementById('inputArea');
-    const in2 = document.getElementById('inputArea2');
-    const out = document.getElementById('outputArea');
-
-// 新增：只要原始資料變動，就清空結果區（並記錄歷史）
-    function clearOutputIfInputChanged() {
-        if (out.value !== "") {
-            saveHistory(); // 清空前先存入歷史，萬一按錯可以 undo
-            out.value = "";
-            updateStats();
-        }
-    }
-
-    // 綁定事件：監控資料源 1 & 2
-    in1.addEventListener('input', () => {
-        updateStats();
-        clearOutputIfInputChanged();
-    });
-    in2.addEventListener('input', () => {
-        updateStats();
-        clearOutputIfInputChanged();
-    });
-
-    function saveHistory() { history.push(out.value); if (history.length > 30) history.shift(); }
-    function undo() { if (history.length > 0) { out.value = history.pop(); updateStats(); } }
-    
-    function resetTools() {
-        ['joinChar','splitChar','filterText','prefix','suffix','regFind','regRep','delChar'].forEach(id => document.getElementById(id).value = (id==='splitChar'?',':''));
-        ['numPad','headCount','tailCount'].forEach(id => document.getElementById(id).value = (id==='numPad'?'1':'0'));
-    }
-
-    function updateStats() {
-        const s = (el) => `| 字:${el.value.length} 行:${el.value.split('\n').filter(x=>x.trim()).length}`;
-        document.getElementById('stat1').innerText = s(in1);
-        document.getElementById('stat2').innerText = s(in2);
-        document.getElementById('statOut').innerText = s(out);
-    }
-
-    async function pasteTo(id) { 
-        try { 
-            document.getElementById(id).value = await navigator.clipboard.readText(); 
-            // 貼上後也要觸發清空結果
-            if (id === 'inputArea' || id === 'inputArea2') clearOutputIfInputChanged();
-            updateStats(); 
-        } catch(e) { 
-            alert("請手動貼上"); 
-        } 
-    }
-
-    function clearArea(id) { 
-        // 如果清空的是資料源 1 或 2，連帶清空結果區
-        if (id === 'inputArea' || id === 'inputArea2') {
-            document.getElementById(id).value = '';
-            clearOutputIfInputChanged();
-        } else {
-            // 如果單獨清空結果區
-            saveHistory();
-            document.getElementById(id).value = '';
-        }
-        updateStats(); 
-    }
-
-    function copyOut() {
-        // 執行複製
-        navigator.clipboard.writeText(out.value);
-    
-        // 建立 Toast 元素
-        const toast = document.createElement('div');
-        toast.innerText = '已複製到剪貼簿！';
-        
-        // 設定樣式 (也可以寫在 CSS 裡)
-        Object.assign(toast.style, {
-            position: 'fixed',
-            bottom: '300px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: 'rgba(0, 0, 0, 0.8)',
-            color: '#fff',
-            padding: '10px 20px',
-            borderRadius: '20px',
-            zIndex: '10000',
-            fontSize: '20px',
-            transition: 'opacity 0.5s ease'
-        });
-    
-        document.body.appendChild(toast);
-    
-        // 1秒後開始淡出，淡出完成後移除元素
-        setTimeout(() => {
-            toast.style.opacity = '0';
-            setTimeout(() => toast.remove(), 500); // 確保動畫跑完再刪除
-        }, 1000);
-    }
-
-
-    function downloadTxt() {
-        const blob = new Blob([out.value], {type: 'text/plain'});
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob); a.download = `Result_${new Date().getTime()}.txt`; a.click();
-    }
-
-    function dualProcess(type) {
-        saveHistory();
-        let lines1 = in1.value.split(/\r?\n/);
-        let lines2 = in2.value.split(/\r?\n/);
-        let res = [];
-
-        if (type === 'join') {
-            let max = Math.max(lines1.length, lines2.length);
-            for(let i=0; i<max; i++) res.push((lines1[i] || "") + (lines2[i] || ""));
-        } 
-        else if (type === 'interleave') {
-            let max = Math.max(lines1.length, lines2.length);
-            for(let i=0; i<max; i++) {
-                if(i < lines1.length) res.push(lines1[i]);
-                if(i < lines2.length) res.push(lines2[i]);
-            }
-        }
-        else if (type === 'compare') {
-            let s1 = new Set(lines1.filter(x => x.trim()));
-            let s2 = new Set(lines2.filter(x => x.trim()));
-            let common = [...s1].filter(x => s2.has(x));
-            let only1 = [...s1].filter(x => !s2.has(x));
-            let only2 = [...s2].filter(x => !s1.has(x));
-            res = ["【共同擁有】", ...common, "", "【只有資1有】", ...only1, "", "【只有資2有】", ...only2];
-        }
-        out.value = res.join('\n');
-        updateStats();
-    }
-
-    function process(type) {
-        saveHistory();
-        let text = out.value.trim() !== "" ? out.value : in1.value;
-        if (!text) return;
-        let lines = text.split(/\r?\n/);
-        
-        switch(type) {
-            case 'join': text = lines.join(document.getElementById('joinChar').value); break;
-            case 'split': text = text.split(document.getElementById('splitChar').value).join('\n'); break;
-            case 'delete': text = text.split(document.getElementById('delChar').value).join(''); break;
-            case 'noEng': text = text.replace(/[a-zA-Z]/g, ''); break;
-            case 'noNum': text = text.replace(/[0-9]/g, ''); break;
-            case 'noSym': text = text.replace(/[^a-zA-Z0-9\s\u4e00-\u9fa5]/gi, ''); break;
-            case 'noHTML': text = text.replace(/<\/?[^>]+(>|$)/g, ""); break;
-            case 'noEmptyLine': text = lines.filter(l => l.trim() !== '').join('\n'); break;
-            case 'addEmptyLine': text = lines.join('\n\n'); break;
-            case 'trimSpace': text = lines.map(l => l.trim()).join('\n'); break;
-            case 'indent': text = lines.map(l => '    ' + l).join('\n'); break;
-            case 'outdent': text = lines.map(l => l.replace(/^    |^  |^\t/, '')).join('\n'); break;
-            case 'sort': text = lines.sort((a,b) => a.localeCompare(b, 'zh-Hant')).join('\n'); break;
-            case 'shuffle': text = lines.sort(() => Math.random() - 0.5).join('\n'); break;
-            case 'upper': text = text.toUpperCase(); break;
-            case 'lower': text = text.toLowerCase(); break;
-            case 'capitalize': text = lines.map(l => l.charAt(0).toUpperCase() + l.slice(1)).join('\n'); break;
-            case 'findDup':
-                let c = {}; lines.forEach(l => { if(l.trim()) c[l] = (c[l]||0)+1 });
-                text = Object.keys(c).filter(k => c[k]>1).join('\n'); break;
-            case 'addEdge': 
-                let p = document.getElementById('prefix').value, s = document.getElementById('suffix').value;
-                text = lines.map(l => p + l + s).join('\n'); break;
-            case 'sliceKeep':
-                let hK = parseInt(document.getElementById('headCount').value), tK = parseInt(document.getElementById('tailCount').value);
-                text = lines.map(l => l.substring(0, hK) + l.substring(l.length - tK)).join('\n'); break;
-            case 'sliceDel':
-                let hD = parseInt(document.getElementById('headCount').value), tD = parseInt(document.getElementById('tailCount').value);
-                text = lines.map(l => l.substring(hD, l.length - tD)).join('\n'); break;
-            case 'autoNum':
-                let pad = parseInt(document.getElementById('numPad').value);
-                text = lines.map((l, i) => (i + 1).toString().padStart(pad, '0') + l).join('\n'); break;
-            case 'regex': 
-                let re = new RegExp(document.getElementById('regFind').value, 'g');
-                text = text.replace(re, document.getElementById('regRep').value); break;
-            case 'keepLine': text = lines.filter(l => l.includes(document.getElementById('filterText').value)).join('\n'); break;
-            case 'delLine': text = lines.filter(l => !l.includes(document.getElementById('filterText').value)).join('\n'); break;
-
-            case 'smartFormat': // 你的功能鍵呼叫這個
-            out.value = universalSmartFormat(out.value.trim() !== "" ? out.value : in1.value);
-            updateStats();
-            // 順便觸發我們之前說的 1 秒消失提示
-            showToast("格式已切換"); 
-            break;
-
-
-        }
-        out.value = text;
-        updateStats();
-    }
-
-
-
-    function universalSmartFormat(text) {
-        if (!text.trim()) return "";
-    
-        // --- 步驟 A: 自動偵測語言 ---
-        let mode = "json";
-        try {
-            JSON.parse(text);
-            mode = "json";
-        } catch (e) {
-            // 如果 JSON 解析失敗，且包含 CSS 特徵符號，則判定為 CSS
-            if (text.includes('{') || text.includes(';') || text.includes('.')) {
-                mode = "css";
-            } else {
-                return text; // 既不是 JSON 也不是 CSS，不處理
-            }
-        }
-    
-        const lines = text.trim().split('\n');
-        const isSingleLine = lines.length <= 1;
-    
-        // --- 步驟 B: 執行三段式循環 ---
-        if (mode === "json") {
-            try {
-                const obj = JSON.parse(text);
-                // 狀態 1: 只有一行 -> 全展開
-                if (isSingleLine) return JSON.stringify(obj, null, 4);
-                
-                // 狀態 2: 已經展開 (判斷第一行是否只有 { ) -> 半壓縮
-                if (lines[0].trim() === '{') {
-                    let temp = JSON.stringify(obj, null, 2);
-                    return temp.replace(/\{\s*\n\s*([\s\S]*?)\n\s*\}/g, (m, content) => {
-                        return `{ ${content.replace(/\s+/g, ' ').trim()} }`;
-                    });
-                }
-                // 狀態 3: 其他情況 -> 縮回一行
-                return JSON.stringify(obj);
-            } catch (e) { return text; }
-        } 
-        
-        if (mode === "css") {
-            const isCssSemi = text.includes('{ ') && text.includes(' }');
-            // 狀態 1: 只有一行 -> 全展開
-            if (isSingleLine) {
-                // 1. 處理換行：讓 { , } , ; 後面都先換行
-                let formatted = text
-                    .replace(/\s+/g, ' ') 
-                    .replace(/\{\s*/g, '{\n')
-                    .replace(/;\s*/g, ';\n')
-                    .replace(/\s*\}\s*/g, '\n}\n');
-            
-                // 2. 【核心吸附】把「掉下去的註釋」吸上來
-                formatted = formatted.replace(/;\n\s*(\/\*[\s\S]*?\*\/)/g, '; $1\n');
-            
-                // 3. 【註釋換行】確保獨立註釋結尾 */ 之後強制換行
-                formatted = formatted.replace(/\*\/\s*/g, '*/\n');
-            
-                // 4. 最終精修
-                let depth = 0;
-                let lines = formatted.split('\n')
-                    .map(line => {
-                        const trimmed = line.trim();
-                        if (!trimmed) return null; // 移除所有空白行
-            
-                        // 遇右括號：降級
-                        if (trimmed.startsWith('}')) {
-                            depth = Math.max(0, depth - 1);
-                        }
-            
-                        const currentIndent = '    '.repeat(depth);
-                        let result;
-            
-                        // 【核心修正判斷】
-                        // 只有在最外層 (depth === 0) 時，選擇器、@規則、獨立註釋才靠左
-                        // 只要進入嵌套內部 (depth > 0)，一律縮進
-                        if (depth === 0 && (
-                            (trimmed.includes('{') && !trimmed.includes(':')) || 
-                            trimmed.startsWith('@') ||
-                            (trimmed.startsWith('/*') && !trimmed.includes(':')) ||
-                            trimmed === '}'
-                        )) {
-                            result = trimmed; 
-                        } else {
-                            result = currentIndent + trimmed; 
-                        }
-            
-                        // 遇左括號：升級
-                        if (trimmed.endsWith('{')) {
-                            depth++;
-                        }
-            
-                        return result;
-                    })
-                    .filter(line => line !== null);
-            
-                // 5. 【精確補行】重新組合後，只針對「靠左對齊的 }」補空白行
-                let output = lines.join('\n');
-                
-                return output
-                    .replace(/^\}/gm, '}\n\n') // 針對行首的 } 補空行
-                    .replace(/\n{3,}/g, '\n\n') // 確保最多只有一個空白行
-                    .trim();
-            }
-            // 狀態 2: 全展開 -> 半壓縮
-            else if (!isCssSemi) {
-                return text
-                    .replace(/\s*\n\s*/g, ' ')
-                    .replace(/\s*\{\s*/g, ' { ')
-                    .replace(/\s*;\s*/g, '; ')
-                    .replace(/\s*\}\s*/g, ' }\n')
-                    .trim();
-            } 
-            // 狀態 3: 半壓縮 -> 精簡一行
-            else {
-                return text.replace(/\s*\n\s*/g, '').replace(/\s+/g, ' ').trim();
-            }
-        }
-    }
-
-
-
-    function scrollArea(id, pos) {
-        const el = document.getElementById(id);
-        if (pos === 'top') {
-            el.scrollTop = 0;
-        } else {
-            el.scrollTop = el.scrollHeight;
-        }
-    }
-
-
-    function toggleFullScreen() {
-        const box = document.querySelector('.box-50'); // 取得結果區容器
-        const btn = document.getElementById('fullBtn');
-        const isFull = box.classList.toggle('fullscreen-mode');
-    
-        // 切換全屏時，隱藏其他無關元素（header, footer, 其他 box）
-        document.querySelectorAll('header, footer, .box-25').forEach(el => {
-            el.classList.toggle('hidden', isFull);
-        });
-    
-        if (isFull) {
-            btn.innerText = "✕ 退出全屏";
-            btn.classList.add('btn-exit-full');
-            // 自動聚焦，方便直接編輯
-            document.getElementById('outputArea').focus();
-        } else {
-            btn.innerText = "⛶ 全屏";
-            btn.classList.remove('btn-exit-full');
-        }
-    }
-    
-    // 貼心功能：按下 Esc 鍵也能退出全屏
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && document.querySelector('.fullscreen-mode')) {
-            toggleFullScreen();
-        }
-    });
-
-
-
-    function toggleTheme() {
-        const body = document.body;
-        const btn = document.getElementById('themeBtn');
-        
-        // 切換 class
-        const isLight = body.classList.toggle('light-theme');
-        
-        // 修改按鈕文字與圖示
-        if (isLight) {
-            btn.innerText = "🌙深色模式";
-        } else {
-            btn.innerText = "☀️淺色模式";
-        }
-        
-        // 儲存偏好到瀏覽器，下次開啟會記住
-        localStorage.setItem('theme', isLight ? 'light' : 'dark');
-    }
-    
-    // 頁面載入時檢查上次的佈景主題設定
-    window.onload = () => {
-        if (localStorage.getItem('theme') === 'light') {
-            toggleTheme();
-        }
-    };
-
-</script>
-
+<script src="script.js?ver=1.01"></script>
 <script defer src="https://events.vercount.one/js"></script>
 </body>
 </html>
