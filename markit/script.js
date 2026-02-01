@@ -387,6 +387,14 @@ function resetStudentList() {
 }
 
 
+// 專門重置 Bin ID 或 API Key 的畫面欄位
+function resetBinField(targetId) {
+    if(confirm("確定要清除此欄位的內容嗎？")) {
+        document.getElementById(targetId).value = '';
+    }
+}
+
+
 async function uploadToCloud() {
     const { binId, apiKey } = state.settings;
     if (!binId || !apiKey) return alert("請先在「設定」中填寫 https://jsonbin.io 的 Bin ID 與 API Key");
@@ -413,7 +421,7 @@ async function uploadToCloud() {
             alert("雲端同步成功！");
         } else {
             const err = await response.json();
-            alert("上傳失敗：" + (err.message || "請檢查設定"));
+            alert("上傳失敗：" + (err.message || "請檢查 Bin ID 與 API Key。"));
         }
     } catch (e) {
         alert("網路連線錯誤：" + e.message);
