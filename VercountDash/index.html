@@ -289,7 +289,7 @@
     function resetField(id) { if(confirm("確定清空嗎？")) document.getElementById(id).value = ""; }
     function exportData() {
         const blob = new Blob([JSON.stringify({ settings: appData.settings, stats: appData.stats }, null, 2)], { type: 'application/json' });
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `backup_${new Date().toISOString().slice(0,10)}.json`; a.click();
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `Vercount_${new Date().toISOString().slice(0,10)}.json`; a.click();
     }
     function triggerImport() { document.getElementById('import-file').click(); }
     function handleFileImport(event) {
