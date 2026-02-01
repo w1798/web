@@ -8,7 +8,9 @@ let state = {
         quickTasks: "國習,數習,生字,圈詞",
         studentFontSize: 18,
         appendMode: false,
-        dateOffset: 1
+        dateOffset: 1,
+	binId: '',
+	apiKey: ''
     },
     assignments: []
 };
@@ -195,6 +197,8 @@ function saveSettings() {
     s.studentList = document.getElementById('studentListConfig').value.trim() || FULL_30;
     s.studentFontSize = parseInt(document.getElementById('studentFontSizeSelect').value);
     s.dateOffset = parseInt(document.getElementById('dateOffsetSelect').value);
+    s.binId = document.getElementById('binId').value.trim();
+    s.apiKey = document.getElementById('apiKey').value.trim();
     
     saveData();
     applySettings();
@@ -253,6 +257,8 @@ function openModal(id) {
         document.getElementById('sizeTotal').value = s.sizeTotal || 70;
         document.getElementById('studentFontSizeSelect').value = s.studentFontSize || 18;
         document.getElementById('dateOffsetSelect').value = s.dateOffset || 1;
+        document.getElementById('binId').value = s.binId || '';
+        document.getElementById('apiKey').value = s.apiKey || '';
     }
 }
 
@@ -377,6 +383,74 @@ function resetQuickTasks() {
 function resetStudentList() {
     if(confirm("確定要將名單恢復為 1-30 號嗎？")) {
         document.getElementById('studentListConfig').value = FULL_30.split(',').join('\n');
+    }
+}
+
+
+async function uploadToCloud() {
+    const { binId, apiKey } = state.settings;
+    if (!binId || !apiKey) return alert("請先在「設定」中填寫 JSONBin ID 與 API Key");
+    
+    if (!confirm("確定要將【本地資料】上傳至雲端嗎？\n注意：這會覆蓋「雲端的資料」。")) return;
+
+    // --- 關鍵修改：排除敏感資訊 ---
+    // 1. 深拷貝 state 避免影響本地運作
+    const uploadData = JSON.parse(JSON.stringify(state));
+    // 2. 移除副本中的 ID 與 Key
+    delete uploadData.settings.binId;
+    delete uploadData.settings.apiKey;
+
+    try {
+        const response = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Access-Key': apiKey
+            },
+            body: JSON.stringify(uploadData) // 上傳排除後的版本
+        });
+
+        if (response.ok) {
+            alert("雲端同步成功！（敏感資訊已排除）");
+        } else {
+            const err = await response.json();
+            alert("上傳失敗：" + (err.message || "請檢查設定"));
+        }
+    } catch (e) {
+        alert("網路連線錯誤：" + e.message);
+    }
+}
+
+async function downloadFromCloud() {
+    const { binId, apiKey } = state.settings;
+    if (!binId || !apiKey) return alert("請先在「設定」中填寫 JSONBin ID 與 API Key");
+
+    if (!confirm("確定從雲端下載資料嗎？\n這將覆蓋「現在的所有資料」。")) return;
+
+    try {
+        const response = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+            method: 'GET',
+            headers: { 'X-Access-Key': apiKey }
+        });
+
+        if (response.ok) {
+            const resData = await response.json();
+            const cloudState = resData.record;
+            
+            // --- 關鍵修改：合併設定 ---
+            // 將雲端下載的內容覆蓋到 state，但強制保留目前的 API 資訊
+            state = cloudState;
+            state.settings.binId = binId;
+            state.settings.apiKey = apiKey;
+
+            saveData();
+            alert("雲端下載完成！");
+            location.reload();
+        } else {
+            alert("下載失敗，請檢查 ID 或 Key。");
+        }
+    } catch (e) {
+        alert("網路連線錯誤：" + e.message);
     }
 }
 
