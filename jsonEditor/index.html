@@ -127,13 +127,25 @@
 
         function createField(pKey, iKey, sKey, val) {
             const label = sKey || (pKey === null ? iKey : '');
-            const displayVal = Array.isArray(val) ? val.join('\n') : (typeof val === 'object' ? JSON.stringify(val) : val);
+            
+            // 改良點：如果是物件或陣列，使用 JSON.stringify 並縮排，避免出現 [object Object]
+            let displayVal;
+            if (typeof val === 'object' && val !== null) {
+                displayVal = JSON.stringify(val, null, 2); 
+            } else {
+                displayVal = val;
+            }
+
             const path = JSON.stringify({pKey, iKey, sKey});
             
+            // 增加 rows 屬性讓多行內容更好閱讀
+            const rowCount = typeof displayVal === 'string' ? Math.min(displayVal.split('\n').length, 15) : 1;
+
             return `
                 <div class="flex flex-col gap-1">
                     ${label ? `<label class="text-[10px] font-black text-indigo-400 uppercase tracking-wider">${label}</label>` : ''}
-                    <textarea class="w-full text-sm p-2 bg-slate-50 rounded-lg border-transparent focus:bg-white focus:ring-2 focus:ring-indigo-100 outline-none transition" 
+                    <textarea class="w-full text-sm p-2 bg-slate-50 rounded-lg border-transparent focus:bg-white focus:ring-2 focus:ring-indigo-100 outline-none transition font-mono" 
+                              rows="${rowCount}"
                               onchange='updateRawData(${path}, this.value)'>${displayVal}</textarea>
                 </div>
             `;
@@ -199,6 +211,7 @@
 
 
 
+
 <style>
 #busuanzi_container_page_pv {
     color: #888;
@@ -215,7 +228,6 @@
 </style>
 
 <script defer src="https://events.vercount.one/js"></script>
-
 
 </body>
 </html>
