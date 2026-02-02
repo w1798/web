@@ -116,6 +116,10 @@
             <h1>☁️ JSON 雲端備份申請說明</h1>
             <div class="alert-box">
                 <p class="alert-text">
+                ★ 提供兩種方案：
+                <br>* Upstash 所以網頁服務都共用一組 URL 和 Token
+                <br>* JSONBin 只有 Key 可共用，Bin ID 每個網頁服務都有各自的 ID
+                <br><br>
                     ★ 第一次在應用程式中設定好連線資訊後，<br>請務必先按一下「上傳」按鈕，以更新雲端端的初始資料，確保後續讀取正常。
                 </p>
             </div>
@@ -123,49 +127,9 @@
 
         <section class="glass-card">
             <div class="card-header">
-                <div class="icon icon-blue">J</div>
-                <a href="https://jsonbin.io" target="_blank" class="url-link" style="color:#2b6cb0">https://jsonbin.io</a>
-                <span class="badge badge-blue">免費版限制：每月 9,999 次讀取</span>
-            </div>
-
-            <div class="step-row">
-                <div class="step-num jsonbin-num">1</div>
-                <div class="step-content">
-                    <p class="step-title">用 google 帳號登入</p>
-                </div>
-            </div>
-
-            <div class="step-row">
-                <div class="step-num jsonbin-num">2</div>
-                <div class="step-content">
-                    <p class="step-title">選 [BINS] 的 [Create a Bin]</p>
-                    <p style="color:#4299e1; font-weight: bold; margin-bottom: 10px;">(★每個網頁服務都要申請一個專用的 Bin)</p>
-                    <ul class="sub-list">
-                        <li>畫面拉到右邊，按設定，在 <strong>[Name]</strong> 輸入 Bin 的名稱(英文，自己看得懂就好)</li>
-                        <li>在 JSON 下面，貼上 <code>{"a":1,"b":1}</code></li>
-                        <li>最後按 <strong>[Save Bin]</strong></li>
-                        <li>畫面拉到左邊，畫面中剛剛取的名稱 <span class="highlight-red">Bin ID</span> 複製起來，要用到</li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="step-row">
-                <div class="step-num jsonbin-num">3</div>
-                <div class="step-content">
-                    <p class="step-title">按 [API KEYS]，選 [Create Access Key]</p>
-                    <ul class="sub-list">
-                        <li>畫面拉到右邊，勾選 <strong>[Read]</strong> 和 <strong>[Update]</strong>，按右上角 <strong>[Save Access Key]</strong></li>
-                        <li>畫面拉到左邊，<span class="highlight-red">X-ACCESS-KEY</span> 一串很長的英文和數字複製起來，要用到</li>
-                    </ul>
-                </div>
-            </div>
-        </section>
-
-        <section class="glass-card">
-            <div class="card-header">
                 <div class="icon icon-red">U</div>
                 <a href="https://upstash.com" target="_blank" class="url-link" style="color:#c53030">https://upstash.com</a>
-                <span class="badge badge-red">免費版限制：每月 50,000 次讀取</span>
+                <span class="badge badge-red">免費版限制：每月 500k 次讀取，總容量 256MB</span>
             </div>
 
             <div class="step-row">
@@ -196,11 +160,53 @@
                         UPSTASH_REDIS_REST_TOKEN="<span class="highlight-yellow">一串很長的英文加數字</span>"
                     </div>
                     <p style="margin-top: 20px; color: #e53e3e; font-weight: bold; background: #fff5f5; padding: 10px; border-radius: 8px; display: inline-block; border: 1px solid #feb2b2;">
-                        請複製引號內的 Url(https://到 io) 和 Token(一串很長的英文加數字)，要用到
+                        請複製引號內的 URL(https://到 io) 和 Token(一串很長的英文加數字)，設定要用到
                     </p>
                 </div>
             </div>
         </section>
+        
+        <section class="glass-card">
+            <div class="card-header">
+                <div class="icon icon-blue">J</div>
+                <a href="https://jsonbin.io" target="_blank" class="url-link" style="color:#2b6cb0">https://jsonbin.io</a>
+                <span class="badge badge-blue">免費版限制：每月 10k 次讀取，一個 Bin 容量 100kb</span>
+            </div>
+
+            <div class="step-row">
+                <div class="step-num jsonbin-num">1</div>
+                <div class="step-content">
+                    <p class="step-title">用 google 帳號登入</p>
+                </div>
+            </div>
+
+            <div class="step-row">
+                <div class="step-num jsonbin-num">2</div>
+                <div class="step-content">
+                    <p class="step-title">選 [BINS] 的 [Create a Bin]</p>
+                    <p style="color:#4299e1; font-weight: bold; margin-bottom: 10px;">★每個網頁服務都要申請一個專用的 Bin。<br>例如：「教學清點小幫手」取 markit，「作業動態曆」取 homework</p>
+                    <ul class="sub-list">
+                        <li>畫面拉到右邊，按設定，在 <strong>[Name]</strong> 輸入 Bin 的名稱(英文，自己看得懂就好)</li>
+                        <li>在 JSON 下面，貼上符合格式隨意值，例如： <code>{"a":1,"b":1}</code></li>
+                        <li>最後按 <strong>[Save Bin]</strong></li>
+                        <li>畫面拉到左邊，畫面中剛剛取的名稱 <span class="highlight-red">Bin ID</span> 複製起來，設定要用到</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step-row">
+                <div class="step-num jsonbin-num">3</div>
+                <div class="step-content">
+                    <p class="step-title">按 [API KEYS]，選 [Create Access Key]</p>
+                    <ul class="sub-list">
+                        <li>畫面拉到右邊，勾選 <strong>[Read]</strong> 和 <strong>[Update]</strong>，按右上角 <strong>[Save Access Key]</strong></li>
+                        <li>畫面拉到左邊，<span class="highlight-red">X-ACCESS-KEY</span> 「一串很長的英文和數字」複製起來，設定要用到</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+
 
         <footer>
         <a href="https://w1798.github.io/web/" target="_blank">
