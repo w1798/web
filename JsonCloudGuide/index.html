@@ -241,7 +241,7 @@
 (function() {
     const TIME_KEY = 'VERCOUNT_FORCE_FREEZE';
     const VAL_KEY = 'VERCOUNT_LAST_VAL';
-    const COOL_DOWN = 5 * 60 * 1000; 
+    const COOL_DOWN = 30 * 60 * 1000; 
     const now = Date.now();
     const lastVisit = localStorage.getItem(TIME_KEY);
     
@@ -249,7 +249,7 @@
     const timeLeft = lastVisit ? Math.ceil((parseInt(lastVisit) + COOL_DOWN - now) / 1000) : 0;
 
     if (timeLeft <= 0) {
-        // --- 情況 A：超過 5 分鐘，執行正常抓取 ---
+        // --- 情況 A：超過 30 分鐘，執行正常抓取 ---
         console.log("%c[Vercount]%c 已過冷卻期，正在請求伺服器更新 PV...", "color:#00b894;font-weight:bold", "color:inherit");
         
         const script = document.createElement('script');
