@@ -240,7 +240,47 @@
         </span>
     </footer>
 
-    <script defer src="https://events.vercount.one/js"></script>
+    <script>
+(function() {
+    const TIME_KEY = 'VERCOUNT_FORCE_FREEZE';
+    const VAL_KEY = 'VERCOUNT_LAST_VAL';
+    const COOL_DOWN = 30 * 60 * 1000; 
+    const now = Date.now();
+    const lastVisit = localStorage.getItem(TIME_KEY);
+    
+    // 計算剩餘秒數
+    const timeLeft = lastVisit ? Math.ceil((parseInt(lastVisit) + COOL_DOWN - now) / 1000) : 0;
+
+    if (timeLeft <= 0) {
+        // --- 情況 A：超過 30 分鐘，執行正常抓取 ---
+        console.log("%c[Vercount]%c 已過冷卻期，正在請求伺服器更新 PV...", "color:#00b894;font-weight:bold", "color:inherit");
+        
+        const script = document.createElement('script');
+        script.src = "https://events.vercount.one/js";
+        script.defer = true;
+        
+        script.onload = () => {
+            setTimeout(() => {
+                const pvVal = document.getElementById('busuanzi_value_page_pv')?.innerText;
+                if (pvVal) localStorage.setItem(VAL_KEY, pvVal);
+            }, 1500);
+        };
+        document.head.appendChild(script);
+        localStorage.setItem(TIME_KEY, now);
+    } else {
+        // --- 情況 B：還在冷卻中，僅在 Console 顯示一次提醒 ---
+        const lastVal = localStorage.getItem(VAL_KEY) || "--";
+        
+        console.log(`%c[Vercount]%c 冷卻中（剩 ${timeLeft} 秒）。本次顯示舊數據：${lastVal}`, "color:#f1c40f;font-weight:bold", "color:inherit");
+
+        // 依然幫你把舊數字填入 span，確保畫面不留白
+        window.addEventListener('load', () => {
+            const pvSpan = document.getElementById('busuanzi_value_page_pv');
+            if (pvSpan) pvSpan.innerText = lastVal;
+        });
+    }
+})();
+</script>
 
     <script>
         const links = [
