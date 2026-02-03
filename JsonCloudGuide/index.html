@@ -241,15 +241,13 @@
 (function() {
     const TIME_KEY = 'VERCOUNT_FORCE_FREEZE';
     const VAL_KEY = 'VERCOUNT_LAST_VAL';
-    const COOL_DOWN = 1 * 60 * 1000; // 5 分鐘
+    const COOL_DOWN = 5 * 60 * 1000; // 5 分鐘
     const now = Date.now();
     const lastVisit = localStorage.getItem(TIME_KEY);
 
-    // 檢查是否在冷卻期內
     const isCooling = lastVisit && (now - lastVisit < COOL_DOWN);
 
     if (!isCooling) {
-        console.log("載入 Vercount 並更新數據...");
         const script = document.createElement('script');
         script.src = "https://events.vercount.one/js";
         script.defer = true;
@@ -275,7 +273,7 @@
                 const timeLeft = Math.ceil((parseInt(lastVisit) + COOL_DOWN - Date.now()) / 1000);
                 
                 if (timeLeft <= 0) {
-                    if (pvSpan) pvSpan.innerText = lastVal + " (冷卻結束，請重整)";
+                    if (pvSpan) pvSpan.innerText = lastVal;
                     clearInterval(timer);
                 } else {
                     if (pvSpan) pvSpan.innerText = `${lastVal} (冷卻中：剩 ${timeLeft} 秒)`;
