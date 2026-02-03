@@ -237,7 +237,47 @@
 }
 </style>
 
-<script defer src="https://events.vercount.one/js"></script>
+<script>
+(function() {
+    const TIME_KEY = 'VERCOUNT_FORCE_FREEZE';
+    const VAL_KEY = 'VERCOUNT_LAST_VAL';
+    const COOL_DOWN = 1 * 60 * 1000; // 冷卻幾分鐘
+    const now = Date.now();
+    const lastVisit = localStorage.getItem(TIME_KEY);
+
+    if (!lastVisit || (now - lastVisit > COOL_DOWN)) {
+        console.log("載入 Vercount 並更新數據...");
+        
+        const script = document.createElement('script');
+        script.src = "https://events.vercount.one/js";
+        script.defer = true;
+        
+        // 當官方腳本加載完成並抓到數字後，我們把它截取下來存進 localStorage
+        script.onload = () => {
+            setTimeout(() => {
+                const pvVal = document.getElementById('busuanzi_value_page_pv').innerText;
+                if (pvVal && !isNaN(pvVal)) {
+                    localStorage.setItem(VAL_KEY, pvVal);
+                }
+            }, 1000); // 延遲 1 秒等待數字渲染
+        };
+        
+        document.head.appendChild(script);
+        localStorage.setItem(TIME_KEY, now);
+    } else {
+        console.log("冷卻中，使用本地上次紀錄的次數。");
+        
+        window.addEventListener('load', () => {
+            const pvSpan = document.getElementById('busuanzi_value_page_pv');
+            const lastVal = localStorage.getItem(VAL_KEY);
+            if (pvSpan) {
+                // 如果有舊數字就顯示舊的，沒有就顯示 --
+                pvSpan.innerText = lastVal ? lastVal : "--";
+            }
+        });
+    }
+})();
+</script>
 
 </body>
 </html>
