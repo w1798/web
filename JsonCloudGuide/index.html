@@ -241,39 +241,49 @@
 (function() {
     const TIME_KEY = 'VERCOUNT_FORCE_FREEZE';
     const VAL_KEY = 'VERCOUNT_LAST_VAL';
-    const COOL_DOWN = 1 * 60 * 1000; // 冷卻幾分鐘
+    const COOL_DOWN = 1 * 60 * 1000; // 5 分鐘
     const now = Date.now();
     const lastVisit = localStorage.getItem(TIME_KEY);
 
-    if (!lastVisit || (now - lastVisit > COOL_DOWN)) {
+    // 檢查是否在冷卻期內
+    const isCooling = lastVisit && (now - lastVisit < COOL_DOWN);
+
+    if (!isCooling) {
         console.log("載入 Vercount 並更新數據...");
-        
         const script = document.createElement('script');
         script.src = "https://events.vercount.one/js";
         script.defer = true;
         
-        // 當官方腳本加載完成並抓到數字後，我們把它截取下來存進 localStorage
         script.onload = () => {
             setTimeout(() => {
-                const pvVal = document.getElementById('busuanzi_value_page_pv').innerText;
-                if (pvVal && !isNaN(pvVal)) {
+                const pvVal = document.getElementById('busuanzi_value_page_pv')?.innerText;
+                if (pvVal && !isNaN(pvVal.replace(/,/g, ''))) {
                     localStorage.setItem(VAL_KEY, pvVal);
                 }
-            }, 1000); // 延遲 1 秒等待數字渲染
+            }, 1200);
         };
         
         document.head.appendChild(script);
         localStorage.setItem(TIME_KEY, now);
     } else {
-        console.log("冷卻中，使用本地上次紀錄的次數。");
-        
         window.addEventListener('load', () => {
             const pvSpan = document.getElementById('busuanzi_value_page_pv');
-            const lastVal = localStorage.getItem(VAL_KEY);
-            if (pvSpan) {
-                // 如果有舊數字就顯示舊的，沒有就顯示 --
-                pvSpan.innerText = lastVal ? lastVal : "--";
-            }
+            const lastVal = localStorage.getItem(VAL_KEY) || "--";
+            
+            // 啟動倒數計時器
+            const timer = setInterval(() => {
+                const timeLeft = Math.ceil((parseInt(lastVisit) + COOL_DOWN - Date.now()) / 1000);
+                
+                if (timeLeft <= 0) {
+                    if (pvSpan) pvSpan.innerText = lastVal + " (冷卻結束，請重整)";
+                    clearInterval(timer);
+                } else {
+                    if (pvSpan) pvSpan.innerText = `${lastVal} (冷卻中：剩 ${timeLeft} 秒)`;
+                }
+            }, 1000);
+
+            // 初始顯示一次防止空白
+            if (pvSpan) pvSpan.innerText = `${lastVal} (冷卻中...)`;
         });
     }
 })();
