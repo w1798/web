@@ -23,6 +23,7 @@ jobs:
       - name: Run Script
         run: node update_stats.js
         env:
+          TEST_VAR: "Hello-I-Am-Working" # 新增這一行測試
           JSONBIN_BIN_ID: ${{ secrets.JSONBIN_BIN_ID }}
           JSONBIN_KEY: ${{ secrets.JSONBIN_KEY }}
           UPSTASH_REST_URL: ${{ secrets.UPSTASH_REST_URL }}
