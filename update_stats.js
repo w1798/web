@@ -1,13 +1,5 @@
 const axios = require('axios');
 
-console.log("--- 環境變數診斷 ---");
-console.log("測試變數:", process.env.TEST_VAR);
-console.log("JSONBIN_ID 存在嗎:", !!process.env.JSONBIN_BIN_ID);
-console.log("JSONBIN_KEY 存在嗎:", !!process.env.JSONBIN_KEY);
-console.log("UPSTASH_URL 內容:", process.env.UPSTASH_REST_URL || "找不到變數");
-console.log("UPSTASH_TOKEN 存在嗎:", !!process.env.UPSTASH_REST_TOKEN);
-console.log("-------------------");
-
 const JSONBIN_ID = process.env.JSONBIN_BIN_ID;
 const JSONBIN_KEY = process.env.JSONBIN_KEY;
 const UPSTASH_URL = process.env.UPSTASH_REST_URL;
@@ -62,7 +54,7 @@ async function run() {
     console.log("開始執行 JSONBin 任務...");
     try {
         const res = await axios.get(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}/latest`, {
-            headers: { 'X-Master-Key': JSONBIN_KEY }
+            headers: { 'X-Access-Key': JSONBIN_KEY }
         });
         const updatedJSONBin = await updateDataRecord(res.data.record);
         await axios.put(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}`, updatedJSONBin, {
@@ -76,19 +68,19 @@ async function run() {
     // --- 任務 B: Upstash (Redis) ---
     console.log("開始執行 Upstash 任務...");
     try {
-        const res = await axios.get(`${UPSTASH_URL}/get/CHARLES_STATS`, {
+        const res = await axios.get(`${UPSTASH_URL}/get/vercount_v1`, {
             headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` }
         });
         // Upstash 的結果是在 .result 欄位，且通常是字串，需要解析
         if (res.data.result) {
             const currentUpstashData = JSON.parse(res.data.result);
             const updatedUpstash = await updateDataRecord(currentUpstashData);
-            await axios.post(`${UPSTASH_URL}/set/CHARLES_STATS`, JSON.stringify(updatedUpstash), {
+            await axios.post(`${UPSTASH_URL}/set/vercount_v1`, JSON.stringify(updatedUpstash), {
                 headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` }
             });
             console.log("✅ Upstash 同步完成");
         } else {
-            console.log("Upstash 中找不到 CHARLES_STATS 紀錄");
+            console.log("Upstash 中找不到 vercount_v1 紀錄");
         }
     } catch (err) {
         console.error("❌ Upstash 流程錯誤:", err.message);
