@@ -2,7 +2,7 @@ name: Auto Update Analytics
 
 on:
   schedule:
-    - cron: '0 16 * * *' # 台灣時間凌晨 00:00 (UTC 16:00)
+    - cron: '0 16 * * *' # 每天凌晨 00:00 (台灣時間)
   workflow_dispatch: # 允許手動執行測試
 
 jobs:
@@ -21,6 +21,7 @@ jobs:
         run: npm install axios
 
       - name: Run Script
+        # 注意：env 必須縮排在 Run Script 這個步驟裡面
         run: node update_stats.js
         env:
           JSONBIN_BIN_ID: ${{ secrets.JSONBIN_BIN_ID }}
