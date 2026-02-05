@@ -1,6 +1,7 @@
 const axios = require('axios');
 
 console.log("--- 環境變數診斷 ---");
+console.log("測試變數:", process.env.TEST_VAR);
 console.log("JSONBIN_ID 存在嗎:", !!process.env.JSONBIN_BIN_ID);
 console.log("JSONBIN_KEY 存在嗎:", !!process.env.JSONBIN_KEY);
 console.log("UPSTASH_URL 內容:", process.env.UPSTASH_REST_URL || "找不到變數");
