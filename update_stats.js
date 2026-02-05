@@ -1,43 +1,31 @@
 const axios = require('axios');
 
-// 從 GitHub Secrets 讀取環境變數
 const JSONBIN_ID = process.env.JSONBIN_BIN_ID;
 const JSONBIN_KEY = process.env.JSONBIN_KEY;
 const UPSTASH_URL = process.env.UPSTASH_REST_URL;
 const UPSTASH_TOKEN = process.env.UPSTASH_REST_TOKEN;
 
-const TARGET_URLS = [
-    "https://nextime5.blogspot.com/", "https://w1798.github.io/web/homework",
-    "https://w1798.github.io/web/evalprompt", "https://w1798.github.io/web/TextLab",
-    "https://w1798.github.io/web/examboard", "https://w1798.github.io/web/markit",
-    "https://w1798.github.io/web/jsonEditor", "https://w1798.github.io/web/comment",
-    "https://w1798.github.io/web/"
-];
-
-async function run() {
-    let history = {};
-
-    // --- 1. 抓取初始數據 (優先從 JSONBin 讀取舊紀錄) ---
-    try {
-        const res = await axios.get(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}/latest`, {
-            headers: { 'X-Access-Key': JSONBIN_KEY }
-        });
-        history = res.data.record || {};
-        console.log("成功從 JSONBin 讀取歷史數據");
-    } catch (err) {
-        console.log("無法讀取歷史數據，將建立新紀錄");
+// 核心處理函式：給入資料、回傳更新後的資料
+async function updateDataRecord(fullData) {
+    if (!fullData || !fullData.settings || !fullData.settings.urls) {
+        console.log("資料格式不正確，跳過更新");
+        return fullData;
     }
 
-    // --- 2. 抓取最新 PV 資料 ---
+    const urls = fullData.settings.urls;
+    if (!fullData.stats) fullData.stats = {};
+
     const now = new Date();
     const todayStr = `${now.getFullYear()}/${now.getMonth() + 1}/${now.getDate()}`;
     const timeStr = now.toLocaleString('zh-TW', { hour12: true });
 
-    for (const url of TARGET_URLS) {
+    for (const url of urls) {
         try {
             const res = await axios.get(`https://events.vercount.one/log?url=${url}`);
             const data = res.data;
-            if (!history[url]) history[url] = [];
+            
+            if (!fullData.stats[url]) fullData.stats[url] = [];
+            const historyArr = fullData.stats[url];
 
             const newEntry = {
                 time: timeStr,
@@ -46,37 +34,56 @@ async function run() {
                 uv: data.site_uv || 0
             };
 
-            const lastIdx = history[url].length - 1;
-            if (lastIdx >= 0 && history[url][lastIdx].time.split(' ')[0] === todayStr) {
-                history[url][lastIdx] = newEntry; // 同天更新
+            const lastIdx = historyArr.length - 1;
+            // 判斷是否為同一天
+            if (lastIdx >= 0 && historyArr[lastIdx].time.startsWith(todayStr)) {
+                historyArr[lastIdx] = newEntry;
             } else {
-                history[url].push(newEntry);
-                if (history[url].length > 30) history[url].shift(); // 僅保留 30 天
+                historyArr.push(newEntry);
+                if (historyArr.length > 30) historyArr.shift();
             }
         } catch (err) {
             console.error(`抓取失敗 ${url}: ${err.message}`);
         }
     }
+    return fullData;
+}
 
-    // --- 3. 同步至 JSONBin.io ---
+async function run() {
+    // --- 任務 A: JSONBin.io ---
+    console.log("開始執行 JSONBin 任務...");
     try {
-        await axios.put(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}`, history, {
-            headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_KEY }
+        const res = await axios.get(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}/latest`, {
+            headers: { 'X-Master-Key': JSONBIN_KEY }
         });
-        console.log("✅ JSONBin.io 同步成功");
+        const updatedJSONBin = await updateDataRecord(res.data.record);
+        await axios.put(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}`, updatedJSONBin, {
+            headers: { 'Content-Type': 'application/json', 'X-Access-Key': JSONBIN_KEY }
+        });
+        console.log("✅ JSONBin 同步完成");
     } catch (err) {
-        console.error("❌ JSONBin 同步失敗:", err.message);
+        console.error("❌ JSONBin 流程錯誤:", err.message);
     }
 
-    // --- 4. 同步至 Upstash (Redis) ---
+    // --- 任務 B: Upstash (Redis) ---
+    console.log("開始執行 Upstash 任務...");
     try {
-        // 使用 Redis 的 SET 指令存入 CHARLES_STATS
-        await axios.post(`${UPSTASH_URL}/set/CHARLES_STATS`, JSON.stringify(history), {
+        const res = await axios.get(`${UPSTASH_URL}/get/CHARLES_STATS`, {
             headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` }
         });
-        console.log("✅ Upstash 同步成功");
+        // Upstash 的結果是在 .result 欄位，且通常是字串，需要解析
+        if (res.data.result) {
+            const currentUpstashData = JSON.parse(res.data.result);
+            const updatedUpstash = await updateDataRecord(currentUpstashData);
+            await axios.post(`${UPSTASH_URL}/set/CHARLES_STATS`, JSON.stringify(updatedUpstash), {
+                headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` }
+            });
+            console.log("✅ Upstash 同步完成");
+        } else {
+            console.log("Upstash 中找不到 CHARLES_STATS 紀錄");
+        }
     } catch (err) {
-        console.error("❌ Upstash 同步失敗:", err.message);
+        console.error("❌ Upstash 流程錯誤:", err.message);
     }
 }
 
