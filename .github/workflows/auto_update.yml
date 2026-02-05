@@ -2,7 +2,7 @@ name: Auto Update Analytics
 
 on:
   schedule:
-    - cron: '0 2,10,18 * * *'
+    - cron: '0 8,20 * * *'
   workflow_dispatch: # 允許手動執行測試
 
 jobs:
