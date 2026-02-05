@@ -15,9 +15,20 @@ async function updateDataRecord(fullData) {
     const urls = fullData.settings.urls;
     if (!fullData.stats) fullData.stats = {};
 
-    const now = new Date();
-    const todayStr = `${now.getFullYear()}/${now.getMonth() + 1}/${now.getDate()}`;
-    const timeStr = now.toLocaleString('zh-TW', { hour12: true });
+// --- 建議修正為 (強制指定台灣時區) ---
+const now = new Date();
+const options = { timeZone: 'Asia/Taipei', hour12: false, year: 'numeric', month: 'numeric', day: 'numeric' };
+const formatter = new Intl.DateTimeFormat('zh-TW', options);
+const parts = formatter.formatToParts(now);
+
+// 取得 YYYY/M/D 格式用於比對
+const y = parts.find(p => p.type === 'year').value;
+const m = parts.find(p => p.type === 'month').value;
+const d = parts.find(p => p.type === 'day').value;
+const todayStr = `${y}/${m}/${d}`;
+
+// 取得完整的顯示時間 (例如：2026/2/5 18:00:00)
+const timeStr = now.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false });
 
     for (const url of urls) {
         try {
