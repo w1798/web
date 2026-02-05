@@ -1,0 +1,29 @@
+name: Auto Update Analytics
+
+on:
+  schedule:
+    - cron: '0 16 * * *' # 台灣時間凌晨 00:00 (UTC 16:00)
+  workflow_dispatch: # 允許手動執行測試
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Dependencies
+        run: npm install axios
+
+      - name: Run Script
+        run: node update_stats.js
+        env:
+          JSONBIN_BIN_ID: ${{ secrets.JSONBIN_BIN_ID }}
+          JSONBIN_KEY: ${{ secrets.JSONBIN_KEY }}
+          UPSTASH_REST_URL: ${{ secrets.UPSTASH_REST_URL }}
+          UPSTASH_REST_TOKEN: ${{ secrets.UPSTASH_REST_TOKEN }}
