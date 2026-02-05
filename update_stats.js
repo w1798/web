@@ -20,7 +20,7 @@ async function run() {
     // --- 1. 抓取初始數據 (優先從 JSONBin 讀取舊紀錄) ---
     try {
         const res = await axios.get(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}/latest`, {
-            headers: { 'X-Master-Key': JSONBIN_KEY }
+            headers: { 'X-Access-Key': JSONBIN_KEY }
         });
         history = res.data.record || {};
         console.log("成功從 JSONBin 讀取歷史數據");
