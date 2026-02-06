@@ -253,7 +253,7 @@
             background: #5f27cd;
         }
 
-        /* 手機版稍微調高一點，避免擋住重要操作 */
+      /* 手機版稍微調高一點，避免擋住重要操作 */
         @media (max-width: 850px) {
             #backToTop {
                 bottom: 70px;
@@ -450,7 +450,11 @@
         renderLinks();
     </script>
 
-<button id="backToTop" onclick="scrollToTop()" title="回到頂端">▲</button>
+<button id="backToTop" onclick="scrollToTop()" title="回到頂端">
+    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="18 15 12 9 6 15"></polyline>
+    </svg>
+</button>
     
     
     <script>
