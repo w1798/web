@@ -72,7 +72,18 @@
             margin-bottom: 30px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
             padding-bottom: 20px;
+            
+            /* --- 新增：固定在頂部 --- */
+            position: sticky;
+            top: 0;
+            background: rgba(102, 126, 234, 0.8); /* 稍微帶點背景色，確保文字重疊時清晰 */
+            backdrop-filter: blur(10px); /* 磨砂玻璃效果 */
+            z-index: 1000; /* 確保在卡片上方 */
+            padding-top: 20px; /* 增加上方間距 */
+            margin-top: -10px; /* 抵銷部分容器間距，讓它更貼頂 */
         }
+
+
 
         .main-title {
             color: white;
@@ -179,7 +190,11 @@
             .main-container { margin-left: 0; padding: 20px; }
             .nav-group { display: flex; overflow-x: auto; gap: 8px; }
             .nav-item { white-space: nowrap; flex: 1; font-size: 1.1rem; }
-            header { flex-direction: column; gap: 15px; text-align: center; }
+                        header {
+                position: sticky;
+                top: 0;
+                padding: 15px 0;
+            }
             .main-title { font-size: 1.8rem; }
         }
 
@@ -224,11 +239,32 @@
         <header>
             <a href="https://nextime5.blogspot.com" target="_blank" class="main-title">Charles Nextime 網頁程式集</a>
             <div class="toolbar">
+                <button class="view-btn" onclick="scrollToComments()" style="border-color: #00b894; color: #fff894;">💬 留言區</button>
                 <button id="btn-detail" class="view-btn" onclick="changeView('detail', this)">詳細模式</button>
                 <button id="btn-simple" class="view-btn active" onclick="changeView('simple', this)">精簡模式</button>
             </div>
         </header>
         <div id="link-container" class="simple-view"></div>
+        <div id="comment-area" class="giscus-container" style="margin-top: 50px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 30px;">
+        <div class="giscus"></div>
+        </div>
+        
+    <script src="https://giscus.app/client.js"
+        data-repo="w1798/my-comments"
+        data-repo-id="R_kgDORJxfpw"
+        data-category="General"
+        data-category-id="DIC_kwDORJxfp84C18p5"
+        data-mapping="url"
+        data-strict="0"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme="preferred_color_scheme"
+        data-lang="zh-TW"
+        crossorigin="anonymous"
+        async>
+    </script>
+    
     </main>
 
     <footer class="footer-mini">
@@ -240,47 +276,7 @@
         </span>
     </footer>
 
-    <script>
-(function() {
-    const TIME_KEY = 'VERCOUNT_FORCE_FREEZE';
-    const VAL_KEY = 'VERCOUNT_LAST_VAL';
-    const COOL_DOWN = 30 * 60 * 1000; 
-    const now = Date.now();
-    const lastVisit = localStorage.getItem(TIME_KEY);
-    
-    // 計算剩餘秒數
-    const timeLeft = lastVisit ? Math.ceil((parseInt(lastVisit) + COOL_DOWN - now) / 1000) : 0;
 
-    if (timeLeft <= 0) {
-        // --- 情況 A：超過 30 分鐘，執行正常抓取 ---
-        console.log("%c[Vercount]%c 已過冷卻期，正在請求伺服器更新 PV...", "color:#00b894;font-weight:bold", "color:inherit");
-        
-        const script = document.createElement('script');
-        script.src = "https://events.vercount.one/js";
-        script.defer = true;
-        
-        script.onload = () => {
-            setTimeout(() => {
-                const pvVal = document.getElementById('busuanzi_value_page_pv')?.innerText;
-                if (pvVal) localStorage.setItem(VAL_KEY, pvVal);
-            }, 1500);
-        };
-        document.head.appendChild(script);
-        localStorage.setItem(TIME_KEY, now);
-    } else {
-        // --- 情況 B：還在冷卻中，僅在 Console 顯示一次提醒 ---
-        const lastVal = localStorage.getItem(VAL_KEY) || "--";
-        
-        console.log(`%c[Vercount]%c 冷卻中（剩 ${timeLeft} 秒）。本次顯示舊數據：${lastVal}`, "color:#f1c40f;font-weight:bold", "color:inherit");
-
-        // 依然幫你把舊數字填入 span，確保畫面不留白
-        window.addEventListener('load', () => {
-            const pvSpan = document.getElementById('busuanzi_value_page_pv');
-            if (pvSpan) pvSpan.innerText = lastVal;
-        });
-    }
-})();
-</script>
 
     <script>
         const links = [
@@ -372,7 +368,70 @@
             container.className = mode === 'detail' ? 'detail-view' : 'simple-view';
         }
 
+        function scrollToComments() {
+            const commentSection = document.getElementById('comment-area');
+            if (commentSection) {
+                // 取得 header 的高度
+                const headerHeight = document.querySelector('header').offsetHeight;
+                // 計算位置：目標位置 - header高度 - 額外的間距(20px)
+                const elementPosition = commentSection.getBoundingClientRect().top + window.pageYOffset;
+                const offsetPosition = elementPosition - headerHeight - 20;
+
+                window.scrollTo({
+                    top: offsetPosition,
+                    behavior: 'smooth'
+                });
+            }
+        }
+        
         renderLinks();
     </script>
+
+
+    
+    
+    <script>
+(function() {
+    const TIME_KEY = 'VERCOUNT_FORCE_FREEZE';
+    const VAL_KEY = 'VERCOUNT_LAST_VAL';
+    const COOL_DOWN = 30 * 60 * 1000; 
+    const now = Date.now();
+    const lastVisit = localStorage.getItem(TIME_KEY);
+    
+    // 計算剩餘秒數
+    const timeLeft = lastVisit ? Math.ceil((parseInt(lastVisit) + COOL_DOWN - now) / 1000) : 0;
+
+    if (timeLeft <= 0) {
+        // --- 情況 A：超過 30 分鐘，執行正常抓取 ---
+        console.log("%c[Vercount]%c 已過冷卻期，正在請求伺服器更新 PV...", "color:#00b894;font-weight:bold", "color:inherit");
+        
+        const script = document.createElement('script');
+        script.src = "https://events.vercount.one/js";
+        script.defer = true;
+        
+        script.onload = () => {
+            setTimeout(() => {
+                const pvVal = document.getElementById('busuanzi_value_page_pv')?.innerText;
+                if (pvVal) localStorage.setItem(VAL_KEY, pvVal);
+            }, 1500);
+        };
+        document.head.appendChild(script);
+        localStorage.setItem(TIME_KEY, now);
+    } else {
+        // --- 情況 B：還在冷卻中，僅在 Console 顯示一次提醒 ---
+        const lastVal = localStorage.getItem(VAL_KEY) || "--";
+        
+        console.log(`%c[Vercount]%c 冷卻中（剩 ${timeLeft} 秒）。本次顯示舊數據：${lastVal}`, "color:#f1c40f;font-weight:bold", "color:inherit");
+
+        // 依然幫你把舊數字填入 span，確保畫面不留白
+        window.addEventListener('load', () => {
+            const pvSpan = document.getElementById('busuanzi_value_page_pv');
+            if (pvSpan) pvSpan.innerText = lastVal;
+        });
+    }
+})();
+</script>
+
+
 </body>
 </html>
