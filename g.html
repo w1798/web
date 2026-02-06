@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Charles Nextime 網頁程式集</title>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --sidebar-bg: rgba(0, 0, 0, 0.2);
+            --accent-color: #4834d4;
+            --text-main: #2d3436;
+            --count-color: #00b894; /* 翡翠綠數字 */
+        }
+
+        body {
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            background: var(--primary-gradient);
+            background-attachment: fixed;
+            margin: 0;
+            display: flex;
+            min-height: 100vh;
+            color: var(--text-main);
+        }
+
+        /* --- 左側側邊欄 --- */
+        .sidebar {
+            width: 200px;
+            background: var(--sidebar-bg);
+            backdrop-filter: blur(15px);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 40px 10px;
+            position: fixed;
+            height: 100vh;
+            box-sizing: border-box;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1001;
+        }
+
+        .nav-item {
+            padding: 15px 10px;
+            margin-bottom: 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 1.25rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .nav-item:hover { background: rgba(255, 255, 255, 0.15); }
+        .nav-item.active {
+            background: white;
+            color: var(--accent-color);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        /* --- 右側內容區 --- */
+        .main-container {
+            flex: 1;
+            margin-left: 200px;
+            padding: 30px 40px 80px 40px;
+            box-sizing: border-box;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 20px;
+        }
+
+        .main-title {
+            color: white;
+            margin: 0;
+            font-size: 2.2rem;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .toolbar { display: flex; gap: 10px; }
+
+        .view-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255,255,255,0.4);
+            color: white;
+            padding: 8px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+	    font-size: 1rem;   /* 預設通常是 0.9rem~1rem，你可以改成 1.1rem 或 14px */
+    	    font-weight: 500;  /* 增加一點粗細可以讓文字更清晰 */
+        }
+
+        .view-btn.active {
+            background: white;
+            color: var(--accent-color);
+            border-color: white;
+        }
+
+        /* --- 卡片容器 --- */
+        #link-container {
+            display: grid;
+            gap: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0.5; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 調整最小寬度，避免標題被擠壓 */
+        .detail-view { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+        .simple-view { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 20px;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.2s ease-out;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden; /* 防止內容溢出 */
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            background: white;
+            box-shadow: 0 12px 25px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            margin: 0;
+            font-size: 1.2rem;
+            color: var(--accent-color);
+            /* --- 關鍵修正：標題不換行 --- */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card p {
+            margin: 10px 0 35px 0;
+            font-size: 0.95rem;
+            color: #555;
+            line-height: 1.5;
+	    text-align: justify; /* 讓文字左右兩端對齊 */
+        }
+
+        /* 卡片內的數據標籤 */
+        .card-stats {
+            position: absolute;
+            bottom: 12px;
+            right: 15px;
+            font-size: 0.8rem;
+            color: #888;
+        }
+        .card-stats b { color: var(--count-color); font-weight: bold; }
+
+        .simple-view .card { padding: 15px 8px; text-align: center; }
+        .simple-view .card p { display: none; }
+        .simple-view .card h2 {font-size: 1.1rem;}
+        .simple-view .card-stats { position: static; margin-top: 8px; }
+
+        /* --- 手機版 --- */
+        @media (max-width: 850px) {
+            body { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; position: relative; padding: 10px; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); }
+            .main-container { margin-left: 0; padding: 20px; }
+            .nav-group { display: flex; overflow-x: auto; gap: 8px; }
+            .nav-item { white-space: nowrap; flex: 1; font-size: 1.1rem; }
+            header { flex-direction: column; gap: 15px; text-align: center; }
+            .main-title { font-size: 1.8rem; }
+        }
+
+        /* --- Footer --- */
+        .footer-mini {
+            position: fixed;
+            bottom: 0; right: 0; left: 200px;
+            background: rgba(0, 0, 0, 0.7);
+            color: rgba(255,255,255,0.7);
+            text-align: center;
+            padding: 8px;
+            font-size: 0.85rem;
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+        }
+        @media (max-width: 850px) { .footer-mini { left: 0; } }
+
+        #busuanzi_container_page_pv {
+            color: #888;
+            font-size: 0.9rem;
+            margin-left: 15px;
+            border-left: 1px solid rgba(128, 128, 128, 0.5);
+            padding-left: 15px;
+        }
+        #busuanzi_value_page_pv { color: var(--count-color); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="nav-group">
+            <div class="nav-item active" onmouseenter="filterLinks('all', this)">全部彙整</div>
+            <div class="nav-item" onmouseenter="filterLinks('daily', this)">教學日常</div>
+            <div class="nav-item" onmouseenter="filterLinks('exam', this)">期中期末</div>
+            <div class="nav-item" onmouseenter="filterLinks('edit', this)">文件編輯</div>
+            <div class="nav-item" onmouseenter="filterLinks('tool', this)">其他軟體</div>
+            <div class="nav-item" onmouseenter="filterLinks('doc', this)">說明文件</div>
+        </div>
+    </aside>
+
+    <main class="main-container">
+        <header>
+            <a href="https://nextime5.blogspot.com" target="_blank" class="main-title">Charles Nextime 網頁程式集</a>
+            <div class="toolbar">
+                <button id="btn-detail" class="view-btn" onclick="changeView('detail', this)">詳細模式</button>
+                <button id="btn-simple" class="view-btn active" onclick="changeView('simple', this)">精簡模式</button>
+            </div>
+        </header>
+        <div id="link-container" class="simple-view"></div>
+    </main>
+
+    <footer class="footer-mini">
+        <a href="https://nextime5.blogspot.com" target="_blank" style="color: inherit; text-decoration: none;">
+            Completed by Charles Nextime with AI assistance, 2026
+        </a>
+        <span id="busuanzi_container_page_pv">
+            本頁使用量 <span id="busuanzi_value_page_pv"></span> 次
+        </span>
+    </footer>
+
+
+
+    <script>
+        const links = [
+            { id: "homework", category: "daily", title: "★ 作業動態曆", desc: "　解放雙手的智慧作業排程助手。<br>　採「智慧動態推移」技術，讓相同作業自動遞延、精準避開假日。結合直覺的視覺化編輯與全面客製化風格，讓功課管理告別壓力，轉化為一場極簡高效的視覺享受。", url: "https://w1798.github.io/web/homework" },
+            { id: "evalprompt", category: "exam", title: "★ 評語提詞自造佳", desc: "　自訂模組，造視操作，佳句生成！<br>　提供高自由度，讓您「視覺化」自定義類別與特質，並透過簡單操作輕鬆完成評語提詞，是追求效率與流暢美學者的最佳選擇。", url: "https://w1798.github.io/web/evalprompt" },
+            { id: "markit", category: "daily", title: "★ 教學清點小幫手", desc: "　快速處理學生任務與作業訂正，簡化繁瑣流程。<br>　即時掌握學習狀況，讓課堂管理變得輕鬆有感，騰出更多時間回歸教學本質。", url: "https://w1798.github.io/web/markit" },
+            { id: "examboard", category: "exam", title: "★ 數位考場看板", desc: "　即時顯示考試資訊、當前進度和播放聽力測驗，並提醒注意事項，幫助學生掌握考試時間。<br>　設定方便快速，各科可單獨設定個別試場人數，讓監考老師掌握試場人數。", url: "https://w1798.github.io/web/examboard" },
+            { id: "textlab", category: "edit", title: "★ 多功能文字處理器", desc: "　這是一款為高效能而生的全方位文字處理工具。<br>　透過「累加運算」邏輯，整合串接、分割、取代與重複項偵測等強大功能。極簡暗色介面搭配直覺式操作，助您瞬間完成複雜的文本清理與格式重塑，打造純淨無瑕的數據內容。", url: "https://w1798.github.io/web/TextLab" },
+            { id: "jsoneditor", category: "edit", title: "★ JSON編輯器", desc: "　能自動解析各種簡單的 JSON 結構檔並視覺化編修。<br>　可以資料模組化為直觀的卡片，支援動態拖拽排序與即時編輯，任何配置檔都能輕鬆修改。", url: "https://w1798.github.io/web/jsonEditor" },
+            { id: "vercountdash", category: "tool", title: "★ Vercount數據儀表板", desc: "　這是一款專為 Vercount 打造的視覺化儀表板，配合 JSONbin 服務能將資料存入雲端。<br>　支援多網址 PV/UV 即時監控與 30 日趨勢圖表。具備雙向雲端同步、自動緩衝更新及對比數據顯示，助您精準掌握多個專案的流量動態。", url: "https://w1798.github.io/web/VercountDash" },
+            { id: "jsoncloudguide", category: "doc", title: "★ JSON雲端備份申請", desc: "　跨平台同步，數據如影隨形申請說明。<br>　透過 Upstash 與 JSONBin.io 雲端整合方案，您可以將本地 .json 設定檔瞬時備份至雲端，輕鬆實現多裝置間的偏好設定共用，打造無縫接軌的數位體驗。", url: "https://w1798.github.io/web/JsonCloudGuide/" },
+            { id: "blogspot", category: "tool", title: "其他電腦程式", desc: "　Charles Nextime 的程式。<br>一些好用的 Windows 軟體，程式碼公開透明，不僅安全免費、無廣告干擾，更能自由使用。邀您體驗純粹、強大且不受限的數位工作流。", url: "https://nextime5.blogspot.com/" }
+        ];
+
+        let currentCategory = 'all';
+
+        function renderLinks() {
+            const container = document.getElementById('link-container');
+            const filteredData = currentCategory === 'all' ? links : links.filter(i => i.category === currentCategory);
+
+            container.innerHTML = filteredData.map(item => `
+                <a href="${item.url}" target="_blank" class="card">
+                    <h2>${item.title}</h2>
+                    <p>${item.desc}</p>
+                    <div class="card-stats">使用：<b id="count-${item.id}">...</b> 次</div>
+                </a>
+            `).join('');
+
+            fetchStats(filteredData);
+        }
+
+
+        // 使用 async/await 讓請求乖乖排隊
+	async function fetchStats(dataList) {
+            const CACHE_KEY_PREFIX = 'vc_cache_';
+            const CACHE_TIME = 60 * 60 * 1000; // 60 分鐘 (毫秒)
+            const now = Date.now();
+
+            for (const item of dataList) {
+                const el = document.getElementById(`count-${item.id}`);
+                if (!el) continue;
+
+                // 嘗試從 localStorage 讀取快取
+                const cachedData = localStorage.getItem(CACHE_KEY_PREFIX + item.id);
+                if (cachedData) {
+                    const { value, timestamp } = JSON.parse(cachedData);
+                    // 檢查是否在 5 分鐘內
+                    if (now - timestamp < CACHE_TIME) {
+                        el.innerText = value.toLocaleString();
+                        continue; // 跳過這次 fetch，直接處理下一個
+                    }
+                }
+
+                try {
+                    await new Promise(resolve => setTimeout(resolve, 50)); 
+                    const response = await fetch(`https://events.vercount.one/log?url=${item.url}`);
+                    const data = await response.json();
+                    const num = data.page_pv !== undefined ? data.page_pv : 0;
+                    
+                    // 更新顯示
+                    el.innerText = num.toLocaleString();
+                    
+                    // 存入快取
+                    localStorage.setItem(CACHE_KEY_PREFIX + item.id, JSON.stringify({
+                        value: num,
+                        timestamp: now
+                    }));
+                } catch (error) {
+                    console.error('抓取失敗:', item.id, error);
+                    el.innerText = '-';
+                }
+            }
+        }
+
+
+        function filterLinks(category, element) {
+            if (currentCategory === category) return;
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+            currentCategory = category;
+            changeView(category === 'all' ? 'simple' : 'detail', document.getElementById(category === 'all' ? 'btn-simple' : 'btn-detail'));
+            renderLinks();
+        }
+
+        function changeView(mode, element) {
+            const container = document.getElementById('link-container');
+            document.querySelectorAll('.view-btn').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+            container.className = mode === 'detail' ? 'detail-view' : 'simple-view';
+        }
+
+        renderLinks();
+    </script>
+    
+    <script src="https://giscus.app/client.js"
+        data-repo="w1798/my-comments"
+        data-repo-id="R_kgDORJxfpw"
+        data-category="General"
+        data-category-id="DIC_kwDORJxfp84C18p5"
+        data-mapping="url"
+        data-strict="0"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme="preferred_color_scheme"
+        data-lang="zh-TW"
+        crossorigin="anonymous"
+        async>
+    </script>
+    
+    
+    <script>
+(function() {
+    const TIME_KEY = 'VERCOUNT_FORCE_FREEZE';
+    const VAL_KEY = 'VERCOUNT_LAST_VAL';
+    const COOL_DOWN = 30 * 60 * 1000; 
+    const now = Date.now();
+    const lastVisit = localStorage.getItem(TIME_KEY);
+    
+    // 計算剩餘秒數
+    const timeLeft = lastVisit ? Math.ceil((parseInt(lastVisit) + COOL_DOWN - now) / 1000) : 0;
+
+    if (timeLeft <= 0) {
+        // --- 情況 A：超過 30 分鐘，執行正常抓取 ---
+        console.log("%c[Vercount]%c 已過冷卻期，正在請求伺服器更新 PV...", "color:#00b894;font-weight:bold", "color:inherit");
+        
+        const script = document.createElement('script');
+        script.src = "https://events.vercount.one/js";
+        script.defer = true;
+        
+        script.onload = () => {
+            setTimeout(() => {
+                const pvVal = document.getElementById('busuanzi_value_page_pv')?.innerText;
+                if (pvVal) localStorage.setItem(VAL_KEY, pvVal);
+            }, 1500);
+        };
+        document.head.appendChild(script);
+        localStorage.setItem(TIME_KEY, now);
+    } else {
+        // --- 情況 B：還在冷卻中，僅在 Console 顯示一次提醒 ---
+        const lastVal = localStorage.getItem(VAL_KEY) || "--";
+        
+        console.log(`%c[Vercount]%c 冷卻中（剩 ${timeLeft} 秒）。本次顯示舊數據：${lastVal}`, "color:#f1c40f;font-weight:bold", "color:inherit");
+
+        // 依然幫你把舊數字填入 span，確保畫面不留白
+        window.addEventListener('load', () => {
+            const pvSpan = document.getElementById('busuanzi_value_page_pv');
+            if (pvSpan) pvSpan.innerText = lastVal;
+        });
+    }
+})();
+</script>
+
+
+</body>
+</html>
