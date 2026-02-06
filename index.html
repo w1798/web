@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Charles Nextime 網頁程式集</title>
-    <style>
+    
+<style>
         :root {
             --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             --sidebar-bg: rgba(0, 0, 0, 0.2);
@@ -65,6 +66,7 @@
             box-sizing: border-box;
         }
 
+        /* --- 修改後的 Header：支援固定與兩行排版 --- */
         header {
             display: flex;
             justify-content: space-between;
@@ -72,18 +74,14 @@
             margin-bottom: 30px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
             padding-bottom: 20px;
-            
-            /* --- 新增：固定在頂部 --- */
             position: sticky;
             top: 0;
-            background: rgba(102, 126, 234, 0.8); /* 稍微帶點背景色，確保文字重疊時清晰 */
-            backdrop-filter: blur(10px); /* 磨砂玻璃效果 */
-            z-index: 1000; /* 確保在卡片上方 */
-            padding-top: 20px; /* 增加上方間距 */
-            margin-top: -10px; /* 抵銷部分容器間距，讓它更貼頂 */
+            background: rgba(102, 126, 234, 0.9);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            padding-top: 20px;
+            margin-top: -10px;
         }
-
-
 
         .main-title {
             color: white;
@@ -104,8 +102,9 @@
             border-radius: 8px;
             cursor: pointer;
             transition: 0.3s;
-	    font-size: 1rem;   /* 預設通常是 0.9rem~1rem，你可以改成 1.1rem 或 14px */
-    	    font-weight: 500;  /* 增加一點粗細可以讓文字更清晰 */
+            font-size: 1rem;
+            font-weight: 500;
+            white-space: nowrap; /* 確保文字橫向 */
         }
 
         .view-btn.active {
@@ -126,7 +125,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* 調整最小寬度，避免標題被擠壓 */
         .detail-view { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
         .simple-view { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
 
@@ -141,7 +139,7 @@
             flex-direction: column;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             position: relative;
-            overflow: hidden; /* 防止內容溢出 */
+            overflow: hidden;
         }
 
         .card:hover {
@@ -154,7 +152,6 @@
             margin: 0;
             font-size: 1.2rem;
             color: var(--accent-color);
-            /* --- 關鍵修正：標題不換行 --- */
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -165,10 +162,9 @@
             font-size: 0.95rem;
             color: #555;
             line-height: 1.5;
-	    text-align: justify; /* 讓文字左右兩端對齊 */
+            text-align: justify;
         }
 
-        /* 卡片內的數據標籤 */
         .card-stats {
             position: absolute;
             bottom: 12px;
@@ -183,25 +179,79 @@
         .simple-view .card h2 {font-size: 1.1rem;}
         .simple-view .card-stats { position: static; margin-top: 8px; }
 
-        /* --- 手機版 --- */
+        /* --- 手機版大幅優化 --- */
         @media (max-width: 850px) {
             body { flex-direction: column; }
-            .sidebar { width: 100%; height: auto; position: relative; padding: 10px; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); }
-            .main-container { margin-left: 0; padding: 20px; }
-            .nav-group { display: flex; overflow-x: auto; gap: 8px; }
-            .nav-item { white-space: nowrap; flex: 1; font-size: 1.1rem; }
-                        header {
-                position: sticky;
-                top: 0;
-                padding: 15px 0;
-            }
             
+            /* 側邊欄改為橫向捲動選單 */
+            .sidebar { 
+                width: 100%; 
+                height: auto; 
+                position: relative; 
+                padding: 10px; 
+                border-right: none; 
+                border-bottom: 1px solid rgba(255,255,255,0.1); 
+                overflow: hidden; /* 為了漸層遮罩 */
+            }
+
+            /* 側邊欄漸層提示：告訴使用者右邊還有東西 */
+            .sidebar::after {
+                content: '';
+                position: absolute;
+                right: 0;
+                top: 0;
+                width: 50px;
+                height: 100%;
+                background: linear-gradient(to left, rgba(0, 0, 0, 0.4), transparent);
+                pointer-events: none;
+            }
+
+            .nav-group { 
+                display: flex; 
+                overflow-x: auto; 
+                gap: 8px; 
+                -webkit-overflow-scrolling: touch; 
+                padding-right: 40px; /* 給漸層留空間 */
+            }
+
+            .nav-item { 
+                white-space: nowrap; 
+                flex: 0 0 auto; /* 不壓縮，維持寬度 */
+                width: 100px;   /* 讓第四個會露出一半 */
+                font-size: 1rem; 
+                padding: 10px 5px;
+                margin-bottom: 0;
+            }
+
+            .main-container { margin-left: 0; padding: 15px; }
+
+            /* Header 分成上下兩行 */
+            header {
+                flex-direction: column; 
+                gap: 15px; 
+                padding: 15px 10px;
+                text-align: center;
+            }
+
+            .main-title { font-size: 1.6rem; width: 100%; }
+
+            /* 按鈕橫向平分寬度 */
+            .toolbar { 
+                width: 100%; 
+                justify-content: center; 
+                gap: 5px; 
+            }
+
+            .view-btn { 
+                flex: 1; 
+                padding: 10px 2px; 
+                font-size: 0.85rem; 
+                text-align: center;
+            }
+
             #comment-area {
-                /* 確保手機版留言板底部留出足夠空間，避免被固定底欄遮擋 */
                 padding-bottom: 120px !important; 
             }
-    
-            .main-title { font-size: 1.8rem; }           
         }
 
         /* --- Footer --- */
@@ -218,7 +268,6 @@
         }
         @media (max-width: 850px) { .footer-mini { left: 0; } }
 
-
         #busuanzi_container_page_pv {
             color: #888;
             font-size: 0.9rem;
@@ -227,12 +276,11 @@
             padding-left: 15px;
         }
         #busuanzi_value_page_pv { color: var(--count-color); font-weight: bold; }
-        
-        
-        /* 回到頂端按鈕樣式 */
+
+        /* 回到頂端按鈕 */
         #backToTop {
             position: fixed;
-            bottom: 60px; /* 避開底部 footer 的位置 */
+            bottom: 60px;
             right: 20px;
             width: 45px;
             height: 45px;
@@ -241,28 +289,16 @@
             border: none;
             border-radius: 50%;
             cursor: pointer;
-            display: none; /* 預設隱藏 */
+            display: none;
             font-size: 20px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            z-index: 1002; /* 確保在所有元件之上 */
+            z-index: 1002;
             transition: all 0.3s ease;
         }
 
-        #backToTop:hover {
-            transform: translateY(-5px);
-            background: #5f27cd;
-        }
-
-      /* 手機版稍微調高一點，避免擋住重要操作 */
         @media (max-width: 850px) {
-            #backToTop {
-                bottom: 70px;
-                right: 15px;
-                width: 40px;
-                height: 40px;
-            }
+            #backToTop { bottom: 70px; right: 15px; width: 40px; height: 40px; }
         }
-        
     </style>
 </head>
 <body>
