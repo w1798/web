@@ -227,6 +227,42 @@
             padding-left: 15px;
         }
         #busuanzi_value_page_pv { color: var(--count-color); font-weight: bold; }
+        
+        
+        /* 回到頂端按鈕樣式 */
+        #backToTop {
+            position: fixed;
+            bottom: 60px; /* 避開底部 footer 的位置 */
+            right: 20px;
+            width: 45px;
+            height: 45px;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: none; /* 預設隱藏 */
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1002; /* 確保在所有元件之上 */
+            transition: all 0.3s ease;
+        }
+
+        #backToTop:hover {
+            transform: translateY(-5px);
+            background: #5f27cd;
+        }
+
+        /* 手機版稍微調高一點，避免擋住重要操作 */
+        @media (max-width: 850px) {
+            #backToTop {
+                bottom: 70px;
+                right: 15px;
+                width: 40px;
+                height: 40px;
+            }
+        }
+        
     </style>
 </head>
 <body>
@@ -391,10 +427,30 @@
             }
         }
         
+        
+        // 監聽網頁捲動事件
+        window.onscroll = function() {
+            const topBtn = document.getElementById("backToTop");
+            // 當捲動超過 300px 時顯示按鈕
+            if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
+                topBtn.style.display = "block";
+            } else {
+                topBtn.style.display = "none";
+            }
+        };
+
+        // 回到頂端的平滑捲動函數
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+        
         renderLinks();
     </script>
 
-
+<button id="backToTop" onclick="scrollToTop()" title="回到頂端">▲</button>
     
     
     <script>
