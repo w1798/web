@@ -38,4 +38,4 @@
 
 ![Visitor Count](https://komarev.com/ghpvc/?username=w17988&repo=web&label=Views&color=green&style=flat-square)
 
-<p align="center">Made with ❤️ by Charles Nextime</p>
+<p align="center">Completed by Charles Nextime with AI assistance</p>
