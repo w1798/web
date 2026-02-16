@@ -22,4 +22,4 @@
 
 [![Giscus Discussions](https://img.shields.io/badge/💬-Giscus%20Discussions-blue?style=for-the-badge)](https://github.com/w1798/my-comments/discussions)
 
-![Visitor Count](https://komarev.com/ghpvc/?username=w17988&repo=web&label=Views&color=green&style=flat-square)
+![Visitor Count](https://komarev.com/ghpvc/?username=w17988&repo=ulc&label=Views&color=green&style=flat-square)
