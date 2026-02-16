@@ -1,7 +1,5 @@
 # 🌐 w1798 Web Tools Portal / 教學與應用網頁工具箱
 
-[![Views](https://endpoint.viewcounter.io/badge/views?url=https%3A%2F%2Fgithub.com%2Fw1798%2Fweb)](https://w1798.github.io/web/)
-![GitHub last commit](https://img.shields.io/github/last-commit/w1798/web?style=flat-square&color=blue)
 
 這是一個專為教學與日常作業設計的輕量化動態網頁工具集。所有工具皆無需安裝，透過瀏覽器即可即時使用。
 
@@ -31,12 +29,6 @@
 
 ---
 
-### 👨‍💻 開發資訊
-
-如果你對這些工具有任何建議或回報 Bug，歡迎透過 [Issues](https://github.com/w1798/web/issues) 與我聯絡。
-
----
-<p align="center">Made with ❤️ by Charles Nextime</p>
 
 
 ## 💬 留言與交流
@@ -45,3 +37,5 @@
 [![Giscus Discussions](https://img.shields.io/badge/💬-Giscus%20Discussions-blue?style=for-the-badge)](https://github.com/w1798/my-comments/discussions)
 
 ![Visitor Count](https://komarev.com/ghpvc/?username=w17988&repo=web&label=Views&color=green&style=flat-square)
+
+<p align="center">Made with ❤️ by Charles Nextime</p>
