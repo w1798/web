@@ -104,8 +104,8 @@ body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background:
 .btn-modal-cancel { padding: 8px 16px; background: #94a3b8; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
 .btn-modal-save { padding: 8px 24px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
 .modal-divider { border: none; border-top: 1px solid #e2e8f0; margin: 5px 0; }
-.author-info { margin-top: 10px; text-align: center; }
-.author-link { color: #94a3b8; text-decoration: none; font-size: 0.8rem; }
+.author-info { margin-top: 12px; text-align: center; }
+.author-link { color: #848308; text-decoration: none; font-size: 1rem; }
 
 /* ============================================================
    手機版響應式樣式 (Responsive Design)
