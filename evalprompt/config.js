@@ -1,3 +1,12 @@
+/**
+ * Charles Nextime Web Tools Portal - Core Logic
+ * * Copyright (c) 2026 Charles Nextime
+ * Licensed under the GNU General Public License v3.0
+ * * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation.
+ */
+
 const themes = [
     { name: "沉靜藍", bg: "#eff6ff", accent: "#1d4ed8" },
     { name: "焙茶棕", bg: "#fffaf3", accent: "#92400e" },
