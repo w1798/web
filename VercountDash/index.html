@@ -75,15 +75,11 @@
 </div>
 
 <div class="footer">
-    <a href="https://w1798.github.io/web/" target="_blank" style="color:var(--primary); text-decoration:none; font-weight:600;">
-&copy; 
-<script>
-  const startYear = 2026;
-  const currentYear = new Date().getFullYear();
-  document.write(startYear === currentYear ? startYear : startYear + "-" + currentYear);
-</script> 
-Charles Nextime
-    </a>
+    <a href="https://w1798.github.io/web/" target="_blank" style="color:var(--primary); text-decoration:none; font-weight:600;">&copy; 2026<script>
+  const y = new Date().getFullYear();
+  if (y > 2026) document.write("-" + y);
+</script> Charles Nextime</a> · GPLv3
+    
     <span id="busuanzi_container_page_pv">
         本頁使用量 <span id="busuanzi_value_page_pv"></span> 次
     </span>
@@ -123,7 +119,16 @@ Charles Nextime
 <input type="file" id="import-file" style="display:none;" accept=".json" onchange="handleFileImport(event)">
 
 <script>
-const STORAGE_KEY = 'CHARLES_SETTINGS_V1';
+/**
+ * Charles Nextime Web Tools Portal - Core Logic
+ * * Copyright (c) 2026 Charles Nextime
+ * Licensed under the GNU General Public License v3.0
+ * * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation.
+ */
+    
+    const STORAGE_KEY = 'CHARLES_SETTINGS_V1';
     const DATA_KEY = 'CHARLES_STATS_V1';
     const PENDING_KEY = 'PUSH_PENDING';
     let appData = { settings: { binId: '', apiKey: '', urls: [], cloudCD: 60, pvCD: 60 }, stats: {} };
