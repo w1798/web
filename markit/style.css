@@ -133,7 +133,7 @@ display: inline-block; font-weight: bold; }
 .report-link:hover { filter: brightness(0.8); color: #000; }
 .select-short { font-size: 1.5rem; padding: 5px 15px; border-radius: 8px; cursor: pointer; border: 2px solid var(--primary); }
 .author-info { margin-top: 30px; padding: 20px; text-align: center; }
-.author-link { color: #888; text-decoratimary); /* 若想讓顏色跟隨主題色，可加上這行 */
+.author-link { text-decoration: none; color: #888; text-decoratimary); /* 若想讓顏色跟隨主題色，可加上這行 */
 }
 
 /* --- 手機版 RWD 最終修正 --- */
