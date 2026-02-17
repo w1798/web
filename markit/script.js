@@ -1,3 +1,12 @@
+/**
+ * Charles Nextime Web Tools Portal - Core Logic
+ * * Copyright (c) 2026 Charles Nextime
+ * Licensed under the GNU General Public License v3.0
+ * * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation.
+ */
+
 const FULL_30 = "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30";
 
 let state = {
