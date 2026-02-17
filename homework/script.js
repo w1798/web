@@ -218,54 +218,94 @@ mb.innerHTML = filtered.map(item => {
     // 應用方向
     mb.dir = appData.direction;
 }
+
+
     
+function ensureEditDaysExist(startDateStr) {
+    // 固定只自動補 7 天，其餘交給手動按鈕
+    const autoDays = 7; 
+    let currentD = new Date(startDateStr);
+    
+    for (let i = 0; i < autoDays; i++) {
+        const dateStr = currentD.toISOString().split('T')[0];
+        let exist = tempTasks.find(t => t.date === dateStr);
+        
+        if (!exist) {
+            const dayName = "日一二三四五六"[currentD.getDay()];
+            tempTasks.push({
+                date: dateStr,
+                day: dayName,
+                list: (dayName === '六' || dayName === '日') ? ["假日"] : []
+            });
+        }
+        currentD.setDate(currentD.getDate() + 1);
+    }
+    // 排序確保顯示正確
+    tempTasks.sort((a, b) => a.date.localeCompare(b.date));
+}
 
 
 // 編修核心函數
 function openEdit() {
-    tempTasks = JSON.parse(JSON.stringify(appData.tasks));
-    document.getElementById('editStartDatePicker').value = new Date().toISOString().split('T')[0];
+    // 1. 複製目前的資料
+    tempTasks = JSON.parse(JSON.stringify(appData.tasks || []));
+    
+    // 2. 設定編修起始日期（預設為今天）
+    const todayStr = new Date().toISOString().split('T')[0];
+    const datePicker = document.getElementById('editStartDatePicker');
+    if (datePicker) datePicker.value = todayStr;
+    
+    // 3. 【關鍵】執行自動補齊邏輯
+    ensureEditDaysExist(todayStr);
+    
+    // 4. 渲染與顯示
     renderEdit();
     document.getElementById('editModal').style.display = 'block';
 }
 
 function renderEdit() {
     const eb = document.getElementById('editBoard');
-    if(!eb) return;
+    if (!eb) return;
+    
     const startD = document.getElementById('editStartDatePicker').value;
-    const showCount = parseInt(appData.editShowCount) || 14;
+    const showCount = parseInt(appData.editShowCount) || 28;
     eb.style.gridTemplateColumns = `repeat(${appData.editCols}, 1fr)`;
 
+    // 確保切換日期時，如果該日期之後是空的也會自動補齊
+    ensureEditDaysExist(startD);
+
+    // 篩選出從選定日期開始的顯示範圍
     let startIdx = tempTasks.findIndex(t => t.date >= startD);
-    if(startIdx === -1) startIdx = 0;
+    if (startIdx === -1) startIdx = 0;
+    
     const displayList = tempTasks.slice(startIdx, startIdx + showCount);
 
     eb.innerHTML = displayList.map((item, localIdx) => {
-        const gIdx = startIdx + localIdx;
+        const gIdx = tempTasks.findIndex(t => t.date === item.date); // 取得在 tempTasks 中的真實索引
         const validList = (item.list || []).filter(t => t && t.trim());
+        const dateParts = item.date.split('-');
+        const shortDate = `${dateParts[1]}/${dateParts[2]}`;
 
-	const dateParts = item.date.split('-'); // 將 2026-01-20 拆開
-    	const shortDate = `${dateParts[1]}/${dateParts[2]}`; // 組合為 01/20
-
-	return `
-    <div class="edit-card" ondragover="event.preventDefault()" ondrop="dropM(${gIdx})">
-        <div class="edit-header" draggable="true" ondragstart="dragM(${gIdx})">
-            <div class="edit-header-title">${shortDate}(${item.day})</div>
-            <span class="edit-del-btn" onclick="delDay(${gIdx})">✕</span>
-        </div>
-
-
-
-        <ul style="flex:1; overflow-y:auto; list-style:none; padding:0; margin:5px 0">
-            ${validList.map((t, ti) => `<li class="task-box" draggable="true" ondragstart="dragT(event,${gIdx},${ti})" ondrop="dropT(event,${gIdx},${ti})">${t} <span onclick="delT(${gIdx},${ti})" style="cursor:pointer">✕</span></li>`).join('')}
-        </ul>
-        <div style="display:flex; gap:2px">
-            <button onclick="prepT(${gIdx})" style="flex:1">新增</button>
-            <button onclick="insD(${gIdx})" style="flex:1">加一天</button>
-        </div>
-    </div>`;
-	}).join('');
-
+        return `
+        <div class="edit-card" ondragover="event.preventDefault()" ondrop="dropM(${gIdx})">
+            <div class="edit-header" draggable="true" ondragstart="dragM(${gIdx})">
+                <div class="edit-header-title">${shortDate}(${item.day})</div>
+                <span class="edit-del-btn" onclick="delDay(${gIdx})">✕</span>
+            </div>
+            <ul class="edit-task-list" style="flex:1; overflow-y:auto; list-style:none; padding:0; margin:5px 0">
+                ${validList.map((t, ti) => `
+                    <li class="task-box" draggable="true" 
+                        ondragstart="dragT(event,${gIdx},${ti})" 
+                        ondrop="dropT(event,${gIdx},${ti})">
+                        ${t} <span onclick="delT(${gIdx},${ti})" style="cursor:pointer">✕</span>
+                    </li>`).join('')}
+            </ul>
+            <div style="display:flex; gap:2px">
+                <button onclick="prepT(${gIdx})" style="flex:1">新增</button>
+                <button onclick="insD(${gIdx})" style="flex:1">加一天</button>
+            </div>
+        </div>`;
+    }).join('');
 }
 
 function updateDateChain(startIndex) {
