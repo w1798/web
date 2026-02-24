@@ -348,31 +348,40 @@ function renderTotalListContent() {
 
 
 function toggleStudent(n, el, work) {
+    // 【新增防搶奪邏輯】點擊瞬間先從本機讀取最新資料，確保不覆蓋另一個視窗的結果
+    const saved = localStorage.getItem('MarkIt');
+    if (saved) {
+        const latestState = JSON.parse(saved);
+        // 同步當前這個任務的最新 doneList
+        const latestWork = latestState.assignments.find(a => a.id === work.id);
+        if (latestWork) {
+            work.doneList = latestWork.doneList;
+            state.assignments = latestState.assignments; // 同步全域 state
+        }
+    }
+
     const maxStatus = parseInt(state.settings.statusCount || 1);
-    
-    // 尋找該生紀錄
     const recordIndex = work.doneList.findIndex(item => (typeof item === 'object' ? item.id === n : item === n));
 
     if (recordIndex === -1) {
-        // 從「無」變「狀態1」
+        // 無 -> 狀態 1
         work.doneList.push({ id: n, status: 1 });
     } else {
         let currentRecord = work.doneList[recordIndex];
-        // 相容舊資料字串格式，字串視為狀態1
         let currentStatus = typeof currentRecord === 'object' ? currentRecord.status : 1;
         
         if (currentStatus < maxStatus) {
-            // 切換到下一個狀態
             work.doneList[recordIndex] = { id: n, status: currentStatus + 1 };
         } else {
-            // 超過最大色數，回到「未點選」
             work.doneList.splice(recordIndex, 1);
         }
     }
     
-    // 即時更新 UI
+    // 更新自己的 UI
     updateStudentUI(n, el, work);
-    saveDataQuietly();
+    
+    // 存檔 (這會觸發另一個視窗的 storage 事件)
+    saveDataQuietly(); 
 }
 
 // 抽取更新單個學生 UI 的邏輯 (為了讓 openDetail 和同步功能共用)
@@ -674,48 +683,37 @@ function importData(e) {
 }
 function resetSystem() { if(confirm("確定重置系統？")) { localStorage.removeItem('MarkIt'); location.reload(); } }
 
-// --- 跨視窗即時同步功能 ---
+// --- 跨視窗即時同步功能 (支援多色標記版) ---
 window.addEventListener('storage', (event) => {
-    // 確保監聽的是我們專屬的 key
     if (event.key === 'MarkIt' && event.newValue) {
         try {
-            // 1. 更新記憶體中的 state
+            // 1. 立即同步 B 視窗記憶體中的 state
             state = JSON.parse(event.newValue);
 
-            // 2. 重新渲染主畫面的卡片 (未交人數等)
+            // 2. 更新首頁卡片
             renderAssignments();
 
-            // 3. 進階處理：如果使用者目前正開著某個任務的詳細視窗，也要即時更新
+            // 3. 更新目前開啟的詳細視窗
             const detailModal = document.getElementById('detailModal');
             if (detailModal && detailModal.style.display === 'block') {
-                // 找到目前正在顯示的任務 ID
-                // (註：你的 openDetail 並沒有把 ID 存入全域，我們從標題或 state 尋找)
                 const currentTitle = document.getElementById('detailTitle').innerText;
+                // 從剛更新的 state 中找任務
                 const currentWork = state.assignments.find(a => a.name === currentTitle);
                 
                 if (currentWork) {
-                    // 重新刷一遍學生格子的狀態
                     const grid = document.getElementById('studentGrid');
                     const items = grid.querySelectorAll('.student-item');
                     const studentList = parseList(state.settings.studentList);
 
                     items.forEach((div, index) => {
                         const studentName = studentList[index];
-                        if (currentWork.doneList.includes(studentName)) {
-                            div.classList.add('done');
-                        } else {
-                            div.classList.remove('done');
-                        }
+                        // 強制執行一次 UI 刷新
+                        updateStudentUI(studentName, div, currentWork);
                     });
                 }
             }
-            
-            // 4. 如果是在設定頁面，也可以考慮同步套用主題
             applySettings();
-            
-        } catch (e) {
-            console.error("跨視窗同步失敗:", e);
-        }
+        } catch (e) { console.error(e); }
     }
 });
 
