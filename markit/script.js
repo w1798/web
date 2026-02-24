@@ -392,17 +392,54 @@ function generateStudentReport() {
 function openDetail(id) {
     const work = state.assignments.find(a => a.id === id);
     if(!work) return;
+    
+    // 1. 設定標題
     document.getElementById('detailTitle').innerText = work.name;
-    const grid = document.getElementById('studentGrid'); grid.innerHTML = '';
+
+    // 2. 新增：動態生成顏色圖例 (Legend)
+    const legendContainer = document.getElementById('statusLegend');
+    if (legendContainer) {
+        legendContainer.innerHTML = '';
+        const maxStatus = parseInt(state.settings.statusCount || 1);
+        
+        for (let i = 1; i <= maxStatus; i++) {
+            // 取得完整標籤，例如 "湖水藍 (完成)"
+            const fullLabel = state.settings.statusLabels[i] || `狀態${i}`;
+
+            // 移除之前的 .split(' ')[0]，直接顯示 fullLabel
+            legendContainer.innerHTML += `
+                <span class="legend-item">
+                    <span class="status-dot status-${i}"></span>
+                    <span class="legend-text status-text-${i}">
+                        ${i}.${fullLabel}
+                    </span>
+                </span>`;
+        }
+    }
+
+    // 3. 渲染學生方格
+    const grid = document.getElementById('studentGrid'); 
+    grid.innerHTML = '';
     parseList(state.settings.studentList).forEach(n => {
-        const div = document.createElement('div'); div.className = 'student-item'; div.innerText = n;
+        const div = document.createElement('div');
+        div.className = `student-item`;
+        div.innerText = n;
         updateStudentUI(n, div, work);
+
         div.onmousedown = () => { isDragging = true; toggleStudent(n, div, work); };
         div.onmouseenter = () => { if (isDragging) toggleStudent(n, div, work); };
         grid.appendChild(div);
     });
+
     window.onmouseup = () => isDragging = false;
-    document.getElementById('deleteBtn').onclick = () => { if(confirm("確定刪除？")) { state.assignments = state.assignments.filter(a => a.id !== id); saveData(); closeModal('detailModal'); } };
+    
+    document.getElementById('deleteBtn').onclick = () => { 
+        if(confirm("確定刪除此任務？")) { 
+            state.assignments = state.assignments.filter(a => a.id !== id); 
+            saveData(); 
+            closeModal('detailModal'); 
+        } 
+    };
     openModal('detailModal');
 }
 

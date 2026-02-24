@@ -223,18 +223,23 @@ top:5px;"></textarea>
 
 <div id="detailModal" class="modal">
     <div class="modal-content modal-full dynamic-size" id="detailModalContent">
-        <div class="modal-header-btns">
-            <button class="btn-danger" id="deleteBtn">刪除任務</button>　　　　　　　　
+        
+        <div class="detail-header-row">
+            <h2 id="detailTitle">任務名稱</h2>
+            
+            <button class="btn-danger" id="deleteBtn">刪除</button>
+            
+            <div id="statusLegend"></div>
 
-　　　
-            <button class="btn-confirm" onclick="closeModal('detailModal')">完成
-
-</button>
+            <button class="btn-confirm" onclick="closeModal('detailModal')">完成</button>
         </div>
-        <h2 id="detailTitle"></h2>
+        
         <div id="studentGrid" class="student-grid scroll-box"></div>
     </div>
 </div>
+
+
+
 
 <div id="studentReportModal" class="modal">
     <div class="modal-content modal-full dynamic-size" id="reportModalContent">

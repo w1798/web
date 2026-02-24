@@ -6,6 +6,12 @@
     --card: #fff; 
     --grid-cols: 5; 
     --student-cols: 7; 
+    --color-1: #8fb1e9; /* 湖水藍 */
+    --color-2: #ff9800; /* 活力橙 */
+    --color-3: #d81b60; /* 胭脂紅 */
+    --color-4: #8e24aa; /* 羅蘭紫 */
+    --color-5: #546e7a; /* 石板灰 */
+    --color-6: #228B22; /* 深林綠 */
 }
 
 /* 湖水藍 (主色) */
@@ -32,6 +38,101 @@
     padding: 5px;
     border-radius: 5px;
     border: 1px solid var(--primary);
+}
+
+
+/* 圖例小圓點的著色 */
+.status-dot.status-1 { background-color: var(--color-1); }
+.status-dot.status-2 { background-color: var(--color-2); }
+.status-dot.status-3 { background-color: var(--color-3); }
+.status-dot.status-4 { background-color: var(--color-4); }
+.status-dot.status-5 { background-color: var(--color-5); }
+.status-dot.status-6 { background-color: var(--color-6); }
+
+
+/* 如果您想讓文字也帶有顏色，可以加入以下設定 */
+.legend-item:nth-child(1) { color: #5a8bd8; } /* 湖水藍文字稍微深一點方便閱讀 */
+.legend-item:nth-child(2) { color: #e68a00; } /* 活力橙 */
+.legend-item:nth-child(3) { color: #d81b60; } /* 胭脂紅 */
+.legend-item:nth-child(4) { color: #8e24aa; } /* 羅蘭紫 */
+.legend-item:nth-child(5) { color: #546e7a; } /* 石板灰 */
+.legend-item:nth-child(6) { color: #228B22; } /* 深林綠 */
+
+
+/* 任務名稱字體稍微縮小一點，避免佔位太多 */
+#detailTitle {
+    font-size: 1.5rem;      /* 稍微縮小字級（原本是2.5em太大了），有助於排在同一列 */
+    margin: 0;             /* 移除邊距讓它跟按鈕對齊 */
+    color: var(--primary); 
+    
+    /* --- 核心修改：加大空間 --- */
+    max-width: 40%;        /* 從 20% 增加到 40% 或更高 */
+    white-space: nowrap;   /* 保持不換行 */
+    overflow: visible;     /* 允許文字溢出而不變 ... */
+    text-overflow: clip;   /* 移除省略號 */
+    flex-shrink: 0;        /* 確保名稱不會被旁邊的圖例擠扁 */
+    margin-top: 10px;      /* 調整與頂部的距離 */
+    margin-bottom: 15px;   /* 調整與下方座號格子的距離 */
+    color: var(--primary); /* 若想讓顏色跟隨主題色，可加上這行 */
+}
+
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    
+    /* 在這裡調整大小 */
+    font-size: 16px;      /* 網頁建議 14px-16px */
+    font-weight: 500;    /* 稍微加粗一點比較好閱讀 */
+    white-space: nowrap; /* 確保 1.湖水藍 不會被斷成兩行 */
+    background: rgba(0,0,0,0.05); /* 給標籤一個淡淡的底色 */
+}
+
+
+
+/* 按鈕群組 */
+.header-action-btns {
+    display: flex;
+    gap: 5px;
+}
+
+.header-action-btns button {
+    padding: 5px 10px;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+
+/* 讓 header 變為橫向一列 */
+.detail-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* 關鍵：從左邊開始排，不要分散 */
+    gap: 0px;                    /* 標題、按鈕、圖例之間的間距 */
+    padding: 8px 12px;
+}
+
+/* 圖例在中間自動伸縮 */
+#statusLegend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start; /* 關鍵：標籤與標籤靠左對齊 */
+    gap: 4px;                    /* 1.湖水藍 和 2.活力橙 之間的距離，數字越小越擠 */
+    flex: 0 1 auto;              /* 關鍵：不要強制撐開佔據所有空間 */
+    font-size: 13px;
+    margin: 0 5px;               /* 稍微跟旁邊的按鈕隔開就好 */
+}
+
+
+
+/* 縮小按鈕寬度，讓中間圖例空間更大 */
+.detail-header-row button {
+    padding: 6px 15px;
+    min-width: 70px;
+    white-space: nowrap;
 }
 
 /* 主題設定 (保留您原本的所有主題) */
@@ -122,14 +223,28 @@ center; }
 .settings-row { font-weight: bold; font-size: 1.1rem; }
 .settings-row label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
 
-
-/* 調整詳情視窗左上角的任務名稱大小 */
-#detailTitle {
-    font-size: 2.5em;       /* 這裡可以調整大小，數字越大字越大 */
-    margin-top: 10px;      /* 調整與頂部的距離 */
-    margin-bottom: 15px;   /* 調整與下方座號格子的距離 */
-    color: var(--primary); /* 若想讓顏色跟隨主題色，可加上這行 */
+.legend-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    background: rgba(0,0,0,0.03);
+    padding: 8px;
+    border-radius: 8px;
+    font-size: 0.9rem;
 }
+
+
+
+/* 確保小圓點樣式 */
+.status-dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+
 
 
 /* 其他組件樣式 (保留) */
