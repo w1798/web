@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>教學清點小幫手 by Charles Nextime</title>
-    <link rel="stylesheet" href="style.css?ver=1.09">
+    <link rel="stylesheet" href="style.css?ver=1.09b">
     <style>
         .quick-select-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 15px; 
 
@@ -109,15 +109,18 @@ value="9">9 個</option><option value="10">10 個</option></select></label></div
 
 id="studentFontSizeSelect" class="select-short-width"></select></label></div>
 
-
-
     <div class="settings-row">
-<p> 雲端備份設定 (<a href="https://w1798.github.io/web/JsonCloudGuide" target="_blank">申請說明</a>)</p>
-<label>
-<input type="text" id="binId" style="width:180px" class="select-short-width" autocomplete="off" placeholder="URL or JSONBinID">
-	<button onclick="resetBinField('binId')">重置</button></label></div>
-    <div class="settings-row"><label><input type="text" id="apiKey" style="width:180px" class="select-short-width" autocomplete="off" placeholder="Token or X-Access-Key">
-<button onclick="resetBinField('apiKey')">重置</button></label></div>
+        <label>切換色數：
+            <select id="statusCountSelect" class="select-short-width"></select>
+        </label>
+    </div>
+
+    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+        <label>自訂標籤名稱：</label>
+        <div id="statusLabelInputs" style="width: 100%; display: grid; gap: 5px;">
+            </div>
+    </div>
+
 
 </div>
 
@@ -147,10 +150,12 @@ class="select-short-width"><option value="desc">新 → 舊</option><option valu
 class="select-short-width"></select></label></div>
 
 <div class="settings-row">
-    <label>切換色數：
-        <select id="statusCountSelect" class="select-short-width"></select>
-    </label>
-</div>
+雲端備份設定 (<a href="https://w1798.github.io/web/JsonCloudGuide" target="_blank">申請說明</a>)
+<label>
+<input type="text" id="binId" style="width:180px" class="select-short-width" autocomplete="off" placeholder="URL or JSONBinID">
+	<button onclick="resetBinField('binId')">重置</button></label></div>
+    <div class="settings-row"><label><input type="text" id="apiKey" style="width:180px" class="select-short-width" autocomplete="off" placeholder="Token or X-Access-Key">
+<button onclick="resetBinField('apiKey')">重置</button></label></div>
 
                 <div class="settings-row"><button class="btn-danger btn-small" 
 
@@ -274,7 +279,7 @@ onchange="generateStudentReport()"></select>
 </span>
 </footer>
 
-<script src="script.js?ver=1.09a"></script>
+<script src="script.js?ver=1.09b"></script>
 
 
 

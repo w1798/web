@@ -8,13 +8,13 @@
  */
 
 const FULL_30 = "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30";
-
-const STATUS_NAMES = {
-    1: "湖水藍",
-    2: "活力橙",
-    3: "胭脂紅",
-    4: "羅蘭紫",
-    5: "石板灰"
+const DEFAULT_LABELS = {
+    1: "湖水藍 (完成)",
+    2: "活力橙 (請假)",
+    3: "胭脂紅 (待補)",
+    4: "羅蘭紫 (特殊)",
+    5: "石板灰 (備註)",
+    6: "深林綠 (其他)"
 };
 
 let state = {
@@ -27,6 +27,7 @@ let state = {
         appendMode: false,
         dateOffset: 1,
         statusCount: 1,
+        statusLabels: { ...DEFAULT_LABELS },
         binId: '',
         apiKey: ''
     },
@@ -42,7 +43,10 @@ window.onload = () => {
 
 function initSelectors() {
     const layoutSel = document.getElementById('layoutSelect');
-    if(layoutSel) for(let i=1; i<=10; i++) layoutSel.add(new Option(`${i} 個`, i));
+    if(layoutSel) {
+        layoutSel.innerHTML = '';
+        for(let i=1; i<=10; i++) layoutSel.add(new Option(`${i} 個`, i));
+    }
  
     const fontSel = document.getElementById('studentFontSizeSelect');
     if (fontSel) {
@@ -56,44 +60,79 @@ function initSelectors() {
    
     const dateOffsetSel = document.getElementById('dateOffsetSelect');
     if (dateOffsetSel) {
+        dateOffsetSel.innerHTML = '';
         dateOffsetSel.add(new Option("+3 天(大後天)", 3));
         dateOffsetSel.add(new Option("+2 天(後天)", 2));
         dateOffsetSel.add(new Option("+1 天 (明天)", 1));
         dateOffsetSel.add(new Option("0 天 (今天)", 0));
-        dateOffsetSel.value = state.settings.dateOffset || 1;
     }
 
     const statusSel = document.getElementById('statusCountSelect');
     if(statusSel) {
         statusSel.innerHTML = '';
-        for(let i=1; i<=5; i++) {
-            // 顯示如：2 色 (包含活力橙)
-            statusSel.add(new Option(`${i} 色 (至${STATUS_NAMES[i].split(' ')[0]})`, i));
+        for(let i=1; i<=6; i++) {
+            const label = state.settings.statusLabels[i] || `顏色 ${i}`;
+            statusSel.add(new Option(`${i} 色 (至${label.split(' ')[0]})`, i));
         }
-        statusSel.value = state.settings.statusCount || 1;
     }
-    
+
     const sizes = [95, 90, 80, 70, 60, 50, 40, 30];
     document.querySelectorAll('.size-sel').forEach(sel => {
+        sel.innerHTML = '';
         sizes.forEach(s => sel.add(new Option(`${s}%`, s)));
     });
+
+    // 初始化後，同步 state 到 UI
+    syncSettingsToUI();
+}
+
+function syncSettingsToUI() {
+    const s = state.settings;
+    
+    const setters = {
+        'autoDate': (el) => el.checked = !!s.autoDate,
+        'appendModeSetting': (el) => el.checked = !!s.appendMode,
+        'layoutSelect': (el) => el.value = s.gridCols || 5,
+        'studentColsSelect': (el) => el.value = s.studentCols || 7,
+        'themeSelect': (el) => el.value = s.theme || 'soft',
+        'sortOrderSelect': (el) => el.value = s.sortOrder || 'desc',
+        'sizeDetail': (el) => el.value = s.sizeDetail || 95,
+        'sizeReport': (el) => el.value = s.sizeReport || 70,
+        'sizeTotal': (el) => el.value = s.sizeTotal || 70,
+        'statusCountSelect': (el) => el.value = s.statusCount || 1,
+        'studentFontSizeSelect': (el) => el.value = s.studentFontSize || 18,
+        'dateOffsetSelect': (el) => el.value = s.dateOffset || 1,
+        'quickTasksConfig': (el) => el.value = (s.quickTasks || "").split(',').join('\n'),
+        'studentListConfig': (el) => el.value = (s.studentList || "").split(',').join('\n'),
+        'cloudBinId': (el) => el.value = s.binId || '',
+        'cloudApiKey': (el) => el.value = s.apiKey || ''
+    };
+
+    for (const [id, setter] of Object.entries(setters)) {
+        const el = document.getElementById(id);
+        if (el) setter(el);
+    }
 }
 
 function loadData() {
     const saved = localStorage.getItem('MarkIt');
     if (saved) {
-        state = JSON.parse(saved);
-        // 確保如果舊資料沒這個欄位，給予預設值 1
-        if (!state.settings.statusCount) state.settings.statusCount = 1;
+        try {
+            const parsed = JSON.parse(saved);
+            state.settings = { ...state.settings, ...parsed.settings };
+            state.assignments = parsed.assignments || [];
+            
+            for (let i = 1; i <= 5; i++) {
+                if (!state.settings.statusLabels[i]) {
+                    state.settings.statusLabels[i] = DEFAULT_LABELS[i];
+                }
+            }
+        } catch(e) { console.error("Data Parse Error", e); }
     }
+    
+    syncSettingsToUI();
     applySettings();
     renderAssignments();
-    
-    // 重要：重新整理後，也要把選單的數字填正確
-    const statusSel = document.getElementById('statusCountSelect');
-    if (statusSel) {
-        statusSel.value = state.settings.statusCount;
-    }
 }
 
 function initQuickTags() {
@@ -110,52 +149,38 @@ function initQuickTags() {
     });
 }
 
-// 渲染日期快捷標籤 (含星期)
 function renderDateQuickSelect() {
     const container = document.getElementById('dateQuickSelect');
     if (!container) return;
     container.innerHTML = '';
-    
     const baseOffset = parseInt(state.settings.dateOffset || 0);
     const dayNames = ["日", "一", "二", "三", "四", "五", "六"];
-    
-    // 生成 前後兩天 + 當天，共五個
     for (let i = baseOffset - 2; i <= baseOffset + 2; i++) {
         const d = new Date();
         d.setDate(d.getDate() + i);
         const mmdd = (d.getMonth() + 1).toString().padStart(2, '0') + d.getDate().toString().padStart(2, '0');
-        const dayName = dayNames[d.getDay()];
-        const label = `${mmdd}(${dayName})`;
-        
+        const label = `${mmdd}(${dayNames[d.getDay()]})`;
         const btn = document.createElement('button');
         btn.className = 'tag-btn';
-        // 預設日期(當天偏移量)使用主色調
         btn.style.background = (i === baseOffset) ? 'var(--primary)' : '#888';
         btn.innerText = label;
         btn.onclick = () => {
-	    const input = document.getElementById('assignmentNameInput');
-	    const datePattern = /^\d{4}\([\u4e00-\u9fa5]\)/;
-
-            // 如果開頭已經是日期格式(4位數字)，替換掉；否則插入最前面
-            if (datePattern.test(input.value)) {
-                input.value = input.value.replace(datePattern, label);
-            } else {
-                input.value = label + input.value;
-            }
+            const input = document.getElementById('assignmentNameInput');
+            const datePattern = /^\d{4}\([\u4e00-\u9fa5]\)/;
+            input.value = datePattern.test(input.value) ? input.value.replace(datePattern, label) : label + input.value;
             moveCursorToEnd(input);
         };
         container.appendChild(btn);
     }
 }
 
-// 整合後的 openAddModal
 function openAddModal() {
     const input = document.getElementById('assignmentNameInput');
-    input.value = state.settings.autoDate ? getOffsetDateStr() : "";
+    if(input) input.value = state.settings.autoDate ? getOffsetDateStr() : "";
     initQuickTags();
-    renderDateQuickSelect(); // 確保呼叫此處來顯示日期標籤
+    renderDateQuickSelect();
     openModal('addAssignmentModal');
-    setTimeout(() => { moveCursorToEnd(input); }, 200);
+    if(input) setTimeout(() => { moveCursorToEnd(input); }, 200);
 }
 
 function moveCursorToEnd(el) {
@@ -166,82 +191,76 @@ function moveCursorToEnd(el) {
 
 function getOffsetDateStr() {
     const d = new Date();
-    const offset = parseInt(state.settings.dateOffset || 0);
-    d.setDate(d.getDate() + offset);
-    
+    d.setDate(d.getDate() + parseInt(state.settings.dateOffset || 0));
     const mm = (d.getMonth() + 1).toString().padStart(2, '0');
     const dd = d.getDate().toString().padStart(2, '0');
-    const dayNames = ["日", "一", "二", "三", "四", "五", "六"];
-    const dayName = dayNames[d.getDay()];
-    
-    return `${mm}${dd}(${dayName})`; // 回傳格式如 0119(一)
+    return `${mm}${dd}(${["日", "一", "二", "三", "四", "五", "六"][d.getDay()]})`;
 }
 
 function fillTaskName(task) {
     const input = document.getElementById('assignmentNameInput');
+    if(!input) return;
     let currentVal = input.value.trim();
-    
     if (state.settings.appendMode && currentVal !== "") {
-        // 累加模式：直接加在後面
         input.value = currentVal + task;
     } else {
-        // 非累加模式：
-        // 1. 檢查目前輸入框開頭是否已經有日期格式 0000(X)
         const datePattern = /^\d{4}\([\u4e00-\u9fa5]\)/;
         const match = currentVal.match(datePattern);
-        
-        if (state.settings.autoDate) {
-            if (match) {
-                // 如果目前輸入框已經有日期（可能是使用者點選上方日期標籤選的），保留該日期並接上任務
-                input.value = match[0] + task;
-            } else {
-                // 如果完全沒日期，才使用系統計算的預設日期
-                input.value = getOffsetDateStr() + task;
-            }
-        } else {
-            // 不自動加日期模式
-            input.value = task;
-        }
+        input.value = (state.settings.autoDate ? (match ? match[0] : getOffsetDateStr()) : "") + task;
     }
     moveCursorToEnd(input);
 }
+
 function applySettings() {
     const s = state.settings;
     document.body.setAttribute('data-theme', s.theme);
     document.documentElement.style.setProperty('--grid-cols', s.gridCols);
     document.documentElement.style.setProperty('--student-cols', s.studentCols);
     document.documentElement.style.setProperty('--student-font-size', (s.studentFontSize || 18) + 'px');
-    
-    if(document.getElementById('detailModalContent')) 
-        document.getElementById('detailModalContent').style.width = (s.sizeDetail || 50) + '%';
-    if(document.getElementById('reportModalContent')) 
-        document.getElementById('reportModalContent').style.width = (s.sizeReport || 70) + '%';
-    if(document.getElementById('totalModalContent')) 
-        document.getElementById('totalModalContent').style.width = (s.sizeTotal || 70) + '%';
+    const setW = (id, val) => { const el = document.getElementById(id); if(el) el.style.width = (val || 70) + '%'; };
+    setW('detailModalContent', s.sizeDetail);
+    setW('reportModalContent', s.sizeReport);
+    setW('totalModalContent', s.sizeTotal);
 }
 
 function saveSettings() {
     const s = state.settings;
-    s.autoDate = document.getElementById('autoDate').checked;
-    s.appendMode = document.getElementById('appendModeSetting').checked;
-    s.gridCols = parseInt(document.getElementById('layoutSelect').value);
-    s.studentCols = parseInt(document.getElementById('studentColsSelect').value);
-    s.theme = document.getElementById('themeSelect').value;
-    s.sortOrder = document.getElementById('sortOrderSelect').value;
-    s.sizeDetail = parseInt(document.getElementById('sizeDetail').value);
-    s.sizeReport = parseInt(document.getElementById('sizeReport').value);
-    s.sizeTotal = parseInt(document.getElementById('sizeTotal').value);
-    s.statusCount = parseInt(document.getElementById('statusCountSelect').value);
-    s.quickTasks = document.getElementById('quickTasksConfig').value.trim();
-    s.studentList = document.getElementById('studentListConfig').value.trim() || FULL_30;
-    s.studentFontSize = parseInt(document.getElementById('studentFontSizeSelect').value);
-    s.dateOffset = parseInt(document.getElementById('dateOffsetSelect').value);
-    s.binId = document.getElementById('binId').value.trim();
-    s.apiKey = document.getElementById('apiKey').value.trim();
+    // 使用「安全讀取」防止 null 報錯
+    const getV = (id) => document.getElementById(id) ? document.getElementById(id).value : null;
+    const getC = (id) => document.getElementById(id) ? document.getElementById(id).checked : false;
+
+    s.autoDate = getC('autoDate');
+    s.appendMode = getC('appendModeSetting');
     
+    if(getV('layoutSelect')) s.gridCols = parseInt(getV('layoutSelect'));
+    if(getV('studentColsSelect')) s.studentCols = parseInt(getV('studentColsSelect'));
+    if(getV('themeSelect')) s.theme = getV('themeSelect');
+    if(getV('sortOrderSelect')) s.sortOrder = getV('sortOrderSelect');
+    
+    s.sizeDetail = parseInt(getV('sizeDetail') || 95);
+    s.sizeReport = parseInt(getV('sizeReport') || 70);
+    s.sizeTotal = parseInt(getV('sizeTotal') || 70);
+    s.statusCount = parseInt(getV('statusCountSelect') || 1);
+    s.studentFontSize = parseInt(getV('studentFontSizeSelect') || 18);
+    s.dateOffset = parseInt(getV('dateOffsetSelect') || 1);
+    
+    if(document.getElementById('quickTasksConfig'))
+        s.quickTasks = parseList(document.getElementById('quickTasksConfig').value).join(',');
+    if(document.getElementById('studentListConfig'))
+        s.studentList = parseList(document.getElementById('studentListConfig').value).join(',');
+    
+    if(document.getElementById('cloudBinId')) s.binId = getV('cloudBinId').trim();
+    if(document.getElementById('cloudApiKey')) s.apiKey = getV('cloudApiKey').trim();
+
+    for(let i = 1; i <= 6; i++) {
+        const input = document.getElementById(`statusLabel_${i}`);
+        if(input) s.statusLabels[i] = input.value.trim();
+    }
+
     saveData();
     applySettings();
     closeModal('settingsModal');
+    initSelectors(); 
 }
 
 function getSortedList() {
@@ -252,15 +271,12 @@ function renderAssignments() {
     const container = document.getElementById('assignmentContainer');
     if(!container) return;
     container.innerHTML = '';
-
     if (state.assignments.length === 0) {
         container.innerHTML = `<div class="empty-hint">請先「新增任務」開始使用！</div>`;
         return;
     }
-
     const totalCount = parseList(state.settings.studentList).length;
-    const sorted = getSortedList();
-    sorted.forEach(item => {
+    getSortedList().forEach(item => {
         const undone = totalCount - item.doneList.length;
         const card = document.createElement('div');
         card.className = 'card';
@@ -271,7 +287,7 @@ function renderAssignments() {
 }
 
 function parseList(input) {
-    // 支援換行與逗號分隔
+    if(!input) return [];
     return input.split(/[\n,]/).map(s => s.trim()).filter(s => s);
 }
 
@@ -280,25 +296,18 @@ function openModal(id) {
     if (!modal) return;
     modal.style.display = 'block'; 
     if(id === 'settingsModal') {
-        const s = state.settings;
-        // 進入設定頁時，將儲存的逗號字串轉回換行顯示
-        document.getElementById('studentListConfig').value = s.studentList.split(',').join('\n');
-        document.getElementById('quickTasksConfig').value = s.quickTasks.split(',').join('\n');
-        
-        document.getElementById('autoDate').checked = s.autoDate;
-        document.getElementById('appendModeSetting').checked = s.appendMode || false;
-        document.getElementById('themeSelect').value = s.theme;
-        document.getElementById('layoutSelect').value = s.gridCols;
-        document.getElementById('studentColsSelect').value = s.studentCols || 7;
-        document.getElementById('sortOrderSelect').value = s.sortOrder || 'desc';
-        document.getElementById('sizeDetail').value = s.sizeDetail || 50;
-        document.getElementById('sizeReport').value = s.sizeReport || 70;
-        document.getElementById('sizeTotal').value = s.sizeTotal || 70;
-        document.getElementById('studentFontSizeSelect').value = s.studentFontSize || 18;
-        document.getElementById('dateOffsetSelect').value = s.dateOffset || 1;
-        document.getElementById('binId').value = s.binId || '';
-        document.getElementById('apiKey').value = s.apiKey || '';
-        document.getElementById('statusCount').value = s.statusCount || 1;
+        const labelContainer = document.getElementById('statusLabelInputs');
+        if (labelContainer) {
+            labelContainer.innerHTML = '';
+            for(let i = 1; i <= 6; i++) {
+                const row = document.createElement('div');
+                row.style = 'display:flex; align-items:center; gap:10px; margin-bottom:5px;';
+                row.innerHTML = `<span class="status-dot status-${i}" style="width:12px; height:12px; border-radius:50%; display:inline-block;"></span> 
+                    <input type="text" id="statusLabel_${i}" value="${state.settings.statusLabels[i] || ""}" 
+                    style="flex:1; padding:4px; border:1px solid #ccc; border-radius:4px;">`;
+                labelContainer.appendChild(row);
+            }
+        }
     }
 }
 
@@ -308,224 +317,113 @@ function closeModal(id) {
     renderAssignments(); 
 }
 
-
 function renderTotalListContent() {
     const filterEl = document.getElementById('totalFilter');
     const body = document.getElementById('totalListDynamicBody');
-    if (!filterEl || !body) return; // 防止元素不存在時報錯
-
+    if (!filterEl || !body) return;
     const filterType = filterEl.value;
     const studentList = parseList(state.settings.studentList);
-    const sorted = getSortedList();
-    
-    const html = sorted.map(a => {
+    body.innerHTML = getSortedList().map(a => {
         let targets = [];
         if (filterType === 'undone') {
-            // 篩選「完全沒被標記的人」
-            targets = studentList.filter(s => 
-                !a.doneList.some(item => (typeof item === 'object' ? item.id === s : item === s))
-            );
+            targets = studentList.filter(s => !a.doneList.some(item => (typeof item === 'object' ? item.id === s : item === s)));
         } else {
-            // 篩選「特定標記顏色的人」
             const statusNum = parseInt(filterType);
-            targets = a.doneList
-                .filter(item => {
-                    // 相容舊資料：如果是字串且 statusNum 為 1，視為符合
-                    if (typeof item !== 'object') return statusNum === 1 && item;
-                    return item.status === statusNum;
-                })
-                .map(item => (typeof item === 'object' ? item.id : item));
+            targets = a.doneList.filter(item => (typeof item === 'object' ? item.status === statusNum : statusNum === 1)).map(item => (typeof item === 'object' ? item.id : item));
         }
-
-        return `<div style="padding:10px; border-bottom:1px solid #eee">
-            <span class="clickable-task" onclick="closeModal('totalListModal'); openDetail(${a.id})">${a.name}</span>: 
-            <span>${targets.join(', ') || '<span style="color:#ccc">無</span>'}</span>
-        </div>`;
-    }).join('');
-    
-    body.innerHTML = html || '<div style="text-align:center; color:#888; padding:20px;">此分類目前無名單</div>';
+        return `<div style="padding:10px; border-bottom:1px solid #eee"><span class="clickable-task" onclick="closeModal('totalListModal'); openDetail(${a.id})">${a.name}</span>: <span>${targets.join(', ') || '<span style="color:#ccc">無</span>'}</span></div>`;
+    }).join('') || '<div style="text-align:center; color:#888; padding:20px;">目前無名單</div>';
 }
 
-
 function toggleStudent(n, el, work) {
-    // 【新增防搶奪邏輯】點擊瞬間先從本機讀取最新資料，確保不覆蓋另一個視窗的結果
     const saved = localStorage.getItem('MarkIt');
     if (saved) {
-        const latestState = JSON.parse(saved);
-        // 同步當前這個任務的最新 doneList
-        const latestWork = latestState.assignments.find(a => a.id === work.id);
-        if (latestWork) {
-            work.doneList = latestWork.doneList;
-            state.assignments = latestState.assignments; // 同步全域 state
-        }
+        const latest = JSON.parse(saved);
+        const latestWork = latest.assignments.find(a => a.id === work.id);
+        if (latestWork) { work.doneList = latestWork.doneList; state.assignments = latest.assignments; }
     }
-
     const maxStatus = parseInt(state.settings.statusCount || 1);
-    const recordIndex = work.doneList.findIndex(item => (typeof item === 'object' ? item.id === n : item === n));
-
-    if (recordIndex === -1) {
-        // 無 -> 狀態 1
+    const idx = work.doneList.findIndex(item => (typeof item === 'object' ? item.id === n : item === n));
+    if (idx === -1) {
         work.doneList.push({ id: n, status: 1 });
     } else {
-        let currentRecord = work.doneList[recordIndex];
-        let currentStatus = typeof currentRecord === 'object' ? currentRecord.status : 1;
-        
-        if (currentStatus < maxStatus) {
-            work.doneList[recordIndex] = { id: n, status: currentStatus + 1 };
-        } else {
-            work.doneList.splice(recordIndex, 1);
-        }
+        let currStatus = typeof work.doneList[idx] === 'object' ? work.doneList[idx].status : 1;
+        if (currStatus < maxStatus) work.doneList[idx] = { id: n, status: currStatus + 1 };
+        else work.doneList.splice(idx, 1);
     }
-    
-    // 更新自己的 UI
     updateStudentUI(n, el, work);
-    
-    // 存檔 (這會觸發另一個視窗的 storage 事件)
     saveDataQuietly(); 
 }
 
-// 抽取更新單個學生 UI 的邏輯 (為了讓 openDetail 和同步功能共用)
 function updateStudentUI(n, el, work) {
     const record = work.doneList.find(item => (typeof item === 'object' ? item.id === n : item === n));
-    // 清除舊 class (包含您原本的 done)
-    el.classList.remove('done', 'status-1', 'status-2', 'status-3', 'status-4', 'status-5');
+    el.classList.remove('done', 'status-1', 'status-2', 'status-3', 'status-4', 'status-5', 'status-6');
     
     if (record) {
         const status = typeof record === 'object' ? record.status : 1;
         el.classList.add(`status-${status}`);
-        if (status === 1) el.classList.add('done'); // 保持 CSS 綠色相容
+        if (status === 1) el.classList.add('done');
     }
 }
 
 function openReportModal() {
     const select = document.getElementById('reportStudentSelect');
-    if(!select) return;
-    
-    // 1. 初始化座號選單
-    const names = parseList(state.settings.studentList);
-    select.innerHTML = names.map(s => `<option value="${s}">${s}</option>`).join('');
-    
-    // 2. 動態生成色系過濾選項 (同步設定中的切換色數)
-    const reportFilter = document.getElementById('reportFilter');
-    let filterHtml = `<option value="undone">未完成 (全部未點選者)</option>`;
-    const maxStatus = parseInt(state.settings.statusCount || 1);
-
-    for(let i=1; i<=maxStatus; i++) {
-        filterHtml += `<option value="${i}">${STATUS_NAMES[i]}</option>`;
-    }
-    reportFilter.innerHTML = filterHtml;
-
+    const filter = document.getElementById('reportFilter');
+    if(!select || !filter) return;
+    select.innerHTML = parseList(state.settings.studentList).map(s => `<option value="${s}">${s}</option>`).join('');
+    let filterHtml = `<option value="undone">未完成</option>`;
+    for(let i=1; i<=parseInt(state.settings.statusCount || 1); i++) filterHtml += `<option value="${i}">${state.settings.statusLabels[i]}</option>`;
+    filter.innerHTML = filterHtml;
     generateStudentReport();
     openModal('studentReportModal');
 }
 
 function generateStudentReport() {
-    const num = document.getElementById('reportStudentSelect').value; // 學生座號
-    const filterType = document.getElementById('reportFilter').value; // 篩選類型
-    const sorted = getSortedList();
-    
-    let resultList = [];
-
-    if (filterType === 'undone') {
-        // 篩選出：該生完全不在 doneList 裡的任務
-        resultList = sorted.filter(a => 
-            !a.doneList.some(item => (typeof item === 'object' ? item.id === num : item === num))
-        );
-    } else {
-        // 篩選出：該生在 doneList 裡且 status 符合所選顏色的任務
-        const statusNum = parseInt(filterType);
-        resultList = sorted.filter(a => 
-            a.doneList.some(item => 
-                (typeof item === 'object' ? (item.id === num && item.status === statusNum) : (num === item && statusNum === 1))
-            )
-        );
-    }
-
+    const num = document.getElementById('reportStudentSelect').value;
+    const type = document.getElementById('reportFilter').value;
+    let list = getSortedList().filter(a => {
+        if (type === 'undone') return !a.doneList.some(item => (typeof item === 'object' ? item.id === num : item === num));
+        return a.doneList.some(item => (typeof item === 'object' ? (item.id === num && item.status === parseInt(type)) : (num === item && parseInt(type) === 1)));
+    });
     const container = document.getElementById('reportResult');
-    if (resultList.length > 0) {
-        container.innerHTML = resultList.map(a => 
-            `<div class="report-link" onclick="closeModal('studentReportModal'); openDetail(${a.id})">${a.name}</div>`
-        ).join('');
-    } else {
-        const msg = filterType === 'undone' ? "✅ 該生已完成所有任務！" : "無此類別標記的任務。";
-        container.innerHTML = `<p style="text-align:center; font-size:1.2rem; margin-top:20px; color:#888;">${msg}</p>`;
-    }
+    container.innerHTML = list.length > 0 ? list.map(a => `<div class="report-link" onclick="closeModal('studentReportModal'); openDetail(${a.id})">${a.name}</div>`).join('') : `<p style="text-align:center; color:#888;">無資料。</p>`;
 }
 
 function openDetail(id) {
     const work = state.assignments.find(a => a.id === id);
     if(!work) return;
-    
     document.getElementById('detailTitle').innerText = work.name;
-    const grid = document.getElementById('studentGrid'); 
-    grid.innerHTML = '';
-
+    const grid = document.getElementById('studentGrid'); grid.innerHTML = '';
     parseList(state.settings.studentList).forEach(n => {
-        const div = document.createElement('div');
-        div.className = `student-item`;
-        div.innerText = n;
-        
-        // 初始化顏色 (支援舊字串格式與新物件格式)
+        const div = document.createElement('div'); div.className = 'student-item'; div.innerText = n;
         updateStudentUI(n, div, work);
-
         div.onmousedown = () => { isDragging = true; toggleStudent(n, div, work); };
         div.onmouseenter = () => { if (isDragging) toggleStudent(n, div, work); };
         grid.appendChild(div);
     });
-
     window.onmouseup = () => isDragging = false;
-    
-    document.getElementById('deleteBtn').onclick = () => { 
-        if(confirm("確定刪除此任務？")) { 
-            state.assignments = state.assignments.filter(a => a.id !== id); 
-            saveData(); 
-            closeModal('detailModal'); 
-        } 
-    };
+    document.getElementById('deleteBtn').onclick = () => { if(confirm("確定刪除？")) { state.assignments = state.assignments.filter(a => a.id !== id); saveData(); closeModal('detailModal'); } };
     openModal('detailModal');
 }
 
 function openTotalListModal() {
     const container = document.getElementById('totalListContent');
     if (!container) return;
-
-    // 1. 建立篩選選單 (補齊之前省略的 HTML)
-    let filterHtml = `
-        <div style="margin-bottom:15px; background:rgba(0,0,0,0.05); padding:10px; border-radius:8px;">
-            篩選顯示：<select id="totalFilter" onchange="renderTotalListContent()" style="padding:5px; border-radius:5px;">
-                <option value="undone">未完成 (全部未點選者)</option>`;
-    
-    // 根據設定的色數動態產生選項
-    const maxStatus = parseInt(state.settings.statusCount || 1);
-    for(let i=1; i<=maxStatus; i++) {
-        filterHtml += `<option value="${i}">${STATUS_NAMES[i]}</option>`;
-    }
-    filterHtml += `</select></div><div id="totalListDynamicBody"></div>`;
-    
-    container.innerHTML = filterHtml;
-    
-    // 2. 執行初次渲染
-    renderTotalListContent(); 
-    openModal('totalListModal');
+    let html = `<div style="margin-bottom:10px;">篩選：<select id="totalFilter" onchange="renderTotalListContent()"><option value="undone">未完成</option>`;
+    for(let i=1; i<=parseInt(state.settings.statusCount || 1); i++) html += `<option value="${i}">${state.settings.statusLabels[i]}</option>`;
+    html += `</select></div><div id="totalListDynamicBody"></div>`;
+    container.innerHTML = html;
+    renderTotalListContent(); openModal('totalListModal');
 }
 
-
-
 function copyTotalList() {
-    const content = document.getElementById('totalListContent');
-    if (content.querySelector('.all-done-msg')) return;
-    const text = content.innerText;
-    navigator.clipboard.writeText(text).then(() => alert("名單已複製！"));
+    navigator.clipboard.writeText(document.getElementById('totalListDynamicBody').innerText).then(() => alert("已複製！"));
 }
 
 function exportData() {
-    const d = new Date();
-    const dateStr = (d.getMonth() + 1).toString().padStart(2, '0') + d.getDate().toString().padStart(2, '0');
-    const blob = new Blob([JSON.stringify(state)], {type: "application/json"});
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `Markit_${dateStr}.json`;
-    a.click();
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(state)], {type: "application/json"}));
+    a.download = `Markit_Backup.json`; a.click();
 }
 
 function addAssignment() {
@@ -536,142 +434,35 @@ function addAssignment() {
 }
 
 function cleanFinishedAssignments() {
-    const totalCount = parseList(state.settings.studentList).length;
-    const finishedCount = state.assignments.filter(a => a.doneList.length >= totalCount).length;
-    if (finishedCount === 0) return alert("目前沒有已完成的任務。");
-    if (confirm(`確定刪除 ${finishedCount} 個已完成任務？`)) {
-        state.assignments = state.assignments.filter(a => a.doneList.length < totalCount);
-        saveData();
-        closeModal('settingsModal');
+    const total = parseList(state.settings.studentList).length;
+    const fin = state.assignments.filter(a => a.doneList.length >= total);
+    if (fin.length === 0) return alert("沒已完成的任務。");
+    if (confirm(`刪除 ${fin.length} 個已完成任務？`)) {
+        state.assignments = state.assignments.filter(a => a.doneList.length < total);
+        saveData(); closeModal('settingsModal');
     }
 }
 
+function resetQuickTasks() { if(confirm("恢復預設快速標籤？")) document.getElementById('quickTasksConfig').value = "國習\n數習\n生字\n圈詞"; }
+function resetStudentList() { if(confirm("恢復預設名單？")) document.getElementById('studentListConfig').value = FULL_30.split(',').join('\n'); }
+function resetBinField(id) { if(confirm("確定清除？")) document.getElementById(id).value = ''; }
 
-// 新增：重置快速標籤功能
-function resetQuickTasks() {
-    if(confirm("確定要將快速標籤恢復為預設值嗎？")) {
-        const defaultTasks = "國習,數習,生字,圈詞";
-        document.getElementById('quickTasksConfig').value = defaultTasks.split(',').join('\n');
-    }
-}
-
-// 新增：重置座號名單功能
-function resetStudentList() {
-    if(confirm("確定要將名單恢復為 1-30 號嗎？")) {
-        document.getElementById('studentListConfig').value = FULL_30.split(',').join('\n');
-    }
-}
-
-
-// 專門重置 Bin ID 或 API Key 的畫面欄位
-function resetBinField(targetId) {
-    if(confirm("確定要清除此欄位的內容嗎？")) {
-        document.getElementById(targetId).value = '';
-    }
-}
-
-
-
-// 雲端同步核心：自動辨別服務商
 async function cloudSync(method = 'UPLOAD') {
-    // 從 state.settings 抓取設定
     const { binId, apiKey } = state.settings;
-    if (!binId || !apiKey) return alert("請先填寫雲端設定 (URL 與 Token)");
-
-    const isUpstash = binId.includes('upstash.io');
-    const storageKey = 'MarkIt_v1'; 
-
+    if (!binId || !apiKey) return alert("請先填寫雲端設定");
     try {
         if (method === 'UPLOAD') {
-            if (!confirm("確定要將【本地資料】上傳至雲端嗎？\n注意：這會覆蓋雲端的資料。")) return;
-            
-            // 準備上傳副本
             const uploadData = JSON.parse(JSON.stringify(state));
-            delete uploadData.settings.binId;
-            delete uploadData.settings.apiKey;
-
-            let response;
-            if (isUpstash) {
-                response = await fetch(`${binId}/set/${storageKey}`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${apiKey}` },
-                    body: JSON.stringify(uploadData)
-                });
-            } else {
-                response = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'X-Access-Key': apiKey },
-                    body: JSON.stringify(uploadData)
-                });
-            }
-
-            if (response.ok) alert("✅ 雲端備份成功！");
-            else alert("❌ 上傳失敗，請檢查 Token。");
-
-        } else if (method === 'DOWNLOAD') {
-            if (!confirm("確定要從雲端下載資料嗎？\n這將覆蓋現有內容。")) return;
-
-            let fetchedData = null;
-
-            if (isUpstash) {
-                const response = await fetch(`${binId}/get/${storageKey}`, {
-                    headers: { 'Authorization': `Bearer ${apiKey}` }
-                });
-                const res = await response.json();
-                if (res && res.result) {
-                    try {
-                        fetchedData = JSON.parse(res.result);
-                    } catch (e) {
-                        // 如果解析失敗，可能是字串格式有問題，嘗試清理
-                        console.error("解析失敗，嘗試二度清理");
-                    }
-                }
-            } else {
-                const response = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
-                    headers: { 'X-Access-Key': apiKey }
-                });
-                const res = await response.json();
-                fetchedData = res.record;
-            }
-
-            if (fetchedData) {
-                let finalData = {};
-
-                if (fetchedData.assignments) {
-                    finalData = fetchedData;
-                } else if (fetchedData.tasks) {
-                    finalData = {
-                        settings: fetchedData.settings || {},
-                        assignments: fetchedData.tasks
-                    };
-                } else {
-                    finalData = {
-                        settings: {},
-                        assignments: Array.isArray(fetchedData) ? fetchedData : []
-                    };
-                }
-
-                // 確保 settings 存在並保留目前的連線金鑰
-                finalData.settings = finalData.settings || {};
-                finalData.settings.binId = binId;
-                finalData.settings.apiKey = apiKey;
-
-                // 使用 Object.assign 確保 state 結構完整
-                state = Object.assign({}, state, finalData);
-
-                saveData(); // 存入 localStorage
-                alert("✨ 載入完成！");
-                location.reload();
-            } else {
-                alert("❌ 載入失敗：雲端查無資料。");
-            }
+            delete uploadData.settings.binId; delete uploadData.settings.apiKey;
+            let res = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Access-Key': apiKey }, body: JSON.stringify(uploadData) });
+            if (res.ok) alert("✅ 備份成功！");
+        } else {
+            let res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, { headers: { 'X-Access-Key': apiKey } });
+            let data = (await res.json()).record;
+            if (data) { state = Object.assign({}, state, data); state.settings.binId = binId; state.settings.apiKey = apiKey; saveData(); location.reload(); }
         }
-    } catch (e) {
-        console.error(e);
-        alert("⚠️ 格式錯誤或連線問題：" + e.message);
-    }
+    } catch (e) { alert("⚠️ 錯誤：" + e.message); }
 }
-
 
 function saveData() { localStorage.setItem('MarkIt', JSON.stringify(state)); renderAssignments(); }
 function saveDataQuietly() { localStorage.setItem('MarkIt', JSON.stringify(state)); }
@@ -683,7 +474,6 @@ function importData(e) {
 }
 function resetSystem() { if(confirm("確定重置系統？")) { localStorage.removeItem('MarkIt'); location.reload(); } }
 
-// --- 跨視窗即時同步功能 (支援多色標記版) ---
 window.addEventListener('storage', (event) => {
     if (event.key === 'MarkIt' && event.newValue) {
         try {
@@ -716,5 +506,3 @@ window.addEventListener('storage', (event) => {
         } catch (e) { console.error(e); }
     }
 });
-
-
