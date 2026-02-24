@@ -8,6 +8,29 @@
     --student-cols: 7; 
 }
 
+/* 湖水藍 (主色) */
+.student-item.status-1 { background-color: var(--primary) !important; color: white; } 
+
+/* 活力橙 */
+.student-item.status-2 { background-color: #ff9800 !important; color: white; } 
+
+/* 胭脂紅 (稍微深一點點的質感紅) */
+.student-item.status-3 { background-color: #d81b60 !important; color: white; } 
+
+/* 羅蘭紫 */
+.student-item.status-4 { background-color: #8e24aa !important; color: white; } 
+
+/* 石板灰 */
+.student-item.status-5 { background-color: #546e7a !important; color: white; }
+
+/* 讓總清單的篩選選單好看一點 */
+.filter-select {
+    margin-left: 10px;
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px solid var(--primary);
+}
+
 /* 主題設定 (保留您原本的所有主題) */
 body[data-theme="soft"] { --primary: #8fb1e9; --bg: #f0f4f8; --text: #333; --card: #fff; }
 body[data-theme="tech"] { --primary: #00d4ff; --bg: #0b1e3b; --text: #eee; --card: #162a4a; }

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>教學清點小幫手 by Charles Nextime</title>
-    <link rel="stylesheet" href="style.css?ver=1.08e">
+    <link rel="stylesheet" href="style.css?ver=1.09">
     <style>
         .quick-select-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 15px; 
 
@@ -145,6 +145,13 @@ class="select-short-width"><option value="desc">新 → 舊</option><option valu
                 <div class="settings-row"><label>預設日期：<select id="dateOffsetSelect" 
 
 class="select-short-width"></select></label></div>
+
+<div class="settings-row">
+    <label>切換色數：
+        <select id="statusCountSelect" class="select-short-width"></select>
+    </label>
+</div>
+
                 <div class="settings-row"><button class="btn-danger btn-small" 
 
 onclick="cleanFinishedAssignments()">🗑️ 清除已完成任務</button></div>
@@ -235,6 +242,12 @@ top:5px;"></textarea>
 
 onchange="generateStudentReport()"></select>
         </div>
+        <div style="margin: 10px 0; padding: 10px; background: rgba(0,0,0,0.05); border-radius: 8px;">
+    查詢類型：
+    <select id="reportFilter" onchange="generateStudentReport()" style="padding:5px; border-radius:5px;">
+        <option value="undone">未完成 (未點選者)</option>
+        </select>
+</div>
         <div id="reportResult" class="scroll-box"></div>
     </div>
 </div>
@@ -261,7 +274,7 @@ onchange="generateStudentReport()"></select>
 </span>
 </footer>
 
-<script src="script.js?ver=1.09d"></script>
+<script src="script.js?ver=1.09"></script>
 
 
 

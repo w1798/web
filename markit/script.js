@@ -9,6 +9,14 @@
 
 const FULL_30 = "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30";
 
+const STATUS_NAMES = {
+    1: "湖水藍",
+    2: "活力橙",
+    3: "胭脂紅",
+    4: "羅蘭紫",
+    5: "石板灰"
+};
+
 let state = {
     settings: { 
         autoDate: true, theme: 'soft', gridCols: 5, studentCols: 7, 
@@ -18,8 +26,9 @@ let state = {
         studentFontSize: 18,
         appendMode: false,
         dateOffset: 1,
-	binId: '',
-	apiKey: ''
+        statusCount: 1,
+        binId: '',
+        apiKey: ''
     },
     assignments: []
 };
@@ -54,6 +63,16 @@ function initSelectors() {
         dateOffsetSel.value = state.settings.dateOffset || 1;
     }
 
+    const statusSel = document.getElementById('statusCountSelect');
+    if(statusSel) {
+        statusSel.innerHTML = '';
+        for(let i=1; i<=5; i++) {
+            // 顯示如：2 色 (包含活力橙)
+            statusSel.add(new Option(`${i} 色 (至${STATUS_NAMES[i].split(' ')[0]})`, i));
+        }
+        statusSel.value = state.settings.statusCount || 1;
+    }
+    
     const sizes = [95, 90, 80, 70, 60, 50, 40, 30];
     document.querySelectorAll('.size-sel').forEach(sel => {
         sizes.forEach(s => sel.add(new Option(`${s}%`, s)));
@@ -62,9 +81,19 @@ function initSelectors() {
 
 function loadData() {
     const saved = localStorage.getItem('MarkIt');
-    if (saved) state = JSON.parse(saved);
+    if (saved) {
+        state = JSON.parse(saved);
+        // 確保如果舊資料沒這個欄位，給予預設值 1
+        if (!state.settings.statusCount) state.settings.statusCount = 1;
+    }
     applySettings();
     renderAssignments();
+    
+    // 重要：重新整理後，也要把選單的數字填正確
+    const statusSel = document.getElementById('statusCountSelect');
+    if (statusSel) {
+        statusSel.value = state.settings.statusCount;
+    }
 }
 
 function initQuickTags() {
@@ -202,6 +231,7 @@ function saveSettings() {
     s.sizeDetail = parseInt(document.getElementById('sizeDetail').value);
     s.sizeReport = parseInt(document.getElementById('sizeReport').value);
     s.sizeTotal = parseInt(document.getElementById('sizeTotal').value);
+    s.statusCount = parseInt(document.getElementById('statusCountSelect').value);
     s.quickTasks = document.getElementById('quickTasksConfig').value.trim();
     s.studentList = document.getElementById('studentListConfig').value.trim() || FULL_30;
     s.studentFontSize = parseInt(document.getElementById('studentFontSizeSelect').value);
@@ -268,6 +298,7 @@ function openModal(id) {
         document.getElementById('dateOffsetSelect').value = s.dateOffset || 1;
         document.getElementById('binId').value = s.binId || '';
         document.getElementById('apiKey').value = s.apiKey || '';
+        document.getElementById('statusCount').value = s.statusCount || 1;
     }
 }
 
@@ -277,72 +308,199 @@ function closeModal(id) {
     renderAssignments(); 
 }
 
-function openDetail(id) {
-    const work = state.assignments.find(a => a.id === id);
-    if(!work) return;
-    document.getElementById('detailTitle').innerText = work.name;
-    const grid = document.getElementById('studentGrid'); grid.innerHTML = '';
-    parseList(state.settings.studentList).forEach(n => {
-        const div = document.createElement('div');
-        div.className = `student-item ${work.doneList.includes(n) ? 'done' : ''}`;
-        div.innerText = n;
 
-        div.onmousedown = () => { isDragging = true; toggleStudent(n, div, work); };
-        div.onmouseenter = () => { if (isDragging) toggleStudent(n, div, work); };
-        grid.appendChild(div);
-    });
-    window.onmouseup = () => isDragging = false;
-    document.getElementById('deleteBtn').onclick = () => { 
-        if(confirm("確定刪除此任務？")) { state.assignments = state.assignments.filter(a => a.id !== id); saveData(); closeModal('detailModal'); } 
-    };
-    openModal('detailModal');
+function renderTotalListContent() {
+    const filterEl = document.getElementById('totalFilter');
+    const body = document.getElementById('totalListDynamicBody');
+    if (!filterEl || !body) return; // 防止元素不存在時報錯
+
+    const filterType = filterEl.value;
+    const studentList = parseList(state.settings.studentList);
+    const sorted = getSortedList();
+    
+    const html = sorted.map(a => {
+        let targets = [];
+        if (filterType === 'undone') {
+            // 篩選「完全沒被標記的人」
+            targets = studentList.filter(s => 
+                !a.doneList.some(item => (typeof item === 'object' ? item.id === s : item === s))
+            );
+        } else {
+            // 篩選「特定標記顏色的人」
+            const statusNum = parseInt(filterType);
+            targets = a.doneList
+                .filter(item => {
+                    // 相容舊資料：如果是字串且 statusNum 為 1，視為符合
+                    if (typeof item !== 'object') return statusNum === 1 && item;
+                    return item.status === statusNum;
+                })
+                .map(item => (typeof item === 'object' ? item.id : item));
+        }
+
+        return `<div style="padding:10px; border-bottom:1px solid #eee">
+            <span class="clickable-task" onclick="closeModal('totalListModal'); openDetail(${a.id})">${a.name}</span>: 
+            <span>${targets.join(', ') || '<span style="color:#ccc">無</span>'}</span>
+        </div>`;
+    }).join('');
+    
+    body.innerHTML = html || '<div style="text-align:center; color:#888; padding:20px;">此分類目前無名單</div>';
 }
 
+
 function toggleStudent(n, el, work) {
-    if (!work.doneList.includes(n)) { work.doneList.push(n); el.classList.add('done'); }
-    else { work.doneList = work.doneList.filter(x => x !== n); el.classList.remove('done'); }
+    const maxStatus = parseInt(state.settings.statusCount || 1);
+    
+    // 尋找該生紀錄
+    const recordIndex = work.doneList.findIndex(item => (typeof item === 'object' ? item.id === n : item === n));
+
+    if (recordIndex === -1) {
+        // 從「無」變「狀態1」
+        work.doneList.push({ id: n, status: 1 });
+    } else {
+        let currentRecord = work.doneList[recordIndex];
+        // 相容舊資料字串格式，字串視為狀態1
+        let currentStatus = typeof currentRecord === 'object' ? currentRecord.status : 1;
+        
+        if (currentStatus < maxStatus) {
+            // 切換到下一個狀態
+            work.doneList[recordIndex] = { id: n, status: currentStatus + 1 };
+        } else {
+            // 超過最大色數，回到「未點選」
+            work.doneList.splice(recordIndex, 1);
+        }
+    }
+    
+    // 即時更新 UI
+    updateStudentUI(n, el, work);
     saveDataQuietly();
+}
+
+// 抽取更新單個學生 UI 的邏輯 (為了讓 openDetail 和同步功能共用)
+function updateStudentUI(n, el, work) {
+    const record = work.doneList.find(item => (typeof item === 'object' ? item.id === n : item === n));
+    // 清除舊 class (包含您原本的 done)
+    el.classList.remove('done', 'status-1', 'status-2', 'status-3', 'status-4', 'status-5');
+    
+    if (record) {
+        const status = typeof record === 'object' ? record.status : 1;
+        el.classList.add(`status-${status}`);
+        if (status === 1) el.classList.add('done'); // 保持 CSS 綠色相容
+    }
 }
 
 function openReportModal() {
     const select = document.getElementById('reportStudentSelect');
     if(!select) return;
+    
+    // 1. 初始化座號選單
     const names = parseList(state.settings.studentList);
     select.innerHTML = names.map(s => `<option value="${s}">${s}</option>`).join('');
+    
+    // 2. 動態生成色系過濾選項 (同步設定中的切換色數)
+    const reportFilter = document.getElementById('reportFilter');
+    let filterHtml = `<option value="undone">未完成 (全部未點選者)</option>`;
+    const maxStatus = parseInt(state.settings.statusCount || 1);
+
+    for(let i=1; i<=maxStatus; i++) {
+        filterHtml += `<option value="${i}">${STATUS_NAMES[i]}</option>`;
+    }
+    reportFilter.innerHTML = filterHtml;
+
     generateStudentReport();
     openModal('studentReportModal');
 }
 
 function generateStudentReport() {
-    const num = document.getElementById('reportStudentSelect').value;
+    const num = document.getElementById('reportStudentSelect').value; // 學生座號
+    const filterType = document.getElementById('reportFilter').value; // 篩選類型
     const sorted = getSortedList();
-    const undone = sorted.filter(a => !a.doneList.includes(num));
-    document.getElementById('reportResult').innerHTML = undone.length 
-        ? undone.map(a => `<div class="report-link" onclick="closeModal('studentReportModal'); openDetail(${a.id})">${a.name}</div>`).join('')
-        : `<p style="text-align:center; font-size:1.2rem; margin-top:20px;">✅ 該生已完成所有任務！</p>`;
+    
+    let resultList = [];
+
+    if (filterType === 'undone') {
+        // 篩選出：該生完全不在 doneList 裡的任務
+        resultList = sorted.filter(a => 
+            !a.doneList.some(item => (typeof item === 'object' ? item.id === num : item === num))
+        );
+    } else {
+        // 篩選出：該生在 doneList 裡且 status 符合所選顏色的任務
+        const statusNum = parseInt(filterType);
+        resultList = sorted.filter(a => 
+            a.doneList.some(item => 
+                (typeof item === 'object' ? (item.id === num && item.status === statusNum) : (num === item && statusNum === 1))
+            )
+        );
+    }
+
+    const container = document.getElementById('reportResult');
+    if (resultList.length > 0) {
+        container.innerHTML = resultList.map(a => 
+            `<div class="report-link" onclick="closeModal('studentReportModal'); openDetail(${a.id})">${a.name}</div>`
+        ).join('');
+    } else {
+        const msg = filterType === 'undone' ? "✅ 該生已完成所有任務！" : "無此類別標記的任務。";
+        container.innerHTML = `<p style="text-align:center; font-size:1.2rem; margin-top:20px; color:#888;">${msg}</p>`;
+    }
+}
+
+function openDetail(id) {
+    const work = state.assignments.find(a => a.id === id);
+    if(!work) return;
+    
+    document.getElementById('detailTitle').innerText = work.name;
+    const grid = document.getElementById('studentGrid'); 
+    grid.innerHTML = '';
+
+    parseList(state.settings.studentList).forEach(n => {
+        const div = document.createElement('div');
+        div.className = `student-item`;
+        div.innerText = n;
+        
+        // 初始化顏色 (支援舊字串格式與新物件格式)
+        updateStudentUI(n, div, work);
+
+        div.onmousedown = () => { isDragging = true; toggleStudent(n, div, work); };
+        div.onmouseenter = () => { if (isDragging) toggleStudent(n, div, work); };
+        grid.appendChild(div);
+    });
+
+    window.onmouseup = () => isDragging = false;
+    
+    document.getElementById('deleteBtn').onclick = () => { 
+        if(confirm("確定刪除此任務？")) { 
+            state.assignments = state.assignments.filter(a => a.id !== id); 
+            saveData(); 
+            closeModal('detailModal'); 
+        } 
+    };
+    openModal('detailModal');
 }
 
 function openTotalListModal() {
-    const sorted = getSortedList();
     const container = document.getElementById('totalListContent');
-    const studentList = parseList(state.settings.studentList);
-    const totalStudentCount = studentList.length;
-    
-    const unfinishedAssignments = sorted.filter(a => a.doneList.length < totalStudentCount);
+    if (!container) return;
 
-    if (unfinishedAssignments.length === 0) {
-        container.innerHTML = `<div class="all-done-msg">✨ 任務都完成！ ✨</div>`;
-    } else {
-        container.innerHTML = unfinishedAssignments.map(a => {
-            const undone = studentList.filter(s => !a.doneList.includes(s));
-            return `<div style="padding:10px; border-bottom:1px solid #eee">
-                <span class="clickable-task" onclick="closeModal('totalListModal'); openDetail(${a.id})">${a.name}</span>: 
-                <span>${undone.join(', ') || '無'}</span>
-            </div>`;
-        }).join('');
+    // 1. 建立篩選選單 (補齊之前省略的 HTML)
+    let filterHtml = `
+        <div style="margin-bottom:15px; background:rgba(0,0,0,0.05); padding:10px; border-radius:8px;">
+            篩選顯示：<select id="totalFilter" onchange="renderTotalListContent()" style="padding:5px; border-radius:5px;">
+                <option value="undone">未完成 (全部未點選者)</option>`;
+    
+    // 根據設定的色數動態產生選項
+    const maxStatus = parseInt(state.settings.statusCount || 1);
+    for(let i=1; i<=maxStatus; i++) {
+        filterHtml += `<option value="${i}">${STATUS_NAMES[i]}</option>`;
     }
+    filterHtml += `</select></div><div id="totalListDynamicBody"></div>`;
+    
+    container.innerHTML = filterHtml;
+    
+    // 2. 執行初次渲染
+    renderTotalListContent(); 
     openModal('totalListModal');
 }
+
+
 
 function copyTotalList() {
     const content = document.getElementById('totalListContent');
