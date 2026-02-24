@@ -515,3 +515,50 @@ function importData(e) {
     reader.readAsText(e.target.files[0]);
 }
 function resetSystem() { if(confirm("確定重置系統？")) { localStorage.removeItem('MarkIt'); location.reload(); } }
+
+// --- 跨視窗即時同步功能 ---
+window.addEventListener('storage', (event) => {
+    // 確保監聽的是我們專屬的 key
+    if (event.key === 'MarkIt' && event.newValue) {
+        try {
+            // 1. 更新記憶體中的 state
+            state = JSON.parse(event.newValue);
+
+            // 2. 重新渲染主畫面的卡片 (未交人數等)
+            renderAssignments();
+
+            // 3. 進階處理：如果使用者目前正開著某個任務的詳細視窗，也要即時更新
+            const detailModal = document.getElementById('detailModal');
+            if (detailModal && detailModal.style.display === 'block') {
+                // 找到目前正在顯示的任務 ID
+                // (註：你的 openDetail 並沒有把 ID 存入全域，我們從標題或 state 尋找)
+                const currentTitle = document.getElementById('detailTitle').innerText;
+                const currentWork = state.assignments.find(a => a.name === currentTitle);
+                
+                if (currentWork) {
+                    // 重新刷一遍學生格子的狀態
+                    const grid = document.getElementById('studentGrid');
+                    const items = grid.querySelectorAll('.student-item');
+                    const studentList = parseList(state.settings.studentList);
+
+                    items.forEach((div, index) => {
+                        const studentName = studentList[index];
+                        if (currentWork.doneList.includes(studentName)) {
+                            div.classList.add('done');
+                        } else {
+                            div.classList.remove('done');
+                        }
+                    });
+                }
+            }
+            
+            // 4. 如果是在設定頁面，也可以考慮同步套用主題
+            applySettings();
+            
+        } catch (e) {
+            console.error("跨視窗同步失敗:", e);
+        }
+    }
+});
+
+
