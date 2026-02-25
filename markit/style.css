@@ -118,63 +118,70 @@ body { font-family: sans-serif; background: var(--bg); color: var(--text); margi
    4. 手機版 RWD 修正 (解決「完成」按鈕消失問題)
    ========================================= */
 @media (max-width: 768px) {
-    /* --- 1. Header 容器：改用相對定位，以便標題撐開 --- */
+    /* --- 1. Header 容器：強制垂直堆疊兩列，避免色系與標題重疊 --- */
     .detail-header-row {
         display: flex !important;
-        justify-content: space-between; /* 讓刪除和完成分別靠左右兩邊 */
-        align-items: center;
-        position: relative;
-        padding: 10px 8px;
-        min-height: 50px; /* 給予足夠高度防止重疊 */
+        flex-direction: column !important; /* 強制分層：第一層標題按鈕，第二層色系 */
+        gap: 12px;
+        padding: 12px 10px;
         background: rgba(0,0,0,0.03);
     }
 
-    /* 刪除按鈕 (左側固定) */
-    .btn-danger {
-        flex: 0 0 auto;
-        padding: 6px 10px !important;
-        min-width: 60px !important;
-        font-size: 13px;
-        z-index: 2; /* 確保在標題上方可點擊 */
+    /* --- 第一層：按鈕與標題的橫向容器 --- */
+    /* 這裡我們建立一個虛擬的列結構 */
+    .detail-header-row > *:not(#statusLegend) {
+        /* 如果您的標題和按鈕沒有被 div 包住，這段會套用到 Title, Delete, Confirm */
     }
 
-    /* 作業名稱 (中間強制加長) */
+    /* 為了精確控制，我們對 header 內的元素重新定義彈性佈局 */
+    .detail-header-row {
+        display: flex !important;
+    }
+
+    /* 重新定義第一列的排列 (標題左右夾擊) */
+    .detail-header-top-row {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    /* 標題：給予 100% 寬度的彈性，並取消寬度限制 */
     #detailTitle {
-        position: absolute; /* 脫離文檔流，強制居中並橫向延伸 */
-        left: 70px;  /* 避開左邊刪除按鈕 */
-        right: 70px; /* 避開右邊完成按鈕 */
+        flex: 1; /* 佔據所有剩餘空間 */
         text-align: center;
-        font-size: 1.1rem; /* 稍微縮小字級確保能塞下更多字 */
+        font-size: 1.2rem;
         font-weight: bold;
         color: var(--primary);
         
-        /* 允許文字橫向撐開，不換行 */
-        white-space: nowrap; 
-        overflow: hidden;
-        text-overflow: ellipsis; /* 如果真的太長才顯示... */
-        
-        margin: 0 !important;
-        pointer-events: none; /* 讓點擊可以穿透到下方的 header */
+        /* 修正：取消固定長度，讓它在寬度內盡量延伸 */
+        white-space: normal !important; 
+        word-break: break-all;
+        margin: 0 5px !important;
+        overflow: visible;
+        display: block;
     }
 
-    /* 完成按鈕 (右側固定) */
-    .btn-confirm {
-        flex: 0 0 auto;
+    /* 左右按鈕：固定寬度，不准伸展 */
+    .btn-danger, .btn-confirm {
+        flex: 0 0 auto; /* 不准長大也不准縮小 */
         padding: 6px 10px !important;
         min-width: 60px !important;
         font-size: 13px;
-        z-index: 2;
+        white-space: nowrap;
     }
 
-    /* --- 2. 圖例網格 (維持 grid) --- */
+    /* --- 2. 第二列：色系圖例 (確保它獨立在下方) --- */
     #statusLegend {
         display: grid !important;
+        /* 強制獨佔一行，不會跟標題重疊 */
         grid-template-columns: repeat(auto-fit, minmax(30%, 1fr)); 
-        gap: 5px;
-        margin-top: 10px;
+        gap: 6px;
         width: 100%;
-        /* 這裡是獨立的一行，因為 header 變成 flex 了，
-           如果您的結構中 legend 在 header 內，請確保 legend 也是 flex 的子元素或調整 HTML */
+        margin-top: 5px;
+        border-top: 1px solid rgba(0,0,0,0.05);
+        padding-top: 10px;
     }
 
     /* --- 3. 座號區塊：字體連動修正 --- */
@@ -185,7 +192,6 @@ body { font-family: sans-serif; background: var(--bg); color: var(--text); margi
     }
 
     .student-item {
-        /* 直接讀取全域連動變數 */
         font-size: var(--student-font-size) !important; 
         aspect-ratio: 1.8 / 1; 
         display: flex;
@@ -193,7 +199,6 @@ body { font-family: sans-serif; background: var(--bg); color: var(--text); margi
         justify-content: center;
     }
 }
-
 
 /* 導覽列靠右設定 */
 .nav-buttons { display: flex; flex: 1; justify-content: flex-end; align-items: center; gap: 10px; }
