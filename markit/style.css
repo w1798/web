@@ -129,11 +129,11 @@ body { font-family: sans-serif; background: var(--bg); color: var(--text); margi
     .detail-header-row {
         display: grid !important;
         /* 第二列需要三個區塊，所以定義三欄網格 */
-        grid-template-columns: repeat(3, 1fr) !important; 
-        row-gap: 12px;
-        background: rgba(0,0,0,0.03);
-        padding: 10px;
-        border-radius: 10px;
+        grid-template-columns: repeat(3, 1fr) !important;
+        grid-template-rows: auto auto !important;
+        row-gap: 8px;
+        padding: 5px 10px !important; /* 縮小上下內邊距 */
+        margin-top: 0 !important;      /* 確保外部沒有間距 */
         align-items: center;
     }
 
@@ -204,7 +204,7 @@ body { font-family: sans-serif; background: var(--bg); color: var(--text); margi
         grid-column: 1 / span 3;
         display: grid !important;
         /* 固定三欄，形成三個區塊 */
-        grid-template-columns: repeat(3, 1fr) !important; 
+        grid-template-columns: repeat(2, 1fr) !important; 
         gap: 0px;
         width: 100%;
         border-top: 1px solid rgba(0,0,0,0.05);
@@ -212,7 +212,7 @@ body { font-family: sans-serif; background: var(--bg); color: var(--text); margi
     }
 
     .legend-item {
-        font-size: 11px;
+        font-size: 12px;
         padding: 2px 1px;
         justify-content: center;
         white-space: nowrap;
