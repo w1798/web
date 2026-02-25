@@ -118,82 +118,102 @@ body { font-family: sans-serif; background: var(--bg); color: var(--text); margi
    4. 手機版 RWD 修正 (解決「完成」按鈕消失問題)
    ========================================= */
 @media (max-width: 768px) {
-    /* --- 1. Header 容器：強制垂直堆疊兩列，避免色系與標題重疊 --- */
+    /* 彈窗整體寬度優化 */
+    .modal-content {
+        padding: 12px;
+        width: 98% !important;
+        margin: 1vh auto;
+    }
+
+    /* --- 核心：詳情 Header 排版 --- */
     .detail-header-row {
-        display: flex !important;
-        flex-direction: column !important; /* 強制分層：第一層標題按鈕，第二層色系 */
-        gap: 12px;
-        padding: 12px 10px;
-        background: rgba(0,0,0,0.03);
-    }
-
-    /* --- 第一層：按鈕與標題的橫向容器 --- */
-    /* 這裡我們建立一個虛擬的列結構 */
-    .detail-header-row > *:not(#statusLegend) {
-        /* 如果您的標題和按鈕沒有被 div 包住，這段會套用到 Title, Delete, Confirm */
-    }
-
-    /* 為了精確控制，我們對 header 內的元素重新定義彈性佈局 */
-    .detail-header-row {
-        display: flex !important;
-    }
-
-    /* 重新定義第一列的排列 (標題左右夾擊) */
-    .detail-header-top-row {
-        display: flex;
-        width: 100%;
+        display: grid !important;
+        /* 第一列：[刪除] [標題] [完成] */
+        /* 第二列：[色系圖例] */
+        grid-template-columns: 65px 1fr 65px !important; 
+        grid-template-rows: auto auto; 
+        row-gap: 12px;
+        column-gap: 5px;
         align-items: center;
-        justify-content: space-between;
-        gap: 8px;
+        background: rgba(0,0,0,0.03);
+        padding: 10px 5px;
+        border-radius: 10px;
     }
 
-    /* 標題：給予 100% 寬度的彈性，並取消寬度限制 */
+    /* 標題：佔據中間，強制不換行以容納更多字 */
     #detailTitle {
-        flex: 1; /* 佔據所有剩餘空間 */
+        grid-column: 2 / 3;
+        grid-row: 1 / 2;
         text-align: center;
-        font-size: 1.2rem;
+        font-size: 1.1rem; /* 稍微調小，確保 10 個字能塞下 */
         font-weight: bold;
         color: var(--primary);
+        margin: 0 !important;
         
-        /* 修正：取消固定長度，讓它在寬度內盡量延伸 */
-        white-space: normal !important; 
-        word-break: break-all;
-        margin: 0 5px !important;
-        overflow: visible;
+        /* 容納 10 個中文字的關鍵：不換行，溢出才處理 */
+        white-space: nowrap !important;
+        overflow: hidden;
+        text-overflow: ellipsis;
         display: block;
+        width: 100%;
     }
 
-    /* 左右按鈕：固定寬度，不准伸展 */
-    .btn-danger, .btn-confirm {
-        flex: 0 0 auto; /* 不准長大也不准縮小 */
-        padding: 6px 10px !important;
-        min-width: 60px !important;
+    /* 刪除按鈕：固定在左側第一列 */
+    .btn-danger {
+        grid-column: 1 / 2;
+        grid-row: 1 / 2;
+        padding: 6px 0 !important;
+        width: 60px !important;
         font-size: 13px;
+        justify-self: start;
         white-space: nowrap;
     }
 
-    /* --- 2. 第二列：色系圖例 (確保它獨立在下方) --- */
-    #statusLegend {
-        display: grid !important;
-        /* 強制獨佔一行，不會跟標題重疊 */
-        grid-template-columns: repeat(auto-fit, minmax(30%, 1fr)); 
-        gap: 6px;
-        width: 100%;
-        margin-top: 5px;
-        border-top: 1px solid rgba(0,0,0,0.05);
-        padding-top: 10px;
+    /* 完成按鈕：固定在右側第一列 */
+    .btn-confirm {
+        grid-column: 3 / 4;
+        grid-row: 1 / 2;
+        padding: 6px 0 !important;
+        width: 60px !important;
+        font-size: 13px;
+        justify-self: end;
+        white-space: nowrap;
     }
 
-    /* --- 3. 座號區塊：字體連動修正 --- */
+    /* 色系圖例：強制排在標題下方 (第二列) */
+    #statusLegend {
+        grid-column: 1 / span 3; /* 橫跨三欄寬度 */
+        grid-row: 2 / 3;
+        display: grid !important;
+        /* 設定一列 2~3 個標籤 */
+        grid-template-columns: repeat(auto-fit, minmax(30%, 1fr)); 
+        gap: 5px;
+        width: 100%;
+        border-top: 1px solid rgba(0,0,0,0.05);
+        padding-top: 8px;
+    }
+
+    .legend-item {
+        font-size: 12px;
+        padding: 3px 5px;
+        background: white;
+        border-radius: 4px;
+        white-space: nowrap;
+    }
+
+    /* --- 座號區塊：連動大小與個數 --- */
     .student-grid {
         display: grid !important;
+        /* 讀取連動變數 --student-cols */
         grid-template-columns: repeat(var(--student-cols), 1fr) !important; 
         gap: 6px !important;
+        margin-top: 15px;
     }
 
     .student-item {
+        /* 讀取連動變數 --student-font-size */
         font-size: var(--student-font-size) !important; 
-        aspect-ratio: 1.8 / 1; 
+        aspect-ratio: 1.2 / 1; /* 調整比例，更符合手機點擊 */
         display: flex;
         align-items: center;
         justify-content: center;
