@@ -206,21 +206,31 @@ body { font-family: sans-serif; background: var(--bg); color: var(--text); margi
         /* 固定三欄，形成三個區塊 */
         grid-template-columns: repeat(3, 1fr) !important; 
         gap: 0px;
-        width: 95%;
+        width: 100%;
         border-top: 1px solid rgba(0,0,0,0.05);
         padding-top: 5px;
     }
 
     .legend-item {
-        font-size: 12px;
-        padding: 4px 2px;
+        font-size: 11px;
+        padding: 2px 1px;
         justify-content: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: clip;
         background: white;
         border-radius: 4px;
         text-align: center;
         box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
-
+    
+    #statusLegend .status-dot {
+        /* 5. 縮小圓點尺寸 */
+        width: 6px !important;
+        height: 6px !important;
+        flex-shrink: 0; /* 防止圓點被擠扁 */
+    }
+    
     /* --- 座號區塊：連動大小與個數 --- */
     .student-grid {
         display: grid !important;
