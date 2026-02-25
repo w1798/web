@@ -11,7 +11,7 @@
     --color-3: #d81b60; /* 胭脂紅 */
     --color-4: #8e24aa; /* 羅蘭紫 */
     --color-5: #546e7a; /* 石板灰 */
-    --color-6: #228B22; /* 深林綠 */
+    --color-6: #52b788; /* 深林綠 */
 }
 
 /* 湖水藍 (主色) */
@@ -30,7 +30,7 @@
 .student-item.status-5 { background-color: #546e7a !important; color: white; }
 
 /* 深林綠 */
-.student-item.status-6 { background-color: #228B22 !important; color: white; }
+.student-item.status-6 { background-color: #52b788 !important; color: white; }
 
 /* 讓總清單的篩選選單好看一點 */
 .filter-select {
