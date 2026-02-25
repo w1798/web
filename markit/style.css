@@ -118,73 +118,144 @@ body { font-family: sans-serif; background: var(--bg); color: var(--text); margi
    4. 手機版 RWD 修正 (解決「完成」按鈕消失問題)
    ========================================= */
 @media (max-width: 768px) {
-    /* --- 核心：Header 欄位比例重新分配 --- */
+    /* 彈窗整體優化 */
+    .modal-content {
+        padding: 12px;
+        width: 98% !important;
+        margin: 1vh auto;
+    }
+
+    /* --- 核心：詳情 Header 排版 --- */
     .detail-header-row {
         display: grid !important;
-        /* 將左右按鈕的空間縮到最小 (50px)，將剩餘所有空間全部給中間標題 */
-        grid-template-columns: 50px 1fr 50px !important; 
-        column-gap: 2px; /* 極小化間距，擠出空間給文字 */
-        padding: 8px 4px;
-        align-items: center;
+        /* 改為三欄架構，但第一列會橫跨所有欄位 */
+        grid-template-columns: repeat(3, 1fr) !important; 
+        row-gap: 12px;
+        background: rgba(0,0,0,0.03);
+        padding: 10px;
+        border-radius: 10px;
     }
 
-    /* 標題：調整字體與顯示邏輯 */
+    /* 建立一個橫跨整排的容器（如果 HTML 結構允許），
+       或直接讓標題與按鈕透過 order 排列並橫跨 */
+    
+    /* 刪除按鈕：置右對齊的第一個 */
+    .btn-danger {
+        grid-column: 1 / span 3; /* 橫跨整行，不受網格限制 */
+        grid-row: 1 / 2;
+        display: flex !important;
+        justify-content: flex-end; /* 整體置右 */
+        align-items: center;
+        
+        /* 這裡利用 margin-right 推開標題 */
+        margin-right: auto; /* 這會把它推到最左邊，如果你要「全部靠右」，請刪除這行 */
+        
+        /* 為了達成你說的 [刪除] [標題] [完成] 全部靠右，我們改用以下設定： */
+        position: relative; 
+        width: fit-content !important;
+        padding: 6px 12px !important;
+        font-size: 13px;
+        white-space: nowrap;
+        justify-self: end; /* 靠右 */
+        margin-right: 170px; /* 留位置給標題和完成 */
+    }
+
+    /* --- 重新設計第一列：更簡單的做法是讓它們在同一行 Flex --- */
+    /* 假設你的標題 ID 是 #detailTitle */
     #detailTitle {
-        grid-column: 2 / 3;
-        text-align: center;
-        /* 1. 稍微縮小字體 (1.1rem 約 17px)，這是容納 10 個字的關鍵 */
-        font-size: 1.1rem; 
+        grid-column: 1 / span 3; /* 橫跨整行！這解決了長度問題 */
+        grid-row: 1 / 2;
+        
+        display: flex !important;
+        justify-content: flex-end; /* 全部內容向右靠齊 */
+        align-items: center;
+        gap: 10px; /* 空一格的效果 */
+        
+        font-size: 1.15rem;
         font-weight: bold;
         color: var(--primary);
-        margin: 0 !important;
+        text-align: right;
         
-        /* 2. 允許標題在必要時「微幅壓縮」字距 */
-        letter-spacing: -0.5px;
-        
-        /* 3. 關鍵：如果 10 個字還是塞不下，改為「自動換行」而不是出現 ... */
-        /* 如果您堅持要一行，請保持 nowrap；但建議用 normal 避免字被切掉 */
-        white-space: normal !important; 
-        line-height: 1.1;
-        max-height: 2.4em; /* 最多顯示兩行，超過才切掉 */
-        overflow: hidden;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
+        /* 確保不換行且長度足夠 */
+        white-space: nowrap !important;
+        overflow: visible; 
+        width: 100%;
+        padding-right: 75px; /* 留給右邊「完成」按鈕的位置 */
     }
 
-    /* 刪除與完成按鈕：極小化處理 */
-    .btn-danger, .btn-confirm {
-        padding: 5px 0 !important;
-        width: 48px !important; /* 縮小按鈕寬度 */
-        min-width: 48px !important;
-        font-size: 12px; /* 縮小按鈕文字 */
-        background: none !important; /* 改為透明底色或輕量化，減少視覺壓迫 */
-        border: 1px solid currentColor !important;
-        border-radius: 4px;
+    /* 為了精確達成 [刪除] 空格 [標題] 空格 [完成] 且全部置右 */
+    /* 我們利用絕對定位或負邊距來微調按鈕位置 */
+
+    .btn-danger {
+        grid-column: 1 / span 3;
+        grid-row: 1 / 2;
+        justify-self: end;
+        margin-right: 230px; /* 根據標題長度調整，或用 Flex 包裹 */
+    }
+
+    /* 修正：直接針對 header 內元素進行 Flex 佈局 */
+    .detail-header-row {
+        display: flex !important;
+        flex-direction: column !important; /* 上下分層 */
+    }
+
+    /* 第一行：功能列 */
+    .header-top-line {
+        display: flex;
+        justify-content: flex-end; /* 置右對齊 */
+        align-items: center;
+        gap: 12px; /* 空一格的效果 */
+        width: 100%;
+    }
+
+    #detailTitle {
+        flex: 1; /* 讓標題佔據剩餘空間 */
+        text-align: right;
+        margin: 0 !important;
+        font-size: 1.1rem;
         white-space: nowrap;
     }
 
-    .btn-danger { color: #dc3545 !important; justify-self: start; }
-    .btn-confirm { color: #28a745 !important; justify-self: end; }
-
-    /* --- 圖例與座號保持連動 --- */
-    #statusLegend {
-        grid-column: 1 / span 3;
-        display: grid !important;
-        grid-template-columns: repeat(auto-fit, minmax(30%, 1fr)); 
-        gap: 4px;
-        margin-top: 8px;
+    .btn-danger, .btn-confirm {
+        flex: 0 0 auto;
+        padding: 6px 12px !important;
+        font-size: 13px;
+        min-width: 60px;
     }
 
+    /* --- 第二列：色系圖例 (維持原樣) --- */
+    #statusLegend {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important; /* 固定三欄 */
+        gap: 5px;
+        width: 100%;
+        border-top: 1px solid rgba(0,0,0,0.05);
+        padding-top: 8px;
+    }
+
+    .legend-item {
+        font-size: 12px;
+        padding: 3px 2px;
+        justify-content: center;
+        background: white;
+        border-radius: 4px;
+        text-align: center;
+    }
+
+    /* --- 座號區塊：連動大小與個數 --- */
     .student-grid {
         display: grid !important;
         grid-template-columns: repeat(var(--student-cols), 1fr) !important; 
-        gap: 5px !important;
+        gap: 6px !important;
+        margin-top: 15px;
     }
 
     .student-item {
-        font-size: var(--student-font-size) !important;
+        font-size: var(--student-font-size) !important; 
         aspect-ratio: 1.2 / 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 }
 
