@@ -118,54 +118,94 @@ body { font-family: sans-serif; background: var(--bg); color: var(--text); margi
    4. 手機版 RWD 修正 (解決「完成」按鈕消失問題)
    ========================================= */
 @media (max-width: 768px) {
-    body { padding: 10px; }
-
-    /* 彈窗 Header 改為換行佈局 */
+    /* 1. 調整 Header 容器：改為垂直堆疊 (第一列與第二列) */
     .detail-header-row {
-        flex-wrap: wrap; 
-        justify-content: center;
-        gap: 10px;
-        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        padding: 12px;
+        background: rgba(0,0,0,0.03);
     }
 
-    /* 任務名稱佔滿一行 */
+    /* 2. 第一列：三欄佈局 (作業名、刪除、完成) */
+    /* 假設您的 HTML 結構中，這三個元素被放在同一個層級，或您可以包裹一層 div */
+    /* 如果您的結構是 [Title, DeleteBtn, Legend, ConfirmBtn]，我們用 order 來排序 */
+    
     #detailTitle {
-        max-width: 100% !important;
-        width: 100%;
-        text-align: center;
-        font-size: 1.2rem;
-        margin-bottom: 5px;
+        order: 1;
+        max-width: 45% !important; /* 確保名稱不佔滿，留給按鈕 */
+        text-align: left !important;
+        font-size: 1.1rem;
+        margin: 0 !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
-    /* 圖例在手機版自動換行並置中 */
+    /* 刪除按鈕 (中間，較短) */
+    .btn-danger {
+        order: 2;
+        flex: 0 0 auto !important;
+        min-width: 60px !important;
+        padding: 6px 10px !important;
+        font-size: 13px;
+    }
+
+    /* 完成按鈕 (右邊，較長) */
+    .btn-confirm {
+        order: 3;
+        flex: 1 !important; /* 佔據剩餘右側空間 */
+        padding: 8px 15px !important;
+        font-size: 14px;
+        text-align: center;
+    }
+
+    /* 強制第一列排成橫向 */
+    /* 我們利用一個虛擬的 row 控制排版，或直接在容器加設定 */
+    .detail-header-row {
+        display: grid;
+        grid-template-columns: auto auto 1fr; /* 寬度分配：自適應、自適應、剩餘 */
+        align-items: center;
+    }
+
+    /* 3. 第二列：色系圖例 (關鍵修改) */
     #statusLegend {
-        justify-content: center;
+        grid-column: 1 / span 3; /* 跨越三欄，獨佔下方空間 */
+        display: grid !important;
+        /* 設定一列最少2個，最多3個，自動填滿 */
+        grid-template-columns: repeat(auto-fit, minmax(30%, 1fr)); 
+        gap: 6px;
+        margin-top: 10px;
+        order: 4;
         width: 100%;
-        gap: 4px;
-        order: 2; /* 放在按鈕下面或中間 */
     }
 
     .legend-item {
+        justify-content: flex-start;
         font-size: 12px;
-        padding: 2px 4px;
+        padding: 4px 6px;
+        background: white;
+        border: 1px solid rgba(0,0,0,0.05);
+        width: 100%; /* 確保填滿網格 */
     }
 
-    /* 強制讓按鈕不會被擠壓，並在手機版稍微加寬好點擊 */
-    .detail-header-row button {
-        flex: 1; 
-        min-width: 80px;
-        order: 3;
-        font-size: 14px;
-        padding: 10px;
+    /* 4. 底下號碼區塊調整 */
+    .student-grid {
+        grid-template-columns: repeat(5, 1fr) !important; /* 手機版建議 5 欄比較好點選 */
+        gap: 6px;
     }
-
-    /* 主網格改為兩列 */
-    .main-layout { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
     
-    /* 導覽列優化 */
-    header { flex-direction: column; padding: 10px; }
-    .nav-buttons { justify-content: center; width: 100%; flex-wrap: wrap; }
-    .danger-zone { margin: 5px 0 !important; }
+    .student-item {
+        font-size: 14px;
+        aspect-ratio: 1 / 1; /* 號碼改為正方形，更像點名簿 */
+    }
+
+    /* 彈窗內容微調 */
+    .modal-content {
+        padding: 15px;
+        width: 98% !important;
+        margin: 1vh auto;
+    }
 }
 
 /* 導覽列靠右設定 */
