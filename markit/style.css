@@ -212,7 +212,7 @@ body { font-family: sans-serif; background: var(--bg); color: var(--text); margi
     }
 
     .legend-item {
-        font-size: 12px;
+        font-size: 14px;
         padding: 2px 1px;
         justify-content: center;
         white-space: nowrap;
