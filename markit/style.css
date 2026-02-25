@@ -1,4 +1,6 @@
-/* 基礎設定與變數 */
+/* =========================================
+   1. 基礎設定與顏色變數
+   ========================================= */
 :root { 
     --primary: #8fb1e9; 
     --bg: #f0f4f8; 
@@ -6,6 +8,7 @@
     --card: #fff; 
     --grid-cols: 5; 
     --student-cols: 7; 
+    /* 狀態顏色變數 */
     --color-1: #8fb1e9; /* 湖水藍 */
     --color-2: #ff9800; /* 活力橙 */
     --color-3: #d81b60; /* 胭脂紅 */
@@ -14,68 +17,50 @@
     --color-6: #52b788; /* 深林綠 */
 }
 
-/* 湖水藍 (主色) */
-.student-item.status-1 { background-color: var(--primary) !important; color: white; } 
+/* --- 學生方格顏色樣式 --- */
+.student-item.status-1 { background-color: var(--color-1) !important; color: white; } 
+.student-item.status-2 { background-color: var(--color-2) !important; color: white; } 
+.student-item.status-3 { background-color: var(--color-3) !important; color: white; } 
+.student-item.status-4 { background-color: var(--color-4) !important; color: white; } 
+.student-item.status-5 { background-color: var(--color-5) !important; color: white; }
+.student-item.status-6 { background-color: var(--color-6) !important; color: white; }
+.student-item.done { background-color: var(--primary); color: white; }
 
-/* 活力橙 */
-.student-item.status-2 { background-color: #ff9800 !important; color: white; } 
-
-/* 胭脂紅 (稍微深一點點的質感紅) */
-.student-item.status-3 { background-color: #d81b60 !important; color: white; } 
-
-/* 羅蘭紫 */
-.student-item.status-4 { background-color: #8e24aa !important; color: white; } 
-
-/* 石板灰 */
-.student-item.status-5 { background-color: #546e7a !important; color: white; }
-
-/* 深林綠 */
-.student-item.status-6 { background-color: #52b788 !important; color: white; }
-
-/* 讓總清單的篩選選單好看一點 */
-.filter-select {
-    margin-left: 10px;
-    padding: 5px;
-    border-radius: 5px;
-    border: 1px solid var(--primary);
+/* =========================================
+   2. 詳情彈窗 Header 排版 (電腦版)
+   ========================================= */
+.detail-header-row {
+    display: flex;
+    align-items: center; 
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 10px 15px;
+    background: rgba(0,0,0,0.04);
+    border-radius: 12px;
+    margin-bottom: 15px;
 }
 
-
-/* 圖例小圓點的著色 */
-.status-dot.status-1 { background-color: var(--color-1); }
-.status-dot.status-2 { background-color: var(--color-2); }
-.status-dot.status-3 { background-color: var(--color-3); }
-.status-dot.status-4 { background-color: var(--color-4); }
-.status-dot.status-5 { background-color: var(--color-5); }
-.status-dot.status-6 { background-color: var(--color-6); }
-
-
-/* 如果您想讓文字也帶有顏色，可以加入以下設定 */
-.legend-item:nth-child(1) { color: #5a8bd8; } /* 湖水藍文字稍微深一點方便閱讀 */
-.legend-item:nth-child(2) { color: #e68a00; } /* 活力橙 */
-.legend-item:nth-child(3) { color: #d81b60; } /* 胭脂紅 */
-.legend-item:nth-child(4) { color: #8e24aa; } /* 羅蘭紫 */
-.legend-item:nth-child(5) { color: #546e7a; } /* 石板灰 */
-.legend-item:nth-child(6) { color: #52b788; } /* 深林綠 */
-
-
-/* 任務名稱字體稍微縮小一點，避免佔位太多 */
 #detailTitle {
-    font-size: 1.5rem;      /* 稍微縮小字級（原本是2.5em太大了），有助於排在同一列 */
-    margin: 0;             /* 移除邊距讓它跟按鈕對齊 */
-    color: var(--primary); 
-    
-    /* --- 核心修改：加大空間 --- */
-    max-width: 40%;        /* 從 20% 增加到 40% 或更高 */
-    white-space: nowrap;   /* 保持不換行 */
-    overflow: visible;     /* 允許文字溢出而不變 ... */
-    text-overflow: clip;   /* 移除省略號 */
-    flex-shrink: 0;        /* 確保名稱不會被旁邊的圖例擠扁 */
-    margin-top: 10px;      /* 調整與頂部的距離 */
-    margin-bottom: 15px;   /* 調整與下方座號格子的距離 */
-    color: var(--primary); /* 若想讓顏色跟隨主題色，可加上這行 */
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: var(--primary);
+    margin: 0;
+    max-width: 35%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 0;
 }
 
+/* 圖例區塊 */
+#statusLegend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 6px;
+    flex: 1; /* 電腦版佔據剩餘空間 */
+    font-size: 14px;
+}
 
 .legend-item {
     display: flex;
@@ -83,57 +68,110 @@
     gap: 4px;
     padding: 2px 6px;
     border-radius: 4px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+/* 狀態圓點 */
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+}
+.status-dot.status-1 { background-color: var(--color-1); }
+.status-dot.status-2 { background-color: var(--color-2); }
+.status-dot.status-3 { background-color: var(--color-3); }
+.status-dot.status-4 { background-color: var(--color-4); }
+.status-dot.status-5 { background-color: var(--color-5); }
+.status-dot.status-6 { background-color: var(--color-6); }
+
+/* 圖例文字顏色對應 */
+.legend-item:nth-child(1) { color: #5a8bd8; } 
+.legend-item:nth-child(2) { color: #e68a00; } 
+.legend-item:nth-child(3) { color: #d81b60; } 
+.legend-item:nth-child(4) { color: #8e24aa; } 
+.legend-item:nth-child(5) { color: #546e7a; } 
+.legend-item:nth-child(6) { color: #52b788; }
+
+/* =========================================
+   3. 全域元件樣式
+   ========================================= */
+* { box-sizing: border-box; }
+body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; min-height: 100vh; display: flex; flex-direction: column; }
+
+.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999; }
+.modal-content { background: var(--card); margin: 2vh auto; padding: 25px; border-radius: 20px; position: relative; max-width: 95%; }
+.modal-full { height: 92vh; display: flex; flex-direction: column; margin-left: auto; margin-right: auto; }
+
+.scroll-box { flex: 1; overflow-y: auto; background: rgba(0,0,0,0.03); border-radius: 12px; padding: 15px; }
+.student-grid { display: grid; grid-template-columns: repeat(var(--student-cols), 1fr); gap: 8px; }
+
+/* 按鈕樣式 */
+.btn-confirm { background: #28a745; color: white; border: none; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+.btn-danger { background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; padding: 8px 15px; }
+.nav-btn { font-size: 1rem; padding: 8px 15px; border: none; border-radius: 8px; cursor: pointer; background: rgba(150,150,150,0.1); }
+
+/* =========================================
+   4. 手機版 RWD 修正 (解決「完成」按鈕消失問題)
+   ========================================= */
+@media (max-width: 768px) {
+    body { padding: 10px; }
+
+    /* 彈窗 Header 改為換行佈局 */
+    .detail-header-row {
+        flex-wrap: wrap; 
+        justify-content: center;
+        gap: 10px;
+        padding: 10px;
+    }
+
+    /* 任務名稱佔滿一行 */
+    #detailTitle {
+        max-width: 100% !important;
+        width: 100%;
+        text-align: center;
+        font-size: 1.2rem;
+        margin-bottom: 5px;
+    }
+
+    /* 圖例在手機版自動換行並置中 */
+    #statusLegend {
+        justify-content: center;
+        width: 100%;
+        gap: 4px;
+        order: 2; /* 放在按鈕下面或中間 */
+    }
+
+    .legend-item {
+        font-size: 12px;
+        padding: 2px 4px;
+    }
+
+    /* 強制讓按鈕不會被擠壓，並在手機版稍微加寬好點擊 */
+    .detail-header-row button {
+        flex: 1; 
+        min-width: 80px;
+        order: 3;
+        font-size: 14px;
+        padding: 10px;
+    }
+
+    /* 主網格改為兩列 */
+    .main-layout { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
     
-    /* 在這裡調整大小 */
-    font-size: 16px;      /* 網頁建議 14px-16px */
-    font-weight: 500;    /* 稍微加粗一點比較好閱讀 */
-    white-space: nowrap; /* 確保 1.湖水藍 不會被斷成兩行 */
-    background: rgba(0,0,0,0.05); /* 給標籤一個淡淡的底色 */
+    /* 導覽列優化 */
+    header { flex-direction: column; padding: 10px; }
+    .nav-buttons { justify-content: center; width: 100%; flex-wrap: wrap; }
+    .danger-zone { margin: 5px 0 !important; }
 }
 
+/* 導覽列靠右設定 */
+.nav-buttons { display: flex; flex: 1; justify-content: flex-end; align-items: center; gap: 10px; }
+.danger-zone { margin: 0 20px; background: #fff1f0; border: 1px solid #ffa39e; border-radius: 8px; }
 
-
-/* 按鈕群組 */
-.header-action-btns {
-    display: flex;
-    gap: 5px;
-}
-
-.header-action-btns button {
-    padding: 5px 10px;
-    font-size: 14px;
-    white-space: nowrap;
-}
-
-
-/* 讓 header 變為橫向一列 */
-.detail-header-row {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start; /* 關鍵：從左邊開始排，不要分散 */
-    gap: 0px;                    /* 標題、按鈕、圖例之間的間距 */
-    padding: 8px 12px;
-}
-
-/* 圖例在中間自動伸縮 */
-#statusLegend {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-start; /* 關鍵：標籤與標籤靠左對齊 */
-    gap: 4px;                    /* 1.湖水藍 和 2.活力橙 之間的距離，數字越小越擠 */
-    flex: 0 1 auto;              /* 關鍵：不要強制撐開佔據所有空間 */
-    font-size: 13px;
-    margin: 0 5px;               /* 稍微跟旁邊的按鈕隔開就好 */
-}
-
-
-
-/* 縮小按鈕寬度，讓中間圖例空間更大 */
-.detail-header-row button {
-    padding: 6px 15px;
-    min-width: 70px;
-    white-space: nowrap;
-}
 
 /* 主題設定 (保留您原本的所有主題) */
 body[data-theme="soft"] { --primary: #8fb1e9; --bg: #f0f4f8; --text: #333; --card: #fff; }
