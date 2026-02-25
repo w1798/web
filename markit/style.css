@@ -59,7 +59,7 @@
     justify-content: flex-start;
     gap: 6px;
     flex: 1; /* 電腦版佔據剩餘空間 */
-    font-size: 14px;
+    font-size: 16px;
 }
 
 .legend-item {
@@ -205,10 +205,10 @@ body { font-family: sans-serif; background: var(--bg); color: var(--text); margi
         display: grid !important;
         /* 固定三欄，形成三個區塊 */
         grid-template-columns: repeat(3, 1fr) !important; 
-        gap: 6px;
+        gap: 0px;
         width: 100%;
         border-top: 1px solid rgba(0,0,0,0.05);
-        padding-top: 10px;
+        padding-top: 5px;
     }
 
     .legend-item {
