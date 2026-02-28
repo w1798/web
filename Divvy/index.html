@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 股息管家 · 股息紀錄本</title>
+    <link rel="stylesheet" href="style.css?ver=1.00">
+</head>
+<body>
+<div class="container">
+    <!-- 頁首 -->
+    <div class="app-header">
+        <div class="logo">
+            <h1>📈 股息管家 · 股息紀錄本</h1>
+            <p>輸入購買紀錄和貼上配息資訊 · 自動計算應得股息(會自動減去手續費10元)</p>
+        </div>
+        <div class="stock-selector">
+            <select id="stockSelect">
+                <option value="">📌 選擇股票代號</option>
+            </select>
+            <button class="btn btn-primary" id="addStockBtn">➕ 新增</button>
+            <button class="btn btn-outline" id="editStockBtn">✏️ 編輯</button>　
+            <button class="btn btn-outline" id="deleteStockBtn">🗑️ 刪除</button>　
+            <button class="btn btn-outline" id="exportDataBtn">📤 匯出</button>
+            <input type="file" id="importFile" accept=".json" style="display: none;">
+            <button class="btn btn-outline" id="importDataBtn">📥 匯入</button>　
+            <button class="btn btn-outline" id="cloudSettingsBtn">☁️ 雲端</button>
+            <button class="btn btn-outline" id="uploadCloudBtn">⬆️ 上傳</button>
+            <button class="btn btn-outline" id="downloadCloudBtn">⬇️ 下載</button>　
+            <button class="btn btn-outline" id="resetDataBtn">🔄 重置</button>
+
+        </div>
+    </div>
+
+    <!-- 主要兩欄 -->
+    <div class="main-grid">
+        <!-- 左欄：購入紀錄管理 -->
+        <div class="left-panel">
+            <div class="panel-title">
+                <span>📋 購入明細</span>
+                <span id="totalSharesBadge" class="stock-badge" style="margin-left: auto;">總股數: 0</span>
+                <button class="btn btn-outline" id="quickAddBtn" style="padding: 5px 12px; margin-left: 10px;">⚡ 快速輸入</button>
+            </div>
+
+            <!-- 新增購入表單 -->
+            <div class="input-group">
+                <div class="form-row" style="align-items: center;">
+                    <div class="form-field" style="flex: 1;">
+                        <label>📅 購入日期</label>
+                        <input type="text" id="purchaseDate" value="2026-01-01" style="width: 100%;">
+                    </div>
+                    <div class="form-field" style="flex: 1;">
+                        <label>🧾 股數 (可加k)</label>
+                        <input type="text" id="purchaseShares" placeholder="例: 200 或 2.3k" style="width: 100%;">
+                    </div>
+                    <button class="btn btn-success" id="addPurchaseBtn" style="height: 45px; margin-top: 20px;">➕ 新增</button>
+                </div>
+                <div class="hint">💡 股數可直接寫數字，或加 k 代表張數 (2.3k = 2300股)</div>
+            </div>
+
+            <!-- 購入列表 -->
+            <div class="purchases-list" id="purchasesList">
+                <!-- 動態產生 -->
+            </div>
+        </div>
+
+        <!-- 右欄：股息計算結果 -->
+        <div class="right-panel">
+        
+            <div class="panel-title">
+                <!-- 左邊：顯示股票名稱 + "股息總和" -->
+                <span id="stockDividendTitle">📊 股息總和</span>
+                
+                <!-- 右邊：顯示實際的總金額 -->
+                <div class="total-badge" id="totalBadge">
+                    總股息: <span id="headerTotal">0</span>元
+                </div>
+            </div>
+            
+            <!-- 股息表格 -->
+            <table class="dividend-table" id="dividendTable">
+                <thead>
+                    <tr><th>發放日</th><th>現金股息</th><th>參加持股數</th><th>股息小計</th></tr>
+                </thead>
+                <tbody id="dividendTbody">
+                    <tr><td colspan="4" style="text-align:center; color:#888;">尚未貼入股息資料</td></tr>
+                </tbody>
+            </table>
+
+            <!-- 原總計卡片 -->
+            <div class="total-card-small" id="totalCard">
+                <div class="total-value" id="totalDividend">0</div>
+            </div>
+        </div>
+    </div>
+    <!-- 頁尾作者資訊 -->
+    <footer>
+        <a href="https://w1798.github.io/web/" target="_blank">&copy; 2026<script>
+            const y = new Date().getFullYear();
+            if (y > 2026) document.write("-" + y);
+        </script> Charles Nextime</a> · <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">GPLv3</a>
+        <span id="busuanzi_container_page_pv">
+    本頁使用量 <span id="busuanzi_value_page_pv"></span> 次
+        </span>
+
+    </footer>
+</div>
+
+<!-- 模態框：新增/編輯股票 + 貼入配息 (滿版) -->
+<div class="modal fullscreen" id="stockModal">
+    <div class="modal-content fullscreen">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <h2 id="modalTitle" style="margin: 0;">📌 新增股票並貼入配息</h2>
+            <button class="btn btn-success" id="parseAndSaveBtn" style="padding:12px 30px; font-size:1.1em;">💾 解析並儲存此股票</button>
+            <span class="close" id="closeModal" style="font-size: 2em; cursor: pointer;">&times;</span>
+        </div>
+        
+        <!-- 股票代號輸入 + 連結 + 別名 -->
+        <div style="margin: 20px 0; display: flex; gap: 20px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 200px;">
+                <label style="font-weight:600; display:block; margin-bottom:8px;">股票代號</label>
+                <input type="text" id="newStockCode" placeholder="例: 0056" style="width: 120px; padding:12px; border-radius:15px; border:2px solid #e2e8f0; font-size:1.1em; text-align: center;">
+            </div>
+            <div style="flex: 2; min-width: 250px;">
+                <label style="font-weight:600; display:block; margin-bottom:8px;">股票別名 (選擇性)</label>
+                <input type="text" id="stockAlias" placeholder="例: 元大高股息" style="width: 100%; padding:12px; border-radius:15px; border:2px solid #e2e8f0; font-size:1.1em;">
+            </div>
+            <div style="display: flex; align-items: flex-end;">
+                <a href="#" id="stockLink" target="_blank" style="white-space: nowrap; background: #f0f4f8; padding:12px 20px; border-radius:15px; text-decoration: none; color: #1e3c72; font-weight:500;">🔗 開啟配息頁面 (玩股網)</a>
+            </div>
+        </div>
+        <div style="margin-top:-10px; margin-bottom:10px; color:#666; font-size:1.2em;">輸入代號後，點擊「開啟配息頁面」，Ctrl+A 全選後，Ctrl+C 複製資料，然後在下面「直接」 Ctrl+V 貼上</div>
+
+        <!-- 貼入配息區塊 -->
+        <div class="parse-section">
+            <label style="font-weight:600; display:block; margin-bottom:8px;">📋 貼入配息記錄</label>
+            <p style="color:#666; font-size:0.9em; margin-bottom:10px;">
+                會自動從「填權天數」的下一行開始抓資料，抓取第1個為「股息」，第2個為「發放日」（自動跳過年度），直到「現金股息」結束。                
+            </p>
+            <textarea id="dividendPasteArea" rows="10" placeholder="貼上內容..." style="width: 100%; padding:15px; border:2px solid #e2e8f0; border-radius:20px; font-family:monospace; resize:vertical;"></textarea>
+        </div>
+    </div>
+</div>
+
+<!-- 模態框：快速輸入購入紀錄 -->
+<div class="modal" id="quickAddModal">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h2>⚡ 快速輸入購入紀錄</h2>
+            <span class="close" id="closeQuickModal">&times;</span>
+        </div>
+        <p style="margin-bottom: 10px; color: #666;">請貼上/輸入多筆紀錄，每行格式：日期<空一格>股數</p>
+        <textarea id="quickInputArea" rows="12" placeholder="2025-12-01 1k&#10;2026/02/03 5.5k&#10;2025-01-03 400" style="width: 100%; padding:15px; border:2px solid #e2e8f0; border-radius:20px; font-family:monospace; resize:vertical; margin-bottom: 20px;"></textarea>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button class="btn btn-outline" id="cancelQuickBtn">取消</button>
+            <button class="btn btn-success" id="saveQuickBtn">💾 儲存所有紀錄</button>
+        </div>
+    </div>
+</div>
+
+<!-- 模態框：雲端備份設定 -->
+<div class="modal" id="cloudModal">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h2>☁️ 雲端備份設定</h2>
+            <span class="close" id="closeCloudModal">&times;</span>
+        </div>
+        <p style="margin-bottom: 15px;">
+            <a href="https://w1798.github.io/web/JsonCloudGuide" target="_blank">📘 申請說明</a>
+        </p>
+        <div style="margin-bottom: 15px;">
+            <label style="font-weight:600; display:block; margin-bottom:5px;">URL / JSONBin ID</label>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="cloudUrl" autocomplete="off" placeholder="https://... 或 Bin ID" style="flex: 1; padding:12px; border-radius:15px; border:2px solid #e2e8f0;">
+                <button class="btn btn-outline" id="resetCloudUrlBtn">重置</button>
+            </div>
+        </div>
+        <div style="margin-bottom: 20px;">
+            <label style="font-weight:600; display:block; margin-bottom:5px;">Token / X-Access-Key</label>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="cloudToken" autocomplete="off" placeholder="Token 或 Access Key" style="flex: 1; padding:12px; border-radius:15px; border:2px solid #e2e8f0;">
+                <button class="btn btn-outline" id="resetCloudTokenBtn">重置</button>
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button class="btn btn-outline" id="closeCloudBtn">確定</button>
+        </div>
+    </div>
+</div>
+
+<!-- 編輯購入的浮動視窗 -->
+<div class="modal" id="editPurchaseModal">
+    <div class="modal-content" style="max-width:400px;">
+        <div class="modal-header">
+            <h2>✏️ 編輯購入</h2>
+            <span class="close" id="closeEditModal">&times;</span>
+        </div>
+        <input type="hidden" id="editIndex">
+        <div class="form-field" style="margin-bottom:15px;">
+            <label>購入日期</label>
+            <input type="date" id="editDate" style="width: 100%; padding:12px; border-radius:15px; border:2px solid #e2e8f0;">
+        </div>
+        <div class="form-field" style="margin-bottom:20px;">
+            <label>股數 (可加k)</label>
+            <input type="text" id="editShares" placeholder="例: 200 或 2.3k" style="width: 100%; padding:12px; border-radius:15px; border:2px solid #e2e8f0;">
+        </div>
+        <button class="btn btn-primary" id="saveEditBtn" style="width:100%; padding:12px;">儲存修改</button>
+    </div>
+</div>
+
+<!-- 回頂端按鈕 -->
+<button id="backToTop" title="回頂端">↑</button>
+
+<style>
+#busuanzi_container_page_pv {
+    color: #888;
+    font-size: 0.9rem;
+    margin-left: 15px;
+    border-left: 1px solid rgba(128, 128, 128, 0.5); /* 加一條細細的分隔線 */
+    padding-left: 15px;
+}
+
+#busuanzi_value_page_pv {
+    color: #00b894;
+    font-weight: bold;
+}
+</style>
+
+
+<script>
+(function() {
+    // 這樣無論是 /web/ 還是 /web 都會統一變成 /web 
+    const path = window.location.pathname.replace(/\/$/, ""); 
+    const TIME_KEY = `VERCOUNT_TIME_${path}`; // 每個分頁獨立計算冷卻時間
+    const VAL_KEY = `VERCOUNT_VAL_${path}`;   // 每個分頁獨立存儲 PV 數
+    
+    const COOL_DOWN = 30 * 60 * 1000; 
+    const now = Date.now();
+    const lastVisit = localStorage.getItem(TIME_KEY);
+    
+    // 計算剩餘秒數
+    const timeLeft = lastVisit ? Math.ceil((parseInt(lastVisit) + COOL_DOWN - now) / 1000) : 0;
+
+    if (timeLeft <= 0) {
+        console.log(`%c[Vercount]%c 路徑 ${path} 冷卻結束，更新數據...`, "color:#00b894;font-weight:bold", "color:inherit");
+        
+        const script = document.createElement('script');
+        script.src = "https://events.vercount.one/js";
+        script.defer = true;
+        
+        script.onload = () => {
+            setTimeout(() => {
+                const pvVal = document.getElementById('busuanzi_value_page_pv')?.innerText;
+                if (pvVal) {
+                    localStorage.setItem(VAL_KEY, pvVal);
+                    localStorage.setItem(TIME_KEY, now); // 成功抓到才更新時間
+                }
+            }, 1500);
+        };
+        document.head.appendChild(script);
+    } else {
+        const lastVal = localStorage.getItem(VAL_KEY) || "--";
+        console.log(`%c[Vercount]%c ${path} 冷卻中（剩 ${timeLeft} 秒）。顯示舊值：${lastVal}`, "color:#f1c40f;font-weight:bold", "color:inherit");
+
+        window.addEventListener('load', () => {
+            const pvSpan = document.getElementById('busuanzi_value_page_pv');
+            if (pvSpan) pvSpan.innerText = lastVal;
+        });
+    }
+})();
+</script>
+
+
+<script src="script.js?ver=1.00"></script>
+</body>
+</html>
