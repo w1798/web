@@ -471,6 +471,13 @@ footer a:hover {
     box-shadow: 0 8px 25px rgba(0,0,0,0.3);
 }
 
+/* 調整貼入配息記錄文字框的字體大小 */
+#dividendPasteArea {
+    font-size: 16px;  /* 調整為您想要的大小 */
+    line-height: 1.5; /* 行高，讓文字更好閱讀 */
+}
+
+
 /* ==================== 手機版版面 ==================== */
 @media screen and (max-width: 768px) {
     body {
@@ -611,7 +618,12 @@ footer a:hover {
         font-size: 0.9rem;
         margin-top: 20px;
     }
+
+    #dividendPasteArea {
+        font-size: 14px;
+    }
 }
+
 
 /* 更小螢幕 */
 @media screen and (max-width: 480px) {
