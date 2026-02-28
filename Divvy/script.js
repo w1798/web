@@ -73,21 +73,54 @@ function parseShares(input) {
     return parseFloat(str) || 0;
 }
 
-// ==================== 解析日期 (接受多種格式) ====================
+// ==================== 解析日期 (支援多種格式) ====================
 function parseDateInput(input) {
     input = input.trim();
-    if (input.includes('/') || input.includes('-')) {
-        let standardized = input.replace(/\//g, '-');
-        const date = new Date(standardized);
-        if (!isNaN(date.getTime())) {
-            return date.toISOString().split('T')[0];
-        }
-    }
+    
+    // 如果已經是 YYYY-MM-DD 格式
     if (input.match(/^\d{4}-\d{2}-\d{2}$/)) {
         const date = new Date(input);
         if (!isNaN(date.getTime())) return input;
     }
-    return null;
+    
+    // 處理各種分隔符和補零問題
+    let parts;
+    let year, month, day;
+    
+    // 格式: YYYY/MM/DD 或 YYYY/M/D
+    if (input.includes('/')) {
+        parts = input.split('/');
+        if (parts.length === 3) {
+            year = parts[0];
+            month = parts[1].padStart(2, '0');
+            day = parts[2].padStart(2, '0');
+            
+            // 驗證是否為有效日期
+            const dateStr = `${year}-${month}-${day}`;
+            const date = new Date(dateStr);
+            if (!isNaN(date.getTime())) {
+                return dateStr;
+            }
+        }
+    }
+    
+    // 格式: YYYY-MM-DD 或 YYYY-M-D
+    if (input.includes('-')) {
+        parts = input.split('-');
+        if (parts.length === 3) {
+            year = parts[0];
+            month = parts[1].padStart(2, '0');
+            day = parts[2].padStart(2, '0');
+            
+            const dateStr = `${year}-${month}-${day}`;
+            const date = new Date(dateStr);
+            if (!isNaN(date.getTime())) {
+                return dateStr;
+            }
+        }
+    }
+    
+    return null; // 無效日期
 }
 
 // ==================== 計算總股數 ====================
@@ -369,7 +402,27 @@ document.getElementById('editStockBtn').addEventListener('click', () => {
     document.getElementById('newStockCode').value = currentStock;
     document.getElementById('newStockCode').disabled = true;
     document.getElementById('stockAlias').value = stockData[currentStock].alias || '';
-    document.getElementById('dividendPasteArea').value = '';
+    
+        // === 新增：將現有配息資料轉成文字格式，方便編輯 ===
+    if (stockData[currentStock].dividends.length > 0) {
+        // 建立表頭
+        let dividendText = '填權天數\n';
+        
+        // 將配息資料轉成文字行
+        const sortedDivs = [...stockData[currentStock].dividends].sort((a,b) => new Date(b.payDate) - new Date(a.payDate));
+        sortedDivs.forEach(div => {
+            // 格式：股利 發放日 (模擬原本貼上的格式)
+            dividendText += `${div.dividend}\t${div.payDate}\n`;
+        });
+        
+        // 補上結束標記
+        dividendText += '現金股息';
+        
+        document.getElementById('dividendPasteArea').value = dividendText;
+    } else {
+        document.getElementById('dividendPasteArea').value = '';
+    }
+    
     updateStockLink();
     document.getElementById('stockModal').classList.add('active');
 });
@@ -416,7 +469,7 @@ document.getElementById('closeModal').addEventListener('click', () => {
     document.getElementById('stockModal').classList.remove('active');
 });
 
-// ==================== 解析邏輯 ====================
+// ==================== 解析邏輯 (修正：支援多種日期格式) ====================
 function parseDividendFromText(text) {
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
     
@@ -433,7 +486,7 @@ function parseDividendFromText(text) {
     
     for (let i = startIndex; i < lines.length; i++) {
         const line = lines[i];
-        if (line.includes('現金股息')) break;
+        if (line.includes('現金股利') || line.includes('現金股息')) break;
         
         const parts = line.split(/\s+/);
         if (parts.length < 2) continue;
@@ -450,13 +503,38 @@ function parseDividendFromText(text) {
         if (parts.length <= payDateIdx) continue;
         
         const dividend = parseFloat(parts[dividendIdx]);
-        const payDate = parts[payDateIdx];
+        let payDate = parts[payDateIdx];
         
-        if (!isNaN(dividend) && payDate.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
-            results.push({
-                payDate: payDate,
-                dividend: dividend
-            });
+        // === 修正：支援多種日期格式 ===
+        if (!isNaN(dividend)) {
+            // 嘗試轉換各種日期格式
+            let formattedDate = null;
+            
+            // 格式1: YYYY/MM/DD
+            if (payDate.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+                formattedDate = payDate;
+            }
+            // 格式2: YYYY-MM-DD
+            else if (payDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                formattedDate = payDate.replace(/-/g, '/');
+            }
+            // 格式3: YYYY/M/D (沒有補零)
+            else if (payDate.match(/^\d{4}\/\d{1,2}\/\d{1,2}$/)) {
+                const [y, m, d] = payDate.split('/');
+                formattedDate = `${y}/${m.padStart(2,'0')}/${d.padStart(2,'0')}`;
+            }
+            // 格式4: YYYY-M-D
+            else if (payDate.match(/^\d{4}-\d{1,2}-\d{1,2}$/)) {
+                const [y, m, d] = payDate.split('-');
+                formattedDate = `${y}/${m.padStart(2,'0')}/${d.padStart(2,'0')}`;
+            }
+            
+            if (formattedDate) {
+                results.push({
+                    payDate: formattedDate,
+                    dividend: dividend
+                });
+            }
         }
     }
     
@@ -847,6 +925,20 @@ backToTopButton.addEventListener('click', () => {
     });
 });
 
+// ==================== 清除按鈕 ====================
+document.getElementById('clearPasteBtn').addEventListener('click', () => {
+    document.getElementById('dividendPasteArea').value = '';
+});
+
+// ==================== 貼上按鈕 ====================
+document.getElementById('pasteBtn').addEventListener('click', async () => {
+    try {
+        const text = await navigator.clipboard.readText();
+        document.getElementById('dividendPasteArea').value = text;
+    } catch (err) {
+        alert('無法讀取剪貼簿，請手動貼上 (Ctrl+V)');
+    }
+});
 
 // ==================== 啟動 ====================
 loadFromStorage();

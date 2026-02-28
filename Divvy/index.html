@@ -136,13 +136,17 @@
             </div>
         </div>
         
-        <div style="margin-top:-10px; margin-bottom:10px; color:#666; font-size:1.2em;">輸入代號後，點擊「開啟配息頁面」，Ctrl+A 全選後，Ctrl+C 複製資料，然後在下面「直接」 Ctrl+V 貼上</div>
+        <div style="margin-top:-10px; margin-bottom:10px; color:#666; font-size:1.2em;">輸入代號後，點擊「開啟配息頁面」，Ctrl+A 全選後，Ctrl+C 複製資料，然後在下面按「貼上」即可</div>
 
         <!-- 貼入配息區塊 -->
         <div class="parse-section">
-            <label style="font-weight:600; display:block; margin-bottom:8px;">📋 貼入配息記錄</label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <label style="font-weight:600;">📋 貼入配息記錄</label>
+                <button class="btn btn-outline" id="pasteBtn" style="padding: 8px 16px;">📋 貼上</button>
+                <button class="btn btn-outline" id="clearPasteBtn" style="padding: 8px 16px;">🧹 清除</button>
+            </div>
             <p style="color:#666; font-size:0.9em; margin-bottom:10px;">
-                會自動從「填權天數」的下一行開始抓資料，抓取第1個為「股息」，第2個為「發放日」（自動跳過年度），直到「現金股息」結束。                
+                會自動從「填權天數」的下一行開始抓資料，抓取第1個為「股利」，第2個為「發放日」（自動跳過年度），直到「現金股利」結束。                
             </p>
             <textarea id="dividendPasteArea" rows="10" placeholder="貼上內容..." style="width: 100%; padding:15px; border:2px solid #e2e8f0; border-radius:20px; font-family:monospace; resize:vertical;"></textarea>
         </div>
