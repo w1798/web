@@ -495,7 +495,7 @@ function parseDividendFromText(text) {
         let payDateIdx = 1;
         
         const first = parts[0];
-        if (!isNaN(parseInt(first)) && parseInt(first) > 2000) {
+        if (!isNaN(parseInt(first)) && parseInt(first) > 1000) {
             dividendIdx = 1;
             payDateIdx = 2;
         }
