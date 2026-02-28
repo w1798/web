@@ -116,19 +116,26 @@
         </div>
         
         <!-- 股票代號輸入 + 連結 + 別名 -->
-        <div style="margin: 20px 0; display: flex; gap: 20px; flex-wrap: wrap;">
-            <div style="flex: 1; min-width: 200px;">
-                <label style="font-weight:600; display:block; margin-bottom:8px;">股票代號</label>
+        <div style="margin: 20px 0; display: flex; gap: 5px; align-items: flex-end; flex-wrap: wrap;">
+            <!-- 股票代號 -->
+            <div style="min-width: 120px;">
+                <label style="font-weight:600; display:block; margin-bottom:8px;">1.股票代號</label>
                 <input type="text" id="newStockCode" placeholder="例: 0056" style="width: 120px; padding:12px; border-radius:15px; border:2px solid #e2e8f0; font-size:1.1em; text-align: center;">
             </div>
-            <div style="flex: 2; min-width: 250px;">
-                <label style="font-weight:600; display:block; margin-bottom:8px;">股票別名 (選擇性)</label>
-                <input type="text" id="stockAlias" placeholder="例: 元大高股息" style="width: 100%; padding:12px; border-radius:15px; border:2px solid #e2e8f0; font-size:1.1em;">
+            
+            <!-- 開啟配息頁面按鈕 -->
+            <div style="min-width: 120px;">
+                <label style="font-weight:600; display:block; margin-bottom:8px;">2.股息複製</label>
+                <a href="#" id="stockLink" target="_blank" style="white-space: nowrap; background: #f0f4f8; padding:12px 20px; border-radius:15px; text-decoration: none; color: #1e3c72; font-weight:500; margin-bottom: 0;">🔗 開啟配息頁面 (玩股網)</a>
             </div>
-            <div style="display: flex; align-items: flex-end;">
-                <a href="#" id="stockLink" target="_blank" style="white-space: nowrap; background: #f0f4f8; padding:12px 20px; border-radius:15px; text-decoration: none; color: #1e3c72; font-weight:500;">🔗 開啟配息頁面 (玩股網)</a>
+            
+            <!-- 股票別名 -->
+            <div style="min-width: 240px;">
+                <label style="font-weight:600; display:block; margin-bottom:8px;">3.股票別名 (選擇性)</label>
+                <input type="text" id="stockAlias" placeholder="例: 元大高股息" style="width: 240px; padding:12px; border-radius:15px; border:2px solid #e2e8f0; font-size:1.1em;">
             </div>
         </div>
+        
         <div style="margin-top:-10px; margin-bottom:10px; color:#666; font-size:1.2em;">輸入代號後，點擊「開啟配息頁面」，Ctrl+A 全選後，Ctrl+C 複製資料，然後在下面「直接」 Ctrl+V 貼上</div>
 
         <!-- 貼入配息區塊 -->

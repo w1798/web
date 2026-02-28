@@ -403,6 +403,15 @@ function updateStockLink() {
     }
 }
 
+document.getElementById('stockLink').addEventListener('click', (e) => {
+    const code = document.getElementById('newStockCode').value.trim().toUpperCase();
+    if (!code) {
+        e.preventDefault(); // 阻止連結跳轉
+        alert('請先輸入股票代號，才能開啟配息頁面！');
+    }
+});
+
+
 document.getElementById('closeModal').addEventListener('click', () => {
     document.getElementById('stockModal').classList.remove('active');
 });
