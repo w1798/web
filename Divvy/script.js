@@ -541,10 +541,10 @@ function parseDividendFromText(text) {
     return results;
 }
 
-// ==================== 解析並儲存 (修正：新增後自動跳轉) ====================
+// ==================== 解析並儲存 (新增：自動抓取別名) ====================
 document.getElementById('parseAndSaveBtn').addEventListener('click', () => {
     const code = document.getElementById('newStockCode').value.trim().toUpperCase();
-    const alias = document.getElementById('stockAlias').value.trim();
+    let alias = document.getElementById('stockAlias').value.trim();  // 使用者輸入的別名
     const pasteText = document.getElementById('dividendPasteArea').value;
     
     if (!code) {
@@ -560,6 +560,26 @@ document.getElementById('parseAndSaveBtn').addEventListener('click', () => {
     if (dividends.length === 0) {
         alert('沒有解析到任何配息記錄，請確認貼上內容格式正確');
         return;
+    }
+    
+    // === 新增：如果別名為空白，嘗試從貼入的文字中抓取 ===
+    if (!alias) {
+        const lines = pasteText.split('\n').map(l => l.trim());
+        for (let i = 0; i < lines.length; i++) {
+            if (lines[i].includes('歷年股利')) {
+                // 找到「歷年股利」的下一行
+                if (i + 1 < lines.length) {
+                    const nextLine = lines[i + 1];
+                    // 取第一個非空白的部分作為別名
+                    const parts = nextLine.split(/\s+/);
+                    if (parts.length > 0 && parts[0]) {
+                        alias = parts[0];
+                        console.log(`自動抓取別名: ${alias}`);
+                    }
+                }
+                break;
+            }
+        }
     }
     
     if (isEditMode) {
@@ -586,10 +606,8 @@ document.getElementById('parseAndSaveBtn').addEventListener('click', () => {
     // 先關閉 modal
     document.getElementById('stockModal').classList.remove('active');
     
-    // === 修正：重新渲染選單，讓新的股票代號出現在選項中 ===
-    const select = document.getElementById('stockSelect');
-    
     // 重新建立選單選項
+    const select = document.getElementById('stockSelect');
     select.innerHTML = '<option value="">📌 選擇股票代號</option>';
     Object.keys(stockData).sort().forEach(stockCode => {
         const option = document.createElement('option');
@@ -609,7 +627,7 @@ document.getElementById('parseAndSaveBtn').addEventListener('click', () => {
     renderPurchases();
     renderDividendTable();
     
-    alert(`✅ 已儲存股票 ${code}，共 ${dividends.length} 筆配息記錄`);
+    alert(`✅ 已儲存股票 ${code}，共 ${dividends.length} 筆配息記錄${alias ? '，別名：' + alias : ''}`);
 });
 
 // ==================== 快速輸入功能 ====================
