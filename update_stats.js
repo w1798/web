@@ -61,40 +61,44 @@ const timeStr = now.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: f
 }
 
 async function run() {
-    // --- 任務 A: JSONBin.io ---
-    console.log("開始執行 JSONBin 任務...");
-    try {
-        const res = await axios.get(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}/latest`, {
-            headers: { 'X-Access-Key': JSONBIN_KEY }
-        });
-        const updatedJSONBin = await updateDataRecord(res.data.record);
-        await axios.put(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}`, updatedJSONBin, {
-            headers: { 'Content-Type': 'application/json', 'X-Access-Key': JSONBIN_KEY }
-        });
-        console.log("✅ JSONBin 同步完成");
-    } catch (err) {
-        console.error("❌ JSONBin 流程錯誤:", err.message);
-    }
+    console.log("🚀 開始執行自動同步任務 (以 Upstash 為主)...");
 
-    // --- 任務 B: Upstash (Redis) ---
-    console.log("開始執行 Upstash 任務...");
     try {
+        // 1. 從 Upstash 讀取權威名單與舊數據
         const res = await axios.get(`${UPSTASH_URL}/get/vercount_v1`, {
             headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` }
         });
-        // Upstash 的結果是在 .result 欄位，且通常是字串，需要解析
-        if (res.data.result) {
-            const currentUpstashData = JSON.parse(res.data.result);
-            const updatedUpstash = await updateDataRecord(currentUpstashData);
-            await axios.post(`${UPSTASH_URL}/set/vercount_v1`, JSON.stringify(updatedUpstash), {
-                headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` }
-            });
-            console.log("✅ Upstash 同步完成");
-        } else {
-            console.log("Upstash 中找不到 vercount_v1 紀錄");
+
+        if (!res.data.result) {
+            throw new Error("Upstash 中找不到 vercount_v1 紀錄，無法開始任務。");
         }
+
+        const masterData = JSON.parse(res.data.result);
+        console.log("✅ 已從 Upstash 取得權威名單。");
+
+        // 2. 拿這份名單去抓所有 Vercount 數據並進行更新
+        const updatedData = await updateDataRecord(masterData);
+        console.log("✅ 數據更新處理完成。");
+
+        // 3. 同時更新回 Upstash 與 JSONBin
+        const upstashUpdate = axios.post(`${UPSTASH_URL}/set/vercount_v1`, JSON.stringify(updatedData), {
+            headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` }
+        });
+
+        const jsonbinUpdate = axios.put(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}`, updatedData, {
+            headers: { 
+                'Content-Type': 'application/json', 
+                'X-Access-Key': JSONBIN_KEY 
+            }
+        });
+
+        // 使用 Promise.all 同時發送，速度更快
+        await Promise.all([upstashUpdate, jsonbinUpdate]);
+
+        console.log("🎉 所有平台同步成功！(Upstash & JSONBin)");
+
     } catch (err) {
-        console.error("❌ Upstash 流程錯誤:", err.message);
+        console.error("❌ 執行過程中發生錯誤:", err.message);
     }
 }
 
