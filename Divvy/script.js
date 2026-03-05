@@ -872,7 +872,7 @@ document.getElementById('downloadCloudBtn').addEventListener('click', async () =
     } catch (error) {
         alert(`❌ 下載錯誤：${error.message}`);
     }
-})v
+});
 
 // ==================== 重置功能 ====================
 document.getElementById('resetDataBtn').addEventListener('click', () => {
