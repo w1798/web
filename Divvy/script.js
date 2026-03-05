@@ -747,43 +747,60 @@ document.getElementById('uploadCloudBtn').addEventListener('click', async () => 
         return;
     }
     
-    // 準備上傳資料：只包含 stockData，排除 cloudSettings
-    const uploadData = stockData;
+    // 準備上傳資料：轉成 JSON 字串
+    const uploadData = JSON.stringify(stockData);
     
     try {
         let response;
-        // 簡單判斷是否為 JSONBin (ID 格式通常是字母數字組合，不含斜線)
+        
+        // 判斷是否為 JSONBin
         if (cloudSettings.url.match(/^[a-zA-Z0-9]+$/)) {
-            // JSONBin.io
+            // JSONBin.io 寫入
             response = await fetch(`https://api.jsonbin.io/v3/b/${cloudSettings.url}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Access-Key': cloudSettings.token
                 },
-                body: JSON.stringify(uploadData)
+                body: JSON.stringify(stockData)
             });
         } else {
-            // Upstash (假設 URL 結尾是 /get/... 要改為 /set/...)
-            let setUrl = cloudSettings.url.replace('/get/', '/set/');
-            if (!setUrl.includes('/set/')) {
-                // 如果不是標準格式，嘗試直接使用原 URL 加上 /set/
-                setUrl = cloudSettings.url.replace(/\/?$/, '/set/');
-            }
+            // === 修正：Upstash 的正確格式 ===
+            // 確保 URL 結尾沒有斜線
+            const baseUrl = cloudSettings.url.replace(/\/$/, '');
+            
+            // 使用 SET 命令，以 "dividend-data" 作為 key
+            const setUrl = `${baseUrl}/set/dividend-data`;
+            
+            console.log('上傳 URL:', setUrl); // 除錯用
+            
             response = await fetch(setUrl, {
-                method: 'POST',
+                method: 'POST',  // Upstash 接受 POST 來設定值[citation:2]
                 headers: {
                     'Authorization': `Bearer ${cloudSettings.token}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(uploadData)
+                body: uploadData  // 直接放 JSON 字串
             });
+            
+            // 查看回應內容
+            const responseText = await response.text();
+            console.log('回應狀態:', response.status);
+            console.log('回應內容:', responseText);
+            
+            if (response.ok) {
+                alert('✅ 雲端上傳成功！');
+            } else {
+                alert(`❌ 上傳失敗：${response.status} - ${responseText}`);
+            }
+            return;
         }
         
         if (response.ok) {
             alert('✅ 雲端上傳成功！');
         } else {
-            alert(`❌ 上傳失敗：${response.status} ${response.statusText}`);
+            const errorText = await response.text();
+            alert(`❌ 上傳失敗：${response.status} ${errorText}`);
         }
     } catch (error) {
         alert(`❌ 上傳錯誤：${error.message}`);
@@ -814,25 +831,32 @@ document.getElementById('downloadCloudBtn').addEventListener('click', async () =
             });
             if (response.ok) {
                 const json = await response.json();
-                data = json.record; // JSONBin 的資料放在 record 裡
+                data = json.record;
             }
         } else {
-            // Upstash
-            response = await fetch(cloudSettings.url, {
+            // === 修正：Upstash 的下載格式 ===
+            const baseUrl = cloudSettings.url.replace(/\/$/, '');
+            const getUrl = `${baseUrl}/get/dividend-data`;
+            
+            console.log('下載 URL:', getUrl);
+            
+            response = await fetch(getUrl, {
                 headers: {
                     'Authorization': `Bearer ${cloudSettings.token}`
                 }
             });
+            
             if (response.ok) {
-                data = await response.json();
-                // Upstash 回傳的結果可能包在 result 裡，視實際情況調整
-                if (data.result) data = data.result;
+                const json = await response.json();
+                // Upstash 回傳格式：{ "result": "..." }[citation:2]
+                if (json.result) {
+                    data = JSON.parse(json.result);
+                }
             }
         }
         
         if (response.ok && data) {
             stockData = data;
-            // 確保資料格式正確
             Object.keys(stockData).forEach(code => {
                 if (!stockData[code].purchases) stockData[code].purchases = [];
                 if (!stockData[code].dividends) stockData[code].dividends = [];
@@ -842,12 +866,13 @@ document.getElementById('downloadCloudBtn').addEventListener('click', async () =
             renderStockSelect();
             alert('✅ 雲端下載成功！');
         } else {
-            alert(`❌ 下載失敗：${response.status} ${response.statusText}`);
+            const errorText = await response.text();
+            alert(`❌ 下載失敗：${response.status} ${errorText}`);
         }
     } catch (error) {
         alert(`❌ 下載錯誤：${error.message}`);
     }
-});
+})v
 
 // ==================== 重置功能 ====================
 document.getElementById('resetDataBtn').addEventListener('click', () => {
