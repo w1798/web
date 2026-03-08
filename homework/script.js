@@ -811,7 +811,15 @@ function updateMainStartDate() {
     renderMain(true); 
 }
 
-function resetApp() { if(confirm("完全重置資料？")) { localStorage.clear(); location.reload(); } }
+
+function resetApp() {
+    if (confirm("確定要重置此專案的資料嗎？")) {
+        localStorage.removeItem('homework_v1');
+        
+        location.reload();
+    }
+}
+
 function exportJSON() {
     const blob = new Blob([JSON.stringify(appData, null, 2)], {type: 'application/json'});
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob);

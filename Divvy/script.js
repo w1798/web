@@ -878,7 +878,7 @@ document.getElementById('downloadCloudBtn').addEventListener('click', async () =
 document.getElementById('resetDataBtn').addEventListener('click', () => {
     if (confirm('確定要重置所有資料嗎？此操作無法復原！')) {
         stockData = {};
-        saveToStorage();
+        localStorage.removeItem('dividendManager');
         renderStockSelect();
     }
 });

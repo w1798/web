@@ -357,7 +357,18 @@
         location.reload();
     }
 
-    function fullSystemReset() { if(confirm("確定重置嗎？")) { localStorage.clear(); location.reload(); } }
+    function fullSystemReset() {
+        if (confirm("確定要重置所有資料嗎？")) {
+            localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem(DATA_KEY);
+            localStorage.removeItem('LAST_CLOUD_LOAD');
+            localStorage.removeItem(PENDING_KEY);
+            localStorage.removeItem('LAST_SYNC_TIME');
+
+            location.reload();
+        }
+    }
+
     function resetField(id) { if(confirm("確定清空嗎？")) document.getElementById(id).value = ""; }
     function exportData() {
         const blob = new Blob([JSON.stringify({ settings: appData.settings, stats: appData.stats }, null, 2)], { type: 'application/json' });

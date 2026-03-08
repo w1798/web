@@ -1,0 +1,102 @@
+/* 1. 全域變數定義與字體連動 */
+:root { 
+    --primary: #3498db; 
+    --user-font-size: 16px; 
+    --header-h: 10vh; 
+    --main-h: 85vh; 
+    --footer-h: 5vh;
+}
+
+/* 確保所有文字容器強制繼承字體大小，並透過 !important 確保 Modal 內部生效 */
+body, button, input, select, table, .modal-body, .summary-box { 
+    font-size: var(--user-font-size) !important; 
+    font-family: sans-serif;
+}
+
+/* 基礎設定 */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; background-color: #f4f7f9; }
+
+/* 2. 頁面框架 (10/85/5) */
+.app-header { height: var(--header-h); background: #2c3e50; color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; z-index: 100; }
+.app-main { height: var(--main-h); overflow-y: auto; padding: 20px; }
+.app-footer { height: var(--footer-h); background: #eee; display: flex; justify-content: center; align-items: center; border-top: 1px solid #ccc; font-size: 0.8rem; }
+
+/* 標題與按鈕 */
+.header-brand { font-size: 24px !important; font-weight: bold; }
+.nav-btn { cursor: pointer; padding: 5px 10px; margin-left: 5px; }
+
+/* 3. 主頁控制列 (一列化) */
+.tool-controls-bar { 
+    display: flex; align-items: center; gap: 15px; background: white; 
+    padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
+}
+.control-item { display: flex; align-items: center; gap: 5px; }
+
+/* 表格樣式 */
+table { width: 100%; border-collapse: collapse; background: white; margin-top: 10px; }
+th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+th { background: #f8f9fa; cursor: pointer; user-select: none; }
+tr:hover { background: #f1f8ff; cursor: pointer; }
+
+/* 4. Modal 基礎架構 */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 1000; }
+.modal-wrapper { background: white; width: 95vw; height: 90vh; display: flex; flex-direction: column; border-radius: 8px; overflow: hidden; }
+.modal-header { height: 10%; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; border-bottom: 1px solid #ddd; }
+.modal-body { height: 85%; overflow-y: auto; padding: 20px; }
+.modal-footer { height: 5%; padding: 0 20px; display: flex; justify-content: flex-end; align-items: center; background: #f8f9fa; border-top: 1px solid #ddd; }
+
+/* 5. 設定視窗三欄 (保留您原本的比例 1fr 1fr 2fr) */
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 10px; width: 100%; }
+.settings-col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.col-title { color: var(--primary); border-bottom: 2px solid var(--primary); padding-bottom: 5px; margin-bottom: 10px; }
+
+.form-row { display: flex; align-items: center; gap: 10px; width: 100%; }
+.form-row label { flex: 0 0 90px; font-weight: bold; white-space: nowrap; }
+.form-row input, .form-row select { flex: 1; min-width: 0; padding: 8px; box-sizing: border-box; }
+.input-with-btn { display: flex; flex: 1; min-width: 0; }
+
+/* 6. 總覽與詳細格狀 */
+.summary-grid, .detail-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.summary-box, .detail-card { border: 1px solid #ddd; padding: 10px; border-radius: 4px; background: #fff; }
+.detail-card { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+
+/* 回到最頂按鈕 */
+#backToTop {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 1000;
+    
+    /* 預設隱藏與漸變效果 */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+    
+    /* 外觀 */
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+}
+
+/* 當 JS 加入 .show class 時顯示 */
+#backToTop.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+
+/* 按鈕風格 */
+button { padding: 6px 12px; cursor: pointer; border: 1px solid #ccc; border-radius: 4px; background: white; }
+.btn-primary, .btn-confirm { background: var(--primary); color: white; border: none; }
+.btn-success { background: #27ae60; color: white; border: none; }
+.btn-orange { background: #e67e22; color: white; border: none; }
+
+@media (max-width: 1000px) { 
+    .settings-grid { grid-template-columns: 1fr; } 
+    .summary-grid, .detail-grid { grid-template-columns: repeat(2, 1fr); } 
+}

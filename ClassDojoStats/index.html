@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClassDojo 點數統計</title>
+    <link rel="stylesheet" href="style.css?ver=1.00">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+</head>
+<body class="theme-1">
+
+    <header class="app-header">
+        <div class="header-brand">ClassDojo 點數統計</div>
+        <div class="header-right">
+            <button class="nav-btn" onclick="cloudAction('upload')">雲端上傳</button>
+            <button class="nav-btn" onclick="cloudAction('download')">雲端下載</button>
+            <button class="nav-btn" onclick="resetAppData()">重置系統</button>
+            <button class="nav-btn" onclick="toggleModal('settingsModal', true)">設定</button>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <section class="tool-controls-bar">
+            <div class="control-item">
+                <label>載入 CSV：</label>
+                <input type="file" id="csvFile" accept=".csv">
+            </div>
+            <button class="btn-primary main-ctrl" onclick="processData()">執行計算</button>
+            <button class="btn-success main-ctrl" onclick="copyScoresOnly()">複製純點數</button>
+            <button class="btn-orange main-ctrl" onclick="showSummary()">全班點數總覽</button>
+        </section>
+
+        <div id="tableContainer">
+            <table id="resultTable" style="display:none;">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable(0)">學生姓名 (點擊詳情) <span id="sortIcon0">▲▼</span></th>
+                        <th onclick="sortTable(1)">計算總點數 <span id="sortIcon1">▲▼</span></th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+
+    </main>
+    
+    <button id="backToTop" onclick="scrollToTop()">↑</button>
+        
+    <footer class="app-footer">
+        <a href="https://w1798.github.io/web/" target="_blank">&copy; 2026 Charles Nextime · GPLv3</a>
+        <span id="busuanzi_container_page_pv">
+    本頁使用量 <span id="busuanzi_value_page_pv"></span> 次
+</span>
+
+    </footer>
+
+    <div id="settingsModal" class="modal-overlay">
+        <div class="modal-wrapper">
+            <div class="modal-header">
+                <span class="fixed-title">相關功能設定 (規則有多個時，請用空白鍵分開關鍵字)</span>
+                <div class="top-btns">
+                    <button onclick="toggleModal('settingsModal', false)">取消</button>
+                    <button class="btn-confirm" onclick="saveSettings()">認定</button>
+                </div>
+            </div>
+            <div class="modal-body settings-grid">
+                <div class="settings-col">
+                    <h3 class="col-title">🎨 介面風格</h3>
+                    <div class="form-row"><label>字體大小</label><input type="number" id="setFontSize"></div>
+                </div>
+                <div class="settings-col">
+                    <h3 class="col-title">🔢 計算規則</h3>
+                    <div class="form-row"><label>計算關鍵字</label><input type="text" id="setInc"></div>
+                    <div class="form-row"><label>排除關鍵字</label><input type="text" id="setExc"></div>
+                    <div class="form-row"><label>負點關鍵字</label><input type="text" id="setMin"></div>
+                </div>
+                <div class="settings-col">
+                    <h3 class="col-title">☁️ 雲端同步 (<a href="https://w1798.github.io/web/JsonCloudGuide" target="_blank" style="color: var(--primary); font-size: 0.85em; text-decoration: underline;">申請說明</a>)</h3>
+                    <div class="form-row">
+                        <label>URL / ID</label>
+                        <div class="input-with-btn"><input type="text" id="setBinId" autocomplete="off" placeholder="URL or JSONBinID"><button onclick="clearField('setBinId')">×</button></div>
+                    </div>
+                    <div class="form-row">
+                        <label>Key / Token</label>
+                        <div class="input-with-btn"><input type="text" id="setApiKey" autocomplete="off" placeholder="Token or X-Access-Key"><button onclick="clearField('setApiKey')">×</button></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="toggleModal('settingsModal', false)">取消</button>
+                <button class="btn-confirm" onclick="saveSettings()">認定</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="detailModal" class="modal-overlay">
+        <div class="modal-wrapper">
+            <div class="modal-header"><span id="detailTitle">得點詳情</span><button onclick="toggleModal('detailModal', false)">關閉</button></div>
+            <div id="detailContent" class="modal-body detail-grid"></div>
+        </div>
+    </div>
+
+    <div id="summaryModal" class="modal-overlay">
+        <div class="modal-wrapper">
+            <div class="modal-header"><span>全班成績總覽</span><button onclick="toggleModal('summaryModal', false)">關閉</button></div>
+            <div id="summaryContent" class="modal-body summary-grid"></div>
+        </div>
+    </div>
+
+
+<style>
+#busuanzi_container_page_pv {
+    color: #888;
+    font-size: 0.9rem;
+    margin-left: 15px;
+    border-left: 1px solid rgba(128, 128, 128, 0.5); /* 加一條細細的分隔線 */
+    padding-left: 15px;
+}
+
+#busuanzi_value_page_pv {
+    color: #00b894;
+    font-weight: bold;
+}
+</style>
+
+
+<script>
+(function() {
+    // 這樣無論是 /web/ 還是 /web 都會統一變成 /web 
+    const path = window.location.pathname.replace(/\/$/, ""); 
+    const TIME_KEY = `VERCOUNT_TIME_${path}`; // 每個分頁獨立計算冷卻時間
+    const VAL_KEY = `VERCOUNT_VAL_${path}`;   // 每個分頁獨立存儲 PV 數
+    
+    const COOL_DOWN = 30 * 60 * 1000; 
+    const now = Date.now();
+    const lastVisit = localStorage.getItem(TIME_KEY);
+    
+    // 計算剩餘秒數
+    const timeLeft = lastVisit ? Math.ceil((parseInt(lastVisit) + COOL_DOWN - now) / 1000) : 0;
+
+    if (timeLeft <= 0) {
+        console.log(`%c[Vercount]%c 路徑 ${path} 冷卻結束，更新數據...`, "color:#00b894;font-weight:bold", "color:inherit");
+        
+        const script = document.createElement('script');
+        script.src = "https://events.vercount.one/js";
+        script.defer = true;
+        
+        script.onload = () => {
+            setTimeout(() => {
+                const pvVal = document.getElementById('busuanzi_value_page_pv')?.innerText;
+                if (pvVal) {
+                    localStorage.setItem(VAL_KEY, pvVal);
+                    localStorage.setItem(TIME_KEY, now); // 成功抓到才更新時間
+                }
+            }, 1500);
+        };
+        document.head.appendChild(script);
+    } else {
+        const lastVal = localStorage.getItem(VAL_KEY) || "--";
+        console.log(`%c[Vercount]%c ${path} 冷卻中（剩 ${timeLeft} 秒）。顯示舊值：${lastVal}`, "color:#f1c40f;font-weight:bold", "color:inherit");
+
+        window.addEventListener('load', () => {
+            const pvSpan = document.getElementById('busuanzi_value_page_pv');
+            if (pvSpan) pvSpan.innerText = lastVal;
+        });
+    }
+})();
+</script>
+
+
+
+    <script src="script.js?ver=1.00"></script>
+</style>
+</body>
+</html>
