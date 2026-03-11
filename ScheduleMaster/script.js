@@ -7,7 +7,23 @@
  * the Free Software Foundation.
  */
  
+// 負責載入外部套件的函式
+function initLibrary() {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js';
+    
+    script.onerror = function() {
+        console.warn("外部庫載入失敗，嘗試本地載入...");
+        const fallback = document.createElement('script');
+        fallback.src = 'mammoth.browser.min.js';
+        document.head.appendChild(fallback);
+    };
+    
+    document.head.appendChild(script);
+}
 
+// 執行載入
+initLibrary();
 
 // --- 1. 定義儲存鍵名與預設值 ---
 const KEY_SCHEDULE = 'SCHOOL_SCHEDULE_ALL_DATA';
