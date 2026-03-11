@@ -1,0 +1,68 @@
+body, html { height: 100%; margin: 0; }
+.layout { height: 100vh; display: flex; flex-direction: column; }
+.header { height: 10%; background: #333; color: white; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
+.footer { height: 5%; background: #eee; text-align: center; line-height: 5vh; }
+
+body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; }/* 移除或調整 container 的 margin，讓它填滿 main-content */
+.container { 
+    background: white; 
+    padding: 20px; 
+    border-radius: 15px; 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+    width: 90%; 
+    max-width: 800px; 
+    margin: 20px auto; /* 讓容器水平置中 */
+}
+
+/* 確保 .main-content 能處理內部長度 */
+.main-content { 
+    height: 85%; 
+    overflow-y: auto; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+}
+.hidden { display: none; }
+button { background: #4a90e2; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; margin: 5px; }
+.btn-end { background: #e74c3c; }
+table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+.counter-row { display: flex; align-items: center; justify-content: space-between; padding: 10px; background: #f9f9f9; border-radius: 8px; margin: 5px 0; }
+
+/* 觀察頁面雙欄佈局 */
+.observe-grid { 
+    display: flex; 
+    gap: 20px; 
+    justify-content: space-between; 
+}
+.student-col { 
+    flex: 1; 
+    padding: 15px; 
+    background: #f8f9fa; 
+    border-radius: 10px; 
+    border: 1px solid #dee2e6; 
+}
+.student-col h3 { text-align: center; color: #4a90e2; }
+
+/* style.css 新增 */
+#analysisChart { 
+    max-width: 100%; 
+    height: 400px; 
+    margin: 20px 0; 
+}
+
+/* 當螢幕為手機寬度時 */
+@media screen and (max-width: 600px) {
+    .container { padding: 10px; width: 95%; }
+    button { padding: 15px; font-size: 18px; width: 100%; } /* 加大按鈕觸控區 */
+    .observe-grid { flex-direction: column; } /* 雙人模式改為上下排列 */
+    .student-col { margin-bottom: 20px; }
+    h1 { font-size: 24px; }
+    
+    /* 表格調整 */
+    table { font-size: 12px; }
+    th, td { padding: 5px; }
+}
+
+/* 防止手機上點擊按鈕時出現藍色反白 */
+button { -webkit-tap-highlight-color: transparent; }
