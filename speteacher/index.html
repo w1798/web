@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="screen-home" class="container">
+        
+        <div class="layout">
+    <header class="header"> <div class="brand"><h1>注意力觀察系統</h1></div>
+        <div class="nav-btns">
+            <button onclick="cloudUpload()">上傳</button>
+            <button onclick="cloudDownload()">下載</button>
+            <button onclick="fileExport()">匯出</button>
+            <button onclick="fileImport()">匯入</button>
+            <button onclick="systemReset()" style="color:red">重置</button>
+            <button onclick="openSettings()">設定</button>
+        </div>
+    </header>
+<main class="main-content">
+    <div id="screen-home" class="home-menu">
+        <h1>請選擇觀察模式</h1>
+        <div class="menu-buttons">
+            <button onclick="setMode('single')">單人模式</button>
+            <button onclick="setMode('double')">雙人模式</button>
+        </div>
+    </div>
+
+    <div id="screen-settings" class="container hidden">...</div>
+    <div id="screen-observe" class="container hidden">...</div>
+</main>
+    <footer class="footer"> <p>© 2026 注意力觀察系統 - <a href="https://w1798.github.io/web/JsonCloudGuide" target="_blank">申請說明</a></p>
+    </footer>
+
+    
+    
+
+    <div id="screen-settings" class="container hidden">
+        <h2>觀察設定</h2>
+        <input type="text" id="obsName" placeholder="觀察者姓名">
+        <input type="text" id="actName" placeholder="活動名稱">
+        <input type="text" id="stuA" placeholder="學生 A 姓名">
+        <input type="text" id="stuB" placeholder="學生 B 姓名" class="hidden">
+        <input type="date" id="obsDate">
+        <select id="duration"><option value="5">5分</option><option value="10">10分</option></select>
+        <button onclick="startObservation()">確定</button>
+    </div>
+
+    <div id="screen-observe" class="container hidden">
+        <h2 id="timerDisplay">總時間: 00:00</h2>
+        <div id="actionButtons"></div>
+        <select id="targetStudent"></select>
+        <button onclick="finishObservation()" class="btn-end">結束觀察並檢視</button>
+    </div>
+
+    <div id="screen-report" class="container hidden">
+        <h2>觀察報表</h2>
+        <div id="reportTableContainer"></div>
+        <canvas id="analysisChart"></canvas>
+        <textarea id="finalNotes" placeholder="整體觀察備註"></textarea>
+        <button onclick="location.reload()">重新開始</button>
+        <button onclick="exportExcel()">匯出 Excel</button>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
