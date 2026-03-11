@@ -1,7 +1,73 @@
-body { background: #f4f7f6; font-family: 'Segoe UI', sans-serif; padding: 20px; }
-.card { max-width: 1000px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-.upload-area { border: 2px dashed #3498db; padding: 40px; text-align: center; color: #3498db; cursor: pointer; margin-bottom: 20px; border-radius: 10px; }
-.analyze-btn { width: 100%; padding: 15px; background: #2c3e50; color: white; border: none; border-radius: 8px; cursor: pointer; }
-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-td, th { border: 1px solid #ddd; padding: 12px; text-align: center; }
-th { background: #f8f9fa; }
+/* 1. 頁面基礎設定 (確保 Flexbox 佈局) */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background: #f4f7f6;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* 2. 主內容容器 (負責撐開頁面) */
+.container {
+    flex: 1;
+    margin: 20px auto;
+    background: white;
+    padding: 10px;
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    width: 95%; /* 響應式寬度 */
+}
+
+/* 3. 表格樣式 */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+td, th {
+    border: 1px solid #ddd;
+    padding: 12px;
+    text-align: center;
+}
+
+th {
+    background: #f8f9fa;
+}
+
+/* 4. Footer 樣式 (固定底部) */
+.app-footer {
+    padding: 20px 0;
+    border-top: 1px solid #ddd;
+    text-align: center;
+    color: #777;
+    font-size: 0.9rem;
+    background: #ffffff;
+}
+
+.app-footer a {
+    text-decoration: none;
+    color: #555;
+    margin: 0 5px;
+}
+
+.app-footer a:hover {
+    text-decoration: underline;
+    color: #000;
+}
+
+/* 計數器樣式 */
+#busuanzi_container_page_pv {
+    padding-left: 10px;
+}
+
+#busuanzi_value_page_pv {
+    color: #00b894;
+    font-weight: bold;
+}

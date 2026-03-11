@@ -1,3 +1,14 @@
+/**
+ * Charles Nextime Web Tools Portal - Core Logic
+ * Copyright (c) 2026 Charles Nextime
+ * Licensed under the GNU General Public License v3.0
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation.
+ */
+ 
+
+
 // --- 1. 定義儲存鍵名與預設值 ---
 const KEY_SCHEDULE = 'SCHOOL_SCHEDULE_ALL_DATA';
 const KEY_SETTINGS = 'SCHOOL_SCHEDULE_SUBJECT_MAP';
@@ -94,7 +105,18 @@ async function handleFile(file) {
 
     const baseIndex = rows.findIndex(r => r.innerText.includes('08：40'));
     const startIndex = Math.max(0, baseIndex); 
-    const classNum = (file.name.match(/(\d+)/) ? file.name.match(/(\d+)/)[0] : "").slice(-1); 
+    // 1. 抓取檔名中的數字序列 (例如 512 會抓到 "512")
+    const match = file.name.match(/(\d+)/);
+    let classNum = "";
+
+    if (match) {
+        // 2. 取最後兩位數 (例如 512 取出 "12", 501 取出 "01")
+        let fullNum = match[0];
+        let lastTwo = fullNum.slice(-2);
+        
+        // 3. 轉為數字再轉回字串，這會自動省略開頭的 0 (例如 "01" 變 "1")
+        classNum = parseInt(lastTwo, 10).toString();
+    } 
 
     let scheduleData = [];
     let lessonIndex = 0;
@@ -169,7 +191,6 @@ function resetScheduleOnly() {
         allProcessedData = [];
         localStorage.removeItem(KEY_SCHEDULE);
         document.getElementById('scheduleOutput').innerHTML = "";
-        alert("課表資料已清除。");
     }
 }
 
@@ -178,8 +199,7 @@ function resetSettingsOnly() {
         subjectMap = { ...DEFAULT_SUBJECT_MAP };
         localStorage.removeItem(KEY_SETTINGS);
         const text = Object.entries(subjectMap).map(([k, v]) => `${k} ${v}`).join('\n');
-        document.getElementById('subjectMapInput').value = text;
-        alert("縮寫設定已恢復預設。");
+        document.getElementById('subjectMapInput').value = text;s
         if (allProcessedData.length > 0) renderIntegratedTables();
     }
 }

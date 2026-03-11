@@ -2,20 +2,20 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>學年總課表</title>
-    <link rel="stylesheet" href="style.css">
+    <title>學年總課表 Schedule Master</title>
+    <link rel="stylesheet" href="style.css?ver=1.00">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
 </head>
 <body>
-
+<div class="container">
     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px;">
         <h1 style="margin: 0;">學年總課表</h1>
         
         <div style="display: flex; gap: 15px; align-items: center;">
-            [<a href="507日課表.docx" download style="color: #2196F3; text-decoration: none; font-size: 14px;">下載課表範例</a>]
-            [<a href="https://nextime5.blogspot.com/2025/05/blog-post.html" target="_blank" style="color: #2196F3; text-decoration: none; font-size: 14px;">下載 Doc 轉 Docx 程式</a>]
+            [<a href="https://w1798.github.io/web/ScheduleMaster/507日課表.docx" download style="color: #2196F3; text-decoration: none; font-size: 14px;">下載課表範例(507日課表.docx)</a>]
+            [<a href="https://nextime5.blogspot.com/2026/03/doc-docx.html" target="_blank" style="color: #2196F3; text-decoration: none; font-size: 14px;">下載 .doc 轉 .docx 轉換工具</a>]
 
-            <button onclick="document.getElementById('fileInput').click()" style="background: #4CAF50; color: white; padding: 8px 15px; border: none; cursor: pointer; border-radius: 4px;">載入課表.docx</button>
+            <button onclick="document.getElementById('fileInput').click()" style="background: #4CAF50; color: white; padding: 8px 15px; border: none; cursor: pointer; border-radius: 4px; font-size: 16px;">載入課表.docx</button>
             <input type="file" id="fileInput" style="display:none" multiple accept=".docx">
             
             <button onclick="exportData()">匯出</button>
@@ -24,16 +24,17 @@
             
             <button onclick="resetScheduleOnly()" style="background: #f44336; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px;">重置課表</button>
             
-            <button onclick="openSettings()" style="padding: 8px 20px; font-weight: bold; cursor: pointer; border-radius: 4px;">設定</button>
+            <button onclick="openSettings()" style="padding: 8px 20px; font-weight: bold; cursor: pointer; border-radius: 4px; font-size: 16px;">設定</button>
         </div>
     </div>
+
 
     <div id="settingsModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:1000;">
         <div style="background:white; width:400px; margin:50px auto; padding:30px; border-radius:12px; position:relative; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
             <span onclick="closeSettings()" style="position:absolute; right:20px; top:15px; cursor:pointer; font-size:28px;">&times;</span>
             <h2 style="margin-top:0;">科目縮寫設定</h2>
             <p style="color: #666;">格式：全名[空格]簡名（例如：數學 數），每行一筆。</p>
-            <textarea id="subjectMapInput" style="width: 100%; height: 300px; font-size: 16px; font-family: monospace; padding: 10px; border: 1px solid #ccc;"></textarea>
+            <textarea id="subjectMapInput" style="width: 100%; height: 300px; font-size: 20px; font-family: monospace; padding: 10px; border: 1px solid #ccc;"></textarea>
             <div style="margin-top:20px; text-align:right;">
                 <button onclick="resetSettingsOnly()" style="background: #9e9e9e; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 5px;">重置縮寫設定</button>
                 <button onclick="saveSettings()" style="padding: 10px 30px; font-size: 18px; background: #2196F3; color: white; border: none; cursor: pointer; border-radius: 5px;">儲存並套用</button>
@@ -41,8 +42,78 @@
         </div>
     </div>
 
-<div id="scheduleOutput"></div>
 
-    <script src="script.js"></script>
+    <div id="scheduleOutput"></div>
+</div>
+
+<footer class="app-footer" style="text-align: center; margin-top: 50px; padding: 20px; border-top: 1px solid #eee; color: #777; font-size: 0.9rem;">
+        <a href="https://w1798.github.io/web/" target="_blank" style="text-decoration: none; color: #555;">&copy; 2026<script>const y=new Date().getFullYear(); if(y>2026)document.write("-"+y);</script> Charles Nextime</a> · 
+        <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" style="text-decoration: none; color: #555;">GPLv3</a> · 
+        <span id="busuanzi_container_page_pv">
+            本頁使用量 <span id="busuanzi_value_page_pv">--</span> 次
+        </span>
+    </footer>
+   
+<style>
+#busuanzi_container_page_pv {
+    color: #888;
+    font-size: 0.9rem;
+    margin-left: 15px;
+    border-left: 1px solid rgba(128, 128, 128, 0.5); /* 計數器加一條細細的分隔線 */
+    padding-left: 15px;
+}
+
+#busuanzi_value_page_pv {
+    color: #00b894;
+    font-weight: bold;
+}
+</style>
+
+
+<script>
+(function() {
+    // 計數器這樣無論是 /web/ 還是 /web 都會統一變成 /web 
+    const path = window.location.pathname.replace(/\/$/, ""); 
+    const TIME_KEY = `VERCOUNT_TIME_${path}`; // 每個分頁獨立計算冷卻時間
+    const VAL_KEY = `VERCOUNT_VAL_${path}`;   // 每個分頁獨立存儲 PV 數
+    
+    const COOL_DOWN = 30 * 60 * 1000; 
+    const now = Date.now();
+    const lastVisit = localStorage.getItem(TIME_KEY);
+    
+    // 計算剩餘秒數
+    const timeLeft = lastVisit ? Math.ceil((parseInt(lastVisit) + COOL_DOWN - now) / 1000) : 0;
+
+    if (timeLeft <= 0) {
+        console.log(`%c[Vercount]%c 路徑 ${path} 冷卻結束，更新數據...`, "color:#00b894;font-weight:bold", "color:inherit");
+        
+        const script = document.createElement('script');
+        script.src = "https://events.vercount.one/js";
+        script.defer = true;
+        
+        script.onload = () => {
+            setTimeout(() => {
+                const pvVal = document.getElementById('busuanzi_value_page_pv')?.innerText;
+                if (pvVal) {
+                    localStorage.setItem(VAL_KEY, pvVal);
+                    localStorage.setItem(TIME_KEY, now); // 成功抓到才更新時間
+                }
+            }, 1500);
+        };
+        document.head.appendChild(script);
+    } else {
+        const lastVal = localStorage.getItem(VAL_KEY) || "--";
+        console.log(`%c[Vercount]%c ${path} 冷卻中（剩 ${timeLeft} 秒）。顯示舊值：${lastVal}`, "color:#f1c40f;font-weight:bold", "color:inherit");
+
+        window.addEventListener('load', () => {
+            const pvSpan = document.getElementById('busuanzi_value_page_pv');
+            if (pvSpan) pvSpan.innerText = lastVal;
+        });
+    }
+})();
+</script>
+   
+   
+    <script src="script.js?ver=1.00"></script>
 </body>
 </html>
