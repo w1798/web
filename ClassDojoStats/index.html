@@ -14,7 +14,7 @@
         <div class="header-right">
             <button class="nav-btn" onclick="cloudAction('upload')">雲端上傳</button>
             <button class="nav-btn" onclick="cloudAction('download')">雲端下載</button>
-            <button class="nav-btn" onclick="resetAppData()">重置系統</button>
+            <button class="nav-btn" onclick="clearResults()">清除結果</button>
             <button class="nav-btn" onclick="toggleModal('settingsModal', true)">設定</button>
         </div>
     </header>
@@ -23,9 +23,8 @@
         <section class="tool-controls-bar">
             <div class="control-item">
                 <label>載入 CSV：</label>
-                <input type="file" id="csvFile" accept=".csv">
+                <input type="file" id="csvFile" accept=".csv" onchange="processData()">
             </div>
-            <button class="btn-primary main-ctrl" onclick="processData()">執行計算</button>
             <button class="btn-success main-ctrl" onclick="copyScoresOnly()">複製純點數</button>
             <button class="btn-orange main-ctrl" onclick="showSummary()">全班點數總覽</button>
         </section>
@@ -59,6 +58,7 @@
             <div class="modal-header">
                 <span class="fixed-title">相關功能設定 (規則有多個時，請用空白鍵分開關鍵字)</span>
                 <div class="top-btns">
+                    <button class="btn-danger" style="background:#e74c3c; color:white; border:none; margin-right:auto;" onclick="resetSettings()">重置設定</button>
                     <button onclick="toggleModal('settingsModal', false)">取消</button>
                     <button class="btn-confirm" onclick="saveSettings()">認定</button>
                 </div>
@@ -169,7 +169,7 @@
 
 
 
-    <script src="script.js?ver=1.00"></script>
+    <script src="script.js?ver=1.00a"></script>
 </style>
 </body>
 </html>
