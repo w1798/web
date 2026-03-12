@@ -7,12 +7,15 @@
  * the Free Software Foundation.
  */
 
-let appData = {
+const DEFAULT_DATA = {
     fontSize: 16,
     cloudConfig: { binId: '', apiKey: '' },
     settings: { includeKeywords: '_', excludeKeywords: 'A0', minusKeywords: '-' },
     students: []
 };
+
+let appData = JSON.parse(JSON.stringify(DEFAULT_DATA));
+
 
 // 頁面載入初始化
 document.addEventListener('DOMContentLoaded', () => {
@@ -32,7 +35,7 @@ function applyStyles() {
 // 執行計算並預設排序 (小排到大)
 function processData() {
     const file = document.getElementById('csvFile').files[0];
-    if (!file) return alert("請選取 CSV 檔案");
+    if (!file) return;
     
     const s = appData.settings;
     const incs = s.includeKeywords.split(/\s+/).filter(x=>x);
@@ -176,13 +179,32 @@ async function cloudAction(action) {
     } catch (e) { alert("❌ 雲端同步失敗，請檢查網路或金鑰"); }
 }
 
-// 重置與工具
-function resetAppData() {
-    if(confirm("確定要重置所有資料並歸零系統嗎？")) {
-        localStorage.removeItem('classDojoAppData');
-        location.reload();
+function clearResults() {
+    if(confirm("確定要清除目前的計算結果嗎？(設定將會保留)")) {
+        appData.students = [];
+        document.getElementById('resultTable').style.display = 'none';
+        document.getElementById('tableBody').innerHTML = '';
+        document.getElementById('csvFile').value = ''; // 清空檔案選取器
+        localStorage.setItem('classDojoAppData', JSON.stringify(appData));
     }
 }
+
+function resetSettings() {
+    if(confirm("確定要將所有設定恢復預設值嗎？")) {
+        // 1. 將設定值恢復為 DEFAULT_DATA 的內容
+        appData.fontSize = DEFAULT_DATA.fontSize;
+        appData.settings = { ...DEFAULT_DATA.settings };
+        appData.cloudConfig = { ...DEFAULT_DATA.cloudConfig };
+        
+        // 2. 同步到 LocalStorage
+        localStorage.setItem('classDojoAppData', JSON.stringify(appData));
+        
+        // 3. 立即更新畫面 UI
+        applyStyles();
+        toggleModal('settingsModal', false);
+    }
+}
+
 
 function clearField(id) { document.getElementById(id).value = ''; }
 function scrollToTop() { document.querySelector('.app-main').scrollTo({ top: 0, behavior: 'smooth' }); }
