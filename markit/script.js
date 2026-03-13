@@ -98,7 +98,7 @@ function syncSettingsToUI() {
         'sizeTotal': (el) => el.value = s.sizeTotal || 70,
         'statusCountSelect': (el) => el.value = s.statusCount || 1,
         'studentFontSizeSelect': (el) => el.value = s.studentFontSize || 18,
-        'dateOffsetSelect': (el) => el.value = s.dateOffset || 1,
+        'dateOffsetSelect': (el) => el.value = (s.dateOffset ?? 1),
         'quickTasksConfig': (el) => el.value = (s.quickTasks || "").split(',').join('\n'),
         'studentListConfig': (el) => el.value = (s.studentList || "").split(',').join('\n'),
         'cloudBinId': (el) => el.value = s.binId || '',
@@ -188,6 +188,7 @@ function moveCursorToEnd(el) {
 
 function getOffsetDateStr() {
     const d = new Date();
+    const offset = parseInt(state.settings.dateOffset || 0);
     d.setDate(d.getDate() + parseInt(state.settings.dateOffset || 0));
     const mm = (d.getMonth() + 1).toString().padStart(2, '0');
     const dd = d.getDate().toString().padStart(2, '0');
@@ -229,6 +230,7 @@ function saveSettings() {
     s.autoDate = getC('autoDate');
     s.appendMode = getC('appendModeSetting');
     
+    if(getV('dateOffsetSelect')) s.dateOffset = parseInt(getV('dateOffsetSelect'));
     if(getV('layoutSelect')) s.gridCols = parseInt(getV('layoutSelect'));
     if(getV('studentColsSelect')) s.studentCols = parseInt(getV('studentColsSelect'));
     if(getV('themeSelect')) s.theme = getV('themeSelect');
