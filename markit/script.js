@@ -9,12 +9,9 @@
 
 const FULL_30 = "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30";
 const DEFAULT_LABELS = {
-    1: "湖水藍 (完成)",
-    2: "活力橙 (請假)",
-    3: "胭脂紅 (待補)",
-    4: "羅蘭紫 (特殊)",
-    5: "石板灰 (備註)",
-    6: "深林綠 (其他)"
+    1: "湖水藍 (完成)", 2: "活力橙 (請假)", 3: "胭脂紅 (待補)",
+    4: "羅蘭紫 (特殊)", 5: "石板灰 (備註)", 6: "深林綠 (其他)",
+    7: "珊瑚橘", 8: "靛藍", 9: "萊姆黃", 10: "咖啡棕", 11: "玫瑰粉", 12: "天空藍"
 };
 
 let state = {
@@ -70,7 +67,7 @@ function initSelectors() {
     const statusSel = document.getElementById('statusCountSelect');
     if(statusSel) {
         statusSel.innerHTML = '';
-        for(let i=1; i<=6; i++) {
+        for(let i=1; i<=12; i++) {
             const label = state.settings.statusLabels[i] || `顏色 ${i}`;
             statusSel.add(new Option(`${i} 色 (至${label.split(' ')[0]})`, i));
         }
@@ -122,7 +119,7 @@ function loadData() {
             state.settings = { ...state.settings, ...parsed.settings };
             state.assignments = parsed.assignments || [];
             
-            for (let i = 1; i <= 5; i++) {
+            for (let i = 1; i <= 12; i++) {
                 if (!state.settings.statusLabels[i]) {
                     state.settings.statusLabels[i] = DEFAULT_LABELS[i];
                 }
@@ -252,7 +249,7 @@ function saveSettings() {
     if(document.getElementById('cloudBinId')) s.binId = getV('cloudBinId').trim();
     if(document.getElementById('cloudApiKey')) s.apiKey = getV('cloudApiKey').trim();
 
-    for(let i = 1; i <= 6; i++) {
+    for(let i = 1; i <= 12; i++) {
         const input = document.getElementById(`statusLabel_${i}`);
         if(input) s.statusLabels[i] = input.value.trim();
     }
@@ -299,7 +296,7 @@ function openModal(id) {
         const labelContainer = document.getElementById('statusLabelInputs');
         if (labelContainer) {
             labelContainer.innerHTML = '';
-            for(let i = 1; i <= 6; i++) {
+            for(let i = 1; i <= 12; i++) {
                 const row = document.createElement('div');
                 row.style = 'display:flex; align-items:center; gap:10px; margin-bottom:5px;';
                 row.innerHTML = `<span class="status-dot status-${i}" style="width:12px; height:12px; border-radius:50%; display:inline-block;"></span> 
@@ -336,32 +333,64 @@ function renderTotalListContent() {
 }
 
 function toggleStudent(n, el, work) {
+    // 1. 從 localStorage 同步最新狀態，避免多視窗操作時資料被覆蓋
     const saved = localStorage.getItem('MarkIt');
     if (saved) {
         const latest = JSON.parse(saved);
         const latestWork = latest.assignments.find(a => a.id === work.id);
-        if (latestWork) { work.doneList = latestWork.doneList; state.assignments = latest.assignments; }
+        if (latestWork) { 
+            work.doneList = latestWork.doneList; 
+            state.assignments = latest.assignments; 
+        }
     }
+
+    // 2. 獲取目前設定的最高色數 (例如您設定的 12)
     const maxStatus = parseInt(state.settings.statusCount || 1);
+    
+    // 3. 尋找該學生是否已經在已完成清單中
     const idx = work.doneList.findIndex(item => (typeof item === 'object' ? item.id === n : item === n));
+
     if (idx === -1) {
+        // 情況 A：目前是空白狀態 -> 切換到第 1 色
         work.doneList.push({ id: n, status: 1 });
     } else {
+        // 獲取當前狀態數值
         let currStatus = typeof work.doneList[idx] === 'object' ? work.doneList[idx].status : 1;
-        if (currStatus < maxStatus) work.doneList[idx] = { id: n, status: currStatus + 1 };
-        else work.doneList.splice(idx, 1);
+        
+        if (currStatus < maxStatus) {
+            // 情況 B：還沒到達最高色數 -> 切換到下一色
+            work.doneList[idx] = { id: n, status: currStatus + 1 };
+        } else {
+            // 情況 C：已經是最後一色 -> 從清單移除，變回空白
+            work.doneList.splice(idx, 1);
+        }
     }
+
+    // 4. 更新該學生方格的 CSS UI
     updateStudentUI(n, el, work);
+
+    // 5. 靜默儲存到 localStorage
     saveDataQuietly(); 
 }
 
 function updateStudentUI(n, el, work) {
+    // 找出該學生的紀錄
     const record = work.doneList.find(item => (typeof item === 'object' ? item.id === n : item === n));
-    el.classList.remove('done', 'status-1', 'status-2', 'status-3', 'status-4', 'status-5', 'status-6');
     
+    // 【重點】清除所有可能的狀態 class
+    // 使用正則表達式或 startsWith 確保 status-7 ~ status-12 都能被移除
+    Array.from(el.classList).forEach(className => {
+        if (className.startsWith('status-') || className === 'done') {
+            el.classList.remove(className);
+        }
+    });
+    
+    // 如果有紀錄，就加上新的 class；如果沒有紀錄 (已被 splice)，這裡就不會執行，方格變回空白
     if (record) {
         const status = typeof record === 'object' ? record.status : 1;
         el.classList.add(`status-${status}`);
+        
+        // 為了相容您原本的 CSS，如果是第 1 色，額外補上 .done
         if (status === 1) el.classList.add('done');
     }
 }
