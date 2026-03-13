@@ -9,34 +9,77 @@
     --grid-cols: 5; 
     --student-cols: 7; 
     /* 狀態顏色變數 */
-    --color-1: #8fb1e9; /* 湖水藍 */
-    --color-2: #ff9800; /* 活力橙 */
-    --color-3: #d81b60; /* 胭脂紅 */
-    --color-4: #8e24aa; /* 羅蘭紫 */
-    --color-5: #546e7a; /* 石板灰 */
-    --color-6: #52b788; /* 深林綠 */
-    --color-7: #ff7043; /* 珊瑚橘 */
-    --color-8: #3f51b5; /* 靛藍 */
-    --color-9: #afb42b; /* 萊姆黃 */
-    --color-10: #795548; /* 咖啡棕 */
-    --color-11: #ec407a; /* 玫瑰粉 */
-    --color-12: #00bcd4; /* 天空藍 */
+    --color-1: #8fb1e9; /* 湖水藍 - 淺藍 */
+    --color-2: #ff9800; /* 活力橙 - 亮橘 */
+    --color-3: #d81b60; /* 胭脂紅 - 深紅紫 */
+    --color-4: #8e24aa; /* 羅蘭紫 - 深紫 */
+    --color-5: #546e7a; /* 石板灰 - 冷灰 */
+    --color-6: #52b788; /* 深林綠 - 翠綠 */
+    --color-7: #e64a19;  /* 磚紅橘 - 比 2 號更深、更紅 */
+        --color-8: #3f51b5;  /* 靛藍色 - 正深藍 */
+    --color-9: #afb42b;  /* 萊姆黃 - 偏綠的黃 */
+    --color-10: #795548; /* 咖啡棕 - 泥土色 */
+    --color-11: #ff80ab; /* 亮粉紅 - 比 3 號更淺、更粉 */
+    --color-12: #00838f; /* 深青色 - 比 1 號更深、偏綠藍 */
 }
 
-/* --- 學生方格顏色樣式 --- */
-.student-item.status-1 { background-color: var(--color-1) !important; color: white; } 
-.student-item.status-2 { background-color: var(--color-2) !important; color: white; } 
-.student-item.status-3 { background-color: var(--color-3) !important; color: white; } 
-.student-item.status-4 { background-color: var(--color-4) !important; color: white; } 
+/* --- 學生方格基礎樣式 --- */
+.student-item {
+    position: relative; /* 必須設定，讓數字能定位在方格內 */
+    overflow: hidden;   /* 確保數字不會超出方格邊界 */
+    z-index: 1;
+}
+
+/* --- 背景數字通用樣式 (浮水印感) --- */
+.student-item[class*="status-"]::after {
+    position: absolute;
+    bottom: 5px;  /* 靠下 */
+    right: 5px;    /* 靠右 */
+    font-size: 2.2rem; /* 數字大小 */
+    font-weight: 900;
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.25); /* 白色半透明，形成浮水印效果 */
+    z-index: -1;   /* 放在座號文字後方 */
+    pointer-events: none; /* 防止干擾點擊 */
+}
+
+/* --- 各狀態對應的顏色、紋理與數字內容 --- */
+
+.student-item.status-1 { background-color: var(--color-1) !important; color: white; }
+.student-item.status-1::after { content: "1"; }
+
+.student-item.status-2 { background-color: var(--color-2) !important; color: white; }
+.student-item.status-2::after { content: "2"; }
+
+.student-item.status-3 { background-color: var(--color-3) !important; color: white; }
+.student-item.status-3::after { content: "3"; }
+
+.student-item.status-4 { background-color: var(--color-4) !important; color: white; }
+.student-item.status-4::after { content: "4"; }
+
 .student-item.status-5 { background-color: var(--color-5) !important; color: white; }
+.student-item.status-5::after { content: "5"; }
+
 .student-item.status-6 { background-color: var(--color-6) !important; color: white; }
+.student-item.status-6::after { content: "6"; }
+
 .student-item.status-7 { background-color: var(--color-7) !important; color: white; }
+.student-item.status-7::after { content: "7"; }
+
 .student-item.status-8 { background-color: var(--color-8) !important; color: white; }
+.student-item.status-8::after { content: "8"; }
+
 .student-item.status-9 { background-color: var(--color-9) !important; color: white; }
+.student-item.status-9::after { content: "9"; }
+
 .student-item.status-10 { background-color: var(--color-10) !important; color: white; }
+.student-item.status-10::after { content: "10"; }
+
 .student-item.status-11 { background-color: var(--color-11) !important; color: white; }
+.student-item.status-11::after { content: "11"; }
+
 .student-item.status-12 { background-color: var(--color-12) !important; color: white; }
-.student-item.done { background-color: var(--primary); color: white; }
+.student-item.status-12::after { content: "12"; }
 
 /* =========================================
    2. 詳情彈窗 Header 排版 (電腦版)
@@ -521,3 +564,5 @@ display: inline-block; font-weight: bold; }
         margin: 5px; /* 手機版不需要超大間距 */
     }
 }
+
+
