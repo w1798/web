@@ -15,6 +15,12 @@
     --color-4: #8e24aa; /* 羅蘭紫 */
     --color-5: #546e7a; /* 石板灰 */
     --color-6: #52b788; /* 深林綠 */
+    --color-7: #ff7043; /* 珊瑚橘 */
+    --color-8: #3f51b5; /* 靛藍 */
+    --color-9: #afb42b; /* 萊姆黃 */
+    --color-10: #795548; /* 咖啡棕 */
+    --color-11: #ec407a; /* 玫瑰粉 */
+    --color-12: #00bcd4; /* 天空藍 */
 }
 
 /* --- 學生方格顏色樣式 --- */
@@ -24,6 +30,12 @@
 .student-item.status-4 { background-color: var(--color-4) !important; color: white; } 
 .student-item.status-5 { background-color: var(--color-5) !important; color: white; }
 .student-item.status-6 { background-color: var(--color-6) !important; color: white; }
+.student-item.status-7 { background-color: var(--color-7) !important; color: white; }
+.student-item.status-8 { background-color: var(--color-8) !important; color: white; }
+.student-item.status-9 { background-color: var(--color-9) !important; color: white; }
+.student-item.status-10 { background-color: var(--color-10) !important; color: white; }
+.student-item.status-11 { background-color: var(--color-11) !important; color: white; }
+.student-item.status-12 { background-color: var(--color-12) !important; color: white; }
 .student-item.done { background-color: var(--primary); color: white; }
 
 /* =========================================
@@ -87,6 +99,12 @@
 .status-dot.status-4 { background-color: var(--color-4); }
 .status-dot.status-5 { background-color: var(--color-5); }
 .status-dot.status-6 { background-color: var(--color-6); }
+.status-dot.status-7 { background-color: var(--color-7); }
+.status-dot.status-8 { background-color: var(--color-8); }
+.status-dot.status-9 { background-color: var(--color-9); }
+.status-dot.status-10 { background-color: var(--color-10); }
+.status-dot.status-11 { background-color: var(--color-11); }
+.status-dot.status-12 { background-color: var(--color-12); }
 
 /* 圖例文字顏色對應 */
 .legend-item:nth-child(1) { color: #5a8bd8; } 
@@ -204,7 +222,7 @@ body { font-family: sans-serif; background: var(--bg); color: var(--text); margi
         grid-column: 1 / span 3;
         display: grid !important;
         /* 固定三欄，形成三個區塊 */
-        grid-template-columns: repeat(2, 1fr) !important; 
+        grid-template-columns: repeat(3, 1fr) !important; 
         gap: 0px;
         width: 100%;
         border-top: 1px solid rgba(0,0,0,0.05);
