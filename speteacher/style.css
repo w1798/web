@@ -147,7 +147,36 @@ input, select, textarea {
 }
 
 
+/* 針對手機裝置的調整 */
 @media (max-width: 600px) {
-    .observe-grid { flex-direction: column; }
-    .header h1 { font-size: 1.2rem; }
+    /* 1. 讓容器填滿螢幕寬度，移除內距 */
+    .container {
+        width: 95% !important;
+        margin: 10px auto !important;
+        padding: 10px !important;
+    }
+
+    /* 2. 設定頁面改為垂直排列 */
+    #view-settings {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+
+    /* 3. 確保所有輸入框與按鈕在手機上夠大、易於點擊 */
+    input, select, textarea, button {
+        width: 100% !important;
+        font-size: 16px !important; /* 避免 iPhone 自動縮放 */
+        padding: 12px !important;
+        box-sizing: border-box;
+    }
+
+    /* 4. 觀察介面：將按鈕改為垂直堆疊 */
+    .observe-grid {
+        flex-direction: column !important;
+    }
+    
+    .actions-grid {
+        grid-template-columns: repeat(2, 1fr) !important; /* 行為按鈕維持兩列 */
+    }
 }
