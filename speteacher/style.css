@@ -32,7 +32,11 @@ body, html { height: 100%; margin: 0; padding: 0; font-family: 'Segoe UI', "Micr
     justify-content: space-between; padding: 0 20px; 
 }
 .header h1 { margin: 0; }
-.nav-btns button { font-size: 0.8rem; padding: 5px 10px; }
+.nav-btns {
+    position: relative;
+    z-index: 100; /* 確保按鈕在最上層 */
+    pointer-events: auto; /* 確保可以接收點擊 */
+}
 
 .main-content { 
     flex: 1;  /* 關鍵：讓 main 佔滿剩下空間 */
@@ -149,34 +153,13 @@ input, select, textarea {
 
 /* 針對手機裝置的調整 */
 @media (max-width: 600px) {
-    /* 1. 提高基礎字體大小 */
-    :root {
-        --main-font-size: 18px; /* 手機版字體調大 */
-    }
-
-    /* 2. 確保容器撐開，避免被壓縮 */
-    .container {
-        width: 95% !important;
-        margin: 10px auto !important;
-        padding: 15px !important;
-    }
-
-    /* 3. 調整所有按鈕的點擊面積 */
-    button {
-        min-height: 50px; /* 確保按鈕夠高，手指好按 */
-        font-size: 1.1rem !important;
-        padding: 15px !important;
-    }
-
-    /* 4. 觀察按鈕：讓單個行為按鈕高度增加 */
-    .act-btn {
-        height: 80px !important;
-        font-size: 1rem !important;
-    }
-
-    /* 5. 確保輸入框不會導致頁面變寬 */
-    input, select, textarea {
-        font-size: 16px !important;
-        padding: 15px !important;
-    }
-}s
+    /* 1. 導覽列調整：改為換行排列，避免擠在一起 */
+    .header { height: auto; flex-direction: column; padding: 10px; }
+    .nav-btns { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-top: 5px; }
+    
+    /* 2. Footer 縮小並預留空間，避免遮擋 */
+    footer { position: relative; font-size: 0.7rem; padding: 5px; margin-bottom: 20px; }
+    
+    /* 3. 優化主內容區域 */
+    .main-content { padding-bottom: 60px; }
+}

@@ -16,7 +16,7 @@
                 <button onclick="cloudDownload()">下載</button>
                 <button onclick="fileExport()">匯出</button>
                 <button onclick="fileImport()">匯入</button>
-                <button onclick="location.reload()">返回主頁</button>
+                <button onclick="goHome()">返回主頁</button>
                 <button onclick="openSettings()">設定</button>
             </div>
         </header>
@@ -25,6 +25,7 @@
             <div id="view-home" class="container">
                 <button onclick="setMode('single')" style="padding: 20px 40px; font-size: 1.2rem;">單人模式</button>
                 <button onclick="setMode('double')" style="padding: 20px 40px; font-size: 1.2rem;">雙人模式</button>
+                <button onclick="loadLastSession()">觀察上一次結果</button>
             </div>
             
             <div id="view-settings" class="container hidden">
@@ -62,7 +63,7 @@
                 <div id="timelineContainer" style="margin-top: 30px;"></div>
                 
                 <button onclick="exportExcel()">匯出完整 CSV 報表</button>
-                <button onclick="location.reload()">返回首頁</button>
+                <button onclick="goHome()">返回首頁</button>
             </div>
 
             <div id="view-config" class="container hidden">

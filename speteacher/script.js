@@ -20,6 +20,12 @@ const STORAGE_KEY = 'attention_app_data';
 
 // --- 初始化 (安全掛載) ---
 window.onload = function() {
+
+    const savedState = localStorage.getItem(STORAGE_KEY);
+    if (savedState) {
+        state = JSON.parse(savedState);
+    }
+    
     const savedActions = localStorage.getItem('custom_dimensions');
     if (savedActions) state.actions = JSON.parse(savedActions);
     
@@ -31,11 +37,22 @@ window.onload = function() {
     if(document.getElementById('cloudToken')) document.getElementById('cloudToken').value = cloud.apiKey || '';
 };
 
+function saveStateToLocal() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
 
-
-// --- 修正 setMode ---
 window.setMode = function(mode) {
+    if (state.logs && state.logs.length > 0) {
+        if (!confirm("系統偵測到有未完成或未匯出的觀察資料，現在開始新模式將會清除所有資料！是否確認已備份並開始新觀察？")) {
+            return; // 使用者按取消，則什麼都不做
+        }
+    }
+    
+    state.data = {};
+    state.logs = [];
+    state.time = 0;
     state.mode = mode;
+    saveStateToLocal();
     // 強制隱藏所有頁面，包含主頁
     window.hideAllViews(); 
     
@@ -48,6 +65,25 @@ window.setMode = function(mode) {
     const stuB = document.getElementById('stuB');
     if (stuB) stuB.style.display = (mode === 'double') ? 'block' : 'none';
 };
+
+window.goHome = function() {
+    hideAllViews();
+    document.getElementById('view-home').classList.remove('hidden');
+    // 這裡我們不清除 state 資料，所以狀態會保留
+};
+
+
+window.resumeObservation = function() {
+    if (state.mode === '') {
+        alert("目前沒有進行中的觀察。");
+        return;
+    }
+    hideAllViews();
+    document.getElementById('view-observe').classList.remove('hidden');
+    // 確保渲染界面
+    renderObservationUI();
+};
+
 
 window.hideAllViews = function() {
     const views = ['view-home', 'view-settings', 'view-observe', 'view-report', 'view-config'];
@@ -87,12 +123,30 @@ window.closeSettings = function() {
 
 
 window.fileExport = function() {
-    const data = JSON.stringify({ state, local: localStorage.getItem('custom_dimensions') });
-    const blob = new Blob([data], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `backup_${new Date().getTime()}.json`;
-    a.click();
+    // 1. 取得報表內容 (假設報表內容在一個 table 中)
+    const table = document.querySelector('table');
+    if (!table) return alert("沒有可匯出的數據！");
+
+    let csvContent = "\ufeff"; // 加入 BOM 以解決 Excel 中文亂碼
+    const rows = table.querySelectorAll('tr');
+
+    rows.forEach(row => {
+        const cols = row.querySelectorAll('th, td');
+        const rowData = Array.from(cols).map(col => `"${col.innerText.replace(/"/g, '""')}"`);
+        csvContent += rowData.join(',') + "\r\n";
+    });
+
+    // 2. 建立 Blob 下載連結
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
+    // 3. 在手機上建立隱藏的下載連結並觸發
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `觀察報告_${new Date().toLocaleDateString()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 };
 
 
@@ -157,21 +211,17 @@ function startObservation() {
 
 function renderObservationUI() {
     const container = document.getElementById('actionButtons');
-    // 新增：上方控制區，包含新增項目與自訂備註按鈕
-    let html = `
-        <div style="width:100%; margin-bottom:15px; display:flex; gap:10px;">
-            <button onclick="addDynamicItem()" style="background:#28a745; flex:1;">+ 新增項目</button>
-            <button onclick="finishObservation()" style="background:#dc3545; flex:1;">結束觀察並結算</button>
-        </div>`;
     
+    // 定義單個學生的 HTML 結構 (已移除刪除按鈕)
     const getBtnHTML = (sKey, sName) => `
         <div class="student-col">
-            <h3 class="stu-title">${sName}</h3>
-            <button onclick="addCustomEvent('${sKey}')" style="margin-bottom:10px;">+ ${sName} 備註</button>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+                <h3 class="stu-title" style="margin:0;">${sName}</h3>
+                <button onclick="addCustomEvent('${sKey}')" style="padding: 5px 10px; font-size: 0.8rem;">+備註</button>
+            </div>
             <div class="actions-grid">
                 ${state.actions.map(act => `
                     <div class="act-btn-wrapper">
-                        <span class="del-btn" onclick="removeDynamicItem('${act}')">ⓧ</span>
                         <button class="act-btn" onclick="addCount('${sKey}', '${act}')">
                             ${act}<br><span id="val-${sKey}-${act}" class="count-badge">${state.data[sKey+'-'+act] || 0}</span>
                         </button>
@@ -180,9 +230,22 @@ function renderObservationUI() {
             </div>
         </div>`;
 
-    container.innerHTML = html + (state.mode === 'double' 
+    // 渲染學生介面
+    const studentHTML = state.mode === 'double' 
         ? `<div class="observe-grid">${getBtnHTML('A', state.config.stuA)}${getBtnHTML('B', state.config.stuB)}</div>`
-        : getBtnHTML('A', state.config.stuA));
+        : getBtnHTML('A', state.config.stuA);
+
+    // 組合整體介面：將操作按鈕放在同一列
+    container.innerHTML = `
+        ${studentHTML}
+        <div style="width:100%; margin-top:20px; display:flex; gap:10px;">
+            <button onclick="addDynamicItem()" style="background:#28a745; flex:1; min-height:45px;">+ 新增項目</button>
+            <button onclick="finishObservation()" class="btn-end" style="margin-top:0; flex:1; min-height:45px;">結束觀察並結算</button>
+        </div>
+        <div id="logArea" style="margin-top:20px;"></div>
+    `;
+    
+    if (typeof updateLiveLogs === 'function') updateLiveLogs();
 }
 
 function addCount(sKey, act) {
@@ -196,6 +259,7 @@ function addCount(sKey, act) {
         act: act 
     });
     document.getElementById(`val-${sKey}-${act}`).innerText = state.data[key];
+    saveStateToLocal(); 
     updateLiveLogs();
 }
 
@@ -478,6 +542,7 @@ function addCustomEvent(sKey) {
             stu: stuName,
             act: a
         });
+        saveStateToLocal();
         updateLiveLogs();
     }
 }
@@ -518,3 +583,11 @@ window.addEventListener('DOMContentLoaded', () => {
     // 設定字體大小
     document.documentElement.style.setProperty('--main-font-size', savedSize + 'px');
 });
+
+
+window.loadLastSession = function() {
+    if(state.logs.length === 0) return alert("沒有歷史紀錄");
+    hideAllViews();
+    document.getElementById('view-report').classList.remove('hidden');
+    renderFinalReport();
+};
