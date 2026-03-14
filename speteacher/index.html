@@ -2,12 +2,11 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>注意力觀察系統</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css?ver=1.00">
 </head>
 <body>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <div class="layout">
         <header class="header">
             <div class="brand"><h1>注意力觀察系統</h1></div>
@@ -16,70 +15,155 @@
                 <button onclick="cloudDownload()">下載</button>
                 <button onclick="fileExport()">匯出</button>
                 <button onclick="fileImport()">匯入</button>
-                <button onclick="systemReset()" style="color:red">重置</button>
+                <button onclick="location.reload()">返回主頁</button>
                 <button onclick="openSettings()">設定</button>
             </div>
         </header>
 
         <main class="main-content">
-            <div id="screen-home" class="home-menu">
-                <h1>請選擇觀察模式</h1>
-                <div class="menu-buttons">
-                    <button onclick="setMode('single')">單人模式</button>
-                    <button onclick="setMode('double')">雙人模式</button>
-                </div>
+            <div id="view-home" class="container">
+                <button onclick="setMode('single')" style="padding: 20px 40px; font-size: 1.2rem;">單人模式</button>
+                <button onclick="setMode('double')" style="padding: 20px 40px; font-size: 1.2rem;">雙人模式</button>
             </div>
-
-            <div id="screen-settings" class="container hidden">
-                <h2>觀察設定</h2>
+            
+            <div id="view-settings" class="container hidden">
                 <input type="text" id="obsName" placeholder="觀察者姓名">
                 <input type="text" id="actName" placeholder="活動名稱">
-                <input type="text" id="stuA" placeholder="學生 A 姓名">
-                <input type="text" id="stuB" placeholder="學生 B 姓名" class="hidden">
+                <input type="text" id="stuA" placeholder="學生A姓名">
+                <input type="text" id="stuB" placeholder="學生B姓名">
                 <input type="date" id="obsDate">
                 <select id="duration">
-                    <option value="5">5分</option>
-                    <option value="10">10分</option>
-                    <option value="15">15分</option>
-                    <option value="20">20分</option>
-                    <option value="30">30分</option>
+                    <option value="1">1 分鐘</option>
+                    <option value="5">5 分鐘</option>
+                    <option value="10" selected>10 分鐘</option>
+                    <option value="15">15 分鐘</option>
+                    <option value="20">20 分鐘</option>
+                    <option value="25">25 分鐘</option>
+                    <option value="30">30 分鐘</option>
                 </select>
-                <button onclick="startObservation()">確定</button>
+                <button onclick="startObservation()">開始</button>
             </div>
 
-            <div id="screen-config" class="container hidden">
-                <h2>系統設定</h2>
-                <h3>雲端備份設定 <a href="https://w1798.github.io/web/JsonCloudGuide" target="_blank" style="font-size: 12px;">申請說明</a></h3>
-                <input type="text" id="cloudURL" placeholder="URL or JSONBin ID">
-                <input type="password" id="cloudToken" placeholder="Token or X-Access-Key">
-                <button onclick="resetCloudConfig()" style="background: #666;">重置雲端設定</button>
-                
-                <h3>自訂觀察項度 (一行一個)</h3>
-                <textarea id="customActions" rows="5" style="width:100%"></textarea>
-                <button onclick="saveGlobalSettings()">儲存並關閉</button>
-            </div>
-
-            <div id="screen-observe" class="container hidden">
-                <h2 id="timerDisplay">總時間: 00:00</h2>
+            <div id="view-observe" class="container hidden">
+                <div id="timerDisplay">總時間: 00:00</div>
                 <div id="actionButtons"></div>
-                <button onclick="finishObservation()" class="btn-end">結束觀察並檢視</button>
             </div>
 
-            <div id="screen-report" class="container hidden">
-                <h2>觀察報表</h2>
+            <div id="view-report" class="container hidden">
+                <h2>觀察統計報表</h2>
                 <div id="reportTableContainer"></div>
-                <canvas id="analysisChart"></canvas>
-                <textarea id="finalNotes" placeholder="整體觀察備註" style="width: 100%; margin-top: 10px;"></textarea>
-                <button onclick="location.reload()">重新開始</button>
-                <button onclick="exportExcel()">匯出 Excel</button>
+                
+                <div style="margin-top: 30px; width: 100%; max-width: 800px;">
+                    <h3>行為分析長條圖</h3>
+                    <canvas id="analysisChart" style="background:#fff;"></canvas>
+                </div>
+                
+                <div id="timelineContainer" style="margin-top: 30px;"></div>
+                
+                <button onclick="exportExcel()">匯出完整 CSV 報表</button>
+                <button onclick="location.reload()">返回首頁</button>
+            </div>
+
+            <div id="view-config" class="container hidden">
+                <div class="config-header">
+                    <h2>系統設定</h2>
+                    <div>
+                        <button onclick="systemReset()" style="background:red;">重置系統</button>
+                        <button onclick="closeSettings()">取消</button>
+                        <button onclick="saveGlobalSettings()">儲存並重啟</button> 
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 20px;">
+                    <div style="flex: 1;">
+                        <h3>觀察項目 (一行一個)</h3>
+                        <textarea id="customActions" rows="10" style="width:100%;"></textarea>
+                    </div>
+                    <div style="flex: 1;">
+                        <h3>觀察統計區間設定</h3>
+                        <label>統計區間 (分鐘): </label>
+                        <input type="number" id="reportInterval" value="0.5" step="0.1" style="width: 60px;">
+                        <h3>雲端同步設定</h3>
+                        <input type="text" id="cloudURL" placeholder="URL or JSONBin ID">
+                        <input type="text" id="cloudToken" placeholder="Token or X-Access-Key">
+                        <div style="margin-top: 10px;">
+                        </div>
+                        <br>
+                        <a href="https://w1798.github.io/web/JsonCloudGuide" target="_blank">申請說明</a>
+                    </div>
+                </div>
             </div>
         </main>
-
-        <footer class="footer">
-            <p>© 2026 注意力觀察系統 - <a href="https://w1798.github.io/web/JsonCloudGuide" target="_blank">申請說明</a></p>
+        <footer>
+          <a href="https://w1798.github.io/web/" target="_blank">&copy; 2026<script>const y=new Date().getFullYear(); if(y>2026)document.write("-"+y);</script> Charles Nextime</a> · 
+          <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">GPLv3</a>
+          <span id="busuanzi_container_page_pv">
+    本頁使用量 <span id="busuanzi_value_page_pv"></span> 次
+</span>
         </footer>
     </div>
+ 
+ <style>
+#busuanzi_container_page_pv {
+    color: #888;
+    font-size: 0.9rem;
+    margin-left: 15px;
+    border-left: 1px solid rgba(128, 128, 128, 0.5); /* 計數器加一條細細的分隔線 */
+    padding-left: 15px;
+}
 
-    <script src="script.js"></script>
+#busuanzi_value_page_pv {
+    color: #00b894;
+    font-weight: bold;
+}
+</style>
+
+
+<script>
+(function() {
+    // 計數器這樣無論是 /web/ 還是 /web 都會統一變成 /web 
+    const path = window.location.pathname.replace(/\/$/, ""); 
+    const TIME_KEY = `VERCOUNT_TIME_${path}`; // 每個分頁獨立計算冷卻時間
+    const VAL_KEY = `VERCOUNT_VAL_${path}`;   // 每個分頁獨立存儲 PV 數
+    
+    const COOL_DOWN = 30 * 60 * 1000; 
+    const now = Date.now();
+    const lastVisit = localStorage.getItem(TIME_KEY);
+    
+    // 計算剩餘秒數
+    const timeLeft = lastVisit ? Math.ceil((parseInt(lastVisit) + COOL_DOWN - now) / 1000) : 0;
+
+    if (timeLeft <= 0) {
+        console.log(`%c[Vercount]%c 路徑 ${path} 冷卻結束，更新數據...`, "color:#00b894;font-weight:bold", "color:inherit");
+        
+        const script = document.createElement('script');
+        script.src = "https://events.vercount.one/js";
+        script.defer = true;
+        
+        script.onload = () => {
+            setTimeout(() => {
+                const pvVal = document.getElementById('busuanzi_value_page_pv')?.innerText;
+                if (pvVal) {
+                    localStorage.setItem(VAL_KEY, pvVal);
+                    localStorage.setItem(TIME_KEY, now); // 成功抓到才更新時間
+                }
+            }, 1500);
+        };
+        document.head.appendChild(script);
+    } else {
+        const lastVal = localStorage.getItem(VAL_KEY) || "--";
+        console.log(`%c[Vercount]%c ${path} 冷卻中（剩 ${timeLeft} 秒）。顯示舊值：${lastVal}`, "color:#f1c40f;font-weight:bold", "color:inherit");
+
+        window.addEventListener('load', () => {
+            const pvSpan = document.getElementById('busuanzi_value_page_pv');
+            if (pvSpan) pvSpan.innerText = lastVal;
+        });
+    }
+})();
+</script>
+
+   
+    
+    <script src="script.js?ver=1.00"></script>
 </body>
 </html>

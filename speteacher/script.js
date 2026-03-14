@@ -1,168 +1,291 @@
 /**
- * 注意力觀察紀錄系統 - 核心邏輯 (script.js)
+ * Charles Nextime Web Tools Portal - Core Logic
+ * Copyright (c) 2026 Charles Nextime
+ * Licensed under the GNU General Public License v3.0
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation.
  */
 
-// 1. 初始狀態與全域變數
 let state = {
-    mode: '',       // 'single' 或 'double'
-    config: {},     // 包含觀察者、活動名稱、學生姓名等
-    time: 0,        // 秒數
-    timer: null,    // 計時器實例
-    data: {},       // 行為次數紀錄 {'A-分心': 0, 'B-分心': 0...}
-    actions: ['分心', '扭動', '離座', '出聲', '玩物品'] // 預設項度
+    mode: '', config: {}, time: 0, timer: null,
+    data: {}, logs: [], 
+    actions: ['分心', '扭動', '離座', '出聲', '玩物品'],
+    currentView: 'view-home'
 };
+
+let myChart = null;
 
 const STORAGE_KEY = 'attention_app_data';
 
-// 2. 頁面初始化：載入自訂設定與雲端設定
+// --- 初始化 (安全掛載) ---
 window.onload = function() {
     const savedActions = localStorage.getItem('custom_dimensions');
-    if (savedActions) {
-        state.actions = JSON.parse(savedActions);
-    }
-    document.getElementById('customActions').value = state.actions.join('\n');
+    if (savedActions) state.actions = JSON.parse(savedActions);
+    
+    const dateEl = document.getElementById('obsDate');
+    if (dateEl) dateEl.valueAsDate = new Date();
+    
+    const cloud = JSON.parse(localStorage.getItem('cloud_config') || '{}');
+    if(document.getElementById('cloudURL')) document.getElementById('cloudURL').value = cloud.binId || '';
+    if(document.getElementById('cloudToken')) document.getElementById('cloudToken').value = cloud.apiKey || '';
+};
 
-    const savedCloud = localStorage.getItem('cloud_config');
-    if (savedCloud) {
-        const cloud = JSON.parse(savedCloud);
-        document.getElementById('cloudURL').value = cloud.binId || '';
-        document.getElementById('cloudToken').value = cloud.apiKey || '';
+
+
+// --- 修正 setMode ---
+window.setMode = function(mode) {
+    state.mode = mode;
+    // 強制隱藏所有頁面，包含主頁
+    window.hideAllViews(); 
+    
+    // 顯示設定頁面
+    state.currentView = 'view-settings';
+    const el = document.getElementById('view-settings');
+    if (el) el.classList.remove('hidden');
+    
+    // 處理雙人輸入框顯示
+    const stuB = document.getElementById('stuB');
+    if (stuB) stuB.style.display = (mode === 'double') ? 'block' : 'none';
+};
+
+window.hideAllViews = function() {
+    const views = ['view-home', 'view-settings', 'view-observe', 'view-report', 'view-config'];
+    views.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.classList.add('hidden');
+            // 額外保險：強制清除 inline-style 的 display
+            el.style.display = ''; 
+        }
+    });
+};
+
+// 修正 openSettings：明確處理浮動視窗
+window.openSettings = function() {
+    // 這裡不要用 hideAllViews，否則會把背景視窗隱藏導致內容閃爍
+    // 我們只顯示浮動視窗
+    const configEl = document.getElementById('view-config');
+    if (configEl) {
+        configEl.classList.remove('hidden');
+        
+        // 載入當前設定
+        const actInput = document.getElementById('customActions');
+        if (actInput) actInput.value = state.actions.join('\n');
+        
+        const intervalInput = document.getElementById('reportInterval');
+        if (intervalInput) intervalInput.value = localStorage.getItem('report_interval') || '0.5';
     }
 };
 
-// 3. 畫面導覽邏輯
-function setMode(mode) {
-    state.mode = mode;
-    document.getElementById('screen-home').classList.add('hidden');
-    document.getElementById('screen-settings').classList.remove('hidden');
-    
-    const stuBInput = document.getElementById('stuB');
-    if (mode === 'double') {
-        stuBInput.classList.remove('hidden');
-    } else {
-        stuBInput.classList.add('hidden');
+window.closeSettings = function() {
+    // 只隱藏設定浮動視窗
+    const configEl = document.getElementById('view-config');
+    if (configEl) configEl.classList.add('hidden');
+};;
+
+
+
+window.fileExport = function() {
+    const data = JSON.stringify({ state, local: localStorage.getItem('custom_dimensions') });
+    const blob = new Blob([data], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `backup_${new Date().getTime()}.json`;
+    a.click();
+};
+
+
+window.systemReset = function() {
+    if(confirm("確定要執行系統重置（清除觀察紀錄與設定）嗎？")) {
+        // 清除你程式中定義的所有關鍵 Key
+        localStorage.removeItem('attention_app_data');      // 你的主資料 KEY
+        localStorage.removeItem('custom_dimensions');     // 自訂觀察項目
+        localStorage.removeItem('cloud_config');          // 雲端設定
+        localStorage.removeItem('user_font_size');        // 字體大小設定
+        
+        alert("系統已重置，將重新整理頁面。");
+        location.reload();
     }
-}
+};
 
-function openSettings() {
-    // 隱藏當前所有顯示的 main-content 區塊
-    document.querySelectorAll('.main-content > div').forEach(div => div.classList.add('hidden'));
-    document.getElementById('screen-config').classList.remove('hidden');
-}
 
-// 4. 設定功能：儲存雲端與項度設定
-function saveGlobalSettings() {
-    // 儲存自訂項度
-    const text = document.getElementById('customActions').value;
-    const newActions = text.split('\n').filter(line => line.trim() !== '');
-    state.actions = newActions;
-    localStorage.setItem('custom_dimensions', JSON.stringify(newActions));
-    
-    // 儲存雲端設定 (單獨儲存)
-    const cloudConfig = {
-        binId: document.getElementById('cloudURL').value,
-        apiKey: document.getElementById('cloudToken').value
-    };
-    localStorage.setItem('cloud_config', JSON.stringify(cloudConfig));
-    
-    alert('設定已儲存並重新載入');
-    location.reload();
-}
-
-function resetCloudConfig() {
-    if (confirm("確定要重置雲端設定欄位嗎？")) {
-        document.getElementById('cloudURL').value = '';
-        document.getElementById('cloudToken').value = '';
-    }
-}
-
-// 5. 觀察核心功能
 function startObservation() {
     state.config = {
-        obsName: document.getElementById('obsName').value,
-        actName: document.getElementById('actName').value,
+        obsName: document.getElementById('obsName').value || '未填寫',
+        actName: document.getElementById('actName').value || '未填寫',
         stuA: document.getElementById('stuA').value || '學生 A',
         stuB: document.getElementById('stuB').value || '學生 B',
-        date: document.getElementById('obsDate').value
+        date: document.getElementById('obsDate').value,
+        duration: parseInt(document.getElementById('duration').value)
     };
+    
+    hideAllViews();
+    document.getElementById('view-observe').classList.remove('hidden');
+    renderObservationUI();
+    
+    // 設定目標總秒數
+    const targetSeconds = state.config.duration * 60;
 
-    document.getElementById('screen-settings').classList.add('hidden');
-    document.getElementById('screen-observe').classList.remove('hidden');
-
-    const container = document.getElementById('actionButtons');
-    container.innerHTML = ''; 
-
-    // 生成觀察計數介面
-    if (state.mode === 'double') {
-        container.innerHTML = `
-            <div class="observe-grid">
-                <div class="student-col"><h3>${state.config.stuA}</h3><div id="btns-A"></div></div>
-                <div class="student-col"><h3>${state.config.stuB}</h3><div id="btns-B"></div></div>
-            </div>`;
-        ['A', 'B'].forEach(studentKey => {
-            const btnContainer = document.getElementById(`btns-${studentKey}`);
-            state.actions.forEach(action => {
-                btnContainer.innerHTML += `
-                    <div class="counter-row">
-                        <span>${action}</span>
-                        <span id="val-${studentKey}-${action}" class="count-num">0</span>
-                        <button onclick="addCount('${studentKey}', '${action}')">+1</button>
-                    </div>`;
-            });
-        });
-    } else {
-        state.actions.forEach(action => {
-            container.innerHTML += `
-                <div class="counter-row">
-                    <span>${action}</span>
-                    <span id="val-A-${action}" class="count-num">0</span>
-                    <button onclick="addCount('A', '${action}')">+1</button>
-                </div>`;
-        });
-    }
-
-    // 啟動計時器
-    state.time = 0;
-    if (state.timer) clearInterval(state.timer);
     state.timer = setInterval(() => {
         state.time++;
-        let m = Math.floor(state.time / 60).toString().padStart(2, '0');
-        let s = (state.time % 60).toString().padStart(2, '0');
-        document.getElementById('timerDisplay').innerText = `總時間: ${m}:${s}`;
+        
+        // 檢查是否達到設定的目標總秒數
+        if (state.time === targetSeconds) {
+            // 暫停計時，等待使用者操作
+            clearInterval(state.timer); 
+            
+            const isFinished = confirm("觀察時間已到，是否結束？");
+            
+            if (isFinished) {
+                // 使用者點選「確定」
+                finishObservation();
+            } else {
+                // 使用者點選「取消」，我們繼續計時（改為累計模式，不再有上限）
+                alert("觀察繼續，將顯示超過的時間。");
+                state.timer = setInterval(() => {
+                    state.time++;
+                    updateTimerDisplay(); // 確保顯示更新
+                }, 1000);
+            }
+            return;
+        }
+        
+        updateTimerDisplay();
     }, 1000);
 }
 
-function addCount(student, action) {
-    let key = `${student}-${action}`;
+function renderObservationUI() {
+    const container = document.getElementById('actionButtons');
+    // 新增：上方控制區，包含新增項目與自訂備註按鈕
+    let html = `
+        <div style="width:100%; margin-bottom:15px; display:flex; gap:10px;">
+            <button onclick="addDynamicItem()" style="background:#28a745; flex:1;">+ 新增項目</button>
+            <button onclick="finishObservation()" style="background:#dc3545; flex:1;">結束觀察並結算</button>
+        </div>`;
+    
+    const getBtnHTML = (sKey, sName) => `
+        <div class="student-col">
+            <h3 class="stu-title">${sName}</h3>
+            <button onclick="addCustomEvent('${sKey}')" style="margin-bottom:10px;">+ ${sName} 備註</button>
+            <div class="actions-grid">
+                ${state.actions.map(act => `
+                    <div class="act-btn-wrapper">
+                        <span class="del-btn" onclick="removeDynamicItem('${act}')">ⓧ</span>
+                        <button class="act-btn" onclick="addCount('${sKey}', '${act}')">
+                            ${act}<br><span id="val-${sKey}-${act}" class="count-badge">${state.data[sKey+'-'+act] || 0}</span>
+                        </button>
+                    </div>
+                `).join('')}
+            </div>
+        </div>`;
+
+    container.innerHTML = html + (state.mode === 'double' 
+        ? `<div class="observe-grid">${getBtnHTML('A', state.config.stuA)}${getBtnHTML('B', state.config.stuB)}</div>`
+        : getBtnHTML('A', state.config.stuA));
+}
+
+function addCount(sKey, act) {
+    const key = `${sKey}-${act}`;
     state.data[key] = (state.data[key] || 0) + 1;
-    document.getElementById(`val-${student}-${action}`).innerText = state.data[key];
-    // 同步儲存到本地，防止跳電或當機
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    const timeStr = document.getElementById('timerDisplay').innerText.replace('總時間: ', '');
+    state.logs.push({ 
+        time: timeStr, 
+        seconds: state.time, 
+        stu: sKey === 'A' ? state.config.stuA : state.config.stuB, 
+        act: act 
+    });
+    document.getElementById(`val-${sKey}-${act}`).innerText = state.data[key];
+    updateLiveLogs();
+}
+
+function updateLiveLogs() {
+    let logBox = document.getElementById('liveLogDisplay');
+    if (!logBox) {
+        logBox = document.createElement('div');
+        logBox.id = 'liveLogDisplay';
+        logBox.className = 'live-log-box';
+        document.getElementById('view-observe').appendChild(logBox);
+    }
+    logBox.innerHTML = '<strong>最新紀錄：</strong><div class="log-scroll">' + 
+        state.logs.map(l => `<div>[${l.time}] ${l.stu}: ${l.act}</div>`).join('') + '</div>';
+    logBox.querySelector('.log-scroll').scrollTop = 99999;
 }
 
 function finishObservation() {
     clearInterval(state.timer);
-    document.getElementById('screen-observe').classList.add('hidden');
-    document.getElementById('screen-report').classList.remove('hidden');
-    renderReport();
+    hideAllViews();
+    document.getElementById('view-report').classList.remove('hidden');
+    renderFinalReport();
 }
 
-// 6. 報表與統計圖
-function renderReport() {
-    const dataA = state.actions.map(act => state.data[`A-${act}`] || 0);
-    const dataB = state.actions.map(act => state.data[`B-${act}`] || 0);
+function renderFinalReport() {
+    const container = document.getElementById('reportTableContainer');
+    const durationMin = state.config.duration;
+    
+    // 從輸入框讀取值，若無則預設為 0.5 (即 30 秒)
+    const storedInterval = localStorage.getItem('report_interval');
+    const intervalVal = storedInterval ? parseFloat(storedInterval) : 0.5;
+    const intervalSec = intervalVal * 60;
+    
+    let html = `<div class="report-info">觀察者：${state.config.obsName} | 活動：${state.config.actName} | 日期：${state.config.date}</div>`;
+    
+    const generateTable = (sKey, sName) => {
+        let t = `<h3>學生：${sName}</h3><table class="segment-table"><tr><th>時間區段</th>${state.actions.map(a => `<th>${a}</th>`).join('')}</tr>`;
 
-    const ctx = document.getElementById('analysisChart').getContext('2d');
-    if (window.myChart) window.myChart.destroy();
+        for (let i = 0; i < durationMin * 60; i += intervalSec) {
+            let segStart = `${Math.floor(i/60)}:${(i%60===0?'00':(i%60))}`;
+            let nextI = i + intervalSec;
+            let segEnd = `${Math.floor(nextI/60)}:${(nextI%60===0?'00':(nextI%60))}`;
+            
+            t += `<tr><td>${segStart}–${segEnd}</td>${state.actions.map(a => {
+                let count = state.logs.filter(l => l.stu === sName && l.act === a && l.seconds >= i && l.seconds < nextI).length;
+                return `<td>${count}</td>`;
+            }).join('')}</tr>`;
+        }
 
-    window.myChart = new Chart(ctx, {
+        t += `<tr class="total-row"><td>總計</td>${state.actions.map(a => `<td>${state.data[sKey+'-'+a] || 0}</td>`).join('')}</tr>`;
+        return t + `</table>`;
+    };
+
+    html += generateTable('A', state.config.stuA);
+    if (state.mode === 'double') html += generateTable('B', state.config.stuB);
+    container.innerHTML = html;
+    
+    renderTimeline();
+    renderChart();
+}
+
+
+function renderChart() {
+    const canvas = document.getElementById('analysisChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    // 如果之前已經有圖表，先銷毀它，避免畫布疊加與報錯
+    if (myChart) {
+        myChart.destroy();
+    }
+
+    const datasets = [{
+        label: state.config.stuA,
+        data: state.actions.map(a => state.data['A-'+a] || 0),
+        backgroundColor: 'rgba(74, 144, 226, 0.7)'
+    }];
+
+    if (state.mode === 'double') {
+        datasets.push({
+            label: state.config.stuB,
+            data: state.actions.map(a => state.data['B-'+a] || 0),
+            backgroundColor: 'rgba(231, 76, 60, 0.7)'
+        });
+    }
+
+    myChart = new Chart(ctx, {
         type: 'bar',
-        data: {
-            labels: state.actions,
-            datasets: [
-                { label: state.config.stuA, data: dataA, backgroundColor: '#4a90e2' },
-                { label: state.config.stuB, data: dataB, backgroundColor: '#e74c3c', hidden: state.mode === 'single' }
-            ]
+        data: { 
+            labels: state.actions, 
+            datasets: datasets 
         },
         options: {
             responsive: true,
@@ -171,23 +294,60 @@ function renderReport() {
     });
 }
 
-// 7. 匯出/匯入/重置功能 (LocalStorage 規範)
-function systemReset() {
-    if (confirm("確定要重置系統嗎？這將刪除所有本地資料與項度設定。")) {
-        localStorage.removeItem(STORAGE_KEY);
-        localStorage.removeItem('custom_dimensions');
-        alert("系統已還原至初始狀態");
-        location.reload();
-    }
+function renderTimeline() {
+    let html = `<h3>【事件行為時間軸紀錄】</h3><table class="timeline-table"><tr><th>時間</th><th>對象</th><th>行為內容</th></tr>`;
+    state.logs.forEach(l => {
+        html += `<tr><td>${l.time}</td><td>${l.stu}</td><td>${l.act}</td></tr>`;
+    });
+    document.getElementById('timelineContainer').innerHTML = html + `</table>`;
 }
 
+// 匯出完整全網頁資料
+function exportExcel() {
+    let csv = "\uFEFF注意力觀察完整報告\n";
+    csv += `觀察者,${state.config.obsName},活動,${state.config.actName},日期,${state.config.date}\n\n`;
+    
+    // 統計表   
+    csv += "\uFEFF時間區段," + state.actions.join(",") + "\n";
+    const totalSec = state.config.duration * 60;
+
+    for (let i = 0; i < totalSec; i += 30) {
+        let seg = `${Math.floor(i/60)}:${(i%60===0?'00':'30')}–${Math.floor((i+30)/60)}:${((i+30)%60===0?'00':'30')}`;
+        let row = [seg];
+        state.actions.forEach(act => {
+            // 計算該時段內所有行為總數 (包含 A 與 B)
+            let count = state.logs.filter(l => l.act === act && l.seconds >= i && l.seconds < i+30).length;
+            row.push(count);
+        });
+        csv += row.join(",") + "\n";
+    }
+    
+    csv += "--- 項目統計 ---\n學生,項目,次數\n";
+    state.actions.forEach(a => {
+        csv += `${state.config.stuA},${a},${state.data['A-'+a] || 0}\n`;
+        if (state.mode === 'double') csv += `${state.config.stuB},${a},${state.data['B-'+a] || 0}\n`;
+    });
+
+    // 事件清單
+    csv += "\n--- 行為時間軸紀錄 ---\n時間,學生,行為描述\n";
+    state.logs.forEach(l => {
+        csv += `${l.time},${l.stu},${l.act}\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `完整報告_${state.config.stuA}_${state.config.date}.csv`;
+    link.click();
+}
+
+// 基礎功能：上傳、下載、匯入、匯出
 function fileExport() {
-    const data = localStorage.getItem(STORAGE_KEY) || JSON.stringify(state);
+    const data = JSON.stringify({ state, local: localStorage.getItem('custom_dimensions') });
     const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = `attention_data_${new Date().toISOString().slice(0,10)}.json`;
+    a.href = URL.createObjectURL(blob);
+    a.download = `backup_${new Date().getTime()}.json`;
     a.click();
 }
 
@@ -196,92 +356,165 @@ function fileImport() {
     input.type = 'file';
     input.accept = '.json';
     input.onchange = e => {
-        const file = e.target.files[0];
         const reader = new FileReader();
-        reader.onload = (event) => {
-            localStorage.setItem(STORAGE_KEY, event.target.result);
-            alert("資料已匯入，頁面即將刷新");
+        reader.onload = event => {
+            const imported = JSON.parse(event.target.result);
+            if(imported.local) localStorage.setItem('custom_dimensions', imported.local);
+            alert("匯入成功，即將刷新");
             location.reload();
         };
-        reader.readAsText(file);
+        reader.readAsText(e.target.files[0]);
     };
     input.click();
 }
 
-// 8. 雲端備份功能 (Jsonbin & Upstash)
-async function cloudUpload() {
-    const cloudStr = localStorage.getItem('cloud_config');
-    if (!cloudStr) return alert("請先至設定填寫雲端 URL 與 Token");
-    
-    const { binId, apiKey } = JSON.parse(cloudStr);
-    if (!binId || !apiKey) return alert("雲端設定不完整，請檢查設定頁面");
 
-    if (!confirm("確定要上傳當前資料到雲端嗎？")) return;
+// --- 雲端安全上傳 ---
+window.cloudUpload = async function() {
+    const cloud = JSON.parse(localStorage.getItem('cloud_config') || '{}');
+    const isUpstash = cloud.binId.includes('upstash.io');
 
-    const isUpstash = binId.includes('upstash.io');
-    const localData = JSON.parse(localStorage.getItem(STORAGE_KEY) || JSON.stringify(state));
-    
-    // 安全性規範：排除敏感資訊
-    delete localData.cloudConfig; 
+    let url = cloud.binId;
+    let options = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${cloud.apiKey}` }
+    };
+
+    if (isUpstash) {
+        // Upstash Redis REST 格式：/set/key/value
+        // 注意：這裡假設你把資料存在一個固定的 key 叫 "speteacher_data"
+        url = `${cloud.binId}/set/speteacher_data`; 
+        options.body = JSON.stringify(state);
+    } else {
+        // JSONBin v3 格式：確保 URL 是正確的 API 路徑
+        // 確保你的 cloud.binId 包含了 https://api.jsonbin.io/v3/b/ 
+        options.method = 'PUT';
+        options.headers = { 'Content-Type': 'application/json', 'X-Access-Key': cloud.apiKey };
+        options.body = JSON.stringify(state);
+    }
 
     try {
-        const url = isUpstash ? `${binId}/attention_data` : `https://api.jsonbin.io/v3/b/${binId}`;
-        const headers = { 'Content-Type': 'application/json' };
+        const res = await fetch(url, options);
+        if (!res.ok) throw new Error(await res.text());
+        alert("上傳成功");
+    } catch(e) { alert("上傳失敗: " + e.message); }
+};
+
+// --- 雲端安全下載 ---
+window.cloudDownload = async function() {
+    const cloud = JSON.parse(localStorage.getItem('cloud_config') || '{}');
+    
+    // 1. 檢查設定
+    if (!cloud.binId || !cloud.apiKey) {
+        return alert("請先至「設定」頁面填寫 URL 與 Token/Key！");
+    }
+
+    if (!confirm("警告：下載將會覆蓋您目前的本地資料，確定繼續嗎？")) return;
+
+    const isUpstash = cloud.binId.includes('upstash.io');
+    let url = cloud.binId;
+    let options = { method: 'GET' };
+
+    // 2. 根據不同服務設定 Header 與 URL
+    if (isUpstash) {
+        // Upstash 的 GET 請求：通常是 /get/key_name
+        url = `${cloud.binId}/get/speteacher_data`;
+        options.headers = { 'Authorization': `Bearer ${cloud.apiKey}` };
+    } else {
+        // JSONBin 的 GET 請求：v3 API
+        // 確保你的 URL 是指向 /v3/b/{binId}
+        options.headers = { 'X-Access-Key': cloud.apiKey };
+    }
+
+    try {
+        const res = await fetch(url, options);
+        if (!res.ok) throw new Error("下載失敗，請檢查設定或連結");
         
-        if (isUpstash) {
-            headers['Authorization'] = `Bearer ${apiKey}`;
+        const result = await res.json();
+        
+        // 3. 解析資料 (JSONBin 的資料在 record 欄位中)
+        const remoteData = isUpstash ? result.result : result.record;
+        
+        if (remoteData) {
+            // 合併資料到 state
+            Object.assign(state, remoteData);
+            
+            // 強制重新渲染 UI 與儲存到 LocalStorage
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            alert("資料下載成功，頁面將自動重新整理。");
+            location.reload();
         } else {
-            headers['X-Access-Key'] = apiKey;
+            alert("無法解析雲端資料格式");
         }
+    } catch(e) { 
+        alert("下載錯誤: " + e.message); 
+        console.error(e);
+    }
+};
 
-        const response = await fetch(url, {
-            method: isUpstash ? 'PUT' : 'PUT', // Jsonbin 更新用 PUT
-            headers: headers,
-            body: JSON.stringify(localData)
+
+
+
+
+function saveGlobalSettings() {
+    const text = document.getElementById('customActions').value;
+    localStorage.setItem('custom_dimensions', JSON.stringify(text.split('\n').filter(l => l.trim())));
+    const cloud = { binId: document.getElementById('cloudURL').value, apiKey: document.getElementById('cloudToken').value };
+    localStorage.setItem('report_interval', document.getElementById('reportInterval').value);
+    localStorage.setItem('cloud_config', JSON.stringify(cloud));
+    location.reload();
+}
+
+function addDynamicItem() { const n = prompt("新項目:"); if(n) { state.actions.push(n); renderObservationUI(); } }
+function removeDynamicItem(a) { state.actions = state.actions.filter(x => x !== a); renderObservationUI(); }
+
+function addCustomEvent(sKey) {
+    const stuName = sKey === 'A' ? state.config.stuA : state.config.stuB;
+    const a = prompt(`請輸入 ${stuName} 的自訂備註:`);
+    if (a) {
+        state.logs.push({
+            time: document.getElementById('timerDisplay').innerText.replace('總時間: ', ''),
+            seconds: state.time,
+            stu: stuName,
+            act: a
         });
-
-        if (response.ok) alert("雲端上傳成功！");
-        else throw new Error("上傳失敗");
-    } catch (err) {
-        alert("雲端通訊出錯: " + err.message);
+        updateLiveLogs();
     }
 }
 
-async function cloudDownload() {
-    const cloudStr = localStorage.getItem('cloud_config');
-    if (!cloudStr) return alert("請先至設定填寫雲端資訊");
-    const { binId, apiKey } = JSON.parse(cloudStr);
 
-    if (!confirm("警告：下載將會覆蓋本地所有資料，確定繼續？")) return;
-
-    const isUpstash = binId.includes('upstash.io');
-    try {
-        const url = isUpstash ? `${binId}/attention_data` : `https://api.jsonbin.io/v3/b/${binId}/latest`;
-        const headers = {};
-        if (isUpstash) headers['Authorization'] = `Bearer ${apiKey}`;
-        else headers['X-Access-Key'] = apiKey;
-
-        const response = await fetch(url, { headers });
-        const resData = await response.json();
-        
-        const finalData = isUpstash ? resData.result : resData.record;
-        localStorage.setItem(STORAGE_KEY, typeof finalData === 'string' ? finalData : JSON.stringify(finalData));
-        
-        alert("下載成功，正在套用資料");
-        location.reload();
-    } catch (err) {
-        alert("下載失敗: " + err.message);
+function updateTimerDisplay() {
+    let m = Math.floor(state.time / 60).toString().padStart(2, '0');
+    let s = (state.time % 60).toString().padStart(2, '0');
+    const displayEl = document.getElementById('timerDisplay');
+    
+    // 確保 ID 存在才更新，避免在報表頁面或主頁面時報錯
+    if (displayEl) {
+        // 這裡確保 state.config.duration 有值，若沒有則顯示預設
+        const total = state.config.duration ? `${state.config.duration}:00` : '--:--';
+        displayEl.innerText = `總時間: ${m}:${s} / ${total}`;
     }
 }
 
-function exportExcel() {
-    // 簡單的 CSV 導出
-    let csvContent = "時間,學生,行為\n";
-    // 這裡可以根據 logs 擴充紀錄，目前以總數為例
-    alert("正在產生統計數據 CSV...");
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "attention_report.csv";
-    link.click();
+
+function applyFontSize() {
+    const size = document.getElementById('fontSize').value;
+    // 直接修改 CSS 變數，整個網站的字體會連動
+    document.documentElement.style.setProperty('--main-font-size', size + 'px');
+    localStorage.setItem('user_font_size', size);
 }
+
+// 初始化時讀取字體設定
+// 修改這一段
+window.addEventListener('DOMContentLoaded', () => {
+    const savedSize = localStorage.getItem('user_font_size') || '16';
+    
+    // 增加一個判斷，避免元素不存在時報錯
+    const fontSizeInput = document.getElementById('fontSize');
+    if (fontSizeInput) {
+        fontSizeInput.value = savedSize;
+    }
+    
+    // 設定字體大小
+    document.documentElement.style.setProperty('--main-font-size', savedSize + 'px');
+});
