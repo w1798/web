@@ -15,6 +15,8 @@ body { font-size: var(--main-font-size); font-family: 'Segoe UI', "Microsoft Jhe
     justify-content: space-between; 
 }
 
+
+
 .brand h1 {
     white-space: nowrap;    /* 強制文字不換行 */
     margin: 0;
@@ -250,24 +252,28 @@ footer { text-align: center; padding: 10px; font-size: 0.7rem; background: #eee;
     /* 當 observe-grid 只有一個學生欄位時 (單人) */
     .observe-grid .student-col:only-child {
         width: 100% !important;
-        max-width: 350px; /* 限制寬度，讓它看起來在中間 */
+        max-width: 600px; /* 限制寬度，讓它看起來在中間 */
         margin: 0 auto;   /* 水平置中關鍵 */
-        flex: none;       /* 取消 flex:1 以便 max-width 生效 */
+        flex: 0 1 100% !important;
     }
 
+    /* 這裡改為 repeat(3, 1fr) 即可讓一行容納三個 */
     .observe-grid .student-col:only-child .actions-grid {
-        grid-template-columns: 1fr !important; /* 單人模式改單行大按鈕 */
+        grid-template-columns: repeat(3, 1fr) !important; 
+        gap: 8px !important;
     }
 
+/* 調整按鈕高度，避免字體過大撐破版面 */
     .observe-grid .student-col:only-child .act-btn {
-        height: 80px;
-        font-size: 1.5rem !important; /* 單人項目字體加大 */
+        height: 60px !important; 
+        font-size: 1.5rem !important; /* 字體縮小以適應三個一排 */
+        padding: 2px !important;
     }
 
     /* 5. 雙人模式下的按鈕樣式 (避免被單人模式影響) */
     .observe-grid .student-col:not(:only-child) .act-btn {
         height: 60px;
-        font-size: 1rem; /* 雙人模式字體稍微小一點點避免溢出 */
+        font-size: 1.2rem; /* 雙人模式字體稍微小一點點避免溢出 */
     }
 
     .stu-title {

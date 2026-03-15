@@ -118,7 +118,7 @@ window.closeSettings = function() {
     // 只隱藏設定浮動視窗
     const configEl = document.getElementById('view-config');
     if (configEl) configEl.classList.add('hidden');
-};;
+};
 
 
 
@@ -230,10 +230,13 @@ function renderObservationUI() {
             </div>
         </div>`;
 
-    // 渲染學生介面
-    const studentHTML = state.mode === 'double' 
-        ? `<div class="observe-grid">${getBtnHTML('A', state.config.stuA)}${getBtnHTML('B', state.config.stuB)}</div>`
-        : getBtnHTML('A', state.config.stuA);
+        // 修正後的渲染邏輯，單人與雙人都有 .observe-grid 外殼
+        const studentHTML = `
+            <div class="observe-grid">
+                ${getBtnHTML('A', state.config.stuA)}
+                ${state.mode === 'double' ? getBtnHTML('B', state.config.stuB) : ''}
+            </div>
+        `;
 
     // 組合整體介面：將操作按鈕放在同一列
     container.innerHTML = `
@@ -559,8 +562,22 @@ function saveGlobalSettings() {
     location.reload();
 }
 
-function addDynamicItem() { const n = prompt("新項目:"); if(n) { state.actions.push(n); renderObservationUI(); } }
-function removeDynamicItem(a) { state.actions = state.actions.filter(x => x !== a); renderObservationUI(); }
+function addDynamicItem() { 
+    const n = prompt("新項目:"); 
+    if (n && n.trim() !== "") { // 增加判斷：確保不是空字串或空白
+        state.actions.push(n.trim()); 
+        
+        // 1. 同步到 localStorage 的自訂項目清單
+        localStorage.setItem('custom_dimensions', JSON.stringify(state.actions));
+        
+        // 2. 同步到總狀態並保存
+        saveStateToLocal(); 
+        
+        // 3. 重新渲染畫面
+        renderObservationUI();
+    } 
+}
+
 
 function addCustomEvent(sKey) {
     const stuName = sKey === 'A' ? state.config.stuA : state.config.stuB;
