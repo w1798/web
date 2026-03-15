@@ -337,7 +337,7 @@ function getTimeStamp() {
     // 如果是真實時間模式，在後面補上現在時間
     if (state.config.timeMode === 'realtime') {
         const now = new Date().toLocaleTimeString('zh-TW', { hour12: false });
-        label += ` (現在: ${now})`;
+        label += ` (${now})`;
     }
     
     return label;
