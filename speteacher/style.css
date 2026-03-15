@@ -266,7 +266,7 @@ footer { text-align: center; padding: 10px; font-size: 0.7rem; background: #eee;
 /* 調整按鈕高度，避免字體過大撐破版面 */
     .observe-grid .student-col:only-child .act-btn {
         height: 60px !important; 
-        font-size: 1.5rem !important; /* 字體縮小以適應三個一排 */
+        font-size: 1.4rem !important; /* 字體縮小以適應三個一排 */
         padding: 2px !important;
     }
 
