@@ -1,165 +1,173 @@
-:root {
-    --main-font-size: 16px;
-}
-
-body {
-    font-size: var(--main-font-size);
-}
-
-/* 確保所有按鈕都繼承這個字體大小 */
-button {
-    font-size: inherit; 
-    padding: 10px;
-}
-
-.segment-table {
-    max-height: 400px;
-    overflow-y: auto;
-    display: block;
-}
-
+/* --- 基礎設定 --- */
+:root { --main-font-size: 16px; }
+body { font-size: var(--main-font-size); font-family: 'Segoe UI', "Microsoft JhengHei", sans-serif; margin: 0; padding: 0; background: #f0f2f5; }
 * { box-sizing: border-box; }
-body, html { height: 100%; margin: 0; padding: 0; font-family: 'Segoe UI', "Microsoft JhengHei", sans-serif; background: #f0f2f5; overflow: hidden; }
 
-.layout { 
-    height: 100vh; 
-    display: flex; 
-    flex-direction: column; 
-}
-
+/* --- 佈局架構 --- */
+.layout { height: 100vh; display: flex; flex-direction: column; }
 .header { 
-    height: 10%; background: #333; color: white; display: flex; align-items: center; 
-    justify-content: space-between; padding: 0 20px; 
-}
-.header h1 { margin: 0; }
-.nav-btns {
-    position: relative;
-    z-index: 100; /* 確保按鈕在最上層 */
-    pointer-events: auto; /* 確保可以接收點擊 */
+    background: #333; 
+    color: white; 
+    padding: 10px 20px; 
+    display: flex; 
+    flex-wrap: nowrap; /* 強制不換行 */
+    align-items: center; 
+    justify-content: space-between; 
 }
 
-.main-content { 
-    flex: 1;  /* 關鍵：讓 main 佔滿剩下空間 */
-    overflow-y: auto; 
+.nav-btns { 
+    display: flex; 
+    flex-wrap: nowrap; /* 按鈕強制橫排 */
+    gap: 5px; 
+}
+
+.nav-btns button {
+    width: auto; /* 按鈕寬度根據文字調整，不要撐滿 */
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    min-height: 40px;
+}
+
+.main-content button {
+    width: 100%;
+    margin: 5px 0;
+}
+
+.header button {
+    width: auto;
+}
+
+.stu-title {
+    margin: 0;
+    font-size: 1.1rem;
+    white-space: nowrap; /* 防止名稱換行擠壓 */
+}
+
+/* 修改或新增這段到 style.css */
+#view-config { 
+    position: fixed !important; /* 強制固定在畫面中央 */
+    top: 50%; 
+    left: 50%; 
+    transform: translate(-50%, -50%); /* 確保視窗居中 */
+    z-index: 99999; 
+    background: white; 
+    border: 1px solid #ccc; 
     padding: 20px; 
+    box-shadow: 0 5px 25px rgba(0,0,0,0.5); 
+    width: 90%; 
+    max-width: 1200px; 
+    max-height: 90vh; /* 限制最大高度 */
+    overflow-y: auto; /* 內容太長可滾動 */
 }
 
-
-#view-home {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 20px;
-}
-
-#view-home.container {
-    margin: 0 auto; /* 水平置中 */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 20px;
-    height: 60vh !important; /* 確保有高度可參考 */
-}
-
+/* 確保設定按鈕區塊的樣式 */
 .config-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
-.hidden { 
-    display: none !important; 
-}
 
-/* 確保浮動視窗出現時，主內容不會被撐開 */
-#view-config {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 9999; /* 確保在最上層 */
-    background: white;
-    border: 1px solid #ccc;
-    padding: 20px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-}
-
-footer {
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    text-align: center;
-    padding: 10px 0;
-    background: #eee;
-}
-
-.footer a { color: #4a90e2; text-decoration: none; font-weight: bold; }
-
-.container {
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    width: 90%; /* 避免太寬 */
-    max-width: 900px;
-    margin: 20px auto; /* 自動置中關鍵 */
-}
-
-button { background: #4a90e2; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
-button:active { transform: scale(0.98); }
-.btn-end { background: #e74c3c; width: 100%; margin-top: 20px; font-weight: bold; }
-
-/* 觀察介面 */
-.observe-grid { display: flex; gap: 15px; width: 100%; }
-.student-col { flex: 1; background: #f9f9f9; padding: 10px; border: 1px solid #ddd; border-radius: 8px; }
-.actions-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-.act-btn-wrapper { position: relative; }
-.act-btn { width: 100%; height: 75px; background: white; color: #333; border: 2px solid #4a90e2; border-radius: 10px; }
-.del-btn { position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 12px; display: flex; align-items: center; justify-content: center; z-index: 5; cursor: pointer; }
-.count-badge { font-weight: bold; color: red; font-size: 1.2rem; }
-
-/* 即時紀錄 */
-.live-log-box { background: #222; color: #0f0; padding: 10px; border-radius: 8px; margin-top: 15px; width: 100%; border-left: 4px solid #4a90e2; }
-.log-scroll { height: 100px; overflow-y: auto; font-family: monospace; font-size: 13px; line-height: 1.6; }
-
-/* 表格與報表 */
-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
-th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-th { background: #f2f2f2; }
-.total-row { background: #eef6ff; font-weight: bold; }
-.report-info { background: #fff8e1; padding: 10px; border-radius: 6px; margin-bottom: 10px; }
-
-input, select, textarea {
-    padding: 5px !important; /* 縮小輸入框邊距 */
-    margin: 4px 0 !important;
-}
-
-#view-settings.container {
+/* 設定按鈕群組水平排列 */
+.button-group {
     display: flex;
-    flex-direction: column; /* 將排列方向改為垂直 */
-    gap: 10px;              /* 設定各項目之間的間距 */
-    align-items: stretch;   /* 讓輸入框寬度拉伸填滿容器 */
+    flex-wrap: wrap; /* 如果空間不夠會自動換行，避免撐爆螢幕 */
+    gap: 8px;        /* 按鈕之間的間距 */
+    justify-content: flex-end; /* 按鈕靠右對齊 */
 }
 
-/* 確保輸入框在手機上夠大，方便觸控 */
-#view-settings input, 
-#view-settings select {
+/* 確保這些按鈕在群組內寬度自動調整，不要強制 100% */
+.button-group button {
+    width: auto !important;
+    padding: 8px 12px !important;
+    font-size: 0.9rem !important;
+    min-height: 40px !important;
+}
+
+
+/* --- 通用容器 --- */
+.container { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 95%; max-width: 800px; margin: 10px auto; }
+.hidden { display: none !important; }
+
+/* --- 設定頁面 (垂直堆疊佈局) --- */
+#view-settings.container { display: flex; flex-direction: column; gap: 15px; }
+.container-inner-wrapper { display: flex; flex-direction: column; width: 100%; gap: 15px; }
+
+/* --- 表單元件觸控優化 --- */
+input, select, textarea { width: 100%; padding: 12px !important; margin: 5px 0 !important; font-size: 16px; border: 1px solid #ccc; border-radius: 6px; }
+button { width: 100%; padding: 15px; background: #4a90e2; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 1rem; min-height: 50px; margin: 5px 0; }
+
+/* --- 觀察介面 (手機版垂直堆疊) --- */
+.observe-grid {
+    display: flex;
+    flex-direction: row; /* 預設電腦版水平排 */
+    gap: 15px;
     width: 100%;
-    padding: 12px !important;
-    font-size: 1rem;
+}
+.student-col {
+    flex: 1; /* 雙人模式時各佔 50% 寬度 */
+    background: #f9f9f9;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
 }
 
+.student-col button[onclick*="addCustomEvent"] {
+    width: auto !important; /* 取消 100% 寬度 */
+    padding: 2px 12px !important; /* 縮減內距讓方框變小 */
+    font-size: 0.8rem !important;
+    min-height: 30px !important; /* 降低高度 */
+    margin: 0 !important;
+}
 
-/* 針對手機裝置的調整 */
-@media (max-width: 600px) {
-    /* 1. 導覽列調整：改為換行排列，避免擠在一起 */
-    .header { height: auto; flex-direction: column; padding: 10px; }
-    .nav-btns { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-top: 5px; }
+.actions-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.act-btn {
+    width: 100%;
+    height: auto; /* 高度隨內容自動調整 */
+    min-height: 50px;
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+.count-badge { font-weight: bold; color: red; font-size: 1.3rem; display: block; }
+
+/* --- 報表與其他 --- */
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+footer { text-align: center; padding: 10px; font-size: 0.7rem; background: #eee; }
+
+/* 設定頁面佈局 */
+.settings-wrapper {
+    display: flex;
+    flex-direction: row; /* 電腦版：水平並排 */
+    gap: 20px;
+    width: 100%;
+}
+
+.col-left, .col-right {
+    flex: 1;
+}
+
+/* 手機版適配 */
+@media (max-width: 768px) {
+    .settings-wrapper {
+        flex-direction: column; /* 手機版：切換為垂直排列 */
+    }
     
-    /* 2. Footer 縮小並預留空間，避免遮擋 */
-    footer { position: relative; font-size: 0.7rem; padding: 5px; margin-bottom: 20px; }
+    .col-left, .col-right {
+        width: 100%; /* 手機版佔滿全寬 */
+    }
     
-    /* 3. 優化主內容區域 */
-    .main-content { padding-bottom: 60px; }
+    .button-group {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr); /* 均分為三欄 */
+        gap: 5px;
+    }
+    
+    .observe-grid {
+        flex-direction: column; /* 手機版才改為垂直堆疊 */
+    }
 }

@@ -215,9 +215,9 @@ function renderObservationUI() {
     // 定義單個學生的 HTML 結構 (已移除刪除按鈕)
     const getBtnHTML = (sKey, sName) => `
         <div class="student-col">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
-                <h3 class="stu-title" style="margin:0;">${sName}</h3>
-                <button onclick="addCustomEvent('${sKey}')" style="padding: 5px 10px; font-size: 0.8rem;">+備註</button>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
+                <h3 class="stu-title" style="margin:10;">${sName}</h3>
+                <button onclick="addCustomEvent('${sKey}')" style="padding: 5px 10px; font-size: 1rem;">+備註</button>
             </div>
             <div class="actions-grid">
                 ${state.actions.map(act => `
@@ -367,43 +367,60 @@ function renderTimeline() {
 }
 
 // 匯出完整全網頁資料
-function exportExcel() {
+window.exportExcel = function() {
     let csv = "\uFEFF注意力觀察完整報告\n";
     csv += `觀察者,${state.config.obsName},活動,${state.config.actName},日期,${state.config.date}\n\n`;
     
-    // 統計表   
-    csv += "\uFEFF時間區段," + state.actions.join(",") + "\n";
+    // 從 localStorage 取得統計區間設定，預設 0.5 分鐘 (30秒)
+    const storedInterval = localStorage.getItem('report_interval');
+    const intervalVal = storedInterval ? parseFloat(storedInterval) : 0.5;
+    const intervalSec = intervalVal * 60;
     const totalSec = state.config.duration * 60;
 
-    for (let i = 0; i < totalSec; i += 30) {
-        let seg = `${Math.floor(i/60)}:${(i%60===0?'00':'30')}–${Math.floor((i+30)/60)}:${((i+30)%60===0?'00':'30')}`;
-        let row = [seg];
-        state.actions.forEach(act => {
-            // 計算該時段內所有行為總數 (包含 A 與 B)
-            let count = state.logs.filter(l => l.act === act && l.seconds >= i && l.seconds < i+30).length;
-            row.push(count);
-        });
-        csv += row.join(",") + "\n";
-    }
-    
-    csv += "--- 項目統計 ---\n學生,項目,次數\n";
-    state.actions.forEach(a => {
-        csv += `${state.config.stuA},${a},${state.data['A-'+a] || 0}\n`;
-        if (state.mode === 'double') csv += `${state.config.stuB},${a},${state.data['B-'+a] || 0}\n`;
-    });
+    // 輔助函式：產生單一學生的統計表格字串
+    const generateCsvTable = (sName) => {
+        let tableStr = `【學生：${sName} 統計表】\n`;
+        tableStr += "時間區段," + state.actions.join(",") + "\n";
 
-    // 事件清單
-    csv += "\n--- 行為時間軸紀錄 ---\n時間,學生,行為描述\n";
+        for (let i = 0; i < totalSec; i += intervalSec) {
+            let segStart = `${Math.floor(i/60)}:${(i%60===0?'00':(i%60))}`;
+            let nextI = i + intervalSec;
+            let segEnd = `${Math.floor(nextI/60)}:${(nextI%60===0?'00':(nextI%60))}`;
+            let row = [`${segStart}–${segEnd}`];
+
+            state.actions.forEach(act => {
+                // 只篩選該學生的紀錄
+                let count = state.logs.filter(l => l.stu === sName && l.act === act && l.seconds >= i && l.seconds < nextI).length;
+                row.push(count);
+            });
+            tableStr += row.join(",") + "\n";
+        }
+        return tableStr + "\n";
+    };
+
+    // 1. 輸出學生 A 的表
+    csv += generateCsvTable(state.config.stuA);
+
+    // 2. 如果是雙人模式，輸出學生 B 的表
+    if (state.mode === 'double') {
+        csv += generateCsvTable(state.config.stuB);
+    }
+
+    // 3. 輸出事件時間軸紀錄 (這部分原本就是分開標記學生的)
+    csv += "--- 行為時間軸紀錄 ---\n時間,學生,行為描述\n";
     state.logs.forEach(l => {
         csv += `${l.time},${l.stu},${l.act}\n`;
     });
 
+    // 執行下載
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = `完整報告_${state.config.stuA}_${state.config.date}.csv`;
+    document.body.appendChild(link);
     link.click();
-}
+    document.body.removeChild(link);
+};
 
 // 基礎功能：上傳、下載、匯入、匯出
 function fileExport() {
