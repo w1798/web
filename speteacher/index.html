@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>注意力觀察系統</title>
-    <link rel="stylesheet" href="style.css?ver=1.00d">
+    <link rel="stylesheet" href="style.css?ver=1.01a">
 </head>
 <body>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -21,7 +21,7 @@
             </div>
         </header>
 
-        <main class="main-content">
+        <main class="main-content" id="main-content-scroll">
             <div id="view-home" class="container">
                 <button onclick="setMode('single')" style="padding: 20px 40px; font-size: 1.2rem;">單人模式</button>
                 <button onclick="setMode('double')" style="padding: 20px 40px; font-size: 1.2rem;">雙人模式</button>
@@ -72,7 +72,7 @@
                     <div class="button-group">
                         <button onclick="systemReset()" style="background:red;">重置系統</button>
                         <button onclick="closeSettings()">取消</button>
-                        <button onclick="saveGlobalSettings()">儲存並重啟</button> 
+                        <button onclick="saveGlobalSettings()">儲存</button> 
                     </div>
                 </div>
 
@@ -95,7 +95,13 @@
                 
             </div>
         </main>
-        <footer>
+
+<button id="topBtn" onclick="document.getElementById('main-content-scroll').scrollTo({top: 0, behavior: 'smooth'})" 
+        style="position:fixed; bottom:70px; right:20px; padding:10px 15px; 
+               background:#333; color:white; border:none; border-radius:50%; 
+               z-index:9999; display:none;">↑</button>    
+
+        <footer class="footer">
           <a href="https://w1798.github.io/web/" target="_blank">&copy; 2026<script>const y=new Date().getFullYear(); if(y>2026)document.write("-"+y);</script> Charles Nextime</a> · 
           <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">GPLv3</a>
           <span id="busuanzi_container_page_pv">
@@ -127,7 +133,7 @@
     const TIME_KEY = `VERCOUNT_TIME_${path}`; // 每個分頁獨立計算冷卻時間
     const VAL_KEY = `VERCOUNT_VAL_${path}`;   // 每個分頁獨立存儲 PV 數
     
-    const COOL_DOWN = 3000 * 60 * 1000; 
+    const COOL_DOWN = 30 * 60 * 1000; 
     const now = Date.now();
     const lastVisit = localStorage.getItem(TIME_KEY);
     
@@ -165,6 +171,6 @@
 
    
     
-    <script src="script.js?ver=1.00b"></script>
+    <script src="script.js?ver=1.01a"></script>
 </body>
 </html>

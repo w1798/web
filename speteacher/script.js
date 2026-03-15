@@ -67,9 +67,16 @@ window.setMode = function(mode) {
 };
 
 window.goHome = function() {
+    if (state.timer) {
+        if (!confirm("目前正在進行觀察，返回主頁將會停止計時，確定要離開嗎？")) {
+            return; // 使用者選取消，直接中斷執行，不返回主頁
+        }
+        clearInterval(state.timer);
+        state.timer = null;
+    }
+    
     hideAllViews();
     document.getElementById('view-home').classList.remove('hidden');
-    // 這裡我們不清除 state 資料，所以狀態會保留
 };
 
 
@@ -157,14 +164,20 @@ window.systemReset = function() {
         localStorage.removeItem('custom_dimensions');     // 自訂觀察項目
         localStorage.removeItem('cloud_config');          // 雲端設定
         localStorage.removeItem('user_font_size');        // 字體大小設定
-        
-        alert("系統已重置，將重新整理頁面。");
+        localStorage.removeItem('report_interval');
+
         location.reload();
     }
 };
 
 
 function startObservation() {
+
+    if (state.timer) {
+        clearInterval(state.timer);
+        state.timer = null;
+    }
+    
     state.config = {
         obsName: document.getElementById('obsName').value || '未填寫',
         actName: document.getElementById('actName').value || '未填寫',
@@ -274,13 +287,29 @@ function updateLiveLogs() {
         logBox.className = 'live-log-box';
         document.getElementById('view-observe').appendChild(logBox);
     }
-    logBox.innerHTML = '<strong>最新紀錄：</strong><div class="log-scroll">' + 
-        state.logs.map(l => `<div>[${l.time}] ${l.stu}: ${l.act}</div>`).join('') + '</div>';
-    logBox.querySelector('.log-scroll').scrollTop = 99999;
+
+    // 1. 取出最後 10 筆資料
+    // 2. reverse() 讓最新的排在陣列最前面
+    const recentLogs = [...state.logs].slice(-10).reverse();
+
+    logBox.innerHTML = `
+        <strong>最新紀錄 (最近 10 筆)：</strong>
+        <div class="log-scroll" style="height: 150px; overflow-y: auto; border: 1px solid #ccc; padding: 5px; background: #fff;">
+            ${recentLogs.map(l => `<div>[${l.time}] ${l.stu}: ${l.act}</div>`).join('')}
+        </div>
+    `;
 }
 
+// 修改原本的 finishObservation 函式
 function finishObservation() {
+    // 加入強制確認
+    if (!confirm("確定要結束本次觀察並產生報表嗎？\n(結束後將進入結算頁面)")) {
+        return; // 使用者按取消，保持在觀察頁面
+    }
+    
     clearInterval(state.timer);
+    state.timer = null; // 確保計時器歸零
+    
     hideAllViews();
     document.getElementById('view-report').classList.remove('hidden');
     renderFinalReport();
@@ -552,14 +581,29 @@ window.cloudDownload = async function() {
 
 
 
-
 function saveGlobalSettings() {
+    // 1. 儲存自訂項目
     const text = document.getElementById('customActions').value;
-    localStorage.setItem('custom_dimensions', JSON.stringify(text.split('\n').filter(l => l.trim())));
-    const cloud = { binId: document.getElementById('cloudURL').value, apiKey: document.getElementById('cloudToken').value };
-    localStorage.setItem('report_interval', document.getElementById('reportInterval').value);
+    state.actions = text.split('\n').filter(l => l.trim());
+    localStorage.setItem('custom_dimensions', JSON.stringify(state.actions));
+    
+    // 2. 儲存雲端設定
+    const cloud = { 
+        binId: document.getElementById('cloudURL').value, 
+        apiKey: document.getElementById('cloudToken').value 
+    };
     localStorage.setItem('cloud_config', JSON.stringify(cloud));
-    location.reload();
+    
+    // 3. 儲存報表間隔
+    localStorage.setItem('report_interval', document.getElementById('reportInterval').value);
+    
+    // 4. 不再使用 location.reload()
+    closeSettings(); // 關閉設定視窗
+    
+    // 5. 如果目前正處於觀察頁面，觸發重新渲染以反映新的行為項目
+    if (!document.getElementById('view-observe').classList.contains('hidden')) {
+        renderObservationUI();
+    }
 }
 
 function addDynamicItem() { 
@@ -638,3 +682,15 @@ window.loadLastSession = function() {
     document.getElementById('view-report').classList.remove('hidden');
     renderFinalReport();
 };
+
+
+// 修改這裡：監聽 main-content 的捲動，而不是 window
+document.getElementById('main-content-scroll').addEventListener('scroll', function() {
+    const btn = document.getElementById('topBtn');
+    // 這裡直接判斷該區塊的 scrollTop
+    if (this.scrollTop > 200) {
+        btn.style.display = "block";
+    } else {
+        btn.style.display = "none";
+    }
+});

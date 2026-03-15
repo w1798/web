@@ -36,6 +36,11 @@ body { font-size: var(--main-font-size); font-family: 'Segoe UI', "Microsoft Jhe
     min-height: 40px;
 }
 
+.main-content { 
+    flex: 1; 
+    overflow-y: auto; /* 確保內容超出時可以捲動 */
+}
+
 .main-content button {
     width: 100%;
     margin: 5px 0;
@@ -121,6 +126,21 @@ body { font-size: var(--main-font-size); font-family: 'Segoe UI', "Microsoft Jhe
 }
 
 
+#topBtn {
+    position: fixed !important;
+    bottom: 70px !important;
+    right: 20px !important;
+    z-index: 99999 !important; /* 確保層級最高 */
+    display: none;             /* 預設隱藏 */
+    width: 50px !important;   /* 寬度變大 */
+    height: 50px !important;  /* 高度變大，與寬度一致確保正圓 */
+    font-size: 28px !important; /* 箭頭符號變大 */
+    padding: 0 !important;   /* 移除 padding 防止變形 */
+    
+}
+
+
+
 /* --- 通用容器 --- */
 .container { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 95%; max-width: 800px; margin: 10px auto; }
 .hidden { display: none !important; }
@@ -175,7 +195,14 @@ button { width: 100%; padding: 15px; background: #4a90e2; color: white; border: 
 /* --- 報表與其他 --- */
 table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
-footer { text-align: center; padding: 10px; font-size: 0.7rem; background: #eee; }
+
+.footer { 
+    text-align: center; 
+    padding: 10px; 
+    font-size: 0.7rem; 
+    background: #eee; 
+    flex-shrink: 0; /* 防止 footer 被壓縮 */
+}
 
 /* 設定頁面佈局 */
 .settings-wrapper {
@@ -283,7 +310,7 @@ footer { text-align: center; padding: 10px; font-size: 0.7rem; background: #eee;
     /* 備註按鈕縮小 */
     .student-col button[onclick*="addCustomEvent"] {
         padding: 2px 5px !important;
-        font-size: 0.8rem !important;
+        font-size: 1rem !important;
         width: auto !important;
     }
 }
