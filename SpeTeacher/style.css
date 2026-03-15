@@ -206,8 +206,8 @@ th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
 
 /* 設定頁面佈局 */
 .settings-wrapper {
-    display: flex;
-    flex-direction: row; /* 電腦版：水平並排 */
+    display: grid;
+    grid-template-columns: 1fr 1fr 2fr; /* 設定比例 1:1:2 */
     gap: 20px;
     width: 100%;
 }

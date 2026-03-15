@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>注意力觀察系統</title>
-    <link rel="stylesheet" href="style.css?ver=1.01a">
+    <link rel="stylesheet" href="style.css?ver=1.01b">
 </head>
 <body>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -23,9 +23,11 @@
 
         <main class="main-content" id="main-content-scroll">
             <div id="view-home" class="container">
+                <button id="btn-resume" onclick="resumeObservation()" class="hidden" style="background-color: #27ae60;">繼續上一次的觀察 </button>
                 <button onclick="setMode('single')" style="padding: 20px 40px; font-size: 1.2rem;">單人模式</button>
                 <button onclick="setMode('double')" style="padding: 20px 40px; font-size: 1.2rem;">雙人模式</button>
-                <button onclick="loadLastSession()">觀察上一次結果</button>
+                <button onclick="loadLastSession()">查看上一次結果</button>
+
             </div>
             
             <div id="view-settings" class="container hidden">
@@ -38,10 +40,12 @@
                     <option value="1">1 分鐘</option>
                     <option value="5">5 分鐘</option>
                     <option value="10" selected>10 分鐘</option>
-                    <option value="15">15 分鐘</option>
                     <option value="20">20 分鐘</option>
-                    <option value="25">25 分鐘</option>
                     <option value="30">30 分鐘</option>
+                    <option value="40">40 分鐘</option>
+                    <option value="50">50 分鐘</option>
+                    <option value="60">60 分鐘</option>
+                    <option value="999">999 分鐘</option>
                 </select>
                 <button onclick="startObservation()">開始</button>
             </div>
@@ -78,17 +82,22 @@
 
                 <div class="settings-wrapper">
                     <div class="col-left">
-                        <h3>觀察項目 (一行一個)</h3>
+                        <h3>觀察項目</h3>
                         <textarea id="customActions" rows="10"></textarea>
                     </div>
-                    <div class="col-right">
-                        <h3>觀察統計區間設定</h3>
-                        <label>統計區間 (分鐘): </label>
+                    <div class="col-center">
+                        <h3>統計區間 (分鐘)</h3>
                         <input type="number" id="reportInterval" value="0.5" step="0.1">
+                        <h3>時間模式</h3>
+                        <select id="timeMode">
+                            <option value="timer">計時模式</option>
+                            <option value="realtime">真實時間</option>
+                        </select>
+                    </div>
+                    <div class="col-right">
                         <h3>雲端同步設定</h3>
                         <input type="text" id="cloudURL" placeholder="URL or JSONBin ID">
                         <input type="text" id="cloudToken" placeholder="Token or X-Access-Key">
-                        <br>
                         <a href="https://w1798.github.io/web/JsonCloudGuide" target="_blank">申請說明</a>
                     </div>
                 </div>
@@ -171,6 +180,6 @@
 
    
     
-    <script src="script.js?ver=1.01a"></script>
+    <script src="script.js?ver=1.01b"></script>
 </body>
 </html>

@@ -8,8 +8,14 @@
  */
 
 let state = {
-    mode: '', config: {}, time: 0, timer: null,
-    data: {}, logs: [], 
+    mode: '', 
+    config: {
+        timeMode: 'timer' // 明確定義預設值
+    }, 
+    time: 0, 
+    timer: null,
+    data: {}, 
+    logs: [], 
     actions: ['分心', '扭動', '離座', '出聲', '玩物品'],
     currentView: 'view-home'
 };
@@ -20,21 +26,47 @@ const STORAGE_KEY = 'attention_app_data';
 
 // --- 初始化 (安全掛載) ---
 window.onload = function() {
-
+    // 1. 先讀取資料
     const savedState = localStorage.getItem(STORAGE_KEY);
     if (savedState) {
-        state = JSON.parse(savedState);
+        try {
+            state = JSON.parse(savedState);
+        } catch (e) {
+            console.error("解析狀態失敗", e);
+        }
     }
-    
+
+    // 2. 強制補全結構 (確保不會出現 undefined)
+    if (!state.config) state.config = { timeMode: 'timer' };
+    if (!state.config.timeMode) state.config.timeMode = 'timer';
+
+    // 3. 恢復邏輯
+    if (state.startTime && !state.isFinished) {
+        state.timer = setInterval(updateTimerDisplay, 1000);
+        const resumeBtn = document.getElementById('btn-resume');
+        if (resumeBtn) resumeBtn.classList.remove('hidden');
+    }
+
+    // 4. 使用 setTimeout 確保 DOM 渲染完畢後再設定選單值
+    // 這能避開部分瀏覽器重整時，HTML 預設選取行為優先於 JS 執行順序的問題
+    setTimeout(() => {
+        const timeModeSelect = document.getElementById('timeMode');
+        if (timeModeSelect) {
+            timeModeSelect.value = state.config.timeMode;
+            console.log("已同步模式為:", state.config.timeMode);
+        }
+    }, 100);
+
+    // 5. 其他初始化
     const savedActions = localStorage.getItem('custom_dimensions');
     if (savedActions) state.actions = JSON.parse(savedActions);
-    
-    const dateEl = document.getElementById('obsDate');
-    if (dateEl) dateEl.valueAsDate = new Date();
     
     const cloud = JSON.parse(localStorage.getItem('cloud_config') || '{}');
     if(document.getElementById('cloudURL')) document.getElementById('cloudURL').value = cloud.binId || '';
     if(document.getElementById('cloudToken')) document.getElementById('cloudToken').value = cloud.apiKey || '';
+
+    const dateEl = document.getElementById('obsDate');
+    if (dateEl) dateEl.valueAsDate = new Date();
 };
 
 function saveStateToLocal() {
@@ -67,16 +99,18 @@ window.setMode = function(mode) {
 };
 
 window.goHome = function() {
-    if (state.timer) {
-        if (!confirm("目前正在進行觀察，返回主頁將會停止計時，確定要離開嗎？")) {
-            return; // 使用者選取消，直接中斷執行，不返回主頁
-        }
-        clearInterval(state.timer);
-        state.timer = null;
-    }
+    // 移除原本的 confirm 確認視窗與 clearInterval 邏輯
+    // 這樣返回主頁時，計時器會繼續在背景執行
     
     hideAllViews();
     document.getElementById('view-home').classList.remove('hidden');
+    state.currentView = 'view-home';
+    
+    // 建議：在返回主頁時，把「繼續觀察」按鈕顯示出來
+    const resumeBtn = document.getElementById('btn-resume');
+    if (resumeBtn && (state.timer || state.time > 0)) {
+        resumeBtn.classList.remove('hidden');
+    }
 };
 
 
@@ -172,55 +206,81 @@ window.systemReset = function() {
 
 
 function startObservation() {
-
     if (state.timer) {
         clearInterval(state.timer);
         state.timer = null;
     }
     
+    // 獲取 UI 設定值
+    const timeMode = document.getElementById('timeMode').value; // 獲取新增的下拉選單值
+
     state.config = {
         obsName: document.getElementById('obsName').value || '未填寫',
         actName: document.getElementById('actName').value || '未填寫',
         stuA: document.getElementById('stuA').value || '學生 A',
         stuB: document.getElementById('stuB').value || '學生 B',
         date: document.getElementById('obsDate').value,
-        duration: parseInt(document.getElementById('duration').value)
+        duration: parseInt(document.getElementById('duration').value),
+        timeMode: timeMode // 儲存模式
     };
     
     hideAllViews();
     document.getElementById('view-observe').classList.remove('hidden');
     renderObservationUI();
     
-    // 設定目標總秒數
-    const targetSeconds = state.config.duration * 60;
+    // --- 根據模式選擇邏輯 ---
+    if (timeMode === 'realtime') {
+        // 真實時間模式：不啟動自動計時器
+        // 為了讓報表統計功能正常運作，我們可以啟動一個隱形的計時器來追蹤經過秒數
+        state.timer = setInterval(() => {
+            state.time++;
+            updateTimerDisplay(); // 畫面仍會顯示經過的時間，但這只是參考
+        }, 1000);
+    } else {
+        // 原本的計時模式
+        const targetSeconds = state.config.duration * 60;
 
-    state.timer = setInterval(() => {
-        state.time++;
-        
-        // 檢查是否達到設定的目標總秒數
-        if (state.time === targetSeconds) {
-            // 暫停計時，等待使用者操作
-            clearInterval(state.timer); 
+        state.timer = setInterval(() => {
+            state.time++;
             
-            const isFinished = confirm("觀察時間已到，是否結束？");
-            
-            if (isFinished) {
-                // 使用者點選「確定」
-                finishObservation();
-            } else {
-                // 使用者點選「取消」，我們繼續計時（改為累計模式，不再有上限）
-                alert("觀察繼續，將顯示超過的時間。");
-                state.timer = setInterval(() => {
-                    state.time++;
-                    updateTimerDisplay(); // 確保顯示更新
-                }, 1000);
+            // 檢查是否達到目標時間 (999 分鐘視為不限制)
+            if (state.config.duration !== 999 && state.time >= targetSeconds) {
+                clearInterval(state.timer);
+                if (confirm("觀察時間已到，是否結束？")) {
+                    finishObservation();
+                } else {
+                    // 若取消，啟動無上限計時
+                    state.timer = setInterval(() => {
+                        state.time++;
+                        updateTimerDisplay();
+                    }, 1000);
+                }
+                return;
             }
-            return;
-        }
-        
-        updateTimerDisplay();
-    }, 1000);
+            updateTimerDisplay();
+        }, 1000);
+    }
+    
+    state.config.timeMode = document.getElementById('timeMode').value;
+    
+    state.startTime = Date.now(); // 記錄開始那一刻的時間戳
+    state.isFinished = false;     // 新增一個旗標標記觀察狀態
+    
+    // 設定計時器，只需負責 UI 更新
+    state.timer = setInterval(updateTimerDisplay, 1000);
 }
+
+function updateTimer() {
+    if (!state.startTime) return;
+    
+    // 計算從開始到現在經過的秒數
+    const elapsedSeconds = Math.floor((Date.now() - state.startTime) / 1000);
+    state.time = elapsedSeconds; 
+    
+    updateTimerDisplay();
+    saveState(); // 確保每秒自動儲存狀態到 localStorage
+}
+
 
 function renderObservationUI() {
     const container = document.getElementById('actionButtons');
@@ -267,9 +327,17 @@ function renderObservationUI() {
 function addCount(sKey, act) {
     const key = `${sKey}-${act}`;
     state.data[key] = (state.data[key] || 0) + 1;
-    const timeStr = document.getElementById('timerDisplay').innerText.replace('總時間: ', '');
+    
+    // 決定時間字串顯示方式
+    let timeLabel;
+    if (state.config.timeMode === 'realtime') {
+        timeLabel = new Date().toLocaleTimeString('zh-TW', { hour12: false });
+    } else {
+        timeLabel = document.getElementById('timerDisplay').innerText.replace('總時間: ', '').split('/')[0].trim();
+    }
+
     state.logs.push({ 
-        time: timeStr, 
+        time: timeLabel, 
         seconds: state.time, 
         stu: sKey === 'A' ? state.config.stuA : state.config.stuB, 
         act: act 
@@ -597,10 +665,19 @@ function saveGlobalSettings() {
     // 3. 儲存報表間隔
     localStorage.setItem('report_interval', document.getElementById('reportInterval').value);
     
-    // 4. 不再使用 location.reload()
-    closeSettings(); // 關閉設定視窗
+    // --- 【關鍵修正】儲存時間模式 ---
+    const timeModeSelect = document.getElementById('timeMode');
+    if (timeModeSelect) {
+        state.config.timeMode = timeModeSelect.value;
+    }
     
-    // 5. 如果目前正處於觀察頁面，觸發重新渲染以反映新的行為項目
+    // 儲存最新的 state 到 localStorage
+    saveStateToLocal();
+    
+    // 4. 關閉設定視窗
+    closeSettings(); 
+    
+    // 5. 如果目前正處於觀察頁面，觸發重新渲染以反映新的設定與行為項目
     if (!document.getElementById('view-observe').classList.contains('hidden')) {
         renderObservationUI();
     }
@@ -640,15 +717,40 @@ function addCustomEvent(sKey) {
 
 
 function updateTimerDisplay() {
-    let m = Math.floor(state.time / 60).toString().padStart(2, '0');
-    let s = (state.time % 60).toString().padStart(2, '0');
     const displayEl = document.getElementById('timerDisplay');
-    
-    // 確保 ID 存在才更新，避免在報表頁面或主頁面時報錯
-    if (displayEl) {
-        // 這裡確保 state.config.duration 有值，若沒有則顯示預設
-        const total = state.config.duration ? `${state.config.duration}:00` : '--:--';
-        displayEl.innerText = `總時間: ${m}:${s} / ${total}`;
+    if (!displayEl) return;
+
+    // 1. 如果是「真實時間」模式且還沒開始，顯示提示
+    if (state.config.timeMode === 'realtime' && !state.startTime) {
+        displayEl.innerText = "總時間: 等待開始...";
+        return;
+    }
+
+    // 2. 計算流逝時間：
+    // 若有 startTime，則永遠計算當下與開始時間的差值
+    // 若沒有 startTime (如還沒開始)，則顯示 0
+    let elapsedSeconds = 0;
+    if (state.startTime) {
+        elapsedSeconds = Math.floor((Date.now() - state.startTime) / 1000);
+        // 同步更新到 state.time 以供其他邏輯使用
+        state.time = elapsedSeconds;
+    }
+
+    // 3. 格式化顯示時間
+    let m = Math.floor(elapsedSeconds / 60).toString().padStart(2, '0');
+    let s = (elapsedSeconds % 60).toString().padStart(2, '0');
+
+    // 4. 處理顯示邏輯
+    let displayStr = `總時間: ${m}:${s}`;
+
+    if (state.config.timeMode === 'realtime') {
+        // 真實時間模式，不顯示目標時長，直接顯示當下真實時鐘
+        const now = new Date().toLocaleTimeString('zh-TW', { hour12: false });
+        displayEl.innerText = `${displayStr} (真實時間: ${now})`;
+    } else {
+        // 計時模式，顯示目標總長
+        const total = state.config.duration === 999 ? '無限' : (state.config.duration ? `${state.config.duration}:00` : '--:--');
+        displayEl.innerText = `${displayStr} / ${total}`;
     }
 }
 
@@ -694,3 +796,19 @@ document.getElementById('main-content-scroll').addEventListener('scroll', functi
         btn.style.display = "none";
     }
 });
+
+
+function resumeObservation() {
+    // 1. 重新計算 startTime 以確保時間是「連續」的
+    // 假設之前已經過了 100 秒，要繼續計時，要把開始時間往回推 100 秒
+    const elapsed = state.time; 
+    state.startTime = Date.now() - (elapsed * 1000);
+    
+    // 2. 恢復狀態
+    state.isFinished = false;
+    
+    // 3. 切換畫面並重啟計時器
+    hideAllViews();
+    document.getElementById('view-observe').classList.remove('hidden');
+    state.timer = setInterval(updateTimerDisplay, 1000);
+}
