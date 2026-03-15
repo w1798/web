@@ -69,6 +69,24 @@ body { font-size: var(--main-font-size); font-family: 'Segoe UI', "Microsoft Jhe
 }
 
 
+/* 修改主頁按鈕樣式 */
+#view-home {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* 居中 */
+    gap: 15px;
+    padding: 30px 10px;
+}
+
+#view-home button {
+    width: 200px !important; /* 限制寬度不再佔滿 70% */
+    height: auto;
+    padding: 15px 20px;
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+
 /* 設定按鈕群組水平排列 */
 .button-group {
     display: flex;
@@ -168,6 +186,31 @@ footer { text-align: center; padding: 10px; font-size: 0.7rem; background: #eee;
     }
     
     .observe-grid {
-        flex-direction: column; /* 手機版才改為垂直堆疊 */
+        flex-direction: row !important; 
+        gap: 8px; /* 縮小間距以擠進畫面 */
+        align-items: flex-start;
     }
+    
+    .student-col {
+        width: 50% !important; /* 每個學生佔一半 */
+        padding: 8px; /* 縮減內距 */
+    }
+
+    /* 縮小按鈕內的字體與高度，確保左右排擠得下 */
+    .act-btn {
+        height: 60px;
+        font-size: 0.8rem;
+        padding: 2px;
+    }
+
+    .stu-title {
+        font-size: 0.9rem;
+    }
+
+    /* 備註按鈕在左右排時也要縮小 */
+    .student-col button[onclick*="addCustomEvent"] {
+        padding: 2px 5px !important;
+        font-size: 0.7rem !important;
+    }
+    
 }
