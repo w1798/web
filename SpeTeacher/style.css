@@ -245,11 +245,16 @@ th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
 
     /* 2. 設定頁面改垂直排列 */
     .settings-wrapper {
-        flex-direction: column;
+        display: flex !important; /* 改為 flex 垂直佈局 */
+        flex-direction: column !important; /* 上下排列 */
+        gap: 15px !important;
+        width: 100% !important;
     }
     
-    .col-left, .col-right {
-        width: 100%;
+    /* 確保內部三個區塊佔滿寬度 */
+    .col-left, .col-center, .col-right {
+        width: 100% !important;
+        flex: none !important; /* 移除原本的比例設定 */
     }
     
     /* 設定視窗底部按鈕三等分 */
@@ -257,6 +262,11 @@ th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 5px;
+    }
+    
+    /* 讓 textarea 在手機上夠高 */
+    #customActions {
+        height: 150px; 
     }
     
     /* 3. 觀察介面：雙人模式強制左右排 */
