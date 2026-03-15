@@ -73,17 +73,26 @@ body { font-size: var(--main-font-size); font-family: 'Segoe UI', "Microsoft Jhe
 #view-home {
     display: flex;
     flex-direction: column;
-    align-items: center; /* 居中 */
-    gap: 15px;
-    padding: 30px 10px;
+    align-items: center;
+    justify-content: center;
+    min-height: 50vh; /* 調整高度，不讓它佔滿全螢幕 */
+    gap: 20px;
 }
 
+#view-home h2 {
+    white-space: nowrap; /* 強制標題不換行 */
+    width: auto;
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    display: block; /* 確保它橫向展開 */
+}
+
+/* 修正按鈕大小，避免撐爆畫面 */
 #view-home button {
-    width: 200px !important; /* 限制寬度不再佔滿 70% */
-    height: auto;
-    padding: 15px 20px;
+    width: 250px !important; /* 固定寬度，不再佔滿 */
+    padding: 15px;
     font-size: 1.1rem;
-    margin: 0;
+    margin: 5px 0;
 }
 
 
@@ -140,10 +149,13 @@ button { width: 100%; padding: 15px; background: #4a90e2; color: white; border: 
 }
 
 .actions-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+
 .act-btn {
     width: 100%;
     height: auto; /* 高度隨內容自動調整 */
     min-height: 50px;
+    font-size: 2rem;       /* 這裡可以改成 0.8rem(小), 1.2rem(大) */
+    font-weight: bold;     /* 加粗文字 */
     padding: 5px;
     display: flex;
     flex-direction: column;
@@ -199,7 +211,8 @@ footer { text-align: center; padding: 10px; font-size: 0.7rem; background: #eee;
     /* 縮小按鈕內的字體與高度，確保左右排擠得下 */
     .act-btn {
         height: 60px;
-        font-size: 0.8rem;
+        font-size: 1rem;       /* 這裡可以改成 0.8rem(小), 1.2rem(大) */
+        font-weight: bold;     /* 加粗文字 */
         padding: 2px;
     }
 
