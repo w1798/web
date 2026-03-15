@@ -245,7 +245,7 @@ footer { text-align: center; padding: 10px; font-size: 0.7rem; background: #eee;
     .student-col {
         flex: 1;
         width: 50% !important;
-        padding: 8px;
+        padding: 0px;
     }
 
     /* 4. 單人模式專用：強制置中且加大 */
@@ -272,7 +272,7 @@ footer { text-align: center; padding: 10px; font-size: 0.7rem; background: #eee;
 
     /* 5. 雙人模式下的按鈕樣式 (避免被單人模式影響) */
     .observe-grid .student-col:not(:only-child) .act-btn {
-        height: 60px;
+        height: 80px;
         font-size: 1rem; /* 雙人模式字體稍微小一點點避免溢出 */
     }
 
@@ -283,7 +283,7 @@ footer { text-align: center; padding: 10px; font-size: 0.7rem; background: #eee;
     /* 備註按鈕縮小 */
     .student-col button[onclick*="addCustomEvent"] {
         padding: 2px 5px !important;
-        font-size: 0.7rem !important;
+        font-size: 0.8rem !important;
         width: auto !important;
     }
 }
