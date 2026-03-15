@@ -206,81 +206,78 @@ window.systemReset = function() {
 
 
 function startObservation() {
-    if (state.timer) {
-        clearInterval(state.timer);
-        state.timer = null;
-    }
+    // 1. 清除任何殘留的計時器
+    if (state.timer) clearInterval(state.timer);
     
-    // 獲取 UI 設定值
-    const timeMode = document.getElementById('timeMode').value; // 獲取新增的下拉選單值
-
-    state.config = {
-        obsName: document.getElementById('obsName').value || '未填寫',
-        actName: document.getElementById('actName').value || '未填寫',
-        stuA: document.getElementById('stuA').value || '學生 A',
-        stuB: document.getElementById('stuB').value || '學生 B',
-        date: document.getElementById('obsDate').value,
-        duration: parseInt(document.getElementById('duration').value),
-        timeMode: timeMode // 儲存模式
-    };
+    // 2. 初始化狀態
+    state.startTime = Date.now();
+    state.isFinished = false;
+    state.isNotified = false; // 關鍵旗標：確保只會跳一次提醒
     
+    // 3. 獲取並儲存模式
+    state.config.timeMode = document.getElementById('timeMode').value;
+    state.config.duration = parseInt(document.getElementById('duration').value) || 999;
+    
+    // 4. 開始統一計時器
+    state.timer = setInterval(() => {
+        // A. 處理時間計算與提醒邏輯
+        processTimerLogic(); 
+        // B. 處理 UI 顯示
+        updateTimerDisplay();
+    }, 1000);
+    
+    saveStateToLocal();
     hideAllViews();
     document.getElementById('view-observe').classList.remove('hidden');
     renderObservationUI();
-    
-    // --- 根據模式選擇邏輯 ---
-    if (timeMode === 'realtime') {
-        // 真實時間模式：不啟動自動計時器
-        // 為了讓報表統計功能正常運作，我們可以啟動一個隱形的計時器來追蹤經過秒數
-        state.timer = setInterval(() => {
-            state.time++;
-            updateTimerDisplay(); // 畫面仍會顯示經過的時間，但這只是參考
-        }, 1000);
-    } else {
-        // 原本的計時模式
-        const targetSeconds = state.config.duration * 60;
-
-        state.timer = setInterval(() => {
-            state.time++;
-            
-            // 檢查是否達到目標時間 (999 分鐘視為不限制)
-            if (state.config.duration !== 999 && state.time >= targetSeconds) {
-                clearInterval(state.timer);
-                if (confirm("觀察時間已到，是否結束？")) {
-                    finishObservation();
-                } else {
-                    // 若取消，啟動無上限計時
-                    state.timer = setInterval(() => {
-                        state.time++;
-                        updateTimerDisplay();
-                    }, 1000);
-                }
-                return;
-            }
-            updateTimerDisplay();
-        }, 1000);
-    }
-    
-    state.config.timeMode = document.getElementById('timeMode').value;
-    
-    state.startTime = Date.now(); // 記錄開始那一刻的時間戳
-    state.isFinished = false;     // 新增一個旗標標記觀察狀態
-    
-    // 設定計時器，只需負責 UI 更新
-    state.timer = setInterval(updateTimerDisplay, 1000);
 }
+
+function processTimerLogic() {
+    if (!state.startTime || state.isFinished) return;
+
+    // 計算經過的分鐘數
+    const elapsedMinutes = (Date.now() - state.startTime) / (1000 * 60);
+
+    // 檢查是否超過設定時間 (且尚未提醒過)
+    if (state.config.duration !== 999 && elapsedMinutes >= state.config.duration && !state.isNotified) {
+        state.isNotified = true; // 立刻標記，防止視窗重複跳出
+        
+        // 延遲執行確保 UI 不會因為 alert 卡死
+        setTimeout(() => {
+            if (confirm("觀察時間已達設定限制，是否結束？")) {
+                finishObservation();
+            } else {
+                alert("已選擇繼續觀察，將不設限。");
+                state.config.duration = 999; // 解除限制
+            }
+        }, 500);
+    }
+}
+
 
 function updateTimer() {
-    if (!state.startTime) return;
+    if (!state.startTime || state.isFinished) return;
     
-    // 計算從開始到現在經過的秒數
-    const elapsedSeconds = Math.floor((Date.now() - state.startTime) / 1000);
-    state.time = elapsedSeconds; 
+    // 計算經過秒數
+    state.time = Math.floor((Date.now() - state.startTime) / 1000);
     
-    updateTimerDisplay();
-    saveState(); // 確保每秒自動儲存狀態到 localStorage
+    // 檢查目標時間 (僅在非無限模式且尚未提醒過時觸發)
+    const targetSeconds = state.config.duration * 60;
+    
+    if (state.config.duration !== 999 && state.time >= targetSeconds && !state.isNotified) {
+        state.isNotified = true; // 鎖定旗標，防止重複跳出
+        
+        // 使用 setTimeout 讓 confirm 在當前執行堆疊後執行，避免阻塞計時器
+        setTimeout(() => {
+            if (confirm("觀察時間已達設定限制，是否結束？")) {
+                finishObservation();
+            } else {
+                alert("已選擇繼續觀察 (將不設限)。");
+                state.config.duration = 999; // 解除限制
+            }
+        }, 100);
+    }
 }
-
 
 function renderObservationUI() {
     const container = document.getElementById('actionButtons');
@@ -324,24 +321,43 @@ function renderObservationUI() {
     if (typeof updateLiveLogs === 'function') updateLiveLogs();
 }
 
+
+function getTimeStamp() {
+    const elapsed = state.time;
+    const m = Math.floor(elapsed / 60).toString().padStart(2, '0');
+    const s = (elapsed % 60).toString().padStart(2, '0');
+    const timerStr = `${m}:${s}`;
+    
+    // 獲取設定的目標總時長 (如果是 999 則顯示無限)
+    const total = state.config.duration === 999 ? '無限' : `${state.config.duration}:00`;
+    
+    // 基礎格式：總時間: 00:07 / 1:00
+    let label = `${timerStr} / ${total}`;
+    
+    // 如果是真實時間模式，在後面補上現在時間
+    if (state.config.timeMode === 'realtime') {
+        const now = new Date().toLocaleTimeString('zh-TW', { hour12: false });
+        label += ` (現在: ${now})`;
+    }
+    
+    return label;
+}
+
+
 function addCount(sKey, act) {
     const key = `${sKey}-${act}`;
     state.data[key] = (state.data[key] || 0) + 1;
     
-    // 決定時間字串顯示方式
-    let timeLabel;
-    if (state.config.timeMode === 'realtime') {
-        timeLabel = new Date().toLocaleTimeString('zh-TW', { hour12: false });
-    } else {
-        timeLabel = document.getElementById('timerDisplay').innerText.replace('總時間: ', '').split('/')[0].trim();
-    }
+    // 使用統一函式取得時間標籤
+    const timeLabel = getTimeStamp();
 
     state.logs.push({ 
-        time: timeLabel, 
+        time: timeLabel, // 直接存入統一格式的字串
         seconds: state.time, 
         stu: sKey === 'A' ? state.config.stuA : state.config.stuB, 
         act: act 
     });
+    
     document.getElementById(`val-${sKey}-${act}`).innerText = state.data[key];
     saveStateToLocal(); 
     updateLiveLogs();
@@ -368,16 +384,14 @@ function updateLiveLogs() {
     `;
 }
 
-// 修改原本的 finishObservation 函式
 function finishObservation() {
-    // 加入強制確認
-    if (!confirm("確定要結束本次觀察並產生報表嗎？\n(結束後將進入結算頁面)")) {
-        return; // 使用者按取消，保持在觀察頁面
+    // 確實清除計時器
+    if (state.timer) {
+        clearInterval(state.timer);
+        state.timer = null;
     }
     
-    clearInterval(state.timer);
-    state.timer = null; // 確保計時器歸零
-    
+    state.isFinished = true;
     hideAllViews();
     document.getElementById('view-report').classList.remove('hidden');
     renderFinalReport();
@@ -720,38 +734,18 @@ function updateTimerDisplay() {
     const displayEl = document.getElementById('timerDisplay');
     if (!displayEl) return;
 
-    // 1. 如果是「真實時間」模式且還沒開始，顯示提示
-    if (state.config.timeMode === 'realtime' && !state.startTime) {
-        displayEl.innerText = "總時間: 等待開始...";
+    // 1. 若尚未開始，顯示初始狀態
+    if (!state.startTime) {
+        displayEl.innerText = "總時間: 00:00 / --:--";
         return;
     }
 
-    // 2. 計算流逝時間：
-    // 若有 startTime，則永遠計算當下與開始時間的差值
-    // 若沒有 startTime (如還沒開始)，則顯示 0
-    let elapsedSeconds = 0;
-    if (state.startTime) {
-        elapsedSeconds = Math.floor((Date.now() - state.startTime) / 1000);
-        // 同步更新到 state.time 以供其他邏輯使用
-        state.time = elapsedSeconds;
-    }
+    // 2. 計算並同步經過秒數
+    state.time = Math.floor((Date.now() - state.startTime) / 1000);
 
-    // 3. 格式化顯示時間
-    let m = Math.floor(elapsedSeconds / 60).toString().padStart(2, '0');
-    let s = (elapsedSeconds % 60).toString().padStart(2, '0');
-
-    // 4. 處理顯示邏輯
-    let displayStr = `總時間: ${m}:${s}`;
-
-    if (state.config.timeMode === 'realtime') {
-        // 真實時間模式，不顯示目標時長，直接顯示當下真實時鐘
-        const now = new Date().toLocaleTimeString('zh-TW', { hour12: false });
-        displayEl.innerText = `${displayStr} (真實時間: ${now})`;
-    } else {
-        // 計時模式，顯示目標總長
-        const total = state.config.duration === 999 ? '無限' : (state.config.duration ? `${state.config.duration}:00` : '--:--');
-        displayEl.innerText = `${displayStr} / ${total}`;
-    }
+    // 3. 直接呼叫統一的 getTimeStamp() 進行賦值
+    // 這確保了您的記錄檔 (logs) 與螢幕顯示 (UI) 永遠不會出現格式差異
+    displayEl.innerText = `總時間: ${getTimeStamp()}`;
 }
 
 
