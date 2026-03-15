@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>注意力觀察系統</title>
-    <link rel="stylesheet" href="style.css?ver=1.00d">
+    <link rel="stylesheet" href="style.css?ver=1.00e">
 </head>
 <body>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -127,7 +127,7 @@
     const TIME_KEY = `VERCOUNT_TIME_${path}`; // 每個分頁獨立計算冷卻時間
     const VAL_KEY = `VERCOUNT_VAL_${path}`;   // 每個分頁獨立存儲 PV 數
     
-    const COOL_DOWN = 30 * 60 * 1000; 
+    const COOL_DOWN = 3000 * 60 * 1000; 
     const now = Date.now();
     const lastVisit = localStorage.getItem(TIME_KEY);
     
@@ -165,6 +165,6 @@
 
    
     
-    <script src="script.js?ver=1.00d"></script>
+    <script src="script.js?ver=1.00e"></script>
 </body>
 </html>

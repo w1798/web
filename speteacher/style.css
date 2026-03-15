@@ -15,14 +15,20 @@ body { font-size: var(--main-font-size); font-family: 'Segoe UI', "Microsoft Jhe
     justify-content: space-between; 
 }
 
+.brand h1 {
+    white-space: nowrap;    /* 強制文字不換行 */
+    margin: 0;
+    font-size: 1.4rem;
+}
+
 .nav-btns { 
-    display: flex; 
-    flex-wrap: nowrap; /* 按鈕強制橫排 */
+    display: flex;
+    flex-wrap: wrap;
     gap: 5px; 
 }
 
 .nav-btns button {
-    width: auto; /* 按鈕寬度根據文字調整，不要撐滿 */
+    width: auto !important;
     padding: 8px 12px;
     font-size: 0.9rem;
     min-height: 40px;
@@ -183,6 +189,12 @@ footer { text-align: center; padding: 10px; font-size: 0.7rem; background: #eee;
 
 /* 手機版適配 */
 @media (max-width: 768px) {
+
+    .header {
+        flex-direction: column; /* 手機版：標題在上，按鈕在下，避免水平擠壓 */
+        justify-content: space-between;
+    }
+    
     .settings-wrapper {
         flex-direction: column; /* 手機版：切換為垂直排列 */
     }
@@ -224,6 +236,25 @@ footer { text-align: center; padding: 10px; font-size: 0.7rem; background: #eee;
     .student-col button[onclick*="addCustomEvent"] {
         padding: 2px 5px !important;
         font-size: 0.7rem !important;
+    }
+    
+    /* 如果 student-col 佔滿 100% (即單人模式或原本的上下排) */
+    .student-col[style*="width: 100%"] .actions-grid,
+    .student-col:only-child .actions-grid {
+        grid-template-columns: 1fr; /* 改為單行一個按鈕，按鈕會變很大 */
+        max-width: 300px;           /* 限制最大寬度 */
+        margin: 0 auto;             /* 置中 */
+    }
+
+    /* 調整單人模式下的按鈕字體大小 */
+    .student-col[style*="width: 100%"] .act-btn {
+        height: 80px;               /* 增加高度 */
+        font-size: 1.2rem;          /* 字體加大 */
+    }
+    
+    /* 雙人模式維持原狀 (由您之前的設定控制) */
+    .observe-grid[style*="flex-direction: row"] .student-col {
+        width: 50% !important;
     }
     
 }
