@@ -273,7 +273,7 @@ footer { text-align: center; padding: 10px; font-size: 0.7rem; background: #eee;
     /* 5. 雙人模式下的按鈕樣式 (避免被單人模式影響) */
     .observe-grid .student-col:not(:only-child) .act-btn {
         height: 60px;
-        font-size: 1.2rem; /* 雙人模式字體稍微小一點點避免溢出 */
+        font-size: 1rem; /* 雙人模式字體稍微小一點點避免溢出 */
     }
 
     .stu-title {
