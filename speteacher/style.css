@@ -190,71 +190,94 @@ footer { text-align: center; padding: 10px; font-size: 0.7rem; background: #eee;
 /* 手機版適配 */
 @media (max-width: 768px) {
 
+    /* 1. 修正標題變直排：將 Header 改為上下兩層，標題在上，按鈕在下 */
     .header {
-        flex-direction: column; /* 手機版：標題在上，按鈕在下，避免水平擠壓 */
-        justify-content: space-between;
+        flex-direction: column !important; 
+        align-items: center;
+        gap: 10px;
+        padding: 10px;
     }
-    
+
+    .brand {
+        width: 100%;
+        text-align: center;
+    }
+
+    .brand h1 {
+        white-space: nowrap; /* 強制文字橫排 */
+        font-size: 1.3rem;
+        margin: 0;
+    }
+
+    .nav-btns {
+        justify-content: center;
+        width: 100%;
+    }
+
+    /* 2. 設定頁面改垂直排列 */
     .settings-wrapper {
-        flex-direction: column; /* 手機版：切換為垂直排列 */
+        flex-direction: column;
     }
     
     .col-left, .col-right {
-        width: 100%; /* 手機版佔滿全寬 */
+        width: 100%;
     }
     
+    /* 設定視窗底部按鈕三等分 */
     .button-group {
         display: grid;
-        grid-template-columns: repeat(3, 1fr); /* 均分為三欄 */
+        grid-template-columns: repeat(3, 1fr);
         gap: 5px;
     }
     
+    /* 3. 觀察介面：雙人模式強制左右排 */
     .observe-grid {
         flex-direction: row !important; 
-        gap: 8px; /* 縮小間距以擠進畫面 */
+        gap: 8px;
         align-items: flex-start;
+        display: flex;
+        justify-content: center; /* 確保內容整體置中 */
     }
     
+    /* 雙人模式下的寬度 */
     .student-col {
-        width: 50% !important; /* 每個學生佔一半 */
-        padding: 8px; /* 縮減內距 */
+        flex: 1;
+        width: 50% !important;
+        padding: 8px;
     }
 
-    /* 縮小按鈕內的字體與高度，確保左右排擠得下 */
-    .act-btn {
+    /* 4. 單人模式專用：強制置中且加大 */
+    /* 當 observe-grid 只有一個學生欄位時 (單人) */
+    .observe-grid .student-col:only-child {
+        width: 100% !important;
+        max-width: 350px; /* 限制寬度，讓它看起來在中間 */
+        margin: 0 auto;   /* 水平置中關鍵 */
+        flex: none;       /* 取消 flex:1 以便 max-width 生效 */
+    }
+
+    .observe-grid .student-col:only-child .actions-grid {
+        grid-template-columns: 1fr !important; /* 單人模式改單行大按鈕 */
+    }
+
+    .observe-grid .student-col:only-child .act-btn {
+        height: 80px;
+        font-size: 1.5rem !important; /* 單人項目字體加大 */
+    }
+
+    /* 5. 雙人模式下的按鈕樣式 (避免被單人模式影響) */
+    .observe-grid .student-col:not(:only-child) .act-btn {
         height: 60px;
-        font-size: 1rem;       /* 這裡可以改成 0.8rem(小), 1.2rem(大) */
-        font-weight: bold;     /* 加粗文字 */
-        padding: 2px;
+        font-size: 1rem; /* 雙人模式字體稍微小一點點避免溢出 */
     }
 
     .stu-title {
         font-size: 0.9rem;
     }
 
-    /* 備註按鈕在左右排時也要縮小 */
+    /* 備註按鈕縮小 */
     .student-col button[onclick*="addCustomEvent"] {
         padding: 2px 5px !important;
         font-size: 0.7rem !important;
+        width: auto !important;
     }
-    
-    /* 如果 student-col 佔滿 100% (即單人模式或原本的上下排) */
-    .student-col[style*="width: 100%"] .actions-grid,
-    .student-col:only-child .actions-grid {
-        grid-template-columns: 1fr; /* 改為單行一個按鈕，按鈕會變很大 */
-        max-width: 300px;           /* 限制最大寬度 */
-        margin: 0 auto;             /* 置中 */
-    }
-
-    /* 調整單人模式下的按鈕字體大小 */
-    .student-col[style*="width: 100%"] .act-btn {
-        height: 80px;               /* 增加高度 */
-        font-size: 1.2rem;          /* 字體加大 */
-    }
-    
-    /* 雙人模式維持原狀 (由您之前的設定控制) */
-    .observe-grid[style*="flex-direction: row"] .student-col {
-        width: 50% !important;
-    }
-    
 }
