@@ -736,143 +736,6 @@ document.getElementById('resetCloudTokenBtn').addEventListener('click', () => {
     saveToStorage();
 });
 
-// 上傳雲端
-document.getElementById('uploadCloudBtn').addEventListener('click', async () => {
-    if (!cloudSettings.url || !cloudSettings.token) {
-        alert('請先完成雲端設定');
-        return;
-    }
-    
-    if (!confirm('⚠️ 確定要將本地資料上傳至雲端嗎？這會覆蓋雲端上的舊資料。請先確認雲端設定正確。')) {
-        return;
-    }
-    
-    // 準備上傳資料：轉成 JSON 字串
-    const uploadData = JSON.stringify(stockData);
-    
-    try {
-        let response;
-        
-        // 判斷是否為 JSONBin
-        if (cloudSettings.url.match(/^[a-zA-Z0-9]+$/)) {
-            // JSONBin.io 寫入
-            response = await fetch(`https://api.jsonbin.io/v3/b/${cloudSettings.url}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Access-Key': cloudSettings.token
-                },
-                body: JSON.stringify(stockData)
-            });
-        } else {
-            // === 修正：Upstash 的正確格式 ===
-            // 確保 URL 結尾沒有斜線
-            const baseUrl = cloudSettings.url.replace(/\/$/, '');
-            
-            // 使用 SET 命令，以 "dividend-data" 作為 key
-            const setUrl = `${baseUrl}/set/dividend-data`;
-            
-            console.log('上傳 URL:', setUrl); // 除錯用
-            
-            response = await fetch(setUrl, {
-                method: 'POST',  // Upstash 接受 POST 來設定值[citation:2]
-                headers: {
-                    'Authorization': `Bearer ${cloudSettings.token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: uploadData  // 直接放 JSON 字串
-            });
-            
-            // 查看回應內容
-            const responseText = await response.text();
-            console.log('回應狀態:', response.status);
-            console.log('回應內容:', responseText);
-            
-            if (response.ok) {
-                alert('✅ 雲端上傳成功！');
-            } else {
-                alert(`❌ 上傳失敗：${response.status} - ${responseText}`);
-            }
-            return;
-        }
-        
-        if (response.ok) {
-            alert('✅ 雲端上傳成功！');
-        } else {
-            const errorText = await response.text();
-            alert(`❌ 上傳失敗：${response.status} ${errorText}`);
-        }
-    } catch (error) {
-        alert(`❌ 上傳錯誤：${error.message}`);
-    }
-});
-
-// 下載雲端
-document.getElementById('downloadCloudBtn').addEventListener('click', async () => {
-    if (!cloudSettings.url || !cloudSettings.token) {
-        alert('請先完成雲端設定');
-        return;
-    }
-    
-    if (!confirm('⚠️ 確定要從雲端下載資料嗎？這會覆蓋本地的所有股票資料。建議先匯出備份。')) {
-        return;
-    }
-    
-    try {
-        let response;
-        let data;
-        
-        if (cloudSettings.url.match(/^[a-zA-Z0-9]+$/)) {
-            // JSONBin.io
-            response = await fetch(`https://api.jsonbin.io/v3/b/${cloudSettings.url}/latest`, {
-                headers: {
-                    'X-Access-Key': cloudSettings.token
-                }
-            });
-            if (response.ok) {
-                const json = await response.json();
-                data = json.record;
-            }
-        } else {
-            // === 修正：Upstash 的下載格式 ===
-            const baseUrl = cloudSettings.url.replace(/\/$/, '');
-            const getUrl = `${baseUrl}/get/dividend-data`;
-            
-            console.log('下載 URL:', getUrl);
-            
-            response = await fetch(getUrl, {
-                headers: {
-                    'Authorization': `Bearer ${cloudSettings.token}`
-                }
-            });
-            
-            if (response.ok) {
-                const json = await response.json();
-                // Upstash 回傳格式：{ "result": "..." }[citation:2]
-                if (json.result) {
-                    data = JSON.parse(json.result);
-                }
-            }
-        }
-        
-        if (response.ok && data) {
-            stockData = data;
-            Object.keys(stockData).forEach(code => {
-                if (!stockData[code].purchases) stockData[code].purchases = [];
-                if (!stockData[code].dividends) stockData[code].dividends = [];
-                if (!stockData[code].alias) stockData[code].alias = '';
-            });
-            saveToStorage();
-            renderStockSelect();
-            alert('✅ 雲端下載成功！');
-        } else {
-            const errorText = await response.text();
-            alert(`❌ 下載失敗：${response.status} ${errorText}`);
-        }
-    } catch (error) {
-        alert(`❌ 下載錯誤：${error.message}`);
-    }
-});
 
 // ==================== 重置功能 ====================
 document.getElementById('resetDataBtn').addEventListener('click', () => {
@@ -883,72 +746,8 @@ document.getElementById('resetDataBtn').addEventListener('click', () => {
     }
 });
 
-// ==================== 匯出 JSON (包含雲端設定) ====================
-document.getElementById('exportDataBtn').addEventListener('click', () => {
-    // 匯出時包含雲端設定
-    const toSave = {
-        stockData: stockData,
-        cloudSettings: cloudSettings
-    };
-    const dataStr = JSON.stringify(toSave, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `divvy-${new Date().toISOString().slice(0,10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-});
 
-// ==================== 匯入 JSON (包含雲端設定) ====================
-document.getElementById('importDataBtn').addEventListener('click', () => {
-    document.getElementById('importFile').click();
-});
 
-document.getElementById('importFile').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        try {
-            const imported = JSON.parse(event.target.result);
-            if (typeof imported === 'object') {
-                if (confirm('匯入將會覆蓋現有所有資料，確定嗎？')) {
-                    // 檢查是否有雲端設定
-                    if (imported.stockData) {
-                        stockData = imported.stockData;
-                        cloudSettings = imported.cloudSettings || { url: '', token: '' };
-                    } else {
-                        // 舊版格式
-                        stockData = imported;
-                        cloudSettings = { url: '', token: '' };
-                    }
-                    
-                    Object.keys(stockData).forEach(code => {
-                        if (!stockData[code].purchases) stockData[code].purchases = [];
-                        if (!stockData[code].dividends) stockData[code].dividends = [];
-                        if (!stockData[code].alias) stockData[code].alias = '';
-                    });
-                    
-                    // 更新雲端輸入框
-                    document.getElementById('cloudUrl').value = cloudSettings.url || '';
-                    document.getElementById('cloudToken').value = cloudSettings.token || '';
-                    
-                    saveToStorage();
-                    renderStockSelect();
-                    alert('匯入成功！');
-                }
-            } else {
-                alert('檔案格式錯誤');
-            }
-        } catch (error) {
-            alert('匯入失敗：不是有效的 JSON 檔案');
-        }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
-});
 
 // ==================== 回頂端功能 ====================
 const backToTopButton = document.getElementById('backToTop');
@@ -982,6 +781,313 @@ document.getElementById('pasteBtn').addEventListener('click', async () => {
         alert('無法讀取剪貼簿，請手動貼上 (Ctrl+V)');
     }
 });
+
+
+// ==================== 自定義選單函數 ====================
+function showCustomMenu(triggerElement, items) {
+    // 移除已存在的選單
+    const existingMenu = document.querySelector('.custom-context-menu');
+    if (existingMenu) existingMenu.remove();
+
+    // 建立選單
+    const menu = document.createElement('div');
+    menu.className = 'custom-context-menu';
+    menu.style.cssText = `
+        position: fixed;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        padding: 8px 0;
+        min-width: 180px;
+        z-index: 10000;
+        border: 1px solid #e2e8f0;
+    `;
+
+    // 加入選單項目
+    items.forEach(item => {
+        const menuItem = document.createElement('div');
+        menuItem.style.cssText = `
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #1e293b;
+        `;
+        menuItem.innerHTML = item.icon ? `${item.icon} ${item.text}` : item.text;
+        
+        menuItem.addEventListener('mouseenter', () => {
+            menuItem.style.backgroundColor = '#f1f5f9';
+        });
+        menuItem.addEventListener('mouseleave', () => {
+            menuItem.style.backgroundColor = 'transparent';
+        });
+        
+        menuItem.addEventListener('click', (e) => {
+            e.stopPropagation();
+            menu.remove();
+            item.action();
+        });
+        
+        menu.appendChild(menuItem);
+        
+        // 加入分隔線
+        if (item.divider) {
+            const divider = document.createElement('div');
+            divider.style.cssText = 'height: 1px; background: #e2e8f0; margin: 8px 0;';
+            menu.appendChild(divider);
+        }
+    });
+
+    // 設定菜單位置
+    const rect = triggerElement.getBoundingClientRect();
+    menu.style.left = `${rect.left}px`;
+    menu.style.top = `${rect.bottom + 5}px`;
+
+    // 確保菜單不會超出畫面右側
+    const menuRect = menu.getBoundingClientRect();
+    if (menuRect.right > window.innerWidth) {
+        menu.style.left = `${window.innerWidth - menuRect.width - 10}px`;
+    }
+
+    document.body.appendChild(menu);
+
+    // 點擊其他地方關閉選單
+    const closeMenu = (e) => {
+        if (!menu.contains(e.target) && e.target !== triggerElement) {
+            menu.remove();
+            document.removeEventListener('click', closeMenu);
+        }
+    };
+    setTimeout(() => document.addEventListener('click', closeMenu), 0);
+}
+
+// ==================== 讀取按鈕功能 ====================
+document.getElementById('loadBtn').addEventListener('click', (e) => {
+    const hasCloud = cloudSettings.url && cloudSettings.token;
+    
+    if (!hasCloud) {
+        // 沒有雲端設定：直接開啟檔案選擇器
+        document.getElementById('importFile').click();
+    } else {
+        // 有雲端設定：顯示選單
+        const items = [
+            {
+                icon: '📁',
+                text: '從本地匯入',
+                action: () => document.getElementById('importFile').click()
+            },
+            {
+                icon: '☁️',
+                text: '從雲端下載',
+                action: async () => {
+                    if (!confirm('⚠️ 確定要從雲端下載資料嗎？這會覆蓋本地的所有股票資料。建議先匯出備份。')) {
+                        return;
+                    }
+                    
+                    try {
+                        let response;
+                        let data;
+                        
+                        if (cloudSettings.url.match(/^[a-zA-Z0-9]+$/)) {
+                            // JSONBin.io
+                            response = await fetch(`https://api.jsonbin.io/v3/b/${cloudSettings.url}/latest`, {
+                                headers: { 'X-Access-Key': cloudSettings.token }
+                            });
+                            if (response.ok) {
+                                const json = await response.json();
+                                data = json.record;
+                            }
+                        } else {
+                            // Upstash
+                            const baseUrl = cloudSettings.url.replace(/\/$/, '');
+                            const getUrl = `${baseUrl}/get/dividend-data`;
+                            
+                            response = await fetch(getUrl, {
+                                headers: { 'Authorization': `Bearer ${cloudSettings.token}` }
+                            });
+                            
+                            if (response.ok) {
+                                const json = await response.json();
+                                if (json.result) {
+                                    data = JSON.parse(json.result);
+                                }
+                            }
+                        }
+                        
+                        if (response.ok && data) {
+                            stockData = data;
+                            Object.keys(stockData).forEach(code => {
+                                if (!stockData[code].purchases) stockData[code].purchases = [];
+                                if (!stockData[code].dividends) stockData[code].dividends = [];
+                                if (!stockData[code].alias) stockData[code].alias = '';
+                            });
+                            saveToStorage();
+                            renderStockSelect();
+                            alert('✅ 雲端下載成功！');
+                        } else {
+                            const errorText = await response.text();
+                            alert(`❌ 下載失敗：${response.status} ${errorText}`);
+                        }
+                    } catch (error) {
+                        alert(`❌ 下載錯誤：${error.message}`);
+                    }
+                }
+            }
+        ];
+        
+        showCustomMenu(e.currentTarget, items);
+    }
+});
+
+// ==================== 存檔按鈕功能 ====================
+document.getElementById('saveBtn').addEventListener('click', (e) => {
+    const hasCloud = cloudSettings.url && cloudSettings.token;
+    
+    if (!hasCloud) {
+        // 沒有雲端設定：直接匯出
+        const toSave = {
+            stockData: stockData,
+            cloudSettings: cloudSettings
+        };
+        const dataStr = JSON.stringify(toSave, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `divvy-${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    } else {
+        // 有雲端設定：顯示選單
+        const items = [
+            {
+                icon: '📥',
+                text: '匯出到本地',
+                action: () => {
+                    const toSave = {
+                        stockData: stockData,
+                        cloudSettings: cloudSettings
+                    };
+                    const dataStr = JSON.stringify(toSave, null, 2);
+                    const blob = new Blob([dataStr], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `divvy-${new Date().toISOString().slice(0,10)}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }
+            },
+            {
+                icon: '☁️',
+                text: '上傳到雲端',
+                action: async () => {
+                    if (!confirm('⚠️ 確定要將本地資料上傳至雲端嗎？這會覆蓋雲端上的舊資料。')) {
+                        return;
+                    }
+                    
+                    const uploadData = JSON.stringify(stockData);
+                    
+                    try {
+                        let response;
+                        
+                        if (cloudSettings.url.match(/^[a-zA-Z0-9]+$/)) {
+                            // JSONBin.io
+                            response = await fetch(`https://api.jsonbin.io/v3/b/${cloudSettings.url}`, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-Access-Key': cloudSettings.token
+                                },
+                                body: JSON.stringify(stockData)
+                            });
+                            
+                            if (response.ok) {
+                                alert('✅ 雲端上傳成功！');
+                            } else {
+                                const errorText = await response.text();
+                                alert(`❌ 上傳失敗：${response.status} ${errorText}`);
+                            }
+                        } else {
+                            // Upstash
+                            const baseUrl = cloudSettings.url.replace(/\/$/, '');
+                            const setUrl = `${baseUrl}/set/dividend-data`;
+                            
+                            response = await fetch(setUrl, {
+                                method: 'POST',
+                                headers: {
+                                    'Authorization': `Bearer ${cloudSettings.token}`,
+                                    'Content-Type': 'application/json'
+                                },
+                                body: uploadData
+                            });
+                            
+                            const responseText = await response.text();
+                            
+                            if (response.ok) {
+                                alert('✅ 雲端上傳成功！');
+                            } else {
+                                alert(`❌ 上傳失敗：${response.status} - ${responseText}`);
+                            }
+                        }
+                    } catch (error) {
+                        alert(`❌ 上傳錯誤：${error.message}`);
+                    }
+                }
+            }
+        ];
+        
+        showCustomMenu(e.currentTarget, items);
+    }
+});
+
+// ==================== 保留原本的匯入檔案監聽 ====================
+document.getElementById('importFile').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        try {
+            const imported = JSON.parse(event.target.result);
+            if (typeof imported === 'object') {
+                if (confirm('匯入將會覆蓋現有所有資料，確定嗎？')) {
+                    if (imported.stockData) {
+                        stockData = imported.stockData;
+                        cloudSettings = imported.cloudSettings || { url: '', token: '' };
+                    } else {
+                        stockData = imported;
+                        cloudSettings = { url: '', token: '' };
+                    }
+                    
+                    Object.keys(stockData).forEach(code => {
+                        if (!stockData[code].purchases) stockData[code].purchases = [];
+                        if (!stockData[code].dividends) stockData[code].dividends = [];
+                        if (!stockData[code].alias) stockData[code].alias = '';
+                    });
+                    
+                    document.getElementById('cloudUrl').value = cloudSettings.url || '';
+                    document.getElementById('cloudToken').value = cloudSettings.token || '';
+                    
+                    saveToStorage();
+                    renderStockSelect();
+                    alert('匯入成功！');
+                }
+            } else {
+                alert('檔案格式錯誤');
+            }
+        } catch (error) {
+            alert('匯入失敗：不是有效的 JSON 檔案');
+        }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+});
+
+
+
 
 // ==================== 啟動 ====================
 loadFromStorage();

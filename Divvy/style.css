@@ -680,6 +680,42 @@ footer a:hover {
     color: #1efc72;
 }
 
+
+/* ==================== 自定義選單樣式 ==================== */
+.custom-context-menu {
+    animation: menuFadeIn 0.15s ease;
+    font-size: 0.95rem;
+}
+
+.custom-context-menu div:last-child {
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+
+.custom-context-menu div:first-child {
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+
+@keyframes menuFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 手機版選單調整 */
+@media screen and (max-width: 768px) {
+    .custom-context-menu {
+        min-width: 160px;
+        font-size: 0.9rem;
+    }
+}
+
 /* 手機版箭頭調整 */
 @media screen and (max-width: 768px) {
     #backToTop {
