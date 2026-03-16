@@ -163,34 +163,6 @@ window.closeSettings = function() {
 
 
 
-window.fileExport = function() {
-    // 1. 取得報表內容 (假設報表內容在一個 table 中)
-    const table = document.querySelector('table');
-    if (!table) return alert("沒有可匯出的數據！");
-
-    let csvContent = "\ufeff"; // 加入 BOM 以解決 Excel 中文亂碼
-    const rows = table.querySelectorAll('tr');
-
-    rows.forEach(row => {
-        const cols = row.querySelectorAll('th, td');
-        const rowData = Array.from(cols).map(col => `"${col.innerText.replace(/"/g, '""')}"`);
-        csvContent += rowData.join(',') + "\r\n";
-    });
-
-    // 2. 建立 Blob 下載連結
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    
-    // 3. 在手機上建立隱藏的下載連結並觸發
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `觀察報告_${new Date().toLocaleDateString()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-};
-
-
 window.systemReset = function() {
     if(confirm("確定要執行系統重置（清除觀察紀錄與設定）嗎？")) {
         // 清除你程式中定義的所有關鍵 Key
@@ -805,4 +777,60 @@ function resumeObservation() {
     hideAllViews();
     document.getElementById('view-observe').classList.remove('hidden');
     state.timer = setInterval(updateTimerDisplay, 1000);
+}
+
+
+// 判斷是否已設定雲端
+function hasCloudConfig() {
+    const cloud = JSON.parse(localStorage.getItem('cloud_config') || '{}');
+    return (cloud.binId && cloud.apiKey);
+}
+
+// 處理「讀取資料」點擊
+window.handleLoadAction = function(event) {
+    // 阻止事件向上傳遞，避免觸發 window.onclick 導致選單立刻關閉
+    if (event) event.stopPropagation();
+
+    if (!hasCloudConfig()) {
+        fileImport(); // 沒設定雲端，直接匯入
+    } else {
+        const loadMenu = document.getElementById("load-menu");
+        const saveMenu = document.getElementById("save-menu");
+
+        // 1. 先確保「存檔備份」選單是關閉的
+        if (saveMenu) saveMenu.classList.remove("show");
+
+        // 2. 切換「讀取資料」選單
+        if (loadMenu) loadMenu.classList.toggle("show");
+    }
+}
+
+// 處理「存檔備份」點擊 (同樣建議加上 event)
+window.handleSaveAction = function(event) {
+    if (event) event.stopPropagation();
+
+    if (!hasCloudConfig()) {
+        fileExport(); // 沒設定雲端，直接匯出
+    } else {
+        const loadMenu = document.getElementById("load-menu");
+        const saveMenu = document.getElementById("save-menu");
+
+        // 1. 先確保「讀取資料」選單是關閉的
+        if (loadMenu) loadMenu.classList.remove("show");
+
+        // 2. 切換「存檔備份」選單
+        if (saveMenu) saveMenu.classList.toggle("show");
+    }
+}
+
+// 點擊頁面其他地方時關閉選單
+window.onclick = function(event) {
+    if (!event.target.matches('#btn-load-main') && !event.target.matches('#btn-save-main')) {
+        const dropdowns = document.getElementsByClassName("dropdown-content");
+        for (let i = 0; i < dropdowns.length; i++) {
+            if (dropdowns[i].classList.contains('show')) {
+                dropdowns[i].classList.remove('show');
+            }
+        }
+    }
 }
