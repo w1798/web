@@ -101,12 +101,12 @@ window.setMode = function(mode) {
 };
 
 window.goHome = function() {
-    // 如果正在觀察中，先執行暫停
-    if (state.startTime && !state.isPaused && !state.isFinished) {
-        state.isPaused = true;
-        state.elapsedBeforePause = state.time; // 紀錄當下秒數
-        if (state.timer) clearInterval(state.timer); // 停止計時器跳動
-        saveStateToLocal();
+    // 檢查條件放寬：只要有 startTime，不管是否被 finishObservation 標記，
+    // 只要時間還在累加，都可以顯示「繼續」
+    const isObserving = !!state.startTime; 
+
+    if (isObserving && !state.isPaused && !state.isFinished) {
+        pauseLogic();
     }
     
     hideAllViews();
@@ -114,9 +114,14 @@ window.goHome = function() {
     state.currentView = 'view-home';
     
     const resumeBtn = document.getElementById('btn-resume');
-    if (resumeBtn && state.time > 0) {
-        resumeBtn.classList.remove('hidden');
-        resumeBtn.innerText = "繼續觀察 (目前暫停中)";
+    if (resumeBtn) {
+        // 【修正點】：只要有時間累積，且不是真的已經徹底關閉資料，就顯示按鈕
+        if (state.time > 0 && !state.isFinished) {
+            resumeBtn.classList.remove('hidden');
+            resumeBtn.innerText = "▶ 繼續上次觀察";
+        } else {
+            resumeBtn.classList.add('hidden');
+        }
     }
 };
 
@@ -130,24 +135,24 @@ function pauseLogic() {
     saveStateToLocal();
 }
 
+// 請只保留這一個正確的恢復邏輯
 window.resumeObservation = function() {
-    if (state.mode === '') {
-        alert("目前沒有進行中的觀察。");
-        return;
-    }
-    
+    if (state.mode === '') return;
+
     // 恢復計時：將 startTime 設為「現在」，新的計時會從這刻開始並累加之前的秒數
     state.startTime = Date.now();
     state.isPaused = false;
     
     hideAllViews();
     document.getElementById('view-observe').classList.remove('hidden');
-    // 確保渲染界面
     renderObservationUI();
-    
-    // 重啟計時器
+
+    // 重啟計時器，並帶入檢查邏輯
     if (state.timer) clearInterval(state.timer);
-    state.timer = setInterval(updateTimerDisplay, 1000);
+    state.timer = setInterval(() => {
+        updateTimerDisplay();
+        checkTimeLimit();
+    }, 1000);
 };
 
 
@@ -203,36 +208,29 @@ window.systemReset = function() {
 
 
 function startObservation() {
-    // 1. 清除任何殘留的計時器
     if (state.timer) clearInterval(state.timer);
     
-    // 2. 初始化狀態
     state.startTime = Date.now();
     state.isFinished = false;
-    state.isNotified = false; // 關鍵旗標：確保只會跳一次提醒
-    state.elapsedBeforePause = 0; // 重置累加
+    state.isNotified = false; 
+    state.elapsedBeforePause = 0; 
     state.isPaused = false;
     
-    // 3. 獲取並儲存模式
     state.config.timeMode = document.getElementById('timeMode').value;
     state.config.duration = parseInt(document.getElementById('duration').value) || 999;
-    // 獲取設定值，若為空則給予預設名稱
+    
     state.config.obsName = document.getElementById('obsName').value || '未具名';
     state.config.actName = document.getElementById('actName').value || '未指定活動';
     state.config.date = document.getElementById('obsDate').value;
-    
-    // 【關鍵修正】處理學生姓名預設值
     state.config.stuA = document.getElementById('stuA').value.trim() || '學生 A';
     if (state.mode === 'double') {
         state.config.stuB = document.getElementById('stuB').value.trim() || '學生 B';
     }
     
-    // 4. 開始統一計時器
+// 啟動計時器：每秒只做兩件事：更新顯示、檢查時限
     state.timer = setInterval(() => {
-        // A. 處理時間計算與提醒邏輯
-        processTimerLogic(); 
-        // B. 處理 UI 顯示
         updateTimerDisplay();
+        checkTimeLimit(); // 獨立的檢查函式
     }, 1000);
     
     saveStateToLocal();
@@ -240,6 +238,29 @@ function startObservation() {
     document.getElementById('view-observe').classList.remove('hidden');
     renderObservationUI();
 }
+
+
+function checkTimeLimit() {
+    if (state.config.duration === 999 || state.isNotified || state.isFinished) return;
+
+    const elapsedMinutes = state.time / 60;
+    
+    if (elapsedMinutes >= state.config.duration) {
+        state.isNotified = true;
+        
+        setTimeout(() => {
+            if (confirm("觀察時間已達設定限制，是否結束？")) {
+                finishObservation();
+            } else {
+                state.config.duration = 999; // 解除限制
+                state.isNotified = false;    // 【修正點】：重置通知旗標，確保後續邏輯正常
+                state.isFinished = false;    // 【修正點】：確保狀態明確為「未結束」
+                alert("已解除時間限制，繼續觀察中。");
+            }
+        }, 100);
+    }
+}
+
 
 function processTimerLogic() {
     if (!state.startTime || state.isFinished) return;
@@ -411,24 +432,35 @@ function finishObservation() {
 
 function renderFinalReport() {
     const container = document.getElementById('reportTableContainer');
-    const durationMin = state.config.duration;
     
-    // 從輸入框讀取值，若無則預設為 0.5 (即 30 秒)
+    // 1. 找出最後一次行為發生的時間 (秒數)
+    const lastLogSeconds = state.logs.length > 0 ? Math.max(...state.logs.map(l => l.seconds)) : 0;
+    
+    // 2. 設定報表終點：
+    // 若沒有紀錄，則用預設 duration；若有紀錄，取最後一筆時間與總設定時間的較小者
+    // 為了讓表格完整包含最後一筆，我們將最後時間向上取整到「間隔區段」的倍數
     const storedInterval = localStorage.getItem('report_interval');
     const intervalVal = storedInterval ? parseFloat(storedInterval) : 0.5;
     const intervalSec = intervalVal * 60;
     
+    const durationSec = state.config.duration * 60;
+    const effectiveEndSeconds = lastLogSeconds > 0 
+        ? Math.min(Math.ceil(lastLogSeconds / intervalSec) * intervalSec, durationSec)
+        : durationSec;
+
     let html = `<div class="report-info">觀察者：${state.config.obsName} | 活動：${state.config.actName} | 日期：${state.config.date}</div>`;
     
     const generateTable = (sKey, sName) => {
         let t = `<h3>學生：${sName}</h3><table class="segment-table"><tr><th>時間區段</th>${state.actions.map(a => `<th>${a}</th>`).join('')}</tr>`;
 
-        for (let i = 0; i < durationMin * 60; i += intervalSec) {
-            let segStart = `${Math.floor(i/60)}:${(i%60===0?'00':(i%60))}`;
+        // 迴圈改為跑至 effectiveEndSeconds
+        for (let i = 0; i < effectiveEndSeconds; i += intervalSec) {
+            let segStart = `${Math.floor(i/60)}:${((i%60).toString().padStart(2, '0'))}`;
             let nextI = i + intervalSec;
-            let segEnd = `${Math.floor(nextI/60)}:${(nextI%60===0?'00':(nextI%60))}`;
+            let segEnd = `${Math.floor(nextI/60)}:${((nextI%60).toString().padStart(2, '0'))}`;
             
             t += `<tr><td>${segStart}–${segEnd}</td>${state.actions.map(a => {
+                // 計算該區段的次數
                 let count = state.logs.filter(l => l.stu === sName && l.act === a && l.seconds >= i && l.seconds < nextI).length;
                 return `<td>${count}</td>`;
             }).join('')}</tr>`;
@@ -440,6 +472,10 @@ function renderFinalReport() {
 
     html += generateTable('A', state.config.stuA);
     if (state.mode === 'double') html += generateTable('B', state.config.stuB);
+    
+    // 在報表下方加註
+    html += `<p style="font-size:0.8rem; color:#666; margin-top:10px;">註：報表顯示至最後一次記錄行為之區段。</p>`;
+    
     container.innerHTML = html;
     
     renderTimeline();
@@ -807,20 +843,6 @@ document.getElementById('main-content-scroll').addEventListener('scroll', functi
 });
 
 
-function resumeObservation() {
-    // 1. 重新計算 startTime 以確保時間是「連續」的
-    // 假設之前已經過了 100 秒，要繼續計時，要把開始時間往回推 100 秒
-    const elapsed = state.time; 
-    state.startTime = Date.now() - (elapsed * 1000);
-    
-    // 2. 恢復狀態
-    state.isFinished = false;
-    
-    // 3. 切換畫面並重啟計時器
-    hideAllViews();
-    document.getElementById('view-observe').classList.remove('hidden');
-    state.timer = setInterval(updateTimerDisplay, 1000);
-}
 
 
 // 判斷是否已設定雲端

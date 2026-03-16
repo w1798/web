@@ -13,16 +13,16 @@
             <div class="brand"><h1>注意力觀察系統</h1></div>
             <div class="nav-btns">
                 <div class="dropdown">
-                    <button id="btn-load-main" onclick="handleLoadAction(event)">讀取資料</button>
+                    <button id="btn-load-main" onclick="handleLoadAction(event)">讀取</button>
                     <div id="load-menu" class="dropdown-content">
-                        <button onclick="fileImport()">從電腦匯入</button>
+                        <button onclick="fileImport()">從本地匯入</button>
                         <button onclick="cloudDownload()">從雲端下載</button>
                     </div>
                 </div>
                 <div class="dropdown">
-                    <button id="btn-save-main" onclick="handleSaveAction(event)">存檔備份</button>
+                    <button id="btn-save-main" onclick="handleSaveAction(event)">存檔</button>
                     <div id="save-menu" class="dropdown-content">
-                        <button onclick="fileExport()">匯出到電腦</button>
+                        <button onclick="fileExport()">匯出到本地</button>
                         <button onclick="cloudUpload()">上傳到雲端</button>
                     </div>
                 </div>
