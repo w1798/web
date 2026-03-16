@@ -14,6 +14,8 @@ let state = {
     }, 
     time: 0, 
     timer: null,
+    isPaused: false, // 新增：是否處於暫停狀態
+    elapsedBeforePause: 0, // 新增：暫停前已經累積的秒數
     data: {}, 
     logs: [], 
     actions: ['分心', '扭動', '離座', '出聲', '玩物品'],
@@ -99,30 +101,53 @@ window.setMode = function(mode) {
 };
 
 window.goHome = function() {
-    // 移除原本的 confirm 確認視窗與 clearInterval 邏輯
-    // 這樣返回主頁時，計時器會繼續在背景執行
+    // 如果正在觀察中，先執行暫停
+    if (state.startTime && !state.isPaused && !state.isFinished) {
+        state.isPaused = true;
+        state.elapsedBeforePause = state.time; // 紀錄當下秒數
+        if (state.timer) clearInterval(state.timer); // 停止計時器跳動
+        saveStateToLocal();
+    }
     
     hideAllViews();
     document.getElementById('view-home').classList.remove('hidden');
     state.currentView = 'view-home';
     
-    // 建議：在返回主頁時，把「繼續觀察」按鈕顯示出來
     const resumeBtn = document.getElementById('btn-resume');
-    if (resumeBtn && (state.timer || state.time > 0)) {
+    if (resumeBtn && state.time > 0) {
         resumeBtn.classList.remove('hidden');
+        resumeBtn.innerText = "繼續觀察 (目前暫停中)";
     }
 };
 
+
+function pauseLogic() {
+    state.isPaused = true;
+    // 紀錄目前的總秒數，作為下次開始的基礎
+    state.elapsedBeforePause = state.time; 
+    // 清除計時器，停止消耗效能
+    if (state.timer) clearInterval(state.timer);
+    saveStateToLocal();
+}
 
 window.resumeObservation = function() {
     if (state.mode === '') {
         alert("目前沒有進行中的觀察。");
         return;
     }
+    
+    // 恢復計時：將 startTime 設為「現在」，新的計時會從這刻開始並累加之前的秒數
+    state.startTime = Date.now();
+    state.isPaused = false;
+    
     hideAllViews();
     document.getElementById('view-observe').classList.remove('hidden');
     // 確保渲染界面
     renderObservationUI();
+    
+    // 重啟計時器
+    if (state.timer) clearInterval(state.timer);
+    state.timer = setInterval(updateTimerDisplay, 1000);
 };
 
 
@@ -185,10 +210,22 @@ function startObservation() {
     state.startTime = Date.now();
     state.isFinished = false;
     state.isNotified = false; // 關鍵旗標：確保只會跳一次提醒
+    state.elapsedBeforePause = 0; // 重置累加
+    state.isPaused = false;
     
     // 3. 獲取並儲存模式
     state.config.timeMode = document.getElementById('timeMode').value;
     state.config.duration = parseInt(document.getElementById('duration').value) || 999;
+    // 獲取設定值，若為空則給予預設名稱
+    state.config.obsName = document.getElementById('obsName').value || '未具名';
+    state.config.actName = document.getElementById('actName').value || '未指定活動';
+    state.config.date = document.getElementById('obsDate').value;
+    
+    // 【關鍵修正】處理學生姓名預設值
+    state.config.stuA = document.getElementById('stuA').value.trim() || '學生 A';
+    if (state.mode === 'double') {
+        state.config.stuB = document.getElementById('stuB').value.trim() || '學生 B';
+    }
     
     // 4. 開始統一計時器
     state.timer = setInterval(() => {
@@ -253,6 +290,8 @@ function updateTimer() {
 
 function renderObservationUI() {
     const container = document.getElementById('actionButtons');
+    const nameA = state.config.stuA || '學生 A';
+    const nameB = state.config.stuB || '學生 B';
     
     // 定義單個學生的 HTML 結構 (已移除刪除按鈕)
     const getBtnHTML = (sKey, sName) => `
@@ -322,6 +361,7 @@ function addCount(sKey, act) {
     
     // 使用統一函式取得時間標籤
     const timeLabel = getTimeStamp();
+    const currentStuName = sKey === 'A' ? (state.config.stuA || '學生 A') : (state.config.stuB || '學生 B');
 
     state.logs.push({ 
         time: timeLabel, // 直接存入統一格式的字串
@@ -712,11 +752,14 @@ function updateTimerDisplay() {
         return;
     }
 
-    // 2. 計算並同步經過秒數
-    state.time = Math.floor((Date.now() - state.startTime) / 1000);
+    // 2. 計算並同步經過秒數 (關鍵修正：累加邏輯)
+    // 只有在「非暫停」且「非結束」狀態下，才根據當前時間差更新 state.time
+    if (!state.isPaused && !state.isFinished) {
+        const currentSessionSeconds = Math.floor((Date.now() - state.startTime) / 1000);
+        state.time = (state.elapsedBeforePause || 0) + currentSessionSeconds;
+    }
 
-    // 3. 直接呼叫統一的 getTimeStamp() 進行賦值
-    // 這確保了您的記錄檔 (logs) 與螢幕顯示 (UI) 永遠不會出現格式差異
+    // 3. 顯示格式化時間
     displayEl.innerText = `總時間: ${getTimeStamp()}`;
 }
 
