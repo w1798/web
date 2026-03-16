@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>作業動態曆 by Charles Nextime</title>
-    <link rel="stylesheet" href="style.css?ver=1.02d">
+    <link rel="stylesheet" href="style.css?ver=1.02f">
 </head>
 <body class="theme-ocean">
     <header class="header-bar">
@@ -14,11 +14,23 @@
             <input type="date" id="mainStartDatePicker" onchange="updateMainStartDate()">
         </div>
         <div class="nav-right">
-            <button class="small-btn" onclick="exportJSON()">匯出</button>
-            <button class="small-btn" onclick="document.getElementById('fileInput').click()">匯入</button>
+            <div class="dropdown">
+                <button class="small-btn" id="btn-load-main" onclick="handleLoadAction(event)">讀取資料</button>
+                <div id="load-menu" class="dropdown-content">
+                    <button onclick="document.getElementById('fileInput').click()">從本地匯入</button>
+                    <button onclick="cloudSync('DOWNLOAD')">從雲端下載</button>
+                </div>
+            </div>
             <input type="file" id="fileInput" style="display:none" onchange="importJSON(event)">
-   	    <button class="small-btn" onclick="cloudSync('UPLOAD')">上傳</button>
-    	    <button class="small-btn" onclick="cloudSync('DOWNLOAD')">下載</button>
+            
+            
+            <div class="dropdown">
+                <button class="small-btn" id="btn-save-main" onclick="handleSaveAction(event)">存檔備份</button>
+                <div id="save-menu" class="dropdown-content">
+                    <button onclick="exportJSON()">匯出到本地</button>
+                    <button onclick="cloudSync('UPLOAD')">上傳到雲端</button>
+                </div>
+            </div>
             <button class="small-btn" onclick="resetApp()">重置</button>
             <button class="small-btn" onclick="openSettings()">設定</button>
             <button class="small-btn" onclick="openEdit()">編修作業</button>
@@ -275,6 +287,6 @@
 </script>
 
 
-    <script src="script.js?ver=1.02d"></script>
+    <script src="script.js?ver=1.02f"></script>
 </body>
 </html>

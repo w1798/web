@@ -842,4 +842,74 @@ function resetBinField(targetId) {
     }
 }
 
+function hasCloudConfig() {
+    // 請確認這行代碼是否符合您儲存設定的方式
+    // 例如：localStorage 中是否有設定雲端帳號或 Token
+    return !!localStorage.getItem('cloud_token'); 
+}
+
+// --- 核心邏輯修正 ---
+
+function hasCloudConfig() {
+    // 讀取當前儲存的資料
+    const savedData = localStorage.getItem('homework_v1');
+    if (!savedData) return false;
+    
+    try {
+        const data = JSON.parse(savedData);
+        // 檢查 appData 裡的這兩個欄位是否有值
+        return (data.binId && data.binId.trim() !== "") && 
+               (data.apiKey && data.apiKey.trim() !== "");
+    } catch (e) {
+        return false;
+    }
+}
+
+// --- 修復後的標準選單邏輯 ---
+
+window.handleLoadAction = function(event) {
+    if (event) event.stopPropagation();
+
+    // 檢查是否有雲端設定
+    if (!hasCloudConfig()) {
+        // 直接觸發本地匯入 (請確認您的匯入函式名稱是 importJSON 還是 fileImport)
+        document.getElementById('fileInput').click(); 
+    } else {
+        // 有雲端資料，顯示選單
+        const loadMenu = document.getElementById("load-menu");
+        const saveMenu = document.getElementById("save-menu");
+        
+        if (saveMenu) saveMenu.classList.remove("show"); // 關閉另一個選單
+        if (loadMenu) loadMenu.classList.toggle("show"); // 切換自己
+    }
+}
+
+window.handleSaveAction = function(event) {
+    if (event) event.stopPropagation();
+
+    // 檢查是否有雲端設定
+    if (!hasCloudConfig()) {
+        // 直接執行匯出 (請確認您的匯出函式名稱是 exportJSON)
+        exportJSON();
+    } else {
+        // 有雲端資料，顯示選單
+        const saveMenu = document.getElementById("save-menu");
+        const loadMenu = document.getElementById("load-menu");
+        
+        if (loadMenu) loadMenu.classList.remove("show"); // 關閉另一個選單
+        if (saveMenu) saveMenu.classList.toggle("show"); // 切換自己
+    }
+}
+
+// 點擊空白處關閉選單 (確保點擊選單以外的地方會關閉選單)
+window.onclick = function(event) {
+    if (!event.target.matches('.small-btn')) {
+        document.querySelectorAll('.dropdown-content').forEach(menu => {
+            menu.classList.remove('show');
+        });
+    }
+}
+
+
+
 init();
