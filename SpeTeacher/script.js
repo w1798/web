@@ -28,28 +28,24 @@ const STORAGE_KEY = 'attention_app_data';
 
 // --- 初始化 (安全掛載) ---
 window.onload = function() {
-    // 1. 先讀取資料
     const savedState = localStorage.getItem(STORAGE_KEY);
     if (savedState) {
         try {
             state = JSON.parse(savedState);
-        } catch (e) {
-            console.error("解析狀態失敗", e);
-        }
+        } catch (e) { console.error("解析狀態失敗", e); }
     }
 
-    // 2. 強制補全結構 (確保不會出現 undefined)
-    if (!state.config) state.config = { timeMode: 'timer' };
-    if (!state.config.timeMode) state.config.timeMode = 'timer';
-
-    // 3. 恢復邏輯
+    // 【關鍵修改】：嚴格檢查，如果 isFinished 為 true，則絕對不自動恢復
     if (state.startTime && !state.isFinished) {
         state.timer = setInterval(updateTimerDisplay, 1000);
         const resumeBtn = document.getElementById('btn-resume');
         if (resumeBtn) resumeBtn.classList.remove('hidden');
+    } else {
+        // 若已結束，隱藏繼續按鈕
+        const resumeBtn = document.getElementById('btn-resume');
+        if (resumeBtn) resumeBtn.classList.add('hidden');
     }
 
-    // 4. 使用 setTimeout 確保 DOM 渲染完畢後再設定選單值
     // 這能避開部分瀏覽器重整時，HTML 預設選取行為優先於 JS 執行順序的問題
     setTimeout(() => {
         const timeModeSelect = document.getElementById('timeMode');
@@ -418,13 +414,20 @@ function updateLiveLogs() {
 }
 
 function finishObservation() {
-    // 確實清除計時器
     if (state.timer) {
         clearInterval(state.timer);
         state.timer = null;
     }
     
-    state.isFinished = true;
+    state.isFinished = true; // 標記已結束
+    
+    // 【關鍵修改】：明確重置計時與狀態，避免重開網頁時誤觸恢復邏輯
+    state.startTime = null; 
+    state.time = 0;
+    state.elapsedBeforePause = 0;
+    
+    saveStateToLocal(); // 儲存這個「已歸零」的狀態
+    
     hideAllViews();
     document.getElementById('view-report').classList.remove('hidden');
     renderFinalReport();
