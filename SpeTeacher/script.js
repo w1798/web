@@ -18,7 +18,7 @@ let state = {
     elapsedBeforePause: 0, // 新增：暫停前已經累積的秒數
     data: {}, 
     logs: [], 
-    actions: ['分心', '扭動', '離座', '出聲', '玩物品'],
+    actions: ['分心', '發聲', '擾人', '扭動', '離座', '弄物', '停頓', '情緒'],
     currentView: 'view-home'
 };
 
