@@ -36,13 +36,29 @@ color: #888; font-size: 1.5rem; font-weight: bold; }
 
 
 <div class="nav-buttons">
-    <div class="nav-group">
-        <button class="nav-btn" onclick="exportData()">匯出</button>
-        <button class="nav-btn" onclick="triggerImport()">匯入</button>
-        <input type="file" id="importInput" style="display:none" accept=".json" onchange="importData(event)">
-    <button class="nav-btn" onclick="cloudSync('UPLOAD')">上傳</button>
-    <button class="nav-btn" onclick="cloudSync('DOWNLOAD')">下載</button>
+
+
+
+<div class="nav-buttons">
+    <div class="dropdown">
+        <button class="nav-btn" onclick="handleReadAction(event)">讀取</button>
+        <div id="readMenu" class="dropdown-content">
+            <a href="javascript:void(0)" onclick="triggerImport()">從本地匯入</a>
+            <a href="javascript:void(0)" onclick="cloudSync('DOWNLOAD')">從雲端下載</a>
+        </div>
     </div>
+
+    <div class="dropdown">
+        <button class="nav-btn" onclick="handleSaveAction(event)">存檔</button>
+        <div id="saveMenu" class="dropdown-content">
+            <a href="javascript:void(0)" onclick="exportData()">匯出到本地</a>
+            <a href="javascript:void(0)" onclick="cloudSync('UPLOAD')">上傳到雲端</a>
+        </div>
+    </div>
+    
+    <input type="file" id="importInput" style="display:none" accept=".json" onchange="importData(event)">
+</div>
+
 
     <div class="nav-group danger-zone">
         <button class="nav-btn" onclick="resetSystem()">重置</button>
@@ -345,7 +361,7 @@ onchange="generateStudentReport()"></select>
 })();
 </script>
 
-<script src="script.js?ver=1.10b"></script>
+<script src="script.js?ver=1.10a"></script>
 
 </body>
 </html>
