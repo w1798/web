@@ -6,6 +6,25 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation.
  */
+ 
+ 
+ // 負責載入外部套件的函式
+function initLibrary() {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+    
+    script.onerror = function() {
+        console.warn("外部庫載入失敗，嘗試本地載入...");
+        const fallback = document.createElement('script');
+        fallback.src = 'chart.js';
+        document.head.appendChild(fallback);
+    };
+    
+    document.head.appendChild(script);
+}
+
+// 執行載入
+initLibrary();
 
 let state = {
     mode: '', 
