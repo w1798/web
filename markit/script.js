@@ -727,3 +727,17 @@ window.addEventListener('click', function(e) {
         }
     });
 });
+
+
+window.onclick = function(event) {
+    // 如果點擊的不是下拉按鈕本身
+    if (!event.target.matches('.nav-btn')) {
+        var dropdowns = document.getElementsByClassName("dropdown-content");
+        for (var i = 0; i < dropdowns.length; i++) {
+            var openDropdown = dropdowns[i];
+            if (openDropdown.classList.contains('show')) {
+                openDropdown.classList.remove('show'); // 移除 show 類別以收合
+            }
+        }
+    }
+}
