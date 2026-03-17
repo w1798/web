@@ -101,8 +101,8 @@ function syncSettingsToUI() {
         'dateOffsetSelect': (el) => el.value = (s.dateOffset ?? 1),
         'quickTasksConfig': (el) => el.value = (s.quickTasks || "").split(',').join('\n'),
         'studentListConfig': (el) => el.value = (s.studentList || "").split(',').join('\n'),
-        'cloudBinId': (el) => el.value = s.binId || '',
-        'cloudApiKey': (el) => el.value = s.apiKey || ''
+        'binId': (el) => el.value = s.binId || '',
+        'apiKey': (el) => el.value = s.apiKey || ''
     };
 
     for (const [id, setter] of Object.entries(setters)) {
@@ -248,8 +248,8 @@ function saveSettings() {
     if(document.getElementById('studentListConfig'))
         s.studentList = parseList(document.getElementById('studentListConfig').value).join(',');
     
-    if(document.getElementById('cloudBinId')) s.binId = getV('cloudBinId').trim();
-    if(document.getElementById('cloudApiKey')) s.apiKey = getV('cloudApiKey').trim();
+    if(document.getElementById('binId')) s.binId = getV('binId').trim();
+    if(document.getElementById('apiKey')) s.apiKey = getV('apiKey').trim();
 
     for(let i = 1; i <= 12; i++) {
         const input = document.getElementById(`statusLabel_${i}`);
@@ -517,24 +517,110 @@ function resetBinField(id) { if(confirm("確定清除？")) document.getElementB
 
 async function cloudSync(method = 'UPLOAD') {
     const { binId, apiKey } = state.settings;
-    if (!binId || !apiKey) return alert("請先填寫雲端設定");
+
+    // 1. 檢查是否已填寫必要設定
+    if (!binId || !apiKey) {
+        return alert("⚠️ 請先前往「設定」填寫雲端 ID (或 URL) 與 API Key (或 Token)！");
+    }
+
+    // 2. 判斷雲端類型
+    const isUpstash = binId.includes('upstash.io');
+    const actionText = method === 'UPLOAD' ? "上傳備份到雲端" : "從雲端下載並覆蓋本地資料";
+    const warnText = method === 'DOWNLOAD' ? "\n(注意：這將會刪除您目前瀏覽器中的所有任務紀錄！)" : "";
+
+    // 3. 彈出確認視窗
+    if (!confirm(`確定要執行【${actionText}】嗎？${warnText}`)) return;
+
     try {
         if (method === 'UPLOAD') {
+            // --- 上傳邏輯 ---
+            // 排除敏感欄位：複製一份 state 並刪除 settings 中的 binId 與 apiKey
             const uploadData = JSON.parse(JSON.stringify(state));
-            delete uploadData.settings.binId; delete uploadData.settings.apiKey;
-            let res = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Access-Key': apiKey }, body: JSON.stringify(uploadData) });
-            if (res.ok) alert("✅ 備份成功！");
+            delete uploadData.settings.binId;
+            delete uploadData.settings.apiKey;
+
+            let res;
+            if (isUpstash) {
+                // Upstash (Redis SET)
+                res = await fetch(binId.startsWith('http') ? binId : `https://${binId}`, {
+                    method: 'POST', // Upstash REST API 通常使用 POST 或 PUT 送出指令
+                    headers: { 'Authorization': `Bearer ${apiKey}` },
+                    body: JSON.stringify(["SET", "markit_backup", JSON.stringify(uploadData)])
+                });
+            } else {
+                // JSONBin.io (PUT)
+                res = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Access-Key': apiKey
+                    },
+                    body: JSON.stringify(uploadData)
+                });
+            }
+
+            if (res.ok) alert("✅ 雲端備份成功！");
+            else throw new Error(`伺服器回傳錯誤: ${res.status}`);
+
         } else {
-            let res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, { headers: { 'X-Access-Key': apiKey } });
-            let data = (await res.json()).record;
-            if (data) { state = Object.assign({}, state, data); state.settings.binId = binId; state.settings.apiKey = apiKey; saveData(); location.reload(); }
+            // --- 下載邏輯 ---
+            let res;
+            let downloadedData;
+
+            if (isUpstash) {
+                // Upstash (Redis GET)
+                res = await fetch(`${binId.startsWith('http') ? binId : 'https://' + binId}/get/markit_backup`, {
+                    headers: { 'Authorization': `Bearer ${apiKey}` }
+                });
+                const json = await res.json();
+                downloadedData = JSON.parse(json.result); 
+            } else {
+                // JSONBin.io (GET)
+                res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+                    headers: { 'X-Access-Key': apiKey }
+                });
+                const json = await res.json();
+                downloadedData = json.record;
+            }
+
+            if (downloadedData) {
+                // 保留目前的雲端設定，不被下載回來的空值覆蓋
+                const currentBinId = state.settings.binId;
+                const currentApiKey = state.settings.apiKey;
+
+                state = Object.assign({}, state, downloadedData);
+                state.settings.binId = currentBinId;
+                state.settings.apiKey = currentApiKey;
+
+                saveData();
+                alert("✅ 資料下載並同步成功！網頁即將重整。");
+                location.reload();
+            } else {
+                throw new Error("找不到有效的雲端資料。");
+            }
         }
-    } catch (e) { alert("⚠️ 錯誤：" + e.message); }
+    } catch (e) {
+        console.error(e);
+        alert("⚠️ 雲端同步失敗：" + e.message);
+    }
 }
 
 function saveData() { localStorage.setItem('MarkIt', JSON.stringify(state)); renderAssignments(); }
 function saveDataQuietly() { localStorage.setItem('MarkIt', JSON.stringify(state)); }
-function triggerImport() { document.getElementById('importInput').click(); }
+
+
+function triggerImport() {
+    console.log("執行 triggerImport...");
+    const fileInput = document.getElementById('importInput');
+    if (fileInput) {
+        fileInput.click();
+    } else {
+        console.error("錯誤：找不到 ID 為 importInput 的檔案輸入框！請檢查 HTML。");
+        alert("系統錯誤：找不到檔案上傳元件");
+    }
+}
+
+
 function importData(e) {
     const reader = new FileReader();
     reader.onload = (ev) => { state = JSON.parse(ev.target.result); saveData(); location.reload(); };
@@ -573,4 +659,71 @@ window.addEventListener('storage', (event) => {
             applySettings();
         } catch (e) { console.error(e); }
     }
+});
+
+
+
+
+
+
+
+function handleReadAction(e) {
+    const { binId, apiKey } = state.settings;
+
+    // 先把所有選單關掉，確保乾淨
+    document.querySelectorAll('.dropdown-content').forEach(m => m.classList.remove('show'));
+
+    if (binId && apiKey) {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        toggleDropdown('readMenu');
+    } else {
+        triggerImport();
+    }
+}
+
+function handleSaveAction(e) {
+    const { binId, apiKey } = state.settings;
+
+    document.querySelectorAll('.dropdown-content').forEach(m => m.classList.remove('show'));
+
+    if (binId && apiKey) {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        toggleDropdown('saveMenu');
+    } else {
+        exportData();
+    }
+}
+
+// 選單切換核心
+function toggleDropdown(id) {
+    const { binId, apiKey } = state.settings;
+    
+    // 雙重保險：如果沒設定雲端，強制關閉所有選單並結束
+    if (!binId || !apiKey) {
+        document.querySelectorAll('.dropdown-content').forEach(m => m.classList.remove('show'));
+        return;
+    }
+
+    const targetMenu = document.getElementById(id);
+    if (!targetMenu) return;
+
+    const isNowVisible = targetMenu.classList.contains('show');
+
+    // 關閉其他已開啟的選單
+    document.querySelectorAll('.dropdown-content').forEach(m => m.classList.remove('show'));
+
+    if (!isNowVisible) {
+        targetMenu.classList.add('show');
+    }
+}
+
+// 全域點擊監控
+window.addEventListener('click', function(e) {
+   
+    const dropdowns = document.querySelectorAll('.dropdown-content');
+    dropdowns.forEach(m => {
+        if (m.classList.contains('show')) {
+            m.classList.remove('show');
+        }
+    });
 });
