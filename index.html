@@ -193,25 +193,19 @@
                 border-bottom: 1px solid rgba(255,255,255,0.1); 
                 overflow: hidden; /* 為了漸層遮罩 */
             }
-
-            /* 側邊欄漸層提示：告訴使用者右邊還有東西 */
-            .sidebar::after {
-                content: '';
-                position: absolute;
-                right: 0;
-                top: 0;
-                width: 50px;
-                height: 100%;
-                background: linear-gradient(to left, rgba(0, 0, 0, 0.4), transparent);
-                pointer-events: none;
-            }
-
+            
             .nav-group { 
                 display: flex; 
                 overflow-x: auto; 
                 gap: 8px; 
                 -webkit-overflow-scrolling: touch; 
-                padding-right: 40px; /* 給漸層留空間 */
+                padding: 5px 20px; /* 增加左右 padding 讓捲動更有餘裕 */
+                scroll-behavior: smooth; /* 讓容器支援平滑行為 */
+                scroll-padding: 0 20px;  /* 這是重點：確保置中時不會撞到邊緣 */
+            }
+            
+            .sidebar::after {
+                display: none; /* 如果有置中，通常就不太需要漸層遮蓋了 */
             }
 
             .nav-item { 
@@ -465,6 +459,13 @@
             currentCategory = category;
             changeView(category === 'all' ? 'simple' : 'detail', document.getElementById(category === 'all' ? 'btn-simple' : 'btn-detail'));
             renderLinks();
+            
+            // --- 新增：自動捲動至置中 ---
+            element.scrollIntoView({
+                behavior: 'smooth', // 平滑捲動
+                inline: 'center',   // 水平方向對齊中間
+                block: 'nearest'    // 垂直方向保持不動
+            });
         }
 
         function changeView(mode, element) {
