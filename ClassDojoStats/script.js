@@ -7,8 +7,28 @@
  * the Free Software Foundation.
  */
 
+ // 負責載入外部套件的函式
+function initLibrary() {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js';
+    
+    script.onerror = function() {
+        console.warn("外部庫載入失敗，嘗試本地載入...");
+        const fallback = document.createElement('script');
+        fallback.src = 'papaparse.min.js';
+        document.head.appendChild(fallback);
+    };
+    
+    document.head.appendChild(script);
+}
+
+// 執行載入
+initLibrary();
+
+
 const DEFAULT_DATA = {
-    fontSize: 16,
+    fontSize: 20,
+    showSurname: false,
     cloudConfig: { binId: '', apiKey: '' },
     settings: { includeKeywords: '_', excludeKeywords: 'A0', minusKeywords: '-' },
     students: []
@@ -69,17 +89,38 @@ function processData() {
     });
 }
 
+function formatStudentName(fullName) {
+    const hasChinese = /[\u4E00-\u9FFF]/.test(fullName);
+    const parts = fullName.trim().split(/\s+/);
+
+    if (appData.showSurname) {
+        // 顯示姓氏：是
+        if (hasChinese) {
+            return fullName.replace(/\s+/g, ''); // 中文去掉空白，如「王小明」
+        }
+        return fullName; // 非中文按原值輸出，如「Wang Xiao Ming」
+    } else {
+        // 顯示姓氏：否
+        if (parts.length > 1) {
+            parts.shift(); // 移除第一個值 (姓氏)
+            const nameOnly = parts.join(' ');
+            return hasChinese ? nameOnly.replace(/\s+/g, '') : nameOnly; // 中文變「小明」，英文變「Xiao Ming」
+        }
+        return fullName; // 若只有一個詞則原樣輸出
+    }
+}
+
 function renderTable() {
     document.getElementById('resultTable').style.display = 'table';
     document.getElementById('tableBody').innerHTML = appData.students.map((s, idx) => `
         <tr onclick="showIndividualDetail(${idx})">
-            <td>${s.name}</td>
+            <td>${formatStudentName(s.name)}</td> 
             <td><strong>${s.sum}</strong></td>
         </tr>
     `).join('');
 }
 
-// 姓名/分數排序功能
+// 姓名/點數排序功能
 window.sortToggle = true;
 function sortTable(colIdx) {
     window.sortToggle = !window.sortToggle;
@@ -88,12 +129,10 @@ function sortTable(colIdx) {
     renderTable();
 }
 
-// 顯示個人詳情 (改為 5 欄格狀)
 function showIndividualDetail(idx) {
     const s = appData.students[idx];
-    document.getElementById('detailTitle').innerText = `${s.name} - 詳細得分 (總計: ${s.sum})`;
+    document.getElementById('detailTitle').innerText = `${formatStudentName(s.name)} - 詳細得點 (總計: ${s.sum})`;
     
-    // 使用 detail-grid 容器與 detail-card 格子
     document.getElementById('detailContent').innerHTML = s.details.map(d => `
         <div class="detail-card">
             <small style="color: #666; font-size: 0.8em;">${d.label}</small>
@@ -106,15 +145,18 @@ function showIndividualDetail(idx) {
     toggleModal('detailModal', true);
 }
 
-// 顯示全班總覽
+// 顯示全班總覽 (修改後：支援點擊查看詳情)
 function showSummary() {
     if (!appData.students.length) return alert("尚無資料");
+    
     document.getElementById('summaryContent').innerHTML = appData.students.map((s, i) => `
-        <div class="summary-box">
-            <span>#${i+1} ${s.name}</span>
-            <span style="color:var(--primary); font-weight:bold">${s.sum}</span>
+        <div class="summary-box" onclick="showIndividualDetail(${i})" style="cursor: pointer;">
+            <span style="color: #FFB5B5; font-size: 0.8em;">${i+1}.</span>
+            <span style="color: #0000C6; font-weight:bold; font-size: calc(var(--user-font-size) * 1.6);"> ${formatStudentName(s.name)}</span>
+            <span style="color:var(--primary); font-size: 1em;">${s.sum}</span>
         </div>
     `).join('');
+    
     toggleModal('summaryModal', true);
 }
 
@@ -123,6 +165,7 @@ function toggleModal(id, show) {
     document.getElementById(id).style.display = show ? 'flex' : 'none';
     if(show && id === 'settingsModal') {
         document.getElementById('setFontSize').value = appData.fontSize;
+        document.getElementById('setShowSurname').value = appData.showSurname.toString();
         document.getElementById('setInc').value = appData.settings.includeKeywords;
         document.getElementById('setExc').value = appData.settings.excludeKeywords;
         document.getElementById('setMin').value = appData.settings.minusKeywords;
@@ -133,6 +176,7 @@ function toggleModal(id, show) {
 
 function saveSettings() {
     appData.fontSize = parseInt(document.getElementById('setFontSize').value) || 16;
+    appData.showSurname = document.getElementById('setShowSurname').value === 'true';
     appData.settings = {
         includeKeywords: document.getElementById('setInc').value,
         excludeKeywords: document.getElementById('setExc').value,
@@ -211,7 +255,7 @@ function scrollToTop() { document.querySelector('.app-main').scrollTo({ top: 0, 
 function copyScoresOnly() {
     if (!appData.students.length) return alert("無資料可複製");
     const text = appData.students.map(s => s.sum).join('\n');
-    navigator.clipboard.writeText(text).then(() => alert("已複製分數列表"));
+    navigator.clipboard.writeText(text).then(() => alert("已複製點數列表"));
 }
 
 // 在 script.js 最下方加入此監聽器
