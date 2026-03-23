@@ -616,11 +616,30 @@ function clickTag(type, val) {
 
 function confirmAddTask() {
     let final = (Array.from(selectedPre).join('') + Array.from(selectedMain).join('') + document.getElementById('taskFinalInput').value).trim();
-    if(final && targetIdx !== -1) {
+    
+    if (final && targetIdx !== -1) {
+        // 找出作業中是否包含 mainTasks 定義的關鍵字（如：數習、國習）
         const keyword = appData.mainTasks.find(k => final.includes(k));
-        if(keyword) executeFullShift(targetIdx, final, keyword);
-        else tempTasks[targetIdx].list.push(final);
-        renderEdit(); closeModal('taskPromptModal');
+        
+        if (keyword) {
+            // --- 修改核心邏輯 ---
+            // 檢查目標日期當天是否已經有包含該關鍵字的作業
+            const alreadyHasKeyword = tempTasks[targetIdx].list.some(t => t && t.includes(keyword));
+            
+            if (alreadyHasKeyword) {
+                // 如果當天「已有」重複作業，執行原本的連動推移邏輯
+                executeFullShift(targetIdx, final, keyword);
+            } else {
+                // 如果當天「沒有」重複作業，直接新增進去，不觸發推移
+                tempTasks[targetIdx].list.push(final);
+            }
+        } else {
+            // 沒有關鍵字的普通作業（如：帶剪刀），直接新增
+            tempTasks[targetIdx].list.push(final);
+        }
+        
+        renderEdit(); 
+        closeModal('taskPromptModal');
     }
 }
 
