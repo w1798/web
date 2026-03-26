@@ -1,7 +1,7 @@
 /* 1. 全域變數定義與字體連動 */
 :root { 
-    --primary: #D0D0D0;
-    --user-font-size: 16px; 
+    --primary: #7B7B7B;
+    --user-font-size: 16px;
     --header-h: 10vh;
     --main-h: 85vh;
     --footer-h: 5vh;
