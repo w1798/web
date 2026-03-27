@@ -86,11 +86,6 @@ function applyBopoTransform(text) {
     const isVertical = appData.writingMode === 'vertical-rl';
     const isBopomofoMode = appData.displayMode === 'bopomofo';
 
-    // 只在注音模式且 RTL 直書時反轉文字
-    if (isBopomofoMode && isRTL && isVertical) {
-        text = text.split('').reverse().join('');
-    }
-    
     return text.split('').map(char => {
         const bopo = map[char];
         
@@ -112,18 +107,11 @@ function applyBopoTransform(text) {
 
             const bopoChars = mainBopo.split('').map(c => `<span>${c}</span>`).join('');
             
-            // 注音模式下的 RTL 直書
-            if (isRTL && isBopomofoMode) {
-                return `<span class="bopo-vertical-item">
-                            <span class="bopo-chars">${bopoChars}</span>
-                            <span class="bopo-tone">${tone}</span>
-                        </span>`;
-            } else {
-                return `<span class="bopo-vertical-item">
+            return `<span class="bopo-vertical-item">
                             <span class="bopo-tone">${tone}</span>
                             <span class="bopo-chars">${bopoChars}</span>
-                        </span>`;
-            }
+                        </span>`;            
+            
         }
         
         return bopo;
@@ -208,19 +196,44 @@ function renderMain(isManual = false) {
     }).slice(0, appData.mainShowCount);
 
 mb.innerHTML = filtered.map(item => {
-        const isVertical = appData.writingMode === 'vertical-rl';
-        const listClass = isVertical ? 'writing-vertical' : '';
-        
-        return `
-            <div class="day-card">
-                <h3>${item.date.split('-').slice(1).join('/')}(${item.day})</h3>
-                <ul class="${listClass}">${item.list.map(t => 
-                    // 注意：這裡直接輸出 HTML，不需要另外處理文字對齊
-                    `<li>${applyBopoTransform(t)}</li>`
-                ).join('')}</ul>
-            </div>
-        `;
-    }).join('');
+    const isVertical = appData.writingMode === 'vertical-rl';
+    const listClass = isVertical ? 'writing-vertical' : '';
+    
+    const styleMap = {
+        'disc': '●',
+        'circle': '○',
+        'square': '■',
+        'hollow-square': '□',
+        'diamond': '◆',
+        'dash': '-',
+        'decimal': '' 
+    };
+    
+    const symbol = styleMap[appData.listStyle || 'disc'];
+
+    return `
+        <div class="day-card">
+            <h3>${item.date.split('-').slice(1).join('/')}(${item.day})</h3>
+            <ul class="${listClass}">${item.list.map((t, idx) => {
+                
+                // A. 決定前綴符號
+                let prefix = "";
+                if (appData.listStyle === 'decimal') {
+                    // 如果是直書，只給數字；如果是橫書，給數字加點
+                    prefix = isVertical ? `${idx + 1}` : `${idx + 1}.`;
+                } else {
+                    prefix = symbol;
+                }
+                
+                // B. 將「前綴」與「內容」合體
+                const fullText = prefix + t;
+                
+                // C. 進行注音轉換
+                return `<li>${applyBopoTransform(fullText)}</li>`;
+            }).join('')}</ul>
+        </div>
+    `;
+}).join('');
 
     
     // 應用方向
@@ -690,6 +703,7 @@ function saveSettings() {
     appData.displayMode = document.getElementById('displayModeSelect').value;
     appData.bopoMap = document.getElementById('bopoMap').value;
     appData.completionRecord = document.getElementById('completionRecordSelect').value;
+    appData.listStyle = document.getElementById('listStyleSelect').value;
     appData.binId = d.getElementById('binId').value.trim();
     appData.apiKey = d.getElementById('apiKey').value.trim()
 
@@ -723,6 +737,7 @@ function openSettings() {
     d.getElementById('bopoMap').value = appData.bopoMap || DEFAULT_VALS.bopoMap;    
     document.getElementById('binId').value = appData.binId || '';
     document.getElementById('apiKey').value = appData.apiKey || '';
+    document.getElementById('listStyleSelect').value = appData.listStyle || 'disc';
     document.getElementById('completionRecordSelect').value = appData.completionRecord || 'yesterday';
     document.getElementById('settingsModal').style.display = 'block';
 }

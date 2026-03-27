@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>作業動態曆 by Charles Nextime</title>
-    <link rel="stylesheet" href="style.css?ver=1.02g">
+    <link rel="stylesheet" href="style.css?ver=1.02h">
 </head>
 <body class="theme-ocean">
     <header class="header-bar">
@@ -86,6 +86,19 @@
                     <div class="s-row"><span>主頁字體</span><select id="fsMainSelect"></select></div>
                     <div class="s-row"><span>設定字體</span><select id="fsSetSelect"></select></div>
                     <div class="s-row"><span>編修字體</span><select id="fsEditSelect"></select></div>
+                    
+                    <div class="s-row">
+                        <span>項目符號</span>
+                        <select id="listStyleSelect">
+                            <option value="disc" selected>● 圓點</option>
+                            <option value="circle">○ 圓圈</option> <option value="square">■ 方點</option>
+                            <option value="hollow-square">□ 方框</option> <option value="diamond">◆ 菱形</option>
+                            <option value="dash">- 橫線</option>
+                            <option value="decimal">1. 數字</option>
+                        </select>
+                    </div>
+                    
+                    
                 </div>
                 <div class="col-b">
                     <div class="s-row"><span>作業方向</span><select id="dirSelect"><option value="ltr">左到右</option><option value="rtl">右到左</option></select></div>
@@ -304,6 +317,6 @@
 </script>
 
 
-    <script src="script.js?ver=1.02g"></script>
+    <script src="script.js?ver=1.02h"></script>
 </body>
 </html>

@@ -32,31 +32,27 @@ body, html {
 }
 
 /* ============================================================
-   3. 主頁面導航列 (按鈕大小已連動)
+   3. 主頁面導航列
    ============================================================ */
 .header-bar { 
     flex: 0 0 auto; min-height: 70px; background: #1a252f; 
     display: flex; align-items: center; justify-content: space-between; 
     padding: 10px 20px; position: relative; border-bottom: 5px solid var(--btn);
-    flex-wrap: wrap; /* 支援手機折行 */
+    flex-wrap: wrap;
 }
 .logo-large { font-size: 2rem; font-weight: 900; color: white; margin-right: 15px; }
 
-/* 中間文字區 */
 .nav-center { display: flex; align-items: center; gap: 10px; }
 .nav-label { color: white; font-size: 1.4rem; font-weight: bold; }
 
-/* 右側按鈕群組 */
 .nav-right { display: flex; gap: 6px; flex-wrap: wrap; }
 .nav-right button[onclick*="resetApp"] {
-    margin-left: 50px;  /* 與「匯入」按鈕的距離 */
-    margin-right: 50px; /* 與「設定」按鈕的距離 */
-    background-color: #fff1f0; /* 選用：給重置按鈕淡淡的底色作為視覺提醒 */
-    border-color: #ffa39e;     /* 選用：淡紅色邊框 */
+    margin-left: 50px;  
+    margin-right: 50px; 
+    background-color: #fff1f0; 
+    border-color: #ffa39e;     
 }
 
-
-/* 主頁按鈕：連動 fs-set */
 .small-btn { 
     padding: 6px 12px; 
     font-size: 20px; 
@@ -70,12 +66,10 @@ body, html {
 }
 .small-btn:hover { background: #eee; }
 
-
-
 .footer-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; border-top: 1px solid #eee; padding: 2px 0; text-align: center; z-index: 1000; }
 
 /* ============================================================
-   4. 主內容區 (卡片)
+   4. 主內容區 (卡片) - 移除所有項目符號與縮排
    ============================================================ */
 .main-content { 
     flex: 1; overflow-y: auto; padding: 25px; background: var(--bg); 
@@ -86,26 +80,50 @@ body, html {
 .day-card { 
     background: #fff; border: 3px solid var(--btn); border-radius: 10px; 
     padding: 20px; min-height: 400px; height: var(--card-height, 500px); 
-width: 100%;       /* 讓它填滿 Grid 欄位 */
-    min-width: 100px;  /* 確保不會縮太小 */
+    width: 100%; min-width: 100px; 
     display: flex; flex-direction: column; box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
 }
+
+[dir="rtl"] .day-card h3 {
+    unicode-bidi: bidi-override; 
+    direction: ltr !important; /* 強制日期內部維持左到右順序 */
+    text-align: center;         /* 保持標題置中 */
+}
+
+
 .day-card h3 { 
     font-size: var(--fs-main); text-align: center; margin: 0 0 10px 0; 
     border-bottom: 2px solid #eee; padding-bottom: 5px; color: var(--btn); 
 }
-.day-card ul { 
-    list-style-type: none; flex: 1; overflow-y: auto; 
-    font-size: var(--fs-main); line-height: 1.4; margin: 10px 0 0 0; 
-    padding-left: 0.5rem; padding-right: 0.5rem; /* 兩邊都預留空間 */
-}
-.day-card li { margin-bottom: 5px; position: relative; padding-left: 1.2rem; text-align: left; }
-.day-card li::before { content: "•"; position: absolute; left: 0; color: var(--btn); }
 
-.author-link {text-decoration: none;}
+/* 清單容器：移除 padding */
+.day-card ul { 
+    list-style-type: none !important; 
+    flex: 1; overflow-y: auto; 
+    font-size: var(--fs-main); line-height: 1.4; margin: 10px 0 0 0; 
+    padding: 0; 
+}
+
+/* 列表項目：移除 padding-left */
+.day-card li { 
+    margin-bottom: 5px; 
+    position: relative; 
+    padding-left: 0; 
+    text-align: left; 
+}
+
+/* 強制移除所有可能的項目符號偽元素 */
+.day-card li::before, 
+.day-card li::after,
+[dir="rtl"] .day-card li::before { 
+    display: none !important; 
+    content: none !important; 
+}
+
+.author-link { text-decoration: none; }
 
 /* ============================================================
-   5. 彈窗與設定 (支援手機全螢幕)
+   5. 彈窗與設定
    ============================================================ */
 .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); }
 .modal-content { background: white; margin: 2% auto; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; }
@@ -115,7 +133,6 @@ width: 100%;       /* 讓它填滿 Grid 欄位 */
 .modal-header-zone { flex: 0 0 65px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background: #eee; border-bottom: 1px solid #ccc; position: relative; }
 .modal-body-zone { flex: 1; padding: 20px; overflow-y: auto; }
 
-/* 統一彈窗按鈕：連動 fs-set */
 .modal-header-zone button, .prompt-btn-group button { 
     font-size: calc(var(--fs-set) * 0.95); 
     padding: 8px 16px; 
@@ -127,17 +144,10 @@ width: 100%;       /* 讓它填滿 Grid 欄位 */
 }
 .confirm-btn { background: var(--btn) !important; color: white !important; font-weight: bold; border: none !important; }
 
-/* 設定視窗佈局 */
-.settings-five-cols { 
-    display: flex; 
-    gap: 15px; 
-    height: 100%; 
-}
-
+.settings-five-cols { display: flex; gap: 15px; height: 100%; }
 .col-a, .col-b { flex: 1.5; min-width: 0; }
 .col-c, .col-d, .col-e, .col-f { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: var(--fs-set); }
-.col-f { flex: 1.5;}
-
+.col-f { flex: 1.5; }
 
 .settings-five-cols textarea { flex: 1; margin-top: 8px; font-size: var(--fs-set); padding: 10px; resize: none; border: 1px solid #ccc; border-radius: 4px; }
 .s-row { display: flex; align-items: center; margin-bottom: 2px; font-size: var(--fs-set); }
@@ -145,7 +155,7 @@ width: 100%;       /* 讓它填滿 Grid 欄位 */
 .s-row select { width: 110px; height: calc(var(--fs-set) * 2); border-radius: 4px; font-size: var(--fs-set); }
 
 /* ============================================================
-   6. 編修管理區 (日期靠左)
+   6. 編修管理區
    ============================================================ */
 .edit-grid-area { display: grid; gap: 15px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
 .edit-card { border: 2px dashed var(--btn); padding: 10px; background: #fff; border-radius: 8px; height: 320px; display: flex; flex-direction: column; }
@@ -161,7 +171,7 @@ width: 100%;       /* 讓它填滿 Grid 欄位 */
 .edit-card button { font-size: calc(var(--fs-edit) * 0.9); padding: 6px 0; margin-top: 5px; cursor: pointer; border: 1px solid var(--btn); background: #fff; color: var(--btn); border-radius: 4px; }
 
 /* ============================================================
-   7. 新增作業項目 (3/4 佈局)
+   7. 新增作業項目
    ============================================================ */
 .prompt-row { display: flex; align-items: flex-start; margin-bottom: 15px; gap: 15px; }
 .prompt-label { flex: 0 0 100px; font-weight: bold; font-size: var(--fs-set); padding-top: 10px; color: var(--btn); text-align: right; }
@@ -174,244 +184,148 @@ width: 100%;       /* 讓它填滿 Grid 欄位 */
 #taskFinalInput { flex: 0 0 75%; height: 50px; font-size: 1.3rem; padding: 0 15px; border: 2px solid var(--btn); border-radius: 8px; }
 .prompt-btn-group { flex: 1; display: flex; gap: 8px; justify-content: flex-end; }
 .prompt-btn-group button { flex: 1; height: 50px; white-space: nowrap; padding: 0 5px; }
-.prompt-btn-group .confirm-btn { flex: 1.5; }
 
 /* ============================================================
-   8. 直書模式修正 - 8個控制項目標記
-   ============================================================ */
-
-/* [1] 國字 左到右 橫式 */
-
-/* [2] 國字 右到左 橫式 */
-
-[dir="rtl"] .day-card li {
-    padding-left: 0;
-    padding-right: 1rem;
-    text-align: left; /* 文字向右靠 */
-    margin-left: 1.5rem; 
-}
-
-[dir="rtl"] .day-card li::before {
-    left: auto;
-    left: -1.5rem; /* 項目符號移至右側 */
-    right: 0;
-}
-
-
-/* [3] 國字 左到右 直式 */
-.writing-vertical li::after {
-    top: 0.1rem;
-    left: 0.6rem; /* 圓點向左移動，靠近文字 */
-    right: auto;
-    transform: none;
-}
-
-
-/* [4] 國字 右到左 直式 */
-[dir="rtl"] .writing-vertical li {
-    line-height: 0;
-}
-
-[dir="rtl"] .writing-vertical li::after {
-    top: 0.1rem;
-    right: 0.9rem;
-    left: auto;
-}
-
-/* [5] 注音 左到右 橫式 */
-
-/* [6] 注音 右到左 橫式 */
-
-/* [7] 注音 左到右 直式 */
-
-
-.writing-vertical .bopo-vertical-item {
-    flex-direction: row-reverse;
-    width: 2.5em;
-    height: 3em;
-}
-
-.writing-vertical li:has(.bopo-vertical-item)::after {
-    top: 0.1rem; /* 控制圓點的垂直位置 */
-    left: 1.5rem; /* 控制圓點的水平位置（LTR模式） */
-}
-
-
-/* 基礎聲符位置調整 */
-[dir="ltr"] .writing-vertical .bopo-vertical-item .bopo-tone {
-    margin-top: 0.5em; /* 負值向上，正值向下 */
-    font-size: 1.7em;    /* 聲符通常縮小一點比較美觀 */
-}
-
-
-
-/* [8] 注音 右到左 直式 */
-
-[dir="rtl"] .writing-vertical .bopo-vertical-item {
-    flex-direction: row-reverse; 
-    /* 縮減寬度（這就是直排時的行距） */
-    width: 1.5em;  /* 從 2.2em 調降，這會讓行與行更緊密 */
-    height: 3.0em; /* 控制字與字之間的垂直距離 */
-    
-    /* 移除位移，改用 margin 微調整體位置 */
-    transform: none; 
-    margin: -0.1rem; /* 左右外距，控制行間的緩衝 */
-    display: inline-flex;
-}
-
-
-
-
-/* 國字特別調整 */
-[dir="rtl"] .writing-vertical .plain-char {
-    transorm: none;
-    width: 0.3em; /* 必須與注音項目的寬度一致，否則行距會不齊 */
-    height: 1.5em;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-}
-
-
-
-
-
-[dir="rtl"] li:has(.bopo-vertical-item)::after {
-    top: 0.1rem; /* 控制圓點的垂直位置 */
-    right: 2rem; /* 控制圓點的水平位置（RTL模式） */
-    left: auto; /* 確保使用 right 定位 */
-}
-
-
-
-/* [0] 基礎聲符位置調整 */
-.bopo-tone {
-    font-size: 2em;
-    /* 負數往上移，正數往下移 */
-    transform: translateY(23px);
-    /* 讓聲調更靠近左邊的注音符號 */
-    margin-right: -1px;
-    width: 0.1em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--btn);
-}
-
-.writing-vertical .bopo-vertical-item .bopo-tone {
-    margin-top: 0.5em; /* 負值向上，正值向下 */
-    font-size: 1.7em;    /* 聲符通常縮小一點比較美觀 */
-}
-
-/* 只有一個注音（如：ㄧ）時，聲符要靠近中間 */
-.writing-vertical .bopo-vertical-item:has(.bopo-chars span:nth-child(1):last-child) .bopo-tone {
-    transform: translateY(-0.2em);
-}
-
-/* 有兩個注音（如：ㄎㄨ）時，聲符位置 */
-.writing-vertical .bopo-vertical-item:has(.bopo-chars span:nth-child(2):last-child) .bopo-tone {
-    transform: translateY(0.2em);
-}
-
-/* 有三個注音（如：ㄍㄨㄛ）時，聲符位置要再往下一點 */
-.writing-vertical .bopo-vertical-item:has(.bopo-chars span:nth-child(3):last-child) .bopo-tone {
-    transform: translateY(16px);
-}
-
-
-/* ============================================================
-   直書模式：基礎樣式
+   8. 直書與注音模式修正 - 確保從上到下輸出
    ============================================================ */
 .writing-vertical {
     writing-mode: vertical-rl;
     text-orientation: upright;
     height: 100%;
     padding: 10px;
-    display: block; /* 容器必須是 block */
+    display: block;            /* 改回 block，不使用 flex 避免軸向反轉 */
+    letter-spacing: 0.1em;
+    direction: ltr !important; /* 核心：內部強制 LTR 確保 1, 2, 3 順序由上而下 */
+    text-align: inherit;
+    overflow-x: auto;          /* 內容過多時可橫向滾動 */
+    
+    margin-left: auto;        /* 將剩餘空間推向左側 */
+    margin-right: 0;          /* 緊貼右側 */
+    width: fit-content;       /* 寬度隨內容伸縮，margin-left 才能生效 */
+    min-width: 100%;          /* 確保高度撐開時，內部對齊邏輯正確 */
+    text-align: left;         /* 在 ltr 直書下，這代表垂直方向的「靠上」 */
+}
+
+[dir="rtl"] .writing-vertical {
+    /* 當日期反轉時，讓整塊內容靠卡片右邊，但內部文字依然靠上 */
+    margin-left: auto;
+    margin-right: 0;
 }
 
 .writing-vertical li {
-    margin-bottom: 1.5rem; /* 增加作業之間的垂直間距 */
+    margin-bottom: 1.5rem; 
     list-style: none;
-    display: block; /* 確保每項作業換行 */
+    display: block;            /* 每一項作業佔據一列（直書的一行） */
     line-height: 1.2;
-    padding: 0px;
-    padding-top: 1.8rem; /* 為圓點預留空間 */
+    padding: 0; 
     position: relative;
-    min-height: 3.5em; /* 確保最小高度 */
+    min-height: 3.5em;
+    text-align: inherit;
+    float: none;               /* 確保不會飄走 */
+    clear: both;
 }
 
-/* 關閉原本橫書用的 ::before 圓點 */
-.writing-vertical li::before {
-    display: none !important;
-}
-
-/* 在每一列的最上方重新畫一個圓點 */
+/* 確保直書模式完全沒有項目符號 */
+.writing-vertical li::before, 
 .writing-vertical li::after {
-    content: "●"; /* 使用實心圓字元 */
-    position: absolute;
-    top: 0; /* 置於最上方 */
-    font-size: 0.8rem;
-    color: var(--btn); /* 跟隨主題顏色 */
+    display: none !important;
+    content: none !important;
 }
 
-/* 確保國字與注音字元在列中垂直置中 */
+/* 內部注音元件的排列 */
 .writing-vertical .bopo-vertical-item,
 .writing-vertical .plain-char {
-    display: inline-flex;
+    display: inline-flex;      /* 維持注音與聲調的組合 */
     align-items: center;
     justify-content: center;
     vertical-align: top;
 }
 
-/* 核心：注音字元容器 */
-.bopo-vertical-item {
-    writing-mode: horizontal-tb; 
-    display: inline-flex; /* 必須是 inline-flex，字才會接在一起 */
-    flex-direction: row-reverse; 
-    align-items: center;
-    justify-content: center;
-    width: 2.2em; /* 欄位寬度 */
-    height: 3.5em; /* 這裡設定每個字的高度，確保垂直間距 */
-    vertical-align: top;
-}
-
-/* 普通國字容器 */
 .writing-vertical .plain-char {
-    display: inline-flex; /* 改為 inline-flex */
+    display: inline-flex; 
     writing-mode: horizontal-tb;
     align-items: center;
     justify-content: center;
     width: 2.2em;
-    height: 1.5em; /* 國字高度較短，注音字較長 */
+    height: 1.5em; 
     text-align: center;
     vertical-align: top;
-
 }
 
-.bopo-chars {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    line-height: 1;
-}
 
 
 /* ============================================================
-   9. 手機版與滾動條
+   聲調位置精細調整 (針對 1個、2個、3個注音符號分別設定)
    ============================================================ */
+
+.bopo-vertical-item {
+    writing-mode: horizontal-tb; 
+    display: inline-flex;
+    flex-direction: row-reverse; 
+    align-items: center;
+    justify-content: center;
+    width: 2.2em; 
+    height: 3.5em; 
+    vertical-align: top;
+}
+
+
+.bopo-chars { display: flex; flex-direction: column; align-items: center; line-height: 1; }
+
+/* 1. 基礎設定：這是通用樣式 */
+.bopo-tone {
+    font-size: 2em;
+    width: 0.1em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--btn);
+    /* 預設值 (通常給予 2 個音的數值) */
+    transform: translateY(2px); 
+    margin-right: -1px;
+}
+
+/* 2. 當只有 1 個注音符號時 (例如：一、ㄚ) */
+/* 判斷條件：第一個 span 同時也是最後一個 span */
+.bopo-vertical-item:has(.bopo-chars span:nth-child(1):last-child) .bopo-tone {
+    transform: translateY(0.1em); /* 往上移一點，靠近正中間 */
+}
+
+/* 3. 當有 2 個注音符號時 (例如：ㄎㄨ、ㄋㄧ) */
+/* 判斷條件：第二個 span 是最後一個 span */
+.bopo-vertical-item:has(.bopo-chars span:nth-child(2):last-child) .bopo-tone {
+    transform: translateY(0.4em); /* 維持在中間偏下的位置 */
+}
+
+/* 4. 當有 3 個注音符號時 (例如：ㄍㄨㄛ、ㄑㄧㄤ) */
+/* 判斷條件：第三個 span 是最後一個 span */
+.bopo-vertical-item:has(.bopo-chars span:nth-child(3):last-child) .bopo-tone {
+    transform: translateY(0.6em); /* 往下移，確保不會壓到第一個音 */
+}
+
+/* 額外修正：如果前綴符號 (1. 或 ●) 產生了空的聲調容器，將其隱藏 */
+.bopo-vertical-item:has(.plain-char) .bopo-tone,
+.bopo-tone:empty {
+    display: none !important;
+}
+
+/* ============================================================
+   9. RTL 與 手機版修正
+   ============================================================ */
+[dir="rtl"] .day-card li {
+    padding-left: 0;
+    padding-right: 0; 
+    text-align: left; 
+    margin-left: 0;
+}
+
 @media (max-width: 768px) {
     .modal-content { width: 100% !important; height: 100% !important; margin: 0 !important; border-radius: 0; }
     .header-bar { justify-content: center; text-align: center; }
     .logo-large { margin-bottom: 10px; }
     .nav-center { width: 100%; justify-content: center; margin-bottom: 10px; }
     .nav-right { width: 100%; justify-content: center; }
-    .nav-right button[onclick*="resetApp"] {
-        margin-left: 10px;
-        margin-right: 10px;
-    }
-   
+    .nav-right button[onclick*="resetApp"] { margin-left: 10px; margin-right: 10px; }
     .settings-five-cols { flex-direction: column; overflow-y: auto; }
     .final-input-container { flex-direction: column; align-items: stretch; }
     #taskFinalInput { flex: none; width: 100%; }
@@ -423,56 +337,18 @@ width: 100%;       /* 讓它填滿 Grid 欄位 */
 ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #aaa; }
 
-/* RTL 模式標題修正 */
-[dir="rtl"] .day-card h3 {
-    unicode-bidi: bidi-override; /* 強制依照字串順序渲染，不讓瀏覽器自動鏡像標點 */
-    direction: ltr; /* 標題內部維持左到右的字串邏輯 */
-    text-align: center; /* 但依然保持在卡片中間 */
-}
-
-/* ============================================================
-   彈窗底部按鈕區
-   ============================================================ */
-.modal-footer-zone button {
-    /* 連動 fs-set 變數，並縮小至 0.95 倍（視覺較精緻） */
-    font-size: calc(var(--fs-set) * 0.95); 
-    
-    padding: 8px 16px;
-    min-width: 80px;
-    cursor: pointer;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    background: #fff;
-}
-
-.modal-btn-group, .modal-footer-zone {
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end; /* 靠右對齊 */
-}
-
+/* 彈窗按鈕區 */
 .modal-footer-zone {
     display: flex;
     gap: 10px;
-    justify-content: flex-end; /* 靠右對齊 */
-    
-    /* 核心調整：增加右邊與下邊的間距 */
-    padding-right: 20px;   /* 距離右側邊界 20px */
-    padding-bottom: 20px;  /* 距離底部邊界 20px */
-    padding-top: 15px;     /* 與上方內容的距離 */
-    
-    /* 裝飾：可選，加一條淡淡的分隔線 */
+    justify-content: flex-end; 
+    padding-right: 20px;   
+    padding-bottom: 20px;  
+    padding-top: 15px;     
     border-top: 1px solid #eee; 
-    
-    /* 確保寬度撐滿，才能正確靠右 */
     width: 100%;
     box-sizing: border-box;
 }
-
-
-
-
-
 
 .dropdown { position: relative; display: inline-block; }
 .dropdown-content {
@@ -493,8 +369,19 @@ width: 100%;       /* 讓它填滿 Grid 欄位 */
     text-align: left;
     cursor: pointer;
 }
+
+/* 修正 RTL 模式下作業項目的數字與標點跑位 */
+[dir="rtl"] .day-card li {
+    direction: ltr !important;   /* 強制讓 2.簽名... 維持左到右 */
+    text-align: left;
+    unicode-bidi: plaintext;      /* 確保數字不會被鏡像 */
+}
+
+/* 如果是直排模式下的 RTL 修正 */
+[dir="rtl"] .writing-vertical li {
+    direction: ltr !important;
+    text-align: inherit;
+}
+
 .dropdown-content button:hover { background-color: #ddd; }
 .show { display: block; }
-
-
-
