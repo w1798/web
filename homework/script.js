@@ -24,6 +24,7 @@ let appData = {
     tasks: [],
     startDayType: 'monday', // 新增：可選 'monday', 'sunday', 'today'
     cardHeight: 'large', // 新增：可選 'small', 'medium', 'large'
+    completionRecord: 'yesterday',
     binId: '', 
     apiKey: '',
     ...DEFAULT_VALS
@@ -313,6 +314,7 @@ function renderEdit() {
             </div>
         </div>`;
     }).join('');
+    updateLastCompletionUI(); // 在渲染編修介面時同時更新頂部狀態
 }
 
 function updateDateChain(startIndex) {
@@ -427,16 +429,27 @@ function delT(mi, ti) { tempTasks[mi].list.splice(ti, 1); renderEdit(); }
 // 拖曳邏輯
 function dragM(idx) { dragInfo = { type: 'M', idx }; }
 function dragT(e, mi, ti) { e.stopPropagation(); dragInfo = { type: 'T', mi, ti }; }
+
 function dropM(toMi) {
     if(!dragInfo) return;
-    if(dragInfo.type === 'M') [tempTasks[dragInfo.idx].list, tempTasks[toMi].list] = [tempTasks[toMi].list, tempTasks[dragInfo.idx].list];
-    else tempTasks[toMi].list.push(tempTasks[dragInfo.mi].list.splice(dragInfo.ti, 1)[0]);
-    renderEdit(); dragInfo = null;
+    if(dragInfo.type === 'M') {
+        [tempTasks[dragInfo.idx].list, tempTasks[toMi].list] = [tempTasks[toMi].list, tempTasks[dragInfo.idx].list];
+    } else {
+        tempTasks[toMi].list.push(tempTasks[dragInfo.mi].list.splice(dragInfo.ti, 1)[0]);
+    }
+    renderEdit(); 
+    updateLastCompletionUI();
+    dragInfo = null;
 }
+
 function dropT(e, toMi, toTi) {
     e.stopPropagation();
-    if(dragInfo && dragInfo.type === 'T') [tempTasks[dragInfo.mi].list[dragInfo.ti], tempTasks[toMi].list[toTi]] = [tempTasks[toMi].list[toTi], tempTasks[dragInfo.mi].list[dragInfo.ti]];
-    renderEdit(); dragInfo = null;
+    if(dragInfo && dragInfo.type === 'T') {
+        [tempTasks[dragInfo.mi].list[dragInfo.ti], tempTasks[toMi].list[toTi]] = [tempTasks[toMi].list[toTi], tempTasks[dragInfo.mi].list[dragInfo.ti]];
+    }
+    renderEdit(); 
+    updateLastCompletionUI();
+    dragInfo = null;
 }
 
 
@@ -676,6 +689,7 @@ function saveSettings() {
     appData.writingMode = document.getElementById('writingModeSelect').value;
     appData.displayMode = document.getElementById('displayModeSelect').value;
     appData.bopoMap = document.getElementById('bopoMap').value;
+    appData.completionRecord = document.getElementById('completionRecordSelect').value;
     appData.binId = d.getElementById('binId').value.trim();
     appData.apiKey = d.getElementById('apiKey').value.trim()
 
@@ -709,6 +723,8 @@ function openSettings() {
     d.getElementById('bopoMap').value = appData.bopoMap || DEFAULT_VALS.bopoMap;    
     document.getElementById('binId').value = appData.binId || '';
     document.getElementById('apiKey').value = appData.apiKey || '';
+    document.getElementById('completionRecordSelect').value = appData.completionRecord || 'yesterday';
+    document.getElementById('settingsModal').style.display = 'block';
 }
 
 function saveEdit() { 
@@ -728,6 +744,61 @@ function saveEdit() {
     localStorage.setItem('homework_v1', JSON.stringify(appData)); 
     renderMain(); 
     closeModal('editModal'); 
+}
+
+
+// 計算最後完成紀錄 (排除含「日」項目，依序向前找)
+function updateLastCompletionUI() {
+    const statusDiv = document.getElementById('lastCompletionStatus');
+    if (!statusDiv) return;
+
+    // 1. 取得模式 (昨天/今天)
+    const mode = appData.completionRecord || 'yesterday';
+    const labelText = (mode === 'yesterday') ? "昨日完成：" : "今日完成：";
+
+    // 2. 決定搜尋起點日期
+    let searchDate = new Date();
+    if (mode === 'yesterday') {
+        searchDate.setDate(searchDate.getDate() - 1);
+    }
+    const searchDateStr = searchDate.toISOString().split('T')[0];
+
+    // 3. 取得要比對的項目順序 (依據設定中的 mainTasks)
+    let targetCategories = [];
+    if (Array.isArray(appData.mainTasks)) {
+        targetCategories = appData.mainTasks.filter(name => !name.includes("日"));
+    }
+
+    let finalDisplay = [];
+
+    // 4. 【關鍵】優先搜尋編輯中的暫存資料 tempTasks
+    // 這樣你在拖曳時，這裡的結果就會立刻改變
+    const dataSource = (typeof tempTasks !== 'undefined' && tempTasks.length > 0) ? tempTasks : appData.tasks;
+
+    targetCategories.forEach(category => {
+        // 從 dataSource 找符合日期且包含該大項的作業
+        const sortedDays = dataSource
+            .filter(d => d.date <= searchDateStr)
+            .sort((a, b) => b.date.localeCompare(a.date));
+
+        for (let day of sortedDays) {
+            const foundTask = day.list.find(t => t.includes(category));
+            if (foundTask) {
+                finalDisplay.push(foundTask);
+                break; 
+            }
+        }
+    });
+
+    // 5. 格式化輸出
+    if (finalDisplay.length > 0) {
+        const coloredItems = finalDisplay.map(item => `<span style="color:#EA0000; font-weight:bold;">${item}</span>`);
+        const blueSeparator = `<span style="color:#0000FF; font-weight:bold; margin: 0 5px;">|</span>`;
+        
+        statusDiv.innerHTML = `<span style="color:#8600FF;">${labelText}</span> ` + coloredItems.join(blueSeparator);
+    } else {
+        statusDiv.innerHTML = `<span style="color:#8600FF;">${labelText}</span> <span style="color:#999; font-weight:normal;">(尚無紀錄)</span>`;
+    }
 }
 
 

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>作業動態曆 by Charles Nextime</title>
-    <link rel="stylesheet" href="style.css?ver=1.02f">
+    <link rel="stylesheet" href="style.css?ver=1.02g">
 </head>
 <body class="theme-ocean">
     <header class="header-bar">
@@ -126,6 +126,15 @@
                         </select>
                     </div>
 
+                    <div class="s-row">
+                        <span>完成紀錄</span>
+                        <select id="completionRecordSelect">
+                            <option value="yesterday" selected>昨天</option>
+                            <option value="today">今天</option>
+                        </select>
+                    </div>
+
+
 <p> 雲端備份設定 (<a href="https://w1798.github.io/web/JsonCloudGuide" target="_blank">申請說明</a>)</p>
 <div class="settings-column">
     <div class="settings-row">
@@ -176,21 +185,29 @@
 
     <div id="editModal" class="modal">
         <div class="modal-content full no-padding-flex">
-            <div class="modal-header-zone">
-                <span class="edit-title-text">編修管理 (拖曳標題換天 / 拖曳作業換項)</span>
-                <div class="edit-center-controls">
-                    顯示起點：<input type="date" id="editStartDatePicker" onchange="renderEdit()">
+            <div class="modal-header-zone" style="display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding-top: 5px; padding-bottom: 0px;">
+                <div style="display: flex; width: 100%; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center;">
+                        <span class="edit-title-text">編修管理 (拖曳標題換天 / 拖曳作業換項)</span>
+                        <div class="edit-center-controls" style="margin-left: 20px;">
+                            顯示起點：<input type="date" id="editStartDatePicker" onchange="renderEdit()">
+                        </div>
+                    </div>
+                    <div class="btn-group-right">
+                        <button onclick="addDayAtStart()">開頭加一天</button>
+                        <button onclick="addDayAtEnd()">末尾加一天</button>　　
+                        <button onclick="closeModal('editModal')">取消</button>　　
+                        <button class="confirm-btn" onclick="saveEdit()">確定</button>
+                    </div>
                 </div>
-                <div class="btn-group-right">
-                    <button onclick="addDayAtStart()">開頭加一天</button>
-                    <button onclick="addDayAtEnd()">末尾加一天</button>　　
-                    <button onclick="closeModal('editModal')">取消</button>　　
-                    <button class="confirm-btn" onclick="saveEdit()">確定</button>
-                </div>
+
+                <div id="lastCompletionStatus" style="color:#d81b60; font-weight:bold; font-size:var(--fs-edit); background: rgba(216, 27, 96, 0.05); padding: 4px 12px; border-radius: 4px; width: 100%; box-sizing: border-box;">
+                    </div>
             </div>
             <div id="editBoard" class="modal-body-zone edit-grid-area"></div>
         </div>
     </div>
+
 
     <div id="taskPromptModal" class="modal">
         <div class="modal-content prompt-box" style="margin-top: 5vh;">
@@ -287,6 +304,6 @@
 </script>
 
 
-    <script src="script.js?ver=1.02e"></script>
+    <script src="script.js?ver=1.02g"></script>
 </body>
 </html>
