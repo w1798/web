@@ -189,9 +189,22 @@ function processLogic(rows) {
         return rowContent.includes(feature1) || (feature2 && rowContent.includes(feature2));
     });
     
-    if (headerRowIdx === -1) throw new Error("找不到表頭列，請確認 Excel 內容。");
+    if (headerRowIdx === -1) {
+        alert(`❌ 找不到標題列！請確認 Excel 中是否包含「${feature1}」欄位。`);
+        return; // 中止程式
+    }
 
-    const excelHeaders = rows[headerRowIdx];
+    const excelHeaders = rows[headerRowIdx].map(h => h ? h.toString().trim() : "");
+
+    // 2. 【新增】完整比對檢查必要欄位
+    const requiredFields = ["姓名", "座號", "監護人", "父親姓名", "母親姓名", "父親行動電話", "母親行動電話"];
+    const missingFields = requiredFields.filter(f => !excelHeaders.includes(f));
+
+    if (missingFields.length > 0) {
+        alert(`⚠️ 轉換失敗！Excel 缺少以下必要欄位(需完整匹配)：\n\n${missingFields.join("\n")}\n\n請檢查 Excel 標題名稱是否完全正確。`);
+        return; // 中止程式，不進行轉換
+    }
+
     const dataRows = rows.slice(headerRowIdx + 1);
 
     const getVal = (row, originalHeader) => {
