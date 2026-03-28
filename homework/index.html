@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>作業動態曆 by Charles Nextime</title>
-    <link rel="stylesheet" href="style.css?ver=1.02h">
+    <link rel="stylesheet" href="style.css?ver=1.03a">
 </head>
 <body class="theme-ocean">
     <header class="header-bar">
@@ -90,11 +90,11 @@
                     <div class="s-row">
                         <span>項目符號</span>
                         <select id="listStyleSelect">
-                            <option value="disc" selected>● 圓點</option>
+                            <option value="decimal" selected>1. 數字</option>
+                            <option value="disc">● 圓點</option>
                             <option value="circle">○ 圓圈</option> <option value="square">■ 方點</option>
                             <option value="hollow-square">□ 方框</option> <option value="diamond">◆ 菱形</option>
                             <option value="dash">- 橫線</option>
-                            <option value="decimal">1. 數字</option>
                         </select>
                     </div>
                     
@@ -144,6 +144,8 @@
                         <select id="completionRecordSelect">
                             <option value="yesterday" selected>昨天</option>
                             <option value="today">今天</option>
+                            <option value="current">當前</option>
+                            <option value="future">最新</option>
                         </select>
                     </div>
 
@@ -317,6 +319,6 @@
 </script>
 
 
-    <script src="script.js?ver=1.02h"></script>
+    <script src="script.js?ver=1.03a"></script>
 </body>
 </html>

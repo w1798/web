@@ -209,7 +209,7 @@ mb.innerHTML = filtered.map(item => {
         'decimal': '' 
     };
     
-    const symbol = styleMap[appData.listStyle || 'disc'];
+    const symbol = styleMap[appData.listStyle || 'decimal'];
 
     return `
         <div class="day-card">
@@ -737,7 +737,7 @@ function openSettings() {
     d.getElementById('bopoMap').value = appData.bopoMap || DEFAULT_VALS.bopoMap;    
     document.getElementById('binId').value = appData.binId || '';
     document.getElementById('apiKey').value = appData.apiKey || '';
-    document.getElementById('listStyleSelect').value = appData.listStyle || 'disc';
+    document.getElementById('listStyleSelect').value = appData.listStyle || 'decimal';
     document.getElementById('completionRecordSelect').value = appData.completionRecord || 'yesterday';
     document.getElementById('settingsModal').style.display = 'block';
 }
@@ -767,31 +767,46 @@ function updateLastCompletionUI() {
     const statusDiv = document.getElementById('lastCompletionStatus');
     if (!statusDiv) return;
 
-    // 1. 取得模式 (昨天/今天)
-    const mode = appData.completionRecord || 'yesterday';
-    const labelText = (mode === 'yesterday') ? "昨日完成：" : "今日完成：";
+    // 1. 取得模式與標籤
+    const mode = appData.completionRecord || 'current';
+    const labels = {
+        'yesterday': '昨日完成：',
+        'today': '今日完成：',
+        'current': '當前進度：',
+        'future': '最新作業：'
+    };
+    const labelText = labels[mode] || "完成紀錄：";
 
-    // 2. 決定搜尋起點日期
-    let searchDate = new Date();
+    // 2. 決定搜尋起點日期 (searchDateStr)
+    let searchDateStr;
+    const todayStr = new Date().toISOString().split('T')[0];
+
     if (mode === 'yesterday') {
-        searchDate.setDate(searchDate.getDate() - 1);
+        let d = new Date();
+        d.setDate(d.getDate() - 1);
+        searchDateStr = d.toISOString().split('T')[0];
+    } else if (mode === 'today') {
+        searchDateStr = todayStr;
+    } else if (mode === 'current') {
+        // 以編修視窗選定的日期為基準
+        searchDateStr = document.getElementById('editStartDatePicker')?.value || todayStr;
+    } else if (mode === 'future') {
+        // 未來模式：不設上限，從最遠的日期開始找
+        searchDateStr = '9999-12-31'; 
     }
-    const searchDateStr = searchDate.toISOString().split('T')[0];
 
-    // 3. 取得要比對的項目順序 (依據設定中的 mainTasks)
+    // 3. 取得要比對的大項 (排除含「日」項目)
     let targetCategories = [];
     if (Array.isArray(appData.mainTasks)) {
         targetCategories = appData.mainTasks.filter(name => !name.includes("日"));
     }
 
     let finalDisplay = [];
-
-    // 4. 【關鍵】優先搜尋編輯中的暫存資料 tempTasks
-    // 這樣你在拖曳時，這裡的結果就會立刻改變
     const dataSource = (typeof tempTasks !== 'undefined' && tempTasks.length > 0) ? tempTasks : appData.tasks;
 
+    // 4. 執行搜尋
     targetCategories.forEach(category => {
-        // 從 dataSource 找符合日期且包含該大項的作業
+        // 過濾出符合時間範圍的作業，並依日期由新到舊排序
         const sortedDays = dataSource
             .filter(d => d.date <= searchDateStr)
             .sort((a, b) => b.date.localeCompare(a.date));
@@ -805,17 +820,15 @@ function updateLastCompletionUI() {
         }
     });
 
-    // 5. 格式化輸出
+    // 5. 格式化渲染
     if (finalDisplay.length > 0) {
         const coloredItems = finalDisplay.map(item => `<span style="color:#EA0000; font-weight:bold;">${item}</span>`);
         const blueSeparator = `<span style="color:#0000FF; font-weight:bold; margin: 0 5px;">|</span>`;
-        
         statusDiv.innerHTML = `<span style="color:#8600FF;">${labelText}</span> ` + coloredItems.join(blueSeparator);
     } else {
         statusDiv.innerHTML = `<span style="color:#8600FF;">${labelText}</span> <span style="color:#999; font-weight:normal;">(尚無紀錄)</span>`;
     }
 }
-
 
 // 雲端同步核心：自動辨別服務商
 async function cloudSync(method = 'UPLOAD') {
