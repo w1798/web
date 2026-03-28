@@ -40,8 +40,7 @@ let fieldList = [
 // 2. 預設輸出設定邏輯
 let outputConfig = fieldList.map(f => {
     // 簡化顯示名稱
-    let customName = f.replace("出生日期", "生日")
-                      .replace("地址-縣市區里", "區里")
+    let customName = f.replace("地址-縣市區里", "區里")
                       .replace("地址-其他", "地址");
 
     // 預設哪些要進備註 (包含性別、地址、身分證、生日、公司電話等)
