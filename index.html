@@ -317,7 +317,7 @@
         <div class="nav-group">
             <div class="nav-item active" onmouseenter="filterLinks('all', this)">全部彙整</div>
             <div class="nav-item" onmouseenter="filterLinks('daily', this)">教學日常</div>
-            <div class="nav-item" onmouseenter="filterLinks('exam', this)">期中期末</div>
+            <div class="nav-item" onmouseenter="filterLinks('milestone', this)">階段任務</div>
             <div class="nav-item" onmouseenter="filterLinks('edit', this)">文件編輯</div>
             <div class="nav-item" onmouseenter="filterLinks('doc', this)">說明文件</div>
             <div class="nav-item" onmouseenter="filterLinks('tool', this)">其他軟體</div>
@@ -376,9 +376,9 @@
             { id: "classdojo", category: "daily", title: "★ ClassDojo 點數統計", desc: "　專為教師打造的課堂管理工具，透過 ClassDojo 的 CSV 檔，系統能根據自訂關鍵字自動加減算出總點數。介面簡潔支援全班總覽，協助您高效掌握學生表現，是現代教室數據化管理的最佳助手。", url: "https://w1798.github.io/web/ClassDojoStats" }, 
             { id: "schedulemaster", category: "daily", title: "★ 學年總課表", desc: "　能自動化整合多班級的 Word 格式課表，系統可讀取任課資訊，自動分類導師課與科任課。支援完全自訂的科目縮寫設定，一鍵生成清晰的「學年總課表」，大幅提升安排教學活動的效率。", url: "https://w1798.github.io/web/ScheduleMaster" },
 
-                        
-            { id: "evalprompt", category: "exam", title: "★ 評語提詞自造佳", desc: "　自訂模組，造視操作，佳句生成！提供高自由度，讓您「視覺化」自定義類別與特質，並透過簡單操作輕鬆完成評語提詞，是追求效率與流暢美學者的最佳選擇。", url: "https://w1798.github.io/web/evalprompt" },
-            { id: "examboard", category: "exam", title: "★ 數位考場看板", desc: "　這是一套整合式智慧監考系統，透過即時考試進度管理、聽力播放控制與客製化試場設定，協助監考老師精準掌控測驗節奏與秩序。", url: "https://w1798.github.io/web/examboard" },
+            { id: "examboard", category: "milestone", title: "★ 數位考場看板", desc: "　這是一套整合式智慧監考系統，透過即時考試進度管理、聽力播放控制與客製化試場設定，協助監考老師精準掌控測驗節奏與秩序。", url: "https://w1798.github.io/web/examboard" },      
+            { id: "evalprompt", category: "milestone", title: "★ 評語提詞自造佳", desc: "　自訂模組，造視操作，佳句生成！提供高自由度，讓您「視覺化」自定義類別與特質，並透過簡單操作輕鬆完成評語提詞，是追求效率與流暢美學者的最佳選擇。", url: "https://w1798.github.io/web/evalprompt" },
+            { id: "GuardianContacts", category: "milestone", title: "★ 家長通訊錄轉換器", desc: "　專為導師設計，能將學務系統匯出的繁雜 Excel 轉化為 Google 聯絡人格式。根據「監護人優先」原則自動標註星號與詳細備註，自動去除重複資料與電話過濾技術，確保您的手機通訊錄簡潔且資訊完整，一鍵輕鬆完成親師聯繫管道的數位化建置。", url: "https://w1798.github.io/web/GuardianContacts" },            
 
             { id: "textlab", category: "edit", title: "★ 多功能文字處理器", desc: "　透過累加運算邏輯，整合串接、分割、取代與重複項偵測等強大功能。極簡暗色介面搭配直覺式操作，助您瞬間完成複雜的文本清理與格式重塑。", url: "https://w1798.github.io/web/TextLab" },
             { id: "jsoneditor", category: "edit", title: "★ JSON編輯器", desc: "　能自動解析各種簡單的 JSON 結構檔並視覺化編修，可以資料模組化為直觀的卡片，支援動態拖拽排序與即時編輯，任何配置檔都能輕鬆修改。", url: "https://w1798.github.io/web/jsonEditor" },
@@ -386,7 +386,6 @@
 
             { id: "jsoncloudguide", category: "doc", title: "★ JSON雲端備份申請", desc: "　跨平台同步，數據如影隨形申請說明，透過 Upstash 與 JSONBin.io 雲端整合方案，您可以將本地 .json 設定檔瞬時備份至雲端，輕鬆實現多裝置間的偏好設定共用，打造無縫接軌的數位體驗。", url: "https://w1798.github.io/web/JsonCloudGuide/" },
             
-            { id: "GuardianContacts", category: "tool", title: "★ 家長通訊錄轉換器", desc: "　專為導師設計，能將學務系統匯出的繁雜 Excel 轉化為 Google 聯絡人格式。根據「監護人優先」原則自動標註星號與詳細備註，自動去除重複資料與電話過濾技術，確保您的手機通訊錄簡潔且資訊完整，一鍵輕鬆完成親師聯繫管道的數位化建置。", url: "https://w1798.github.io/web/GuardianContacts" },            
             { id: "Divvy", category: "tool", title: "★ 股息回本解套記", desc: "　是一套個人化的股息追蹤工具，讓您輕鬆記錄各股票的購入明細與配息歷史。只需貼入公開的配息資料，系統便自動計算每次除息日的應得股息，並支援多股票管理、快速輸入、雲端備份與資料匯出，幫您精準掌握每一筆現金流，逐步邁向解套之路。", url: "https://w1798.github.io/web/Divvy" },            
             { id: "vercountdash", category: "tool", title: "★ Vercount數據儀表板", desc: "　是為 Vercount 打造的視覺化儀表板，配合 JSONbin 服務能將資料存入雲端。支援多網址 PV/UV 即時監控與 30 日趨勢圖表。具備雙向雲端同步、自動緩衝更新及對比數據顯示，助您精準掌握多個專案的流量動態。", url: "https://w1798.github.io/web/VercountDash" },
             { id: "blogspot", category: "tool", title: "其他電腦程式", desc: "　Charles Nextime 的程式，提供一些好用的 Windows 軟體，程式碼公開透明，不僅安全免費、無廣告干擾，更能自由使用，邀您體驗純粹、強大且不受限的數位工作流。", url: "https://nextime5.blogspot.com/" }
