@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>家長通訊錄轉換器 by Charles Nextime</title>
-    <link rel="stylesheet" href="style.css?ver=1.00a">
+    <link rel="stylesheet" href="style.css?ver=1.00B">
 </head>
 <body>
 
@@ -14,11 +14,11 @@
     <div class="instructions">
         <strong>使用說明：</strong>
         <ol>
-            <li>在 [直系親屬] 的 [行動電話] 填寫行動電話</li>
-            <li>監護人選「常簽聯絡本的家長」，資料會掛此監護人身上</li>
+            <li>在 [直系親屬] 的 [行動電話] 填寫家長的聯絡電話</li>
+            <li>選擇[監護人]，備註資料會掛此監護人身上</li>
             <li>學生概況查詢 -> 通詢資料查詢 -> 查詢 -> 列印檔案到 Excel</li>
-            <li>可多加出生日期、身分證字號和學號進來</li>
-            <li>點擊下方「選擇檔案」上傳該 Excel，系統會自動下載 <strong>ok.csv</strong></li>
+            <li>可多加出生日期、身分證字號和學號到上面那個 Excel 檔中</li>
+            <li>點擊下方「選擇檔案」上傳該 Excel，系統會自動下載 <strong>GuardianContacts.csv</strong></li>
             <li>前往 <a href="https://contacts.google.com/" target="_blank">Google 聯絡人</a> 匯入該檔案即可。</li>
         </ol>
     </div>
@@ -41,7 +41,7 @@
     <div class="step-box" style="border: 2px solid #3498db; background: #f0f7ff;">
         <div class="step-num">3</div>
         <input type="file" id="fileInput" accept=".xls,.xlsx,.csv" style="display:none">
-        <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">選擇 Excel 檔案並產出 ok.csv</button>
+        <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">選擇 Excel 檔案並產出 GuardianContacts.csv</button>
         <p id="fileNameDisplay" style="text-align:center; margin-top:10px; font-size:14px; color:#2980b9; font-weight:bold;"></p>
     </div>
 
@@ -155,6 +155,6 @@
 </script>
 
 
-<script src="script.js?ver=1.00a"></script>
+<script src="script.js?ver=1.00b"></script>
 </body>
 </html>

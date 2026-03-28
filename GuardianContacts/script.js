@@ -284,6 +284,6 @@ function processLogic(rows) {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = "ok.csv";
+    link.download = "GuardianContacts.csv";
     link.click();
 }
