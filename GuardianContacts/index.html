@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>家長通訊錄轉換器 by Charles Nextime</title>
+    <link rel="stylesheet" href="style.css?ver=1.00a">
+</head>
+<body>
+
+<div class="container">
+    <h2>家長通訊錄轉換器 (Google Contacts)</h2>
+
+    <div class="instructions">
+        <strong>使用說明：</strong>
+        <ol>
+            <li>在 [直系親屬] 的 [行動電話] 填寫行動電話</li>
+            <li>監護人選「常簽聯絡本的家長」，資料會掛此監護人身上</li>
+            <li>學生概況查詢 -> 通詢資料查詢 -> 查詢 -> 列印檔案到 Excel</li>
+            <li>可多加出生日期、身分證字號和學號進來</li>
+            <li>點擊下方「選擇檔案」上傳該 Excel，系統會自動下載 <strong>ok.csv</strong></li>
+            <li>前往 <a href="https://contacts.google.com/" target="_blank">Google 聯絡人</a> 匯入該檔案即可。</li>
+        </ol>
+    </div>
+
+    <div class="step-box">
+        <div class="step-num">1</div>
+        <h4 style="margin-top:0;">欄位標題設定</h4>
+        <button class="btn btn-setup" onclick="openModal('fieldModal')">📝 設定 Excel 原始標題</button>
+        <button class="btn btn-info" onclick="exportConfig()">📤 匯出設定 (.json)</button>
+        <button class="btn btn-info" onclick="document.getElementById('importInput').click()">📥 匯入設定 (.json)</button>
+        <input type="file" id="importInput" style="display:none" onchange="importConfig(event)">
+    </div>
+
+    <div class="step-box">
+        <div class="step-num">2</div>
+        <h4 style="margin-top:0;">輸出資料設定</h4>
+        <button class="btn btn-setup" onclick="openModal('outputModal')">⚙️ 設定輸出內容與備註</button>
+    </div>
+
+    <div class="step-box" style="border: 2px solid #3498db; background: #f0f7ff;">
+        <div class="step-num">3</div>
+        <input type="file" id="fileInput" accept=".xls,.xlsx,.csv" style="display:none">
+        <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">選擇 Excel 檔案並產出 ok.csv</button>
+        <p id="fileNameDisplay" style="text-align:center; margin-top:10px; font-size:14px; color:#2980b9; font-weight:bold;"></p>
+    </div>
+
+    <div class="footer">
+      <a href="https://w1798.github.io/web/" target="_blank">&copy; 2026<script>const y=new Date().getFullYear(); if(y>2026)document.write("-"+y);</script> Charles Nextime</a> · 
+      <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">GPLv3</a>
+      <span id="busuanzi_container_page_pv">
+    本頁使用量 <span id="busuanzi_value_page_pv"></span> 次
+</span>
+    </div>
+</div>
+
+<div id="fieldModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>1. 欄位標題設定 (原始標題，一筆一行)</h3>
+            <button onclick="closeModal('fieldModal')" class="close-btn">&times;</button>
+        </div>
+        <textarea id="rawFieldInput"></textarea>
+        <div style="text-align:right; margin-top:15px;">
+            <button class="btn btn-primary" style="width:auto;" onclick="saveFields()">儲存欄位設定</button>
+        </div>
+    </div>
+</div>
+
+<div id="outputModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>2. 輸出設定 (自訂名稱與備註)</h3>
+            <button onclick="closeModal('outputModal')" class="close-btn">&times;</button>
+        </div>
+        <div style="margin-bottom:10px;">
+            <button class="btn btn-mini" onclick="batchAction('resetName')">🔄 重置自訂名稱</button>
+            <button class="btn btn-mini" onclick="batchAction('selectAllNote')">✅ 備註全選</button>
+            <button class="btn btn-mini" onclick="batchAction('resetNote')">❌ 備註清空</button>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Excel 原始標題</th>
+                    <th>輸出自訂名稱</th>
+                    <th style="text-align:center;">匯出至備註</th>
+                </tr>
+            </thead>
+            <tbody id="outputSettingBody"></tbody>
+        </table>
+        <div style="text-align:right; margin-top:15px;">
+            <button class="btn btn-primary" style="width:auto;" onclick="saveOutputSettings()">儲存輸出設定</button>
+        </div>
+    </div>
+</div>
+
+
+<style>
+#busuanzi_container_page_pv {
+    color: #888;
+    font-size: 0.9rem;
+    margin-left: 15px;
+    border-left: 1px solid rgba(128, 128, 128, 0.5); /* 計數器加一條細細的分隔線 */
+    padding-left: 15px;
+}
+
+#busuanzi_value_page_pv {
+    color: #00b894;
+    font-weight: bold;
+}
+</style>
+
+
+<script>
+(function() {
+    // 計數器這樣無論是 /web/ 還是 /web 都會統一變成 /web 
+    const path = window.location.pathname.replace(/\/$/, ""); 
+    const TIME_KEY = `VERCOUNT_TIME_${path}`; // 每個分頁獨立計算冷卻時間
+    const VAL_KEY = `VERCOUNT_VAL_${path}`;   // 每個分頁獨立存儲 PV 數
+    
+    const COOL_DOWN = 30 * 60 * 1000; 
+    const now = Date.now();
+    const lastVisit = localStorage.getItem(TIME_KEY);
+    
+    // 計算剩餘秒數
+    const timeLeft = lastVisit ? Math.ceil((parseInt(lastVisit) + COOL_DOWN - now) / 1000) : 0;
+
+    if (timeLeft <= 0) {
+        console.log(`%c[Vercount]%c 路徑 ${path} 冷卻結束，更新數據...`, "color:#00b894;font-weight:bold", "color:inherit");
+        
+        const script = document.createElement('script');
+        script.src = "https://events.vercount.one/js";
+        script.defer = true;
+        
+        script.onload = () => {
+            setTimeout(() => {
+                const pvVal = document.getElementById('busuanzi_value_page_pv')?.innerText;
+                if (pvVal) {
+                    localStorage.setItem(VAL_KEY, pvVal);
+                    localStorage.setItem(TIME_KEY, now); // 成功抓到才更新時間
+                }
+            }, 1500);
+        };
+        document.head.appendChild(script);
+    } else {
+        const lastVal = localStorage.getItem(VAL_KEY) || "--";
+        console.log(`%c[Vercount]%c ${path} 冷卻中（剩 ${timeLeft} 秒）。顯示舊值：${lastVal}`, "color:#f1c40f;font-weight:bold", "color:inherit");
+
+        window.addEventListener('load', () => {
+            const pvSpan = document.getElementById('busuanzi_value_page_pv');
+            if (pvSpan) pvSpan.innerText = lastVal;
+        });
+    }
+})();
+</script>
+
+
+<script src="script.js?ver=1.00a"></script>
+</body>
+</html>
