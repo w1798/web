@@ -177,7 +177,18 @@ function pickBestPhone(row, fields, getValFunc) {
 function processLogic(rows) {
     const fullHeaders = ["Name", "Given Name", "Additional Name", "Family Name", "Yomi Name", "Given Name Yomi", "Additional Name Yomi", "Family Name Yomi", "Name Prefix", "Name Suffix", "Initials", "Nickname", "Short Name", "Maiden Name", "Birthday", "Gender", "Location", "Billing Information", "Directory Server", "Mileage", "Occupation", "Hobby", "Sensitivity", "Priority", "Subject", "Notes", "Group Membership", "Phone 1 - Type", "Phone 1 - Value"];
     
-    const headerRowIdx = rows.findIndex(r => r && (r.includes("姓名") || r.includes("座號")));
+    // --- 動態偵測標題列邏輯 ---
+    // 取出使用者自訂欄位清單的前兩個作為「特徵碼」 (例如："年班", "座號")
+    const feature1 = fieldList[0]; 
+    const feature2 = fieldList[1];
+
+    const headerRowIdx = rows.findIndex(r => {
+        if (!r) return false;
+        // 將該列所有儲存格轉為字串並合併，檢查是否包含使用者定義的前兩個標題
+        const rowContent = r.join("|"); 
+        return rowContent.includes(feature1) || (feature2 && rowContent.includes(feature2));
+    });
+    
     if (headerRowIdx === -1) throw new Error("找不到表頭列，請確認 Excel 內容。");
 
     const excelHeaders = rows[headerRowIdx];
