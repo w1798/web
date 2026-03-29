@@ -7,6 +7,9 @@
  * the Free Software Foundation.
  */
 
+let exportMode = 'google'; // 預設導出模式
+let groupName = "4學生和家長"; // 預設群組名稱
+
  // 負責載入外部套件的函式
 function initLibrary() {
     const script = document.createElement('script');
@@ -44,7 +47,7 @@ let outputConfig = fieldList.map(f => {
                       .replace("地址-其他", "地址");
 
     // 預設哪些要進備註 (包含性別、地址、身分證、生日、公司電話等)
-    const noteKeywords = ["性別", "地址-其他", "生日", "身分證", "學號", "電話"];
+    const noteKeywords = ["地址-其他", "生日", "身分證", "學號", "電話"];
     let isNote = noteKeywords.some(key => f.includes(key));
 
     return {
@@ -53,6 +56,53 @@ let outputConfig = fieldList.map(f => {
         isNote: isNote
     };
 });
+
+function renderOutputTable() {
+    const body = document.getElementById('outputSettingBody');
+    
+    // 1. 先定義最上方的群組設定區塊 (這部分不在 table 裡面)
+    let groupSettingHtml = `
+        <div style="margin-bottom: 20px; padding: 15px; background: #eef2f7; border-radius: 8px; border: 1px solid #d1d9e6;">
+            <strong style="color: #2c3e50;">📁 匯入群組名稱設定</strong><br>
+            <small style="color: #666;">產出的聯絡人將歸類在此群組</small><br>
+            <input type="text" id="groupNameInput" value="${groupName}" 
+                   style="width: 100%; margin-top: 8px; padding: 10px; border: 1px solid #cbd5e0; border-radius: 5px; box-sizing: border-box;" 
+                   placeholder="例如：114學年301班">
+        </div>
+    `;
+
+    // 2. 定義表格結構
+    let tableHtml = `
+        <table style="width:100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background:#f8f9fa; border-bottom: 2px solid #dee2e6;">
+                    <th style="padding: 10px; text-align: left;">Excel 原始標題</th>
+                    <th style="padding: 10px; text-align: left;">輸出自訂名稱</th>
+                    <th style="padding: 10px; width:80px; text-align: center;">匯出備註</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    // 3. 填入表格內容列
+    tableHtml += outputConfig.map((item, i) => `
+        <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 8px; font-size: 0.9em; color: #444;">${item.original}</td>
+            <td style="padding: 8px;">
+                <input type="text" id="cust_${i}" value="${item.custom}" 
+                       style="width:95%; padding: 5px; border: 1px solid #ddd; border-radius: 3px;">
+            </td>
+            <td style="padding: 8px; text-align:center;">
+                <input type="checkbox" id="note_${i}" ${item.isNote ? 'checked' : ''}>
+            </td>
+        </tr>
+    `).join('');
+
+    tableHtml += `</tbody></table>`;
+
+    // 4. 最後將「群組設定」+「表格」合併放入 body
+    body.innerHTML = groupSettingHtml + tableHtml;
+}
 
 // --- 以下 Modal 控制與批次操作保持不變 ---
 
@@ -64,16 +114,6 @@ function openModal(id) {
 
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-function renderOutputTable() {
-    const body = document.getElementById('outputSettingBody');
-    body.innerHTML = outputConfig.map((item, i) => `
-        <tr>
-            <td>${item.original}</td>
-            <td><input type="text" id="cust_${i}" value="${item.custom}" placeholder="${item.original}"></td>
-            <td style="text-align:center;"><input type="checkbox" id="note_${i}" ${item.isNote ? 'checked' : ''}></td>
-        </tr>
-    `).join('');
-}
 
 function batchAction(type) {
     outputConfig.forEach((item, i) => {
@@ -93,6 +133,13 @@ function saveFields() {
 }
 
 function saveOutputSettings() {
+    // 儲存群組名稱
+    const gInput = document.getElementById('groupNameInput');
+    if (gInput) {
+        groupName = gInput.value.trim() || "4學生和家長";
+    }
+
+    // 儲存欄位設定
     outputConfig.forEach((item, i) => {
         let val = document.getElementById(`cust_${i}`).value.trim();
         item.custom = (val === "") ? item.original : val;
@@ -102,10 +149,11 @@ function saveOutputSettings() {
 }
 
 function exportConfig() {
-    const blob = new Blob([JSON.stringify({fieldList, outputConfig}, null, 2)], {type: "application/json"});
+    // 加入 groupName
+    const blob = new Blob([JSON.stringify({fieldList, outputConfig, groupName}, null, 2)], {type: "application/json"});
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = "contact_config.json";
+    a.download = "GuardianContacts_config.json";
     a.click();
 }
 
@@ -115,9 +163,15 @@ function importConfig(e) {
         const data = JSON.parse(event.target.result);
         fieldList = data.fieldList;
         outputConfig = data.outputConfig;
+        groupName = data.groupName || "4學生和家長"; // 讀取匯入的群組名
         alert("匯入成功！");
     };
     reader.readAsText(e.target.files[0]);
+}
+
+function triggerUpload(mode) {
+    exportMode = mode;
+    document.getElementById('fileInput').click();
 }
 
 // --- Excel 處理邏輯 (包含您要求的優先順序與電話欄位更新) ---
@@ -174,35 +228,43 @@ function pickBestPhone(row, fields, getValFunc) {
     return allPhones.find(p => p !== "") || "";
 }
 
+
+function downloadFile(content, filename, type) {
+    const blob = new Blob([content], { type: type });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+}
+
+
 function processLogic(rows) {
-    const fullHeaders = ["Name", "Given Name", "Additional Name", "Family Name", "Yomi Name", "Given Name Yomi", "Additional Name Yomi", "Family Name Yomi", "Name Prefix", "Name Suffix", "Initials", "Nickname", "Short Name", "Maiden Name", "Birthday", "Gender", "Location", "Billing Information", "Directory Server", "Mileage", "Occupation", "Hobby", "Sensitivity", "Priority", "Subject", "Notes", "Group Membership", "Phone 1 - Type", "Phone 1 - Value"];
+    const fullHeaders = ["Name", "Notes", "Group Membership", "Phone 1 - Type", "Phone 1 - Value"];
     
     // --- 動態偵測標題列邏輯 ---
-    // 取出使用者自訂欄位清單的前兩個作為「特徵碼」 (例如："年班", "座號")
     const feature1 = fieldList[0]; 
     const feature2 = fieldList[1];
 
     const headerRowIdx = rows.findIndex(r => {
         if (!r) return false;
-        // 將該列所有儲存格轉為字串並合併，檢查是否包含使用者定義的前兩個標題
         const rowContent = r.join("|"); 
         return rowContent.includes(feature1) || (feature2 && rowContent.includes(feature2));
     });
     
     if (headerRowIdx === -1) {
         alert(`❌ 找不到標題列！請確認 Excel 中是否包含「${feature1}」欄位。`);
-        return; // 中止程式
+        return;
     }
 
     const excelHeaders = rows[headerRowIdx].map(h => h ? h.toString().trim() : "");
 
-    // 2. 【新增】完整比對檢查必要欄位
+    // 必要欄位檢查
     const requiredFields = ["姓名", "座號", "監護人", "父親姓名", "母親姓名", "父親行動電話", "母親行動電話"];
     const missingFields = requiredFields.filter(f => !excelHeaders.includes(f));
 
     if (missingFields.length > 0) {
-        alert(`⚠️ 轉換失敗！Excel 缺少以下必要欄位(需完整匹配)：\n\n${missingFields.join("\n")}\n\n請檢查 Excel 標題名稱是否完全正確。`);
-        return; // 中止程式，不進行轉換
+        alert(`⚠️ 轉換失敗！Excel 缺少以下必要欄位：\n\n${missingFields.join("\n")}`);
+        return;
     }
 
     const dataRows = rows.slice(headerRowIdx + 1);
@@ -216,7 +278,9 @@ function processLogic(rows) {
         return val;
     };
 
-    let outputRows = [fullHeaders];
+    // 用於 Google 的 Array 與 用於 iCloud 的 String
+    let csvRows = [fullHeaders];
+    let vCardContent = "";
 
     dataRows.forEach(row => {
         if (!row || row.length === 0) return;
@@ -228,12 +292,11 @@ function processLogic(rows) {
         const fatherName = getVal(row, "父親姓名");
         const motherName = getVal(row, "母親姓名");
 
-        // --- 智慧抓取電話：優先找手機，手機沒有才找聯絡電話 ---
         const fPhoneRaw = pickBestPhone(row, ["父親行動電話", "父親聯絡電話1", "父親聯絡電話2"], getVal);
         const mPhoneRaw = pickBestPhone(row, ["母親行動電話", "母親聯絡電話1", "母親聯絡電話2"], getVal);
         const gPhoneRaw = pickBestPhone(row, ["監護人行動電話", "監護人聯絡電話1", "監護人聯絡電話2"], getVal);
 
-        // 收集備註資料 (過濾重複與過濾父母電話)
+        // 收集備註資料
         let notesArr = [];
         let usedValues = new Set(); 
 
@@ -243,14 +306,11 @@ function processLogic(rows) {
                 if (val) {
                     let isPhoneField = conf.original.includes("電話") || conf.original.includes("行動");
                     let cleanVal = isPhoneField ? val.replace(/[^\d]/g, "") : val;
-                    
-                    // 特殊處理：如果是 9 開頭的手機號碼，比對前也要補 0
                     if (isPhoneField && cleanVal.startsWith("9") && cleanVal.length === 9) cleanVal = "0" + cleanVal;
 
                     if (!usedValues.has(val)) {
                         if (isPhoneField) {
-                            // 備註內的電話若跟最終選定的爸媽電話一樣，就不顯示
-                            if (cleanVal !== fPhoneRaw && cleanVal !== mPhoneRaw) {
+                            if (cleanVal !== fPhoneRaw && cleanVal !== mPhoneRaw && cleanVal !== gPhoneRaw) {
                                 notesArr.push(`${conf.custom}:${val}`);
                                 usedValues.add(val);
                             }
@@ -264,49 +324,66 @@ function processLogic(rows) {
         });
         const fullNote = notesArr.join("\n");
 
+        // 1. 建立聯絡人清單
         const contacts = [];
-        let targetType = "";
-
         const guardIsFather = (guardName && fatherName && guardName === fatherName);
         const guardIsMother = (guardName && motherName && guardName === motherName);
         const guardIsOther = (guardName && !guardIsFather && !guardIsMother);
 
-        // 建立聯絡人候選清單
         if (gPhoneRaw && guardIsOther) contacts.push({ type: 'guard', label: `監護人(${guardName})`, phone: gPhoneRaw });
         if (mPhoneRaw && motherName) contacts.push({ type: 'mother', label: `媽媽(${motherName})`, phone: mPhoneRaw });
         if (fPhoneRaw && fatherName) contacts.push({ type: 'father', label: `爸爸(${fatherName})`, phone: fPhoneRaw });
 
-        // 優先順序掛 * 號
-        if (guardIsFather && fPhoneRaw) targetType = 'father';
-        else if (guardIsMother && mPhoneRaw) targetType = 'mother';
-        else if (guardIsOther && gPhoneRaw) targetType = 'guard';
-        else if (mPhoneRaw && motherName) targetType = 'mother';
-        else if (fPhoneRaw && fatherName) targetType = 'father';
+        if (contacts.length === 0) return;
 
-        contacts.forEach((c) => {
+        // 2. 智慧判定主要聯絡人
+        let targetIdx = -1;
+        if (guardIsOther) targetIdx = contacts.findIndex(c => c.type === 'guard');
+        else if (guardIsMother) targetIdx = contacts.findIndex(c => c.type === 'mother');
+        else if (guardIsFather) targetIdx = contacts.findIndex(c => c.type === 'father');
+        if (targetIdx === -1) targetIdx = 0;
+
+        // 3. 根據 exportMode 產生資料
+        contacts.forEach((c, index) => {
             let finalPhone = c.phone;
-            // 如果不是手機且不是 0 開頭，補區碼 03
             if (finalPhone && !finalPhone.startsWith("0") && finalPhone.length <= 8) {
                 finalPhone = "03" + finalPhone;
             }
 
-            const isTarget = (c.type === targetType);
-            const star = isTarget ? "*" : "";
-            
-            let rowData = new Array(29).fill("");
-            rowData[0] = `${sn}${star}${name}${c.label}`; 
-            rowData[25] = isTarget ? fullNote : ""; 
-            rowData[26] = "* My Contacts ::: 4學生和家長";
-            rowData[27] = "Mobile";
-            rowData[28] = finalPhone;
-            outputRows.push(rowData);
+            const isMainContact = (index === targetIdx);
+            const star = isMainContact ? "*" : "";
+            const displayName = `${sn}${star}${name}${c.label}`;
+
+            if (exportMode === 'google') {
+                // Google CSV 邏輯
+                csvRows.push([
+                    displayName,
+                    isMainContact ? fullNote : "",
+                    `* My Contacts ::: ${groupName}`,
+                    "Mobile",
+                    finalPhone
+                ]);
+            } else {
+                // iCloud vCard 邏輯 (使用 vCard 3.0 標準)
+                vCardContent += `BEGIN:VCARD\n`;
+                vCardContent += `VERSION:3.0\n`;
+                vCardContent += `FN:${displayName}\n`;
+                vCardContent += `TEL;TYPE=CELL:${finalPhone}\n`;
+                if (isMainContact && fullNote) {
+                    // vCard 的備註換行符號需轉義為 \n 字串
+                    vCardContent += `NOTE:${fullNote.replace(/\n/g, '\\n')}\n`;
+                }
+                vCardContent += `CATEGORIES:${groupName}\n`;
+                vCardContent += `END:VCARD\n`;
+            }
         });
     });
 
-    const csvContent = "\uFEFF" + outputRows.map(e => e.map(cell => `"${cell.replace(/"/g, '""')}"`).join(",")).join("\n");
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "GuardianContacts.csv";
-    link.click();
+    // 4. 下載檔案
+    if (exportMode === 'google') {
+        const csvContent = "\uFEFF" + csvRows.map(e => e.map(cell => `"${cell.replace(/"/g, '""')}"`).join(",")).join("\n");
+        downloadFile(csvContent, "GuardianContacts.csv", 'text/csv;charset=utf-8;');
+    } else {
+        downloadFile(vCardContent, "GuardianContacts.vcf", 'text/vcard;charset=utf-8;');
+    }
 }

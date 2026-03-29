@@ -7,6 +7,7 @@
  * the Free Software Foundation.
  */
 
+let lastFocusedInput = null;
 let history = [];
 const in1 = document.getElementById('inputArea');
 const in2 = document.getElementById('inputArea2');
@@ -23,12 +24,19 @@ function clearOutputIfInputChanged() {
 in1.addEventListener('input', () => { updateStats(); clearOutputIfInputChanged(); });
 in2.addEventListener('input', () => { updateStats(); clearOutputIfInputChanged(); });
 
+// 監聽全域點擊，記錄最後一個被點選的輸入框
+document.addEventListener('focusin', (e) => {
+    if (e.target.tagName === 'INPUT' && e.target.type === 'text') {
+        lastFocusedInput = e.target;
+    }
+});
+
 function saveHistory() { history.push(out.value); if (history.length > 30) history.shift(); }
 
 function undo() { if (history.length > 0) { out.value = history.pop(); updateStats(); } }
 
 function resetTools() {
-    ['joinChar','splitChar','filterText','prefix','suffix','regFind','regRep','delChar'].forEach(id => document.getElementById(id).value = (id==='splitChar'?',':''));
+    ['joinChar','splitChar','filterText','prefix','suffix','regFind','regRep','delChar'].forEach(id => document.getElementById(id).value = '');
     ['numPad','headCount','tailCount'].forEach(id => document.getElementById(id).value = (id==='numPad'?'1':'0'));
 }
 
@@ -110,15 +118,39 @@ function dualProcess(type) {
     updateStats();
 }
 
+
+function insertSym(sym) {
+    if (lastFocusedInput) {
+        // 在目前游標位置插入文字，而不是直接覆蓋整個輸入框
+        const start = lastFocusedInput.selectionStart;
+        const end = lastFocusedInput.selectionEnd;
+        const text = lastFocusedInput.value;
+        lastFocusedInput.value = text.slice(0, start) + sym + text.slice(end);
+        
+        // 插入後將游標移至新插入文字的後面
+        lastFocusedInput.focus();
+        const newPos = start + sym.length;
+        lastFocusedInput.setSelectionRange(newPos, newPos);
+    } else {
+        showToast('請先點選下面的功能輸入框');
+    }
+}
+
+function handleEscape(str) {
+    if (!str) return str;
+    return str
+        .replace(/\\\\t/g, '___TEMP_T___') 
+        .replace(/\\t/g, '\t')            
+        .replace(/\\n/g, '\n')            
+        .replace(/___TEMP_T___/g, '\\t');  
+}
+
 function process(type) {
     saveHistory();
     let text = out.value.trim() !== "" ? out.value : in1.value;
     if (!text) return;
     let lines = text.split(/\r?\n/);
     switch(type) {
-        case 'join': text = lines.join(document.getElementById('joinChar').value); break;
-        case 'split': text = text.split(document.getElementById('splitChar').value).join('\n'); break;
-        case 'delete': text = text.split(document.getElementById('delChar').value).join(''); break;
         case 'noEng': text = text.replace(/[a-zA-Z]/g, ''); break;
         case 'noNum': text = text.replace(/[0-9]/g, ''); break;
         case 'noSym': text = text.replace(/[^a-zA-Z0-9\s\u4e00-\u9fa5]/gi, ''); break;
@@ -136,9 +168,6 @@ function process(type) {
         case 'findDup':
             let c = {}; lines.forEach(l => { if(l.trim()) c[l] = (c[l]||0)+1 });
             text = Object.keys(c).filter(k => c[k]>1).join('\n'); break;
-        case 'addEdge': 
-            let p = document.getElementById('prefix').value, s = document.getElementById('suffix').value;
-            text = lines.map(l => p + l + s).join('\n'); break;
         case 'sliceKeep':
             let hK = parseInt(document.getElementById('headCount').value), tK = parseInt(document.getElementById('tailCount').value);
             text = lines.map(l => l.substring(0, hK) + l.substring(l.length - tK)).join('\n'); break;
@@ -148,11 +177,29 @@ function process(type) {
         case 'autoNum':
             let pad = parseInt(document.getElementById('numPad').value);
             text = lines.map((l, i) => (i + 1).toString().padStart(pad, '0') + l).join('\n'); break;
+
+
+        case 'join': 
+            text = lines.join(handleEscape(document.getElementById('joinChar').value)); break;
+        case 'split': 
+            text = text.split(handleEscape(document.getElementById('splitChar').value)).join('\n'); break;
         case 'regex': 
-            let re = new RegExp(document.getElementById('regFind').value, 'g');
-            text = text.replace(re, document.getElementById('regRep').value); break;
-        case 'keepLine': text = lines.filter(l => l.includes(document.getElementById('filterText').value)).join('\n'); break;
-        case 'delLine': text = lines.filter(l => !l.includes(document.getElementById('filterText').value)).join('\n'); break;
+            let re = new RegExp(handleEscape(document.getElementById('regFind').value), 'g');
+            text = text.replace(re, handleEscape(document.getElementById('regRep').value)); break;
+        case 'addEdge': 
+            let p = handleEscape(document.getElementById('prefix').value);
+            let s = handleEscape(document.getElementById('suffix').value);
+            text = lines.map(l => p + l + s).join('\n'); break;
+        case 'delete':
+            text = text.split(handleEscape(document.getElementById('delChar').value)).join(''); break;
+        case 'keepLine': 
+            let kf = handleEscape(document.getElementById('filterText').value);
+            text = lines.filter(l => l.includes(kf)).join('\n'); break;
+        case 'delLine': 
+            let df = handleEscape(document.getElementById('filterText').value);
+            text = lines.filter(l => !l.includes(df)).join('\n'); break;
+            
+            
         case 'smartFormat':
             out.value = universalSmartFormat(out.value.trim() !== "" ? out.value : in1.value);
             updateStats();

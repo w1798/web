@@ -4,46 +4,51 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>家長通訊錄轉換器 by Charles Nextime</title>
-    <link rel="stylesheet" href="style.css?ver=1.00B">
+    <link rel="stylesheet" href="style.css?ver=1.00c">
 </head>
 <body>
 
 <div class="container">
-    <h2>家長通訊錄轉換器 (Google Contacts)</h2>
+    <h1>雲端學務系統家長通訊錄轉換器</h1>
 
     <div class="instructions">
         <strong>使用說明：</strong>
         <ol>
-            <li>必要欄位標題：姓名、座號、監護人、父親姓名、母親姓名、父親行動電話、母親行動電話</li>
+            <li>必要欄位標題：<strong>姓名、座號、父親姓名、母親姓名、父親行動電話、母親行動電話、監護人</strong></li>
             <li>在 [直系親屬] 的 [行動電話] 填寫家長的聯絡電話</li>
-            <li>選擇[監護人]，備註資料會掛此監護人身上</li>
+            <li>選擇[監護人]，備註資料會掛此監護人身上(監護人不為父母時，請加監護人行動電話)。</li>
             <li>學生概況查詢 -> 通詢資料查詢 -> 查詢 -> 列印檔案到 Excel</li>
             <li>可多加出生日期、身分證字號和學號到上面那個 Excel 檔中</li>
-            <li>點擊下方「選擇檔案」上傳該 Excel，系統會自動下載 <strong>GuardianContacts.csv</strong></li>
-            <li>前往 <a href="https://contacts.google.com/" target="_blank">Google 聯絡人</a> 匯入該檔案即可。</li>
+            <li>點擊下方第3步上傳該 Excel 檔，系統會自動下載轉換後的格式檔</li>
+            <li>前往 <a href="https://contacts.google.com/" target="_blank">Google 聯絡人</a> 或 <a href="https://www.icloud.com/zh-tw/contacts" target="_blank">iCloud 聯絡人</a> 匯入該檔案即可。</li>
         </ol>
     </div>
 
     <div class="step-box">
         <div class="step-num">1</div>
         <h4 style="margin-top:0;">欄位標題設定</h4>
-        <button class="btn btn-setup" onclick="openModal('fieldModal')">📝 設定 Excel 原始標題</button>
-        <button class="btn btn-info" onclick="exportConfig()">📤 匯出設定 (.json)</button>
-        <button class="btn btn-info" onclick="document.getElementById('importInput').click()">📥 匯入設定 (.json)</button>
-        <input type="file" id="importInput" style="display:none" onchange="importConfig(event)">
+        <button class="btn btn-setup" onclick="openModal('fieldModal')">📝 設定 Excel 原始標題</button> 可將標題整列複製出來，到 [<a href="https://w1798.github.io/web/TextLab" target="_blank">多功能文字處理器</a>] 去用 \t (或在右上按 Tab)<strong>分割</strong>，再貼回來
     </div>
 
     <div class="step-box">
         <div class="step-num">2</div>
         <h4 style="margin-top:0;">輸出資料設定</h4>
         <button class="btn btn-setup" onclick="openModal('outputModal')">⚙️ 設定輸出內容與備註</button>
+                <button class="btn btn-info" onclick="exportConfig()">📤 匯出設定</button>
+        <button class="btn btn-info" onclick="document.getElementById('importInput').click()">📥 匯入設定</button>
+        <input type="file" id="importInput" style="display:none" onchange="importConfig(event)">
     </div>
 
     <div class="step-box" style="border: 2px solid #3498db; background: #f0f7ff;">
         <div class="step-num">3</div>
+        <h4 style="margin-top:0;">上傳 Excel 學生資料檔</h4>
         <input type="file" id="fileInput" accept=".xls,.xlsx,.csv" style="display:none">
-        <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">選擇 Excel 檔案並產出 GuardianContacts.csv</button>
-        <p id="fileNameDisplay" style="text-align:center; margin-top:10px; font-size:14px; color:#2980b9; font-weight:bold;"></p>
+        
+        <div style="display: flex; gap: 10px;">
+            <button class="btn btn-primary" onclick="triggerUpload('google')">上傳並產出 Google 格式 (CSV)</button>
+            <button class="btn btn-primary" onclick="triggerUpload('icloud')">上傳並產出 iCloud 格式 (vCard)</button>
+        </div>
+        <p id="fileNameDisplay"></p>
     </div>
 
     <div class="footer">
@@ -79,16 +84,9 @@
             <button class="btn btn-mini" onclick="batchAction('selectAllNote')">✅ 備註全選</button>
             <button class="btn btn-mini" onclick="batchAction('resetNote')">❌ 備註清空</button>
         </div>
-        <table>
-            <thead>
-                <tr>
-                    <th>Excel 原始標題</th>
-                    <th>輸出自訂名稱</th>
-                    <th style="text-align:center;">匯出至備註</th>
-                </tr>
-            </thead>
-            <tbody id="outputSettingBody"></tbody>
-        </table>
+        
+        <div id="outputSettingBody"></div>
+
         <div style="text-align:right; margin-top:15px;">
             <button class="btn btn-primary" style="width:auto;" onclick="saveOutputSettings()">儲存輸出設定</button>
         </div>
@@ -156,6 +154,6 @@
 </script>
 
 
-<script src="script.js?ver=1.00b"></script>
+<script src="script.js?ver=1.00c"></script>
 </body>
 </html>

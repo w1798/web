@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>多功能文字處理器 by Charles Nextime</title>
-    <link rel="stylesheet" href="style.css?ver=1.01">
+    <link rel="stylesheet" href="style.css?ver=1.01a">
 </head>
 <body>
 <div class="container">
@@ -38,11 +38,19 @@
                 <button class="secondary" onclick="process('lower')">全小寫</button>
                 <span class="divider">|</span>
                 <button class="purple" onclick="process('smartFormat')">JSON/CSS格式化</button>
+                <span class="divider">|</span>                       
+                <div class="tool-item" style="background: none; border: none; padding: 0;">
+                    <small style="color: #888; margin-right: 5px;">加入常用:</small>
+                    <button class="secondary" style="padding: 2px 6px; font-size: 12px; margin-right: 4px;" onclick="insertSym('\\t')">Tab</button>
+                    <button class="secondary" style="padding: 2px 6px; font-size: 12px;" onclick="insertSym('\\n')">換行</button>
+                </div>                 
+           
             </div>
         </div>
         <div class="exec-zone">
+    
             <div class="tool-item">以 <input type="text" id="joinChar" style="width:30px" placeholder=" "> 串接 <button onclick="process('join')">執行</button></div>
-            <div class="tool-item">以 <input type="text" id="splitChar" style="width:30px" value=","> 分割 <button onclick="process('split')">執行</button></div>
+            <div class="tool-item">以 <input type="text" id="splitChar" style="width:30px"> 分割 <button onclick="process('split')">執行</button></div>
             <span class="divider">|</span>
             <div class="tool-item">取代 <input type="text" id="regFind" style="width:40px" placeholder="找"> 換 <input type="text" id="regRep" style="width:40px"> <button onclick="process('regex')">執行</button></div>
             <span class="divider">|</span>
@@ -140,7 +148,7 @@
 })();
 </script>
 
-<script src="script.js?ver=1.01"></script>
+<script src="script.js?ver=1.01a"></script>
     
 </body>
 </html>
