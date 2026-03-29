@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code 標籤產生器 - 專業版</title>
+    <link rel="stylesheet" href="style.css?ver=1.00a">
+</head>
+<body>
+
+<div class="container">
+    <div class="header-row">
+        <h2>QR Code 標籤產生器 (專業版)</h2>
+        <div class="btn-group-sm">
+            <button class="btn-sm" onclick="exportConfig()">匯出設定</button>
+            <button class="btn-sm" onclick="document.getElementById('importFile').click()">匯入設定</button>
+            <button class="btn-sm btn-reset" onclick="resetConfig()">重置</button>
+            <input type="file" id="importFile" style="display:none" onchange="importConfig(this)">
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <div class="column settings-group">
+            <div class="sub-section">
+                <span class="section-title">版面設定</span>
+                <div class="field-item"><label>橫向數量 (H):</label><select id="h_cut"></select></div>
+                <div class="field-item"><label>縱向數量 (V):</label><select id="v_cut"></select></div>
+                <div class="field-item">
+                    <label>紙張方向:</label>
+                    <select id="orientation">
+                        <option value="portrait">直式 (A4)</option>
+                        <option value="landscape">橫式 (A4)</option>
+                    </select>
+                </div>
+                <div class="field-item">
+                    <label>框線設定:</label>
+                    <select id="border_style">
+                        <option value="no-outline-dashed">無外框虛線</option>
+                        <option value="no-outline-solid">無外框實線</option>
+                        <option value="solid">有實線</option>
+                        <option value="dashed">有虛線</option>
+                        <option value="none">無線</option>
+                    </select>
+                </div>
+                <div class="field-item"><label>邊界大小 (cm):</label><input type="number" id="margin_cm" value="0.2" step="0.1"></div>
+            </div>
+
+            <div class="sub-section">
+                <span class="section-title">排列與對齊</span>
+                <div class="field-item">
+                    <label>排列方式:</label>
+                    <select id="layout_style">
+                        <option value="top-down">圖在上</option>
+                        <option value="bottom-up">圖在下</option>
+                        <option value="left-right">圖在左</option>
+                        <option value="right-left">圖在右</option>
+                    </select>
+                </div>
+                <div class="field-item">
+                    <label>垂直對齊:</label>
+                    <select id="v_align">
+                        <option value="center" selected>置中</option>
+                        <option value="top">靠上</option>
+                        <option value="bottom">靠下</option>
+                    </select>
+                </div>
+                <div class="field-item">
+                    <label>水平對齊:</label>
+                    <select id="h_align">
+                        <option value="center" selected>置中</option>
+                        <option value="left">靠左</option>
+                        <option value="right">靠右</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="sub-section">
+                <span class="section-title">樣式設定</span>
+                <div class="field-item"><label>字體大小 (pt):</label><input type="number" id="font_size" value="12" step="0.5"></div>
+                <div class="field-item"><label>行距設定 (pt):</label><input type="number" id="line_spacing" value="18" step="0.5"></div>
+                <div class="field-item"><label>QR碼大小 (cm):</label><input type="number" id="qr_size_cm" value="2.5" step="0.1"></div>
+
+                <div class="field-item">
+                    <label>補償值 (DXA):</label>
+                    <input type="number" id="offset_dxa" value="240">
+                    <div class="hint">若表格溢出至第二頁，請調大此值。240 DXA ≒ 0.42cm。</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="column content-area">
+            <span class="section-title">文字內容區</span>
+            <div class="field-item">
+                <label>中心文字 (Caption):</label>
+                <input type="text" id="caption" value="標籤">
+            </div>
+            <div class="field-item">
+                <label>網址 (URL):</label>
+                <input type="text" id="url" value="https://google.com">
+            </div>
+            <div class="field-item">
+                <label>說明內容 (Subject):</label>
+                <textarea id="subject" rows="7">第一行說明&#10;第二行說明&#10;第三行說明&#10;第四行說明&#10;第五行說明</textarea>
+            </div>
+            <button id="generate" onclick="mainProcess()">產生並下載 .docx 檔案</button>
+            <div id="status"></div>
+        </div>
+    </div>
+     <footer>
+      <a href="https://w1798.github.io/web/" target="_blank">&copy; 2026<script>const y=new Date().getFullYear(); if(y>2026)document.write("-"+y);</script> Charles Nextime</a> · 
+      <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">GPLv3</a>
+      <span id="busuanzi_container_page_pv">
+    本頁使用量 <span id="busuanzi_value_page_pv"></span> 次
+</span>
+    </footer>
+</div> 
+<div id="qr-hidden" style="display:none"></div>
+<canvas id="canvas-buffer" style="display:none"></canvas>
+
+<style>
+#busuanzi_container_page_pv {
+    color: #888;
+    font-size: 0.9rem;
+    margin-left: 15px;
+    border-left: 1px solid rgba(128, 128, 128, 0.5); /* 計數器加一條細細的分隔線 */
+    padding-left: 15px;
+}
+
+#busuanzi_value_page_pv {
+    color: #00b894;
+    font-weight: bold;
+}
+</style>
+
+
+<script>
+(function() {
+    // 計數器這樣無論是 /web/ 還是 /web 都會統一變成 /web 
+    const path = window.location.pathname.replace(/\/$/, ""); 
+    const TIME_KEY = `VERCOUNT_TIME_${path}`; // 每個分頁獨立計算冷卻時間
+    const VAL_KEY = `VERCOUNT_VAL_${path}`;   // 每個分頁獨立存儲 PV 數
+    
+    const COOL_DOWN = 30 * 60 * 1000; 
+    const now = Date.now();
+    const lastVisit = localStorage.getItem(TIME_KEY);
+    
+    // 計算剩餘秒數
+    const timeLeft = lastVisit ? Math.ceil((parseInt(lastVisit) + COOL_DOWN - now) / 1000) : 0;
+
+    if (timeLeft <= 0) {
+        console.log(`%c[Vercount]%c 路徑 ${path} 冷卻結束，更新數據...`, "color:#00b894;font-weight:bold", "color:inherit");
+        
+        const script = document.createElement('script');
+        script.src = "https://events.vercount.one/js";
+        script.defer = true;
+        
+        script.onload = () => {
+            setTimeout(() => {
+                const pvVal = document.getElementById('busuanzi_value_page_pv')?.innerText;
+                if (pvVal) {
+                    localStorage.setItem(VAL_KEY, pvVal);
+                    localStorage.setItem(TIME_KEY, now); // 成功抓到才更新時間
+                }
+            }, 1500);
+        };
+        document.head.appendChild(script);
+    } else {
+        const lastVal = localStorage.getItem(VAL_KEY) || "--";
+        console.log(`%c[Vercount]%c ${path} 冷卻中（剩 ${timeLeft} 秒）。顯示舊值：${lastVal}`, "color:#f1c40f;font-weight:bold", "color:inherit");
+
+        window.addEventListener('load', () => {
+            const pvSpan = document.getElementById('busuanzi_value_page_pv');
+            if (pvSpan) pvSpan.innerText = lastVal;
+        });
+    }
+})();
+</script>
+
+<script src="script.js?ver=1.00a"></script>
+</body>
+</html>
