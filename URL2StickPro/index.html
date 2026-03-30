@@ -76,8 +76,8 @@
 
             <div class="sub-section">
                 <span class="section-title">樣式設定</span>
-                <div class="field-item"><label>字體大小 (pt):</label><input type="number" id="font_size" value="12" step="0.5"></div>
-                <div class="field-item"><label>行距設定 (pt):</label><input type="number" id="line_spacing" value="18" step="0.5"></div>
+                <div class="field-item"><label>字體大小 (pt):</label><input type="number" id="font_size" value="10" step="0.5"></div>
+                <div class="field-item"><label>行距設定 (pt):</label><input type="number" id="line_spacing" value="14" step="0.5"></div>
                 <div class="field-item"><label>QR碼大小 (cm):</label><input type="number" id="qr_size_cm" value="2.5" step="0.1"></div>
 
                 <div class="field-item">
@@ -92,7 +92,7 @@
             <span class="section-title">文字內容區</span>
             <div class="field-item">
                 <label>中心文字 (Caption):</label>
-                <input type="text" id="caption" value="Charles Nextime 網頁程式集">
+                <input type="text" id="caption" value="Nextime 網頁程式集">
             </div>
             <div class="field-item">
                 <label>網址 (URL):</label>
@@ -100,7 +100,7 @@
             </div>
             <div class="field-item">
                 <label>說明內容 (Subject):</label>
-                <textarea id="subject" rows="7">第一行說明&#10;第二行說明&#10;第三行說明&#10;第四行說明&#10;第五行說明</textarea>
+                <textarea id="subject" rows="7">支援圖文上下或左右並排&#10;自定尺寸、字體大小&#10;適配各種規格的標籤紙</textarea>
             </div>
             <button id="generate" onclick="mainProcess()">產生並下載 .docx 檔案</button>
             <div id="status"></div>
@@ -176,6 +176,6 @@
 })();
 </script>
 
-<script src="script.js?ver=1.00b"></script>
+<script src="script.js?ver=1.00c"></script>
 </body>
 </html>

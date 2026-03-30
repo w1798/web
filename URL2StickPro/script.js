@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (el) el.value = config[id];
         });
     } else {
-        hSel.value = 4; vSel.value = 5;
+        hSel.value = 5; vSel.value = 6;
     }
 });
 
