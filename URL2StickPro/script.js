@@ -102,9 +102,7 @@ async function mainProcess() {
     const { Document, Packer, Paragraph, Table, TableRow, TableCell, WidthType, ImageRun, AlignmentType, VerticalAlign, TextRun, BorderStyle, TableLayoutType } = window.docx;
     const status = document.getElementById('status');
     
-    try {
-        status.innerText = "正在生成文件中...";
-        
+    try {        
         // 1. 抓取所有介面數值
         const caption = document.getElementById('caption').value;
         let url = document.getElementById('url').value;
@@ -291,7 +289,6 @@ async function mainProcess() {
 
         const blob = await Packer.toBlob(doc);
         saveAs(blob, `${caption}_標籤.docx`);
-        status.innerText = "下載成功！";
     } catch (err) {
         status.innerText = "錯誤: " + err.message;
         console.error(err);
