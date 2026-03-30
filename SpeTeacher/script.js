@@ -16,7 +16,7 @@ function initLibrary() {
     script.onerror = function() {
         console.warn("外部庫載入失敗，嘗試本地載入...");
         const fallback = document.createElement('script');
-        fallback.src = 'chart.js';
+        fallback.src = 'libs/chart.js';
         document.head.appendChild(fallback);
     };
     

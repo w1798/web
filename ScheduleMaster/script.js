@@ -15,7 +15,7 @@ function initLibrary() {
     script.onerror = function() {
         console.warn("外部庫載入失敗，嘗試本地載入...");
         const fallback = document.createElement('script');
-        fallback.src = 'mammoth.browser.min.js';
+        fallback.src = 'libs/mammoth.browser.min.js';
         document.head.appendChild(fallback);
     };
     

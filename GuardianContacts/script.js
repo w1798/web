@@ -18,7 +18,7 @@ function initLibrary() {
     script.onerror = function() {
         console.warn("外部庫載入失敗，嘗試本地載入...");
         const fallback = document.createElement('script');
-        fallback.src = 'xlsx.full.min.js';
+        fallback.src = 'libs/xlsx.full.min.js';
         document.head.appendChild(fallback);
     };
     
