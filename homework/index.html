@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>作業動態曆 by Charles Nextime</title>
-    <link rel="stylesheet" href="style.css?ver=1.03a">
+    <link rel="stylesheet" href="style.css?ver=1.03b">
 </head>
 <body class="theme-ocean">
     <header class="header-bar">
@@ -105,20 +105,20 @@
 
 
 
-<div class="s-row">
-    <span>直書橫書</span>
-    <select id="writingModeSelect">
-        <option value="horizontal-tb">橫書</option>
-        <option value="vertical-rl">直書</option>
-    </select>
-</div>
-<div class="s-row">
-    <span>國字注音</span>
-    <select id="displayModeSelect">
-        <option value="text">國字</option>
-        <option value="bopomofo">注音</option>
-    </select>
-</div>
+                <div class="s-row">
+                    <span>直書橫書</span>
+                    <select id="writingModeSelect">
+                        <option value="horizontal-tb">橫書</option>
+                        <option value="vertical-rl">直書</option>
+                    </select>
+                </div>
+                <div class="s-row">
+                    <span>國字注音</span>
+                    <select id="displayModeSelect">
+                        <option value="text">國字</option>
+                        <option value="bopomofo">注音</option>
+                    </select>
+                </div>
 
 
 
@@ -150,20 +150,20 @@
                     </div>
 
 
-<p> 雲端備份設定 (<a href="https://w1798.github.io/web/JsonCloudGuide" target="_blank">申請說明</a>)</p>
-<div class="settings-column">
-    <div class="settings-row">
-        <label><input type="text" id="binId" style="width:180px" autocomplete="off"  placeholder="URL or JSONBinID">
-            <button onclick="resetBinField('binId')">重置</button>
-        </label>
-    </div>
-    <div class="settings-row">
-        <label><input type="text" id="apiKey" style="width:180px" autocomplete="off" placeholder="Token or X-Access-Key" >
-            <button onclick="resetBinField('apiKey')">重置</button>
-        </label>
-    </div>
-  
-</div>
+                <p> 雲端備份設定 (<a href="https://w1798.github.io/web/JsonCloudGuide" target="_blank">申請說明</a>)</p>
+                <div class="settings-column">
+                    <div class="settings-row">
+                        <label><input type="text" id="binId" style="width:180px" autocomplete="off"  placeholder="URL or JSONBinID">
+                            <button onclick="resetBinField('binId')">重置</button>
+                        </label>
+                    </div>
+                    <div class="settings-row">
+                        <label><input type="text" id="apiKey" style="width:180px" autocomplete="off" placeholder="Token or X-Access-Key" >
+                            <button onclick="resetBinField('apiKey')">重置</button>
+                        </label>
+                    </div>
+                  
+                </div>
 
 
                 </div>
@@ -198,6 +198,86 @@
         </div>
     </div>
 
+
+    <div id="smartScheduleModal" class="modal">
+        <div class="modal-content full">
+            <div class="modal-header-zone">
+                <h2>智慧預排助手</h2>
+                <button onclick="closeSmartModal()">關閉</button>
+            </div>
+            
+            <div class="modal-body-zone" style="display: flex; gap: 20px;">
+                <div style="flex: 1; border-right: 1px solid #ccc; padding-right: 20px;">
+                    <div class="s-row">
+                        <span>唯一作業：</span>
+                        <div id="smartTaskTags" class="tag-row">
+                            </div>
+                    </div>
+                    <hr>
+                    <div class="s-row">
+                        <span>開始日期：</span>
+                        <input type="date" id="smartStartDate">
+                    </div>
+                    <div class="s-row">
+                        <span>前置詞：</span>
+                        <input type="text" id="smartPrefix" placeholder="如：數習">
+                    </div>
+                    <div class="s-row">
+                        <span>起始頁碼：</span>
+                        <input type="number" id="smartStartNum" value="1">
+                        <span style="min-width: 60px; margin-left:10px;">補零：</span>
+                        <select id="smartPadding">
+                            <option value="1">不補</option>
+                            <option value="2">01</option>
+                            <option value="3">001</option>
+                        </select>
+                    </div>
+                    <div class="s-row">
+                        <span>後置詞：</span>
+                        <input type="text" id="smartSuffix" placeholder="如：頁">
+                    </div>
+                    <div class="s-row">
+                        <span>每次派幾項：</span>
+                        <input type="number" id="smartCountPerDay" value="1">
+                    </div>
+                    <div class="s-row">
+                        <span>共產出幾次：</span>
+                        <input type="number" id="smartTotalTimes" value="5">
+                    </div>
+                    
+                    <div class="s-row">
+                        <span>每隔幾天：</span>
+                        <input type="number" id="smartIntervalDays" value="1" min="1">
+                        <small style="color: #666; margin-left: 5px;">(1:每天, 2:隔天...)</small>
+                    </div>
+                    
+                    <div class="s-row">
+                        <span>派發週期：</span>
+                        <div style="font-size: 0.8rem;">
+                            <input type="checkbox" class="weekDay" value="1" checked>一
+                            <input type="checkbox" class="weekDay" value="2" checked>二
+                            <input type="checkbox" class="weekDay" value="3" checked>三
+                            <input type="checkbox" class="weekDay" value="4" checked>四
+                            <input type="checkbox" class="weekDay" value="5" checked>五
+                        </div>
+                    </div>
+                    <button class="confirm-btn" style="width:100%; margin-top:20px;" onclick="previewSchedule()">產生預覽列表</button>
+                </div>
+
+                <div style="flex: 1.5; display: flex; flex-direction: column;">
+                    <h3>預覽列表 (可在此手動修改作業或拖曳作業換天)</h3>
+                    <div id="previewContainer" style="flex:1; overflow-y:auto; border:1px solid #eee; background:#f9f9f9; padding:10px;">
+                        </div>
+                    <div class="modal-footer-zone">
+                        <button class="confirm-btn" onclick="applySchedule()">確認並寫入作業</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
     <div id="editModal" class="modal">
         <div class="modal-content full no-padding-flex">
             <div class="modal-header-zone" style="display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding-top: 5px; padding-bottom: 0px;">
@@ -208,7 +288,10 @@
                             顯示起點：<input type="date" id="editStartDatePicker" onchange="renderEdit()">
                         </div>
                     </div>
+                    
+                                  
                     <div class="btn-group-right">
+                        <button onclick="openSmartModal()" style="background-color: #e3f2fd; border-color: #2196f3; color: #1976d2;">智慧預排</button>
                         <button onclick="addDayAtStart()">開頭加一天</button>
                         <button onclick="addDayAtEnd()">末尾加一天</button>　　
                         <button onclick="closeModal('editModal')">取消</button>　　
@@ -319,6 +402,6 @@
 </script>
 
 
-    <script src="script.js?ver=1.03a"></script>
+    <script src="script.js?ver=1.03b"></script>
 </body>
 </html>

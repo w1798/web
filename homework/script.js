@@ -21,7 +21,7 @@ let appData = {
     theme: 'theme-ocean', cols: 5, mainShowCount: 7, editCols: 7, editShowCount: 28,
     direction: 'ltr', weekendMode: 'both', fsMain: 18, fsSet: 16, fsEdit: 16, autoDeleteDays: 30,
     mainStartDate: new Date().toISOString().split('T')[0], 
-    tasks: [],
+    tasks: {},
     startDayType: 'monday', // 新增：可選 'monday', 'sunday', 'today'
     cardHeight: 'large', // 新增：可選 'small', 'medium', 'large'
     completionRecord: 'yesterday',
@@ -69,6 +69,175 @@ function init() {
 }
 
 const themeChineseNames = { 'theme-ocean': '海洋', 'theme-forest': '森林', 'theme-sakura': '櫻花', 'theme-sunset': '夕陽', 'theme-lavender': '薰衣草', 'theme-lemon': '檸檬', 'theme-slate': '岩石', 'theme-mint': '薄荷', 'theme-rose': '玫瑰', 'theme-cocoa': '可可', 'theme-deepsea': '深海', 'theme-cream': '奶油', 'theme-grape': '葡萄', 'theme-silver': '銀白', 'theme-fire': '火焰' };
+
+let tempPreviewList = []; 
+
+function previewSchedule() {
+    const startDateVal = document.getElementById('smartStartDate').value;
+    const prefix = document.getElementById('smartPrefix').value.trim();
+    const startNum = parseInt(document.getElementById('smartStartNum').value) || 1;
+    const padding = parseInt(document.getElementById('smartPadding').value);
+    const suffix = document.getElementById('smartSuffix').value;
+    const countPerDay = parseInt(document.getElementById('smartCountPerDay').value) || 1;
+    const totalTimes = parseInt(document.getElementById('smartTotalTimes').value) || 1;
+    const intervalDays = parseInt(document.getElementById('smartIntervalDays').value) || 1;
+    
+    // 取得勾選的星期 (1-7)
+    const allowedDays = Array.from(document.querySelectorAll('.weekDay:checked')).map(el => parseInt(el.value));
+    
+    if (!startDateVal || !prefix) { alert("請選擇日期與輸入唯一作業名稱"); return; }
+
+    let currDate = new Date(startDateVal);
+    let currNum = startNum;
+    let successCount = 0;   // 成功排入作業的次數
+    let intervalCounter = 0; // 用來處理「每隔幾天」的計數器
+    
+    tempPreviewList = [];
+
+    // 迴圈直到達到使用者要求的「總共幾次」
+    while (successCount < totalTimes) {
+        let dateStr = currDate.toISOString().split('T')[0];
+        let dayOfWeek = currDate.getDay(); 
+        let dayKey = (dayOfWeek === 0) ? 7 : dayOfWeek; // 轉為 1(一) 到 7(日)
+
+        // A. 先判斷是否為固定假日 (六日)
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            tempPreviewList.push({ date: dateStr, text: "假日", isSkip: true });
+        } 
+        // B. 判斷是否符合使用者勾選的「派發週期」或「日」字規則
+        else if (!allowedDays.includes(dayKey) || prefix.endsWith('日')) {
+            tempPreviewList.push({ date: dateStr, text: "跳過 (非派發日)", isSkip: true });
+        } 
+        // C. 是工作日，處理「每隔幾天」邏輯
+        else {
+            if (intervalCounter === 0) {
+                // 真正排入作業
+                const formatNum = (n) => String(n).padStart(padding === 1 ? 0 : padding, '0');
+                let taskText = "";
+                if (countPerDay > 1) {
+                    taskText = `${prefix}${formatNum(currNum)}~${formatNum(currNum + countPerDay - 1)}${suffix}`;
+                    currNum += countPerDay;
+                } else {
+                    taskText = `${prefix}${formatNum(currNum)}${suffix}`;
+                    currNum += 1;
+                }
+
+                tempPreviewList.push({ date: dateStr, text: taskText, isSkip: false });
+                successCount++;
+                intervalCounter = intervalDays - 1; // 設定下一次要跳過的次數
+            } else {
+                // 這是因為「每隔幾天」產生的間隔跳過
+                tempPreviewList.push({ date: dateStr, text: "間隔跳過", isSkip: true });
+                intervalCounter--;
+            }
+        }
+        
+        // 日期強迫往後推一天
+        currDate.setDate(currDate.getDate() + 1);
+
+        // 安全機制：避免無窮迴圈（例如沒勾任何日子）
+        if (tempPreviewList.length > 500) break; 
+    }
+    renderPreview();
+}
+
+
+function saveData() {
+    try {
+        // 強制檢查：如果 tasks 還是陣列，轉為物件，否則 JSON 存不進日期 Key
+        if (Array.isArray(appData.tasks)) {
+            const newObj = {};
+            // 如果原本陣列裡有舊資料，試著搬移（通常陣列狀態下是空的）
+            appData.tasks = newObj;
+        }
+
+        // 統一儲存到 homework_v1，與 init() 保持一致
+        localStorage.setItem('homework_v1', JSON.stringify(appData));
+        console.log("資料已成功儲存至 homework_v1", appData.tasks);
+    } catch (e) {
+        console.error("儲存失敗", e);
+    }
+}
+
+
+function renderPreview() {
+    const container = document.getElementById('previewContainer');
+    if (tempPreviewList.length === 0) {
+        container.innerHTML = '<div style="text-align:center;color:#999;margin-top:20px;">請設定參數後按「產生預覽」</div>';
+        return;
+    }
+
+    let html = '';
+    tempPreviewList.forEach((item, index) => {
+        const isHoliday = item.isSkip;
+        // 加入 draggable 與相關事件
+        html += `
+            <div class="preview-item" 
+                 style="display:flex; align-items:center; gap:8px; padding:5px; border-bottom:1px solid #eee; background: ${isHoliday ? '#f9f9f9' : '#fff'}; cursor: move;"
+                 draggable="true"
+                 ondragstart="dragPreview(event, ${index})"
+                 ondragover="allowDropPreview(event)"
+                 ondrop="dropPreview(event, ${index})">
+                
+                <b style="width:100px; font-size:0.9rem; pointer-events: none;">${item.date}</b>
+                
+                <input type="text" 
+                       value="${item.text}" 
+                       style="flex:1; padding:4px; border:1px solid #ccc; border-radius:4px; ${isHoliday ? 'color:#999; border:none; background:transparent;' : ''}"
+                       onchange="tempPreviewList[index].text = this.value"
+                       draggable="false"> <div style="display:flex; gap:2px; pointer-events: none;">
+                    <small style="color:#666;">${getDayName(item.date)}</small>
+                </div>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+
+let draggedPreviewIndex = null;
+
+// 開始拖曳時記錄索引
+function dragPreview(event, index) {
+    draggedPreviewIndex = index;
+    event.dataTransfer.setData("text/plain", index);
+    event.target.style.opacity = "0.5"; // 拖曳中的視覺效果
+}
+
+// 允許放置
+function allowDropPreview(event) {
+    event.preventDefault();
+}
+
+// 放下時交換內容
+function dropPreview(event, targetIndex) {
+    event.preventDefault();
+    if (draggedPreviewIndex === null || draggedPreviewIndex === targetIndex) return;
+
+    // 交換 tempPreviewList 中的 text 與 isSkip (保持日期不動)
+    const sourceData = tempPreviewList[draggedPreviewIndex];
+    const targetData = tempPreviewList[targetIndex];
+
+    const tempText = sourceData.text;
+    const tempSkip = sourceData.isSkip;
+
+    sourceData.text = targetData.text;
+    sourceData.isSkip = targetData.isSkip;
+
+    targetData.text = tempText;
+    targetData.isSkip = tempSkip;
+
+    // 重設狀態並刷新畫面
+    draggedPreviewIndex = null;
+    renderPreview();
+}
+
+
+// 輔助：取得星期幾名稱
+function getDayName(dateString) {
+    const days = ['日', '一', '二', '三', '四', '五', '六'];
+    return days[new Date(dateString).getDay()];
+}
 
 
 function applyBopoTransform(text) {
@@ -120,24 +289,25 @@ function applyBopoTransform(text) {
 
 
 
-// 使其回傳過濾後的陣列而不只是修改全域
 function performAutoDelete() {
     const days = parseInt(appData.autoDeleteDays);
-    if (days === 0) return; // 0 代表不自動刪除
+    if (days === 0 || Array.isArray(appData.tasks)) return; 
 
-    // 計算截止日期 (今天 - 設定天數)
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - days);
     const cutoffStr = cutoffDate.toISOString().split('T')[0];
 
-    // 過濾掉舊作業
-    const originalCount = appData.tasks.length;
-    appData.tasks = appData.tasks.filter(t => t.date >= cutoffStr);
+    let deleted = false;
+    for (let dateKey in appData.tasks) {
+        if (dateKey < cutoffStr) {
+            delete appData.tasks[dateKey];
+            deleted = true;
+        }
+    }
     
-    // 如果有刪除資料，就存入 localStorage
-    if (originalCount !== appData.tasks.length) {
-        localStorage.setItem('homework_v2026', JSON.stringify(appData));
-        console.log(`已自動刪除 ${originalCount - appData.tasks.length} 筆過期作業`);
+    if (deleted) {
+        saveData();
+        console.log(`已自動刪除過期作業`);
     }
 }
 
@@ -165,6 +335,7 @@ function getCalculatedStartDate() {
 }
 
 
+
 function renderMain(isManual = false) {
     document.body.className = appData.theme;
 
@@ -174,69 +345,82 @@ function renderMain(isManual = false) {
     document.documentElement.style.setProperty('--fs-main', appData.fsMain + 'px');
     document.documentElement.style.setProperty('--fs-set', appData.fsSet + 'px');
     document.documentElement.style.setProperty('--fs-edit', appData.fsEdit + 'px');
+    
     const mb = document.getElementById('mainBoard');
     mb.style.gridTemplateColumns = `repeat(${appData.cols}, 1fr)`;
     mb.dir = appData.direction;
 
-// --- 修正點：只有在非手動調整時才自動計算起點 ---
+    // --- 修正點 1：處理起始日期 ---
     if (!isManual) {
         const calculatedStart = getCalculatedStartDate();
         appData.mainStartDate = calculatedStart; 
         document.getElementById('mainStartDatePicker').value = calculatedStart;
     } else {
-        // 如果是手動選取的，確保 picker 顯示的是手動選的那天
         document.getElementById('mainStartDatePicker').value = appData.mainStartDate;
     }
 
-    const filtered = appData.tasks.filter(t => {
-        if(t.date < appData.mainStartDate) return false;
-        if(appData.weekendMode === 'sat') return t.day !== '日';
-        if(appData.weekendMode === 'none') return t.day !== '六' && t.day !== '日';
+    // --- 修正點 2：將物件格式的 tasks 轉換為可篩選的陣列 ---
+    let taskArray = [];
+    if (appData.tasks && typeof appData.tasks === 'object' && !Array.isArray(appData.tasks)) {
+        // 將 { "2026-03-30": [...] } 轉為 [ {date: "2026-03-30", list: [...]}, ... ]
+        taskArray = Object.keys(appData.tasks).map(date => {
+            const d = new Date(date);
+            return {
+                date: date,
+                day: "日一二三四五六"[d.getDay()],
+                list: appData.tasks[date]
+            };
+        });
+    } else {
+        // 保險起見，如果還是陣列則直接使用
+        taskArray = Array.isArray(appData.tasks) ? appData.tasks : [];
+    }
+
+    // 確保日期排序正確
+    taskArray.sort((a, b) => a.date.localeCompare(b.date));
+
+    // --- 修正點 3：執行篩選邏輯 ---
+    const filtered = taskArray.filter(t => {
+        if (t.date < appData.mainStartDate) return false;
+        if (appData.weekendMode === 'sat') return t.day !== '日';
+        if (appData.weekendMode === 'none') return t.day !== '六' && t.day !== '日';
         return true;
     }).slice(0, appData.mainShowCount);
 
-mb.innerHTML = filtered.map(item => {
-    const isVertical = appData.writingMode === 'vertical-rl';
-    const listClass = isVertical ? 'writing-vertical' : '';
-    
-    const styleMap = {
-        'disc': '●',
-        'circle': '○',
-        'square': '■',
-        'hollow-square': '□',
-        'diamond': '◆',
-        'dash': '-',
-        'decimal': '' 
-    };
-    
-    const symbol = styleMap[appData.listStyle || 'decimal'];
+    // --- 渲染 HTML ---
+    mb.innerHTML = filtered.map(item => {
+        const isVertical = appData.writingMode === 'vertical-rl';
+        const listClass = isVertical ? 'writing-vertical' : '';
+        
+        const styleMap = {
+            'disc': '●',
+            'circle': '○',
+            'square': '■',
+            'hollow-square': '□',
+            'diamond': '◆',
+            'dash': '-',
+            'decimal': '' 
+        };
+        
+        const symbol = styleMap[appData.listStyle || 'decimal'];
 
-    return `
-        <div class="day-card">
-            <h3>${item.date.split('-').slice(1).join('/')}(${item.day})</h3>
-            <ul class="${listClass}">${item.list.map((t, idx) => {
-                
-                // A. 決定前綴符號
-                let prefix = "";
-                if (appData.listStyle === 'decimal') {
-                    // 如果是直書，只給數字；如果是橫書，給數字加點
-                    prefix = isVertical ? `${idx + 1}` : `${idx + 1}.`;
-                } else {
-                    prefix = symbol;
-                }
-                
-                // B. 將「前綴」與「內容」合體
-                const fullText = prefix + t;
-                
-                // C. 進行注音轉換
-                return `<li>${applyBopoTransform(fullText)}</li>`;
-            }).join('')}</ul>
-        </div>
-    `;
-}).join('');
+        return `
+            <div class="day-card">
+                <h3>${item.date.split('-').slice(1).join('/')}(${item.day})</h3>
+                <ul class="${listClass}">${item.list.map((t, idx) => {
+                    let prefix = "";
+                    if (appData.listStyle === 'decimal') {
+                        prefix = isVertical ? `${idx + 1}` : `${idx + 1}.`;
+                    } else {
+                        prefix = symbol;
+                    }
+                    const fullText = prefix + t;
+                    return `<li>${applyBopoTransform(fullText)}</li>`;
+                }).join('')}</ul>
+            </div>
+        `;
+    }).join('');
 
-    
-    // 應用方向
     mb.dir = appData.direction;
 }
 
@@ -266,20 +450,22 @@ function ensureEditDaysExist(startDateStr) {
 }
 
 
-// 編修核心函數
 function openEdit() {
-    // 1. 複製目前的資料
-    tempTasks = JSON.parse(JSON.stringify(appData.tasks || []));
+    // 修正：使用 JSON 序列化進行深拷貝，切斷與 appData.tasks 的引用關係
+    const rawTasks = JSON.parse(JSON.stringify(appData.tasks || {}));
     
-    // 2. 設定編修起始日期（預設為今天）
+    // 將物件轉為陣列供編輯器使用
+    tempTasks = Object.keys(rawTasks).map(date => ({
+        date: date,
+        day: "日一二三四五六"[new Date(date).getDay()],
+        list: rawTasks[date]
+    })).sort((a, b) => a.date.localeCompare(b.date));
+
+    // 設定起點日期
     const todayStr = new Date().toISOString().split('T')[0];
-    const datePicker = document.getElementById('editStartDatePicker');
-    if (datePicker) datePicker.value = todayStr;
-    
-    // 3. 【關鍵】執行自動補齊邏輯
+    document.getElementById('editStartDatePicker').value = todayStr;
+
     ensureEditDaysExist(todayStr);
-    
-    // 4. 渲染與顯示
     renderEdit();
     document.getElementById('editModal').style.display = 'block';
 }
@@ -292,17 +478,17 @@ function renderEdit() {
     const showCount = parseInt(appData.editShowCount) || 28;
     eb.style.gridTemplateColumns = `repeat(${appData.editCols}, 1fr)`;
 
-    // 確保切換日期時，如果該日期之後是空的也會自動補齊
+    // 確保切換日期時，自動補齊
     ensureEditDaysExist(startD);
 
-    // 篩選出從選定日期開始的顯示範圍
+    // 篩選出顯示範圍
     let startIdx = tempTasks.findIndex(t => t.date >= startD);
     if (startIdx === -1) startIdx = 0;
     
     const displayList = tempTasks.slice(startIdx, startIdx + showCount);
 
-    eb.innerHTML = displayList.map((item, localIdx) => {
-        const gIdx = tempTasks.findIndex(t => t.date === item.date); // 取得在 tempTasks 中的真實索引
+    eb.innerHTML = displayList.map((item) => {
+        const gIdx = tempTasks.findIndex(t => t.date === item.date); // 真實索引
         const validList = (item.list || []).filter(t => t && t.trim());
         const dateParts = item.date.split('-');
         const shortDate = `${dateParts[1]}/${dateParts[2]}`;
@@ -317,8 +503,11 @@ function renderEdit() {
                 ${validList.map((t, ti) => `
                     <li class="task-box" draggable="true" 
                         ondragstart="dragT(event,${gIdx},${ti})" 
-                        ondrop="dropT(event,${gIdx},${ti})">
-                        ${t} <span onclick="delT(${gIdx},${ti})" style="cursor:pointer">✕</span>
+                        ondrop="dropT(event,${gIdx},${ti})"
+                        ondblclick="editTaskName(${gIdx}, ${ti})"
+                        title="雙點擊可修改作業內容"
+                        style="cursor: pointer;">
+                        ${t} <span onclick="delT(${gIdx},${ti})" style="cursor:pointer; margin-left:5px">✕</span>
                     </li>`).join('')}
             </ul>
             <div style="display:flex; gap:2px">
@@ -327,8 +516,39 @@ function renderEdit() {
             </div>
         </div>`;
     }).join('');
-    updateLastCompletionUI(); // 在渲染編修介面時同時更新頂部狀態
+    
+    if (typeof updateLastCompletionUI === 'function') {
+        updateLastCompletionUI(); 
+    }
 }
+
+/**
+ * 雙擊修改作業內容
+ * @param {number} gIdx - 在 tempTasks 中的日期索引
+ * @param {number} ti - 作業在該日期列表中的索引
+ */
+function editTaskName(gIdx, ti) {
+    const oldVal = tempTasks[gIdx].list[ti];
+    const newVal = prompt("請輸入修改後的作業內容：", oldVal);
+
+    // 檢查使用者是否有輸入新內容，且不為 null (取消)
+    if (newVal !== null) {
+        const trimmedVal = newVal.trim();
+        if (trimmedVal !== "" && trimmedVal !== oldVal) {
+            // 更新暫存資料
+            tempTasks[gIdx].list[ti] = trimmedVal;
+            // 重新渲染編輯畫面
+            renderEdit();
+            console.log(`已修改索引 ${gIdx}-${ti} 的作業為: ${trimmedVal}`);
+        } else if (trimmedVal === "") {
+            // 如果輸入空白，詢問是否刪除
+            if (confirm("內容為空，是否要刪除此項作業？")) {
+                delT(gIdx, ti);
+            }
+        }
+    }
+}
+
 
 function updateDateChain(startIndex) {
     for (let i = startIndex + 1; i < tempTasks.length; i++) {
@@ -561,58 +781,58 @@ function updateDateChainAndReorder(startIndex) {
 
 
 
-// 修改 executeFullShift 函數
-function executeFullShift(startIdx, taskName, keyword) {
-    let currentCarrier = taskName; 
-    for (let i = startIdx; i < tempTasks.length; i++) {
-        // --- 修改點：遇到最後一個字為 "日" 的項目排除推移 ---
-        if (tempTasks[i].list.some(t => t && t.endsWith("日"))) continue;
+function executeFullShift(startDayIdx, newTask, matchKey, oldTaskContent) {
+    let dayIdx = startDayIdx;
+    let taskToPush = newTask;
+    let taskToBeDisplaced = oldTaskContent;
 
-        let list = tempTasks[i].list;
-        let foundIdx = list.findIndex(t => t && t.includes(keyword));
+    while (dayIdx < tempTasks.length) {
+        const currentList = tempTasks[dayIdx].list;
         
-        if (foundIdx !== -1) {
-            let backup = list[foundIdx];
-            list[foundIdx] = currentCarrier;
-            currentCarrier = backup; 
-        } else if (currentCarrier && currentCarrier.trim() !== "") {
-            list.push(currentCarrier);
-            currentCarrier = ""; 
+        // 在當天尋找跟 matchKey 匹配的作業
+        const targetInDay = currentList.findIndex(t => t.startsWith(matchKey));
+
+        if (targetInDay !== -1) {
+            // 備份當天那個要被擠走的東西，供明天使用
+            const nextDisplaced = currentList[targetInDay];
+            
+            // 把今天的新東西塞入那個位置
+            currentList[targetInDay] = taskToPush;
+            
+            // 準備處理明天：明天要塞入的東西就是今天被擠走的東西
+            taskToPush = nextDisplaced;
+            
+            // 跳到下一天 (需避開假日邏輯)
+            dayIdx = getNextValidWorkDayIdx(dayIdx);
+        } else {
+            // 如果這天沒有同類型的作業，就直接把擠過來的東西加在最後面，然後結束推移
+            currentList.push(taskToPush);
+            break;
         }
-    }
-    
-    // 2. 當作業推移超過目前最後一天時，自動產生新日期
-    if (currentCarrier && currentCarrier.trim() !== "") {
-        let lastDate = new Date(tempTasks[tempTasks.length - 1].date);
-        lastDate.setDate(lastDate.getDate() + 1);
-        
-        let newDayDate = lastDate.toISOString().split('T')[0];
-        let newDayWeek = "日一二三四五六"[lastDate.getDay()];
-        let newList = [];
-        
-        if (newDayWeek === '六' || newDayWeek === '日') {
-            newList.push("假日");
-        }
-        
-        let newDay = {
-            date: newDayDate,
-            day: newDayWeek,
-            list: newList
-        };
-        
-        tempTasks.push(newDay);
-        executeFullShift(tempTasks.length - 1, currentCarrier, keyword);
     }
 }
 
-
+function getNextValidWorkDayIdx(currentIdx) {
+    let nextIdx = currentIdx + 1;
+    while (nextIdx < tempTasks.length) {
+        const item = tempTasks[nextIdx];
+        const isWeekend = (item.day === '六' || item.day === '日');
+        const isManualHoliday = item.list.some(t => typeof t === 'string' && t.endsWith('日'));
+        
+        if (!isWeekend && !isManualHoliday) return nextIdx;
+        nextIdx++;
+    }
+    return nextIdx;
+}
 
 
 // 新增作業 UI
 function prepT(idx) {
-    targetIdx = idx; selectedPre.clear(); selectedMain.clear();
+    targetIdx = idx; // 記錄目前是哪一天要新增
+    selectedPre.clear(); 
+    selectedMain.clear();
     document.getElementById('taskFinalInput').value = '';
-    renderTags();
+    renderTags(); // 渲染那些 國習、數習 等標籤
     document.getElementById('taskPromptModal').style.display = 'block';
 }
 
@@ -640,27 +860,36 @@ function clickTag(type, val) {
     renderTags();
 }
 
+
 function confirmAddTask() {
-    let final = (Array.from(selectedPre).join('') + Array.from(selectedMain).join('') + document.getElementById('taskFinalInput').value).trim();
+    const preStr = Array.from(selectedPre).join('');   
+    const mainStr = Array.from(selectedMain).join(''); 
+    const subStr = document.getElementById('taskFinalInput').value.trim(); 
     
+    const final = (preStr + mainStr + subStr).trim();
+    const matchKey = (preStr + mainStr).trim(); // 比對關鍵：前置 + 唯一作業
+
     if (final && targetIdx !== -1) {
-        // 找出作業中是否包含 mainTasks 定義的關鍵字（如：數習、國習）
-        const keyword = appData.mainTasks.find(k => final.includes(k));
+        const tasksForDay = tempTasks[targetIdx].list;
         
-        if (keyword) {
-            // --- 修改核心邏輯 ---
-            // 檢查目標日期當天是否已經有包含該關鍵字的作業
-            const alreadyHasKeyword = tempTasks[targetIdx].list.some(t => t && t.includes(keyword));
+        // 找到當天「第一個」符合前置+唯一作業的具體內容
+        const existingIdx = tasksForDay.findIndex(t => 
+            matchKey !== "" && typeof t === 'string' && t.startsWith(matchKey)
+        );
+
+        if (existingIdx !== -1) {
+            const currentTaskContent = tasksForDay[existingIdx]; // 這是被撞到的那個作業
             
-            if (alreadyHasKeyword) {
-                // 如果當天「已有」重複作業，執行原本的連動推移邏輯
-                executeFullShift(targetIdx, final, keyword);
-            } else {
-                // 如果當天「沒有」重複作業，直接新增進去，不觸發推移
-                tempTasks[targetIdx].list.push(final);
+            if (currentTaskContent !== final) {
+                if (confirm(`日期 ${tempTasks[targetIdx].date} 已有相同類型作業：「${currentTaskContent}」\n\n按【確定】：取代並將「${currentTaskContent}」推移至隔日\n按【取消】：直接新增但不推移`)) {
+                    
+                    // 關鍵修改：傳入 currentTaskContent (舊內容) 而非只傳 keyword
+                    executeFullShift(targetIdx, final, matchKey, currentTaskContent);
+                } else {
+                    tempTasks[targetIdx].list.push(final);
+                }
             }
         } else {
-            // 沒有關鍵字的普通作業（如：帶剪刀），直接新增
             tempTasks[targetIdx].list.push(final);
         }
         
@@ -668,6 +897,7 @@ function confirmAddTask() {
         closeModal('taskPromptModal');
     }
 }
+
 
 // 設定與存檔
 function resetField(type) {
@@ -742,23 +972,19 @@ function openSettings() {
     document.getElementById('settingsModal').style.display = 'block';
 }
 
-function saveEdit() { 
-    // 1. 同步日期選擇器
-    const editStartD = document.getElementById('editStartDatePicker').value;
-    appData.mainStartDate = editStartD;
-    document.getElementById('mainStartDatePicker').value = editStartD;
-    
-    // 2. 將編輯中的 tempTasks 同步回主資料
-    appData.tasks = tempTasks; 
+function saveEdit() {
+    // 將 tempTasks (陣列) 轉回 appData.tasks (物件)
+    const newTasksObj = {};
+    tempTasks.forEach(item => {
+        newTasksObj[item.date] = item.list;
+    });
+    appData.tasks = newTasksObj;
 
-    // 3. 【關鍵：存檔前先清理】
-    // 這樣可以確保寫入 localStorage 的資料永遠是清理過的
-    performAutoDelete();
+    // 真正的寫入 LocalStorage
+    saveData(); 
     
-    // 4. 正式寫入資料庫並渲染
-    localStorage.setItem('homework_v1', JSON.stringify(appData)); 
-    renderMain(); 
-    closeModal('editModal'); 
+    renderMain(true);
+    closeModal('editModal');
 }
 
 
@@ -919,7 +1145,17 @@ async function cloudSync(method = 'UPLOAD') {
     }
 }
 
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+function closeModal(id) {
+    document.getElementById(id).style.display = 'none';
+    if (id === 'editModal') {
+        // 重新從 localStorage 載入，確保資料是最乾淨的
+        const savedData = localStorage.getItem('homework_v1');
+        if (savedData) {
+            appData = JSON.parse(savedData);
+        }
+        renderMain(true); // 強制還原主頁
+    }
+}
 
 // 尋找 script.js 中的 updateMainStartDate 並修改如下
 function updateMainStartDate() { 
@@ -1019,6 +1255,85 @@ window.handleSaveAction = function(event) {
     }
 }
 
+
+function openSmartModal() {
+    document.getElementById('smartScheduleModal').style.display = 'block';
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('smartStartDate').value = today;
+
+    const tagContainer = document.getElementById('smartTaskTags');
+    tagContainer.innerHTML = '';
+    
+    // --- 修正處：過濾掉最後一個字是「日」的作業 ---
+    const filteredTasks = appData.mainTasks.filter(task => !task.endsWith('日'));
+    
+    filteredTasks.forEach(task => {
+        const span = document.createElement('span');
+        span.className = 'clickable-tag';
+        span.innerText = task;
+        span.onclick = function() {
+            Array.from(tagContainer.children).forEach(c => c.classList.remove('active'));
+            this.classList.add('active');
+            document.getElementById('smartPrefix').value = task;
+        };
+        tagContainer.appendChild(span);
+    });
+}
+
+// 關閉視窗
+function closeSmartModal() {
+    document.getElementById('smartScheduleModal').style.display = 'none';
+}
+
+
+function applySchedule() {
+    const validItems = tempPreviewList.filter(item => !item.isSkip);
+    const prefix = document.getElementById('smartPrefix').value.trim();
+
+    if (validItems.length === 0) return;
+
+    // 注意：這裡不再修改 appData.tasks，只修改 tempTasks
+    validItems.forEach(item => {
+        const d = item.date;
+        const newTaskText = item.text;
+
+        let targetIdx = tempTasks.findIndex(t => t.date === d);
+        if (targetIdx === -1) {
+            const dayName = "日一二三四五六"[new Date(d).getDay()];
+            tempTasks.push({ date: d, day: dayName, list: [] });
+            tempTasks.sort((a, b) => a.date.localeCompare(b.date));
+            targetIdx = tempTasks.findIndex(t => t.date === d);
+        }
+
+        const tasksForDay = tempTasks[targetIdx].list;
+        const existingIdx = tasksForDay.findIndex(t => 
+            prefix !== "" && typeof t === 'string' && t.startsWith(prefix)
+        );
+        
+
+        if (existingIdx !== -1) {
+            const currentTask = tasksForDay[existingIdx];
+            if (currentTask === newTaskText) return; 
+
+            // 詢問推移
+            if (confirm(`日期 ${d} 已有作業：「${currentTask}」\n\n按【確定】：取代並將舊作業向後推移\n按【取消】：保留舊作業並將此作業取消`)) {
+                executeFullShift(targetIdx, newTaskText, prefix);
+            }
+        } else {
+            tempTasks[targetIdx].list.push(newTaskText);
+        }
+    });
+
+    // 只刷新預覽，不呼叫 saveData()
+    closeSmartModal();
+    renderEdit(); 
+    
+    // 提示使用者尚未存檔
+    console.log("智慧預排已加入暫存，請按下編修管理的『確定』以永久儲存。");
+}
+
+ 
+ 
 // 點擊空白處關閉選單 (確保點擊選單以外的地方會關閉選單)
 window.onclick = function(event) {
     if (!event.target.matches('.small-btn')) {

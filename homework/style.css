@@ -170,6 +170,25 @@ body, html {
 .task-box { background: #f1f1f1; border: 1px solid #ddd; margin-top: 5px; padding: 8px; cursor: grab; display: flex; justify-content: space-between; font-size: var(--fs-edit); border-radius: 4px; }
 .edit-card button { font-size: calc(var(--fs-edit) * 0.9); padding: 6px 0; margin-top: 5px; cursor: pointer; border: 1px solid var(--btn); background: #fff; color: var(--btn); border-radius: 4px; }
 
+/* 確保智慧預排視窗永遠在最上層 */
+#smartScheduleModal {
+    z-index: 2000 !important; /* 比一般的 modal (1000) 更高 */
+}
+
+/* 讓預覽列表的輸入框更好看點 */
+.preview-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+}
+.preview-item input {
+    border: 1px solid #ccc;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
 /* ============================================================
    7. 新增作業項目
    ============================================================ */
