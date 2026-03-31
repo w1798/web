@@ -427,45 +427,81 @@ function renderMain(isManual = false) {
 
     
 function ensureEditDaysExist(startDateStr) {
-    // 固定只自動補 7 天，其餘交給手動按鈕
-    const autoDays = 7; 
-    let currentD = new Date(startDateStr);
+    // --- 修正處：檢查日期有效性 ---
+    let current = new Date(startDateStr);
     
-    for (let i = 0; i < autoDays; i++) {
-        const dateStr = currentD.toISOString().split('T')[0];
-        let exist = tempTasks.find(t => t.date === dateStr);
+    // 如果 startDateStr 是無效字串，current.getTime() 會是 NaN
+    if (isNaN(current.getTime())) {
+        console.warn("收到無效日期字串，已自動校正為今日:", startDateStr);
+        current = new Date();
+    }
+
+    // 往後補齊 40 天
+    for (let i = 0; i < 40; i++) {
+        const dStr = current.toISOString().split('T')[0];
+        const exists = tempTasks.find(t => t.date === dStr);
         
-        if (!exist) {
-            const dayName = "日一二三四五六"[currentD.getDay()];
+        if (!exists) {
             tempTasks.push({
-                date: dateStr,
-                day: dayName,
-                list: (dayName === '六' || dayName === '日') ? ["假日"] : []
+                date: dStr,
+                day: "日一二三四五六"[current.getDay()],
+                list: []
             });
         }
-        currentD.setDate(currentD.getDate() + 1);
+        current.setDate(current.getDate() + 1);
     }
-    // 排序確保顯示正確
     tempTasks.sort((a, b) => a.date.localeCompare(b.date));
 }
 
 
 function openEdit() {
-    // 修正：使用 JSON 序列化進行深拷貝，切斷與 appData.tasks 的引用關係
-    const rawTasks = JSON.parse(JSON.stringify(appData.tasks || {}));
+    // 1. 取得原始資料，確保它是一個物件
+    const rawData = appData.tasks || {};
     
-    // 將物件轉為陣列供編輯器使用
-    tempTasks = Object.keys(rawTasks).map(date => ({
-        date: date,
-        day: "日一二三四五六"[new Date(date).getDay()],
-        list: rawTasks[date]
-    })).sort((a, b) => a.date.localeCompare(b.date));
+    // 2. 將原始資料轉換為 tempTasks 陣列
+    // 我們要處理兩種可能：rawData 已經是陣列，或是它是一個以日期為 Key 的物件
+    if (Array.isArray(rawData)) {
+        // 如果已經是陣列格式，直接深拷貝一份給 tempTasks
+        tempTasks = JSON.parse(JSON.stringify(rawData));
+    } else {
+        // 如果是舊的物件格式 { "2024-03-31": ["作業1"], ... }
+        tempTasks = Object.keys(rawData).map(date => {
+            const d = new Date(date);
+            const dayIdx = d.getDay();
+            const finalDay = isNaN(dayIdx) ? "無" : "日一二三四五六"[dayIdx];
+            
+            let listData = rawData[date];
+            // 確保內容一定是陣列
+            if (!Array.isArray(listData)) {
+                listData = (typeof listData === 'string' && listData.trim()) ? [listData] : [];
+            }
 
-    // 設定起點日期
+            return {
+                date: date,
+                day: finalDay,
+                list: listData
+            };
+        });
+    }
+
+    // 3. 排序，確保日期由小到大
+    tempTasks.sort((a, b) => a.date.localeCompare(b.date));
+
+    // 4. 設定日期選擇器的初始值（預設今天）
     const todayStr = new Date().toISOString().split('T')[0];
-    document.getElementById('editStartDatePicker').value = todayStr;
+    const picker = document.getElementById('editStartDatePicker');
+    
+    if (picker) {
+        // 如果 picker 沒值，才設為今天；如果有值就維持原樣
+        if (!picker.value) picker.value = todayStr;
+    }
+    
+    const startD = (picker && picker.value) ? picker.value : todayStr;
 
-    ensureEditDaysExist(todayStr);
+    // 5. 補齊顯示範圍內的空白日期
+    ensureEditDaysExist(startD);
+
+    // 6. 渲染畫面並顯示視窗
     renderEdit();
     document.getElementById('editModal').style.display = 'block';
 }
@@ -478,25 +514,38 @@ function renderEdit() {
     const showCount = parseInt(appData.editShowCount) || 28;
     eb.style.gridTemplateColumns = `repeat(${appData.editCols}, 1fr)`;
 
-    // 確保切換日期時，自動補齊
     ensureEditDaysExist(startD);
 
-    // 篩選出顯示範圍
     let startIdx = tempTasks.findIndex(t => t.date >= startD);
     if (startIdx === -1) startIdx = 0;
     
     const displayList = tempTasks.slice(startIdx, startIdx + showCount);
 
     eb.innerHTML = displayList.map((item) => {
-        const gIdx = tempTasks.findIndex(t => t.date === item.date); // 真實索引
-        const validList = (item.list || []).filter(t => t && t.trim());
-        const dateParts = item.date.split('-');
-        const shortDate = `${dateParts[1]}/${dateParts[2]}`;
+        const gIdx = tempTasks.findIndex(t => t.date === item.date);
+        
+        // --- 修正處 1：確保 list 存在 ---
+        let rawList = item.list || [];
+        if (typeof rawList === 'string') rawList = [rawList];
+        const validList = Array.isArray(rawList) ? rawList.filter(t => t && t.trim()) : [];
+
+        // --- 修正處 2：防止日期出現 undefined ---
+        let displayDate = "無日期";
+        let displayDay = item.day || "無";
+
+        if (item.date && typeof item.date === 'string') {
+            const dateParts = item.date.split('-');
+            if (dateParts.length >= 3) {
+                displayDate = `${dateParts[1]}/${dateParts[2]}`;
+            } else {
+                displayDate = item.date;
+            }
+        }
 
         return `
         <div class="edit-card" ondragover="event.preventDefault()" ondrop="dropM(${gIdx})">
             <div class="edit-header" draggable="true" ondragstart="dragM(${gIdx})">
-                <div class="edit-header-title">${shortDate}(${item.day})</div>
+                <div class="edit-header-title">${displayDate}(${displayDay})</div>
                 <span class="edit-del-btn" onclick="delDay(${gIdx})">✕</span>
             </div>
             <ul class="edit-task-list" style="flex:1; overflow-y:auto; list-style:none; padding:0; margin:5px 0">
@@ -505,7 +554,6 @@ function renderEdit() {
                         ondragstart="dragT(event,${gIdx},${ti})" 
                         ondrop="dropT(event,${gIdx},${ti})"
                         ondblclick="editTaskName(${gIdx}, ${ti})"
-                        title="雙點擊可修改作業內容"
                         style="cursor: pointer;">
                         ${t} <span onclick="delT(${gIdx},${ti})" style="cursor:pointer; margin-left:5px">✕</span>
                     </li>`).join('')}
@@ -517,9 +565,7 @@ function renderEdit() {
         </div>`;
     }).join('');
     
-    if (typeof updateLastCompletionUI === 'function') {
-        updateLastCompletionUI(); 
-    }
+    if (typeof updateLastCompletionUI === 'function') updateLastCompletionUI();
 }
 
 /**
@@ -993,7 +1039,7 @@ function updateLastCompletionUI() {
     const statusDiv = document.getElementById('lastCompletionStatus');
     if (!statusDiv) return;
 
-    // 1. 取得模式與標籤
+    // 1. 取得模式與標籤 (保留原功能)
     const mode = appData.completionRecord || 'current';
     const labels = {
         'yesterday': '昨日完成：',
@@ -1003,7 +1049,7 @@ function updateLastCompletionUI() {
     };
     const labelText = labels[mode] || "完成紀錄：";
 
-    // 2. 決定搜尋起點日期 (searchDateStr)
+    // 2. 決定搜尋起點日期 (保留原功能)
     let searchDateStr;
     const todayStr = new Date().toISOString().split('T')[0];
 
@@ -1014,39 +1060,51 @@ function updateLastCompletionUI() {
     } else if (mode === 'today') {
         searchDateStr = todayStr;
     } else if (mode === 'current') {
-        // 以編修視窗選定的日期為基準
         searchDateStr = document.getElementById('editStartDatePicker')?.value || todayStr;
     } else if (mode === 'future') {
-        // 未來模式：不設上限，從最遠的日期開始找
         searchDateStr = '9999-12-31'; 
     }
 
-    // 3. 取得要比對的大項 (排除含「日」項目)
+    // 3. 取得要比對的大項 (保留原功能)
     let targetCategories = [];
     if (Array.isArray(appData.mainTasks)) {
         targetCategories = appData.mainTasks.filter(name => !name.includes("日"));
     }
 
     let finalDisplay = [];
-    const dataSource = (typeof tempTasks !== 'undefined' && tempTasks.length > 0) ? tempTasks : appData.tasks;
+    
+    // 確保 dataSource 永遠是可迭代的陣列
+    let dataSource = (typeof tempTasks !== 'undefined' && tempTasks.length > 0) ? tempTasks : [];
+    if (dataSource.length === 0 && appData.tasks) {
+        // 如果 tempTasks 沒東西，將物件格式的 appData.tasks 轉為陣列格式處理
+        dataSource = Object.keys(appData.tasks).map(date => ({
+            date: date,
+            list: appData.tasks[date]
+        }));
+    }
 
-    // 4. 執行搜尋
+    // 4. 執行搜尋 (加入防禦性檢查)
     targetCategories.forEach(category => {
-        // 過濾出符合時間範圍的作業，並依日期由新到舊排序
         const sortedDays = dataSource
-            .filter(d => d.date <= searchDateStr)
+            .filter(d => d && d.date && d.date <= searchDateStr)
             .sort((a, b) => b.date.localeCompare(a.date));
 
         for (let day of sortedDays) {
-            const foundTask = day.list.find(t => t.includes(category));
-            if (foundTask) {
-                finalDisplay.push(foundTask);
-                break; 
+            // --- 核心修正處：確保 day.list 是陣列，且內容 t 是字串後才呼叫 includes ---
+            if (Array.isArray(day.list)) {
+                const foundTask = day.list.find(t => 
+                    typeof t === 'string' && t.includes(category)
+                );
+                
+                if (foundTask) {
+                    finalDisplay.push(foundTask);
+                    break; 
+                }
             }
         }
     });
 
-    // 5. 格式化渲染
+    // 5. 格式化渲染 (保留原樣式)
     if (finalDisplay.length > 0) {
         const coloredItems = finalDisplay.map(item => `<span style="color:#EA0000; font-weight:bold;">${item}</span>`);
         const blueSeparator = `<span style="color:#0000FF; font-weight:bold; margin: 0 5px;">|</span>`;
