@@ -271,8 +271,32 @@ function generatePrompts() {
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
 }
 
-function openSettings() { document.getElementById('settingsModal').style.display = 'flex'; }
-function closeSettings() { document.getElementById('settingsModal').style.display = 'none'; }
+// 在 script.js 找到 openSettings 並修改
+function openSettings() { 
+    // 打開時，先將目前的 config 轉成字串暫存起來
+    window._configBackup = JSON.stringify(config); 
+    // 同時確保 UI 上的值是最新的
+    loadConfigToUI();
+    document.getElementById('settingsModal').style.display = 'flex'; 
+}
+
+function closeSettings() {
+    if (window._configBackup) {
+        // 如果有備份，代表使用者是按「取消」或直接關閉
+        // 我們把 config 還原，並重新加載到 UI 欄位（包含 traitsSet）
+        const originalConfig = JSON.parse(window._configBackup);
+        
+        // 將 config 恢復原狀
+        Object.assign(config, originalConfig);
+        
+        // 重新把正確的數值填回所有 input/textarea
+        loadConfigToUI();
+    }
+    
+    document.getElementById('settingsModal').style.display = 'none';
+    window._configBackup = null; // 清除備份
+}
+
 function closeStudentModal() { document.getElementById('studentModal').style.display = 'none'; }
 function resetStudentSelection() { delete studentStates[activeStudent]; saveToLocal(); renderStudentGrid(); closeStudentModal(); }
 function clearAllSelections() { if(confirm("清除所有選取？")) { studentStates = {}; saveToLocal(); renderStudentGrid(); }}
@@ -581,7 +605,12 @@ function saveSettings() {
     
     applyTheme(config.themeIdx);
     applyFontSize(config.fontSize, config.studentFontSize);
-    saveToLocal(); renderStudentGrid(); closeSettings();
+    saveToLocal(); 
+    renderStudentGrid(); 
+
+    // 重要：先清空備份，再關閉視窗，這樣 closeSettings 就不會執行還原動作
+    window._configBackup = null; 
+    document.getElementById('settingsModal').style.display = 'none';
 }
 
 // 初始化應用程式
