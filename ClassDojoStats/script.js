@@ -41,7 +41,18 @@ let appData = JSON.parse(JSON.stringify(DEFAULT_DATA));
 document.addEventListener('DOMContentLoaded', () => {
     const saved = localStorage.getItem('classDojoAppData');
     if (saved) {
-        appData = JSON.parse(saved);
+        const parsedData = JSON.parse(saved);
+        
+        // 【核心修正】使用展開運算子 (...) 將預設值與舊資料合併
+        // 這樣如果 parsedData 缺少 showSurname，就會自動採用 DEFAULT_DATA 的值
+        appData = {
+            ...DEFAULT_DATA,
+            ...parsedData,
+            // 針對嵌套層級較深的物件也要確保合併（例如雲端設定與計算規則）
+            cloudConfig: { ...DEFAULT_DATA.cloudConfig, ...parsedData.cloudConfig },
+            settings: { ...DEFAULT_DATA.settings, ...parsedData.settings }
+        };
+
         if (appData.students && appData.students.length > 0) renderTable();
     }
     applyStyles();
@@ -215,8 +226,18 @@ async function cloudAction(action) {
                 const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, { headers: { 'X-Access-Key': apiKey } });
                 const json = await res.json(); data = json.record;
             }
+
+
+            // 在 cloudAction 的下載成功處修改：
             const currentConfig = appData.cloudConfig;
-            appData = data; appData.cloudConfig = currentConfig;
+            // 同樣進行資料補齊，避免從雲端下載到舊格式的備份檔
+            appData = {
+                ...DEFAULT_DATA,
+                ...data,
+                settings: { ...DEFAULT_DATA.settings, ...data.settings }
+            }; 
+            appData.cloudConfig = currentConfig;
+
             localStorage.setItem('classDojoAppData', JSON.stringify(appData));
             location.reload();
         }
