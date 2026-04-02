@@ -26,20 +26,31 @@ function initLibrary() {
 // 執行載入
 initLibrary();
 
-let state = {
+// 預設狀態範本：未來新增參數請統一加在此處
+const DEFAULT_STATE = {
     mode: '', 
     config: {
-        timeMode: 'timer' // 明確定義預設值
+        timeMode: 'timer',
+        duration: 999,      // 預設時長
+        obsName: '',        // 觀察者姓名
+        actName: '',        // 活動名稱
+        stuA: '學生 A',
+        stuB: '學生 B'
     }, 
     time: 0, 
     timer: null,
-    isPaused: false, // 新增：是否處於暫停狀態
-    elapsedBeforePause: 0, // 新增：暫停前已經累積的秒數
+    isPaused: false, 
+    isFinished: false,    // 確保狀態完整
+    isNotified: false,
+    elapsedBeforePause: 0, 
     data: {}, 
     logs: [], 
     actions: ['分心', '發聲', '擾人', '扭動', '離座', '弄物', '停頓', '情緒'],
     currentView: 'view-home'
 };
+
+// 實際運作中的狀態（初始先複製一份範本）
+let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
 
 let myChart = null;
 
@@ -47,25 +58,33 @@ const STORAGE_KEY = 'attention_app_data';
 
 // --- 初始化 (安全掛載) ---
 window.onload = function() {
+    // 1. 資料載入與合併 (向後相容的核心)
     const savedState = localStorage.getItem(STORAGE_KEY);
     if (savedState) {
         try {
-            state = JSON.parse(savedState);
-        } catch (e) { console.error("解析狀態失敗", e); }
+            const parsed = JSON.parse(savedState);
+            // 使用展開運算子合併：用 DEFAULT_STATE 當底，parsed 覆蓋上去
+            state = {
+                ...DEFAULT_STATE,
+                ...parsed,
+                config: { ...DEFAULT_STATE.config, ...parsed.config }
+            };
+        } catch (e) { 
+            console.error("解析狀態失敗", e); 
+        }
     }
 
-    // 【關鍵修改】：嚴格檢查，如果 isFinished 為 true，則絕對不自動恢復
+    // 2. 恢復計時器與按鈕狀態 (保留你的關鍵修改)
+    // 嚴格檢查，如果 isFinished 為 true，則絕對不自動恢復
+    const resumeBtn = document.getElementById('btn-resume');
     if (state.startTime && !state.isFinished) {
         state.timer = setInterval(updateTimerDisplay, 1000);
-        const resumeBtn = document.getElementById('btn-resume');
         if (resumeBtn) resumeBtn.classList.remove('hidden');
     } else {
-        // 若已結束，隱藏繼續按鈕
-        const resumeBtn = document.getElementById('btn-resume');
         if (resumeBtn) resumeBtn.classList.add('hidden');
     }
 
-    // 這能避開部分瀏覽器重整時，HTML 預設選取行為優先於 JS 執行順序的問題
+    // 3. 同步 HTML 元素 (保留你的 setTimeout 避錯機制)
     setTimeout(() => {
         const timeModeSelect = document.getElementById('timeMode');
         if (timeModeSelect) {
@@ -74,14 +93,17 @@ window.onload = function() {
         }
     }, 100);
 
-    // 5. 其他初始化
+    // 4. 其他初始化 (保留自訂項目與雲端設定)
     const savedActions = localStorage.getItem('custom_dimensions');
     if (savedActions) state.actions = JSON.parse(savedActions);
     
     const cloud = JSON.parse(localStorage.getItem('cloud_config') || '{}');
-    if(document.getElementById('cloudURL')) document.getElementById('cloudURL').value = cloud.binId || '';
-    if(document.getElementById('cloudToken')) document.getElementById('cloudToken').value = cloud.apiKey || '';
+    const cloudURL = document.getElementById('cloudURL');
+    const cloudToken = document.getElementById('cloudToken');
+    if(cloudURL) cloudURL.value = cloud.binId || '';
+    if(cloudToken) cloudToken.value = cloud.apiKey || '';
 
+    // 5. 日期初始化
     const dateEl = document.getElementById('obsDate');
     if (dateEl) dateEl.valueAsDate = new Date();
 };

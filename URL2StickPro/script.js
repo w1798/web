@@ -51,17 +51,51 @@ document.addEventListener('DOMContentLoaded', () => {
         hSel.add(new Option(i, i));
         vSel.add(new Option(i, i));
     }
-    
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-        const config = JSON.parse(saved);
-        Object.keys(config).forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.value = config[id];
-        });
-    } else {
-        hSel.value = 5; vSel.value = 6;
+
+    // 1. 定義「當前版本」的所有預設值
+    const DEFAULT_CONFIG = {
+        h_cut: "5",
+        v_cut: "6",
+        orientation: "portrait",
+        border_style: "no-outline-dashed",
+        margin_cm: "0.2",
+        layout_style: "top-down",
+        v_align: "center",
+        h_align: "center",
+        font_size: "10",
+        line_spacing: "14",
+        qr_size_cm: "2.5",
+        offset_dxa: "240",
+        caption: "Nextime 網頁程式集",
+        url: "https://w1798.github.io/web",
+        subject: "支援圖文上下或左右並排\n自定尺寸、字體大小\n適配各種規格的標籤紙"
+    };
+
+    // 2. 讀取舊資料並與預設值合併
+    const savedRaw = localStorage.getItem(STORAGE_KEY);
+    let finalConfig = DEFAULT_CONFIG;
+
+    if (savedRaw) {
+        try {
+            const savedConfig = JSON.parse(savedRaw);
+            // 使用 Spread Operator 合併：預設值墊底，舊資料覆蓋
+            // 如果 savedConfig 缺少某個新欄位，它會保留 DEFAULT_CONFIG 的值
+            finalConfig = { ...DEFAULT_CONFIG, ...savedConfig };
+        } catch (e) {
+            console.error("解析存檔失敗，使用預設值");
+        }
     }
+
+    // 3. 將最終設定套用到 UI 元件上
+    Object.keys(finalConfig).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.value = finalConfig[id];
+        }
+    });
+    
+    // 4. (選用) 立即回存一次，幫舊用戶補齊缺少的欄位
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(finalConfig));
 });
 
 // 自動存檔
@@ -84,8 +118,19 @@ function importConfig(input) {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (e) => {
-        localStorage.setItem(STORAGE_KEY, e.target.result);
-        location.reload();
+        try {
+            const importedData = JSON.parse(e.target.result);
+            
+            // 建議統一與 DEFAULT_CONFIG 合併，因為它才是最完整的範本
+            // 這樣即便匯入的是極舊版本的檔案，也能完美補齊新參數
+            const finalMerged = { ...DEFAULT_CONFIG, ...importedData };
+            
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(finalMerged));
+            alert("匯入成功！");
+            location.reload();
+        } catch (err) {
+            alert("匯入失敗：檔案格式不正確");
+        }
     };
     reader.readAsText(file);
 }

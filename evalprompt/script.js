@@ -128,9 +128,18 @@ function exportData() {
 function importData(e) {
     const reader = new FileReader();
     reader.onload = (ev) => {
-        const imported = JSON.parse(ev.target.result);
-        config = imported.config; studentStates = imported.studentStates;
-        saveToLocal(); location.reload();
+        try {
+            const imported = JSON.parse(ev.target.result);
+            // 關鍵點：匯入時也經過 syncConfig 處理
+            config = syncConfig(imported.config); 
+            studentStates = imported.studentStates || {};
+            
+            saveToLocal(); 
+            alert("資料匯入成功並已更新相容性");
+            location.reload();
+        } catch (err) {
+            alert("匯入失敗：檔案格式不正確");
+        }
     };
     reader.readAsText(e.target.files[0]);
 }
@@ -539,14 +548,22 @@ function insertTag(tag) {
 }
 
 
+function syncConfig(incomingData) {
+    if (!incomingData) return { ...defaultConfig };
+    
+    // 合併邏輯：預設值 + 傳入值
+    return { ...defaultConfig, ...incomingData };
+}
 
-// 全域狀態初始化
-config = JSON.parse(localStorage.getItem('eval_v6_config')) || { ...defaultConfig };
-studentStates = JSON.parse(localStorage.getItem('eval_v6_states')) || {}; 
-activeStudent = null;
-secondaryColors = [];
+
+
 
 function init() {
+    const localData = JSON.parse(localStorage.getItem('eval_v6_config'));
+    config = syncConfig(localData);
+    
+    studentStates = JSON.parse(localStorage.getItem('eval_v6_states')) || {};
+    
     // 初始化下拉選單
     const gSelect = document.getElementById('gradeSet');
     for(let i=1; i<=12; i++) gSelect.add(new Option(i + '年級', i));
@@ -596,11 +613,13 @@ function saveSettings() {
     config.tones = document.getElementById('tonesSet').value;
     config.prePrompt = document.getElementById('prePromptSet').value;
     config.promptTemplate = document.getElementById('promptTemplateSet').value;
-    config.gridCount = document.getElementById('gridCountSet').value;
-    config.traitCols = document.getElementById('traitColSet').value;
+
+    config.gridCount = parseInt(document.getElementById('gridCountSet').value);
+    config.traitCols = parseInt(document.getElementById('traitColSet').value);
+    config.themeIdx = parseInt(document.getElementById('themeSelect').value);
+    
     config.fontSize = document.getElementById('fontSizeSet').value;
     config.studentFontSize = document.getElementById('studentFontSizeSet').value;
-    config.themeIdx = document.getElementById('themeSelect').value;
     config.includeCatName = document.getElementById('includeCatNameSet').checked;
     
     applyTheme(config.themeIdx);

@@ -60,11 +60,17 @@ function isSubject(text) {
 }
 
 // --- 3. 頁面初始化與儲存邏輯 ---
-
 window.onload = () => {
+    // 1. 處理科目設定：以預設為底，疊加使用者設定
     const savedSettings = localStorage.getItem(KEY_SETTINGS);
-    if (savedSettings) subjectMap = JSON.parse(savedSettings);
+    if (savedSettings) {
+        const parsedSettings = JSON.parse(savedSettings);
+        // 使用者設定 ({'國語':'國'}) 會覆蓋 DEFAULT 中的同名鍵，
+        // 但 DEFAULT 中有的、使用者沒改過的，會被保留。
+        subjectMap = { ...DEFAULT_SUBJECT_MAP, ...parsedSettings };
+    }
 
+    // 2. 處理課表資料：維持原狀或根據需求決定是否合併
     const savedSchedule = localStorage.getItem(KEY_SCHEDULE);
     if (savedSchedule) {
         allProcessedData = JSON.parse(savedSchedule);
@@ -252,11 +258,11 @@ document.getElementById('importFile').onchange = function(e) {
         try {
             const imported = JSON.parse(event.target.result);
             if (imported.subjectMap) {
-                subjectMap = imported.subjectMap;
+                subjectMap = { ...subjectMap, ...imported.subjectMap };
                 autoSaveSettings();
             }
             if (imported.allProcessedData) {
-                allProcessedData = imported.allProcessedData;
+                allProcessedData = [...allProcessedData, ...imported.allProcessedData];
                 autoSaveSchedule();
             }
             renderIntegratedTables();

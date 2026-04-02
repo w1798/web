@@ -7,6 +7,8 @@
  * the Free Software Foundation.
  */
 
+
+
 const FULL_30 = "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30";
 
 const DEFAULT_LABELS = {
@@ -14,22 +16,37 @@ const DEFAULT_LABELS = {
     7: "磚紅色", 8: "寶藍色", 9: "芥末黃", 10: "棕色", 11: "粉紅色", 12: "青綠色"
 };
 
-let state = {
-    settings: { 
-        autoDate: true, theme: 'soft', gridCols: 5, studentCols: 7, 
-        studentList: FULL_30, sizeDetail: 95, sizeReport: 70, sizeTotal: 70,
-        sortOrder: 'desc',
-        quickTasks: "國習,數習,生字,圈詞",
-        studentFontSize: 18,
-        appendMode: false,
-        dateOffset: 1,
-        statusCount: 1,
-        statusLabels: { ...DEFAULT_LABELS },
-        binId: '',
-        apiKey: ''
-    },
-    assignments: []
-};
+let state = getInitialState();
+
+
+/**
+ * 取得初始的完整 State 範本
+ */
+function getInitialState() {
+    return {
+        settings: { 
+            autoDate: true, 
+            theme: 'soft', 
+            gridCols: 5, 
+            studentCols: 7, 
+            studentList: FULL_30, 
+            sizeDetail: 95, 
+            sizeReport: 70, 
+            sizeTotal: 70,
+            sortOrder: 'desc',
+            quickTasks: "國習,數習,生字,圈詞",
+            studentFontSize: 18,
+            appendMode: false,
+            dateOffset: 1,
+            statusCount: 1,
+            statusLabels: { ...DEFAULT_LABELS }, // 展開預設標籤
+            binId: '',
+            apiKey: ''
+        },
+        assignments: []
+    };
+}
+
 
 let isDragging = false;
 
@@ -113,19 +130,8 @@ function syncSettingsToUI() {
 
 function loadData() {
     const saved = localStorage.getItem('MarkIt');
-    if (saved) {
-        try {
-            const parsed = JSON.parse(saved);
-            state.settings = { ...state.settings, ...parsed.settings };
-            state.assignments = parsed.assignments || [];
-            
-            for (let i = 1; i <= 12; i++) {
-                if (!state.settings.statusLabels[i]) {
-                    state.settings.statusLabels[i] = DEFAULT_LABELS[i];
-                }
-            }
-        } catch(e) { console.error("Data Parse Error", e); }
-    }
+    // 直接使用 mergeWithDefault，它會自動處理「無資料」或「舊資料補齊」
+    state = mergeWithDefault(saved ? JSON.parse(saved) : null);
     
     syncSettingsToUI();
     applySettings();
@@ -389,7 +395,7 @@ function updateStudentUI(n, el, work) {
     
     // 如果有紀錄，就加上新的 class；如果沒有紀錄 (已被 splice)，這裡就不會執行，方格變回空白
     if (record) {
-        const status = typeof record === 'object' ? record.status : 1;
+        const status = (typeof record === 'object' && record.status) ? record.status : 1;
         el.classList.add(`status-${status}`);
         
         // 為了相容您原本的 CSS，如果是第 1 色，額外補上 .done
@@ -515,6 +521,31 @@ function resetQuickTasks() { if(confirm("恢復預設快速標籤？")) document
 function resetStudentList() { if(confirm("恢復預設名單？")) document.getElementById('studentListConfig').value = FULL_30.split(',').join('\n'); }
 function resetBinField(id) { if(confirm("確定清除？")) document.getElementById(id).value = ''; }
 
+
+/**
+ * 核心相容性合併器
+ * 將傳入的資料（source）安全地疊加在預設範本（target）上
+ */
+function mergeWithDefault(source) {
+    const template = getInitialState();
+    if (!source) return template;
+
+    return {
+        ...template,
+        settings: {
+            ...template.settings,
+            ...source.settings,
+            // 處理深層巢狀物件
+            statusLabels: { 
+                ...template.settings.statusLabels, 
+                ...(source.settings?.statusLabels || {}) 
+            }
+        },
+        assignments: source.assignments || []
+    };
+}
+
+
 async function cloudSync(method = 'UPLOAD') {
     const { binId, apiKey } = state.settings;
 
@@ -584,19 +615,22 @@ async function cloudSync(method = 'UPLOAD') {
             }
 
             if (downloadedData) {
-                // 保留目前的雲端設定，不被下載回來的空值覆蓋
-                const currentBinId = state.settings.binId;
-                const currentApiKey = state.settings.apiKey;
+                // 1. 備份當前的金鑰（因為下載的資料通常不含金鑰，避免蓋掉後無法再次上傳）
+                const currentKeys = { 
+                    binId: state.settings.binId, 
+                    apiKey: state.settings.apiKey 
+                };
 
-                state = Object.assign({}, state, downloadedData);
-                state.settings.binId = currentBinId;
-                state.settings.apiKey = currentApiKey;
+                // 2. 利用萬用合併器處理向後相容
+                state = mergeWithDefault(downloadedData);
+
+                // 3. 回填金鑰
+                state.settings.binId = currentKeys.binId;
+                state.settings.apiKey = currentKeys.apiKey;
 
                 saveData();
-                alert("✅ 資料下載並同步成功！網頁即將重整。");
+                alert("✅ 雲端資料下載並合併成功！");
                 location.reload();
-            } else {
-                throw new Error("找不到有效的雲端資料。");
             }
         }
     } catch (e) {
@@ -623,48 +657,15 @@ function triggerImport() {
 
 function importData(e) {
     const reader = new FileReader();
-    reader.onload = (ev) => { state = JSON.parse(ev.target.result); saveData(); location.reload(); };
+    reader.onload = (ev) => { 
+        const imported = JSON.parse(ev.target.result);
+        state = mergeWithDefault(imported); // 自動補齊缺失欄位
+        saveData(); 
+        location.reload(); 
+    };
     reader.readAsText(e.target.files[0]);
 }
 function resetSystem() { if(confirm("確定重置系統？")) { localStorage.removeItem('MarkIt'); location.reload(); } }
-
-window.addEventListener('storage', (event) => {
-    if (event.key === 'MarkIt' && event.newValue) {
-        try {
-            // 1. 立即同步 B 視窗記憶體中的 state
-            state = JSON.parse(event.newValue);
-
-            // 2. 更新首頁卡片
-            renderAssignments();
-
-            // 3. 更新目前開啟的詳細視窗
-            const detailModal = document.getElementById('detailModal');
-            if (detailModal && detailModal.style.display === 'block') {
-                const currentTitle = document.getElementById('detailTitle').innerText;
-                // 從剛更新的 state 中找任務
-                const currentWork = state.assignments.find(a => a.name === currentTitle);
-                
-                if (currentWork) {
-                    const grid = document.getElementById('studentGrid');
-                    const items = grid.querySelectorAll('.student-item');
-                    const studentList = parseList(state.settings.studentList);
-
-                    items.forEach((div, index) => {
-                        const studentName = studentList[index];
-                        // 強制執行一次 UI 刷新
-                        updateStudentUI(studentName, div, currentWork);
-                    });
-                }
-            }
-            applySettings();
-        } catch (e) { console.error(e); }
-    }
-});
-
-
-
-
-
 
 
 function handleReadAction(e) {
@@ -717,27 +718,49 @@ function toggleDropdown(id) {
     }
 }
 
-// 全域點擊監控
+// 全域點擊監控：點擊頁面任何地方時關閉下拉選單
 window.addEventListener('click', function(e) {
-   
-    const dropdowns = document.querySelectorAll('.dropdown-content');
+    // 檢查點擊的目標是否為導航按鈕 (.nav-btn)
+    // 如果點擊的是按鈕本身，讓按鈕自己的 toggleDropdown 函式去處理，這裡直接 return
+    if (e.target.matches('.nav-btn')) return;
+
+    // 取得所有開啟中的下拉選單並隱藏
+    const dropdowns = document.querySelectorAll('.dropdown-content.show');
     dropdowns.forEach(m => {
-        if (m.classList.contains('show')) {
-            m.classList.remove('show');
-        }
+        m.classList.remove('show');
     });
 });
 
 
-window.onclick = function(event) {
-    // 如果點擊的不是下拉按鈕本身
-    if (!event.target.matches('.nav-btn')) {
-        var dropdowns = document.getElementsByClassName("dropdown-content");
-        for (var i = 0; i < dropdowns.length; i++) {
-            var openDropdown = dropdowns[i];
-            if (openDropdown.classList.contains('show')) {
-                openDropdown.classList.remove('show'); // 移除 show 類別以收合
+window.addEventListener('storage', (event) => {
+    if (event.key === 'MarkIt' && event.newValue) {
+        try {
+            // 1. 立即同步 B 視窗記憶體中的 state
+            state = JSON.parse(event.newValue);
+
+            // 2. 更新首頁卡片
+            renderAssignments();
+
+            // 3. 更新目前開啟的詳細視窗
+            const detailModal = document.getElementById('detailModal');
+            if (detailModal && detailModal.style.display === 'block') {
+                const currentTitle = document.getElementById('detailTitle').innerText;
+                // 從剛更新的 state 中找任務
+                const currentWork = state.assignments.find(a => a.name === currentTitle);
+                
+                if (currentWork) {
+                    const grid = document.getElementById('studentGrid');
+                    const items = grid.querySelectorAll('.student-item');
+                    const studentList = parseList(state.settings.studentList);
+
+                    items.forEach((div, index) => {
+                        const studentName = studentList[index];
+                        // 強制執行一次 UI 刷新
+                        updateStudentUI(studentName, div, currentWork);
+                    });
+                }
             }
-        }
+            applySettings();
+        } catch (e) { console.error(e); }
     }
-}
+});

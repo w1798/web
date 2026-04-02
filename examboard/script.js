@@ -77,21 +77,64 @@ const audioPlayers = {};
 
 function init() {
     const saved = localStorage.getItem('examBoardState');
-    state = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_STATE));
+    let loadedData = {};
     
-    if (state.showReminders === undefined) state.showReminders = true;
-    if (state.theme === undefined) state.theme = 'default';
+    try {
+        // 若有存檔則解析，否則給予空物件
+        loadedData = saved ? JSON.parse(saved) : {};
+    } catch (e) {
+        console.error("解析存檔失敗，將使用預設值回原");
+    }
 
-    populateNumberOptions('inputTotal', 55);
-    populateNumberOptions('inputAbsent', 20);
+    // 1. 建立深拷貝的預設值基底
+    const baseState = JSON.parse(JSON.stringify(DEFAULT_STATE));
+
+    // 2. 向後相容核心：結構化合併
+    state = {
+        ...baseState,       // 先鋪設所有預設欄位
+        ...loadedData,      // 覆蓋使用者已存的欄位
+        
+        // 針對巢狀物件進行「深度補完」，避免舊資料缺少新欄位
+        reminders: {
+            exam: (loadedData.reminders?.exam && loadedData.reminders.exam.length > 0) 
+                  ? loadedData.reminders.exam 
+                  : baseState.reminders.exam,
+            break: (loadedData.reminders?.break && loadedData.reminders.break.length > 0) 
+                   ? loadedData.reminders.break 
+                   : baseState.reminders.break
+        },
+
+        // 確保 subjects 存在且為陣列 (防止舊版資料格式衝突)
+        subjects: Array.isArray(loadedData.subjects) ? loadedData.subjects : baseState.subjects
+    };
+
+    // 3. 確保關鍵的 schedule 陣列不為空
+    if (!Array.isArray(state.schedule) || state.schedule.length === 0) {
+        state.schedule = JSON.parse(JSON.stringify(DEFAULT_STATE.schedule));
+    }
+
+    // 4. 初始化 UI 狀態
+    // 注意：populateNumberOptions 建議改在 toggleModal(true) 時呼叫
+    // 但若要在 init 執行，請確保 HTML 的 ID 已存在
+    const inputTotal = document.getElementById('inputTotal');
+    const inputAbsent = document.getElementById('inputAbsent');
+    if (inputTotal && inputAbsent) {
+        populateNumberOptions('inputTotal', 55);
+        populateNumberOptions('inputAbsent', 20);
+    }
     
-    applyTheme(state.theme);
+    // 5. 套用設定並啟動循環
+    applyTheme(state.theme || 'default');
     syncUI();
     updateReminderUI(); 
 
+    // 啟動計時器
     setInterval(updateTime, 1000);
     setInterval(updateReminderUI, 6000);
+    
+    console.log("系統初始化完成，已套用向後相容邏輯");
 }
+
 
 function applyTheme(themeName) {
     document.body.className = ''; 
@@ -227,6 +270,12 @@ function renderSchedule() {
 function handleAudioUpload(input, idx) {
     if (input.files[0]) {
         const id = state.schedule[idx].id;
+        
+        // 修正：如果原本就有 URL，先釋放掉
+        if (state.schedule[idx].audioUrl) {
+            URL.revokeObjectURL(state.schedule[idx].audioUrl);
+        }
+
         const url = URL.createObjectURL(input.files[0]);
         state.schedule[idx].audioUrl = url;
         if (audioPlayers[id]) audioPlayers[id].pause();
@@ -369,10 +418,21 @@ function importData(input) {
     if(!input.files[0]) return; 
     const reader = new FileReader(); 
     reader.onload = (e) => { 
-        state = JSON.parse(e.target.result); 
-        applyTheme(state.theme || 'default');
-        saveToLocal(); 
-        syncUI(); 
+        try {
+            const imported = JSON.parse(e.target.result);
+            // 同樣套用「合併」邏輯而非直接覆蓋
+            state = {
+                ...JSON.parse(JSON.stringify(DEFAULT_STATE)),
+                ...imported
+            };
+            
+            applyTheme(state.theme || 'default');
+            saveToLocal(); 
+            syncUI();
+            alert("匯入成功！");
+        } catch (err) {
+            alert("檔案格式錯誤，無法匯入。");
+        }
     }; 
     reader.readAsText(input.files[0]); 
 }

@@ -127,37 +127,49 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation.
  */
-    
+ 
+     // 預設範本：未來新增參數只需改這裡
+    const DEFAULT_SETTINGS = {
+        binId: '',
+        apiKey: '',
+        urls: [],
+        cloudCD: 60,
+        pvCD: 60,
+        theme: 'light',      // 假設未來新增的參數
+        autoRefresh: true    // 假設未來新增的參數
+    };
+
+    const DEFAULT_DATA = {
+        settings: DEFAULT_SETTINGS,
+        stats: {}
+    };
+   
     const STORAGE_KEY = 'CHARLES_SETTINGS_V1';
     const DATA_KEY = 'CHARLES_STATS_V1';
     const PENDING_KEY = 'PUSH_PENDING';
-    let appData = { settings: { binId: '', apiKey: '', urls: [], cloudCD: 60, pvCD: 60 }, stats: {} };
+    
+    let appData = { 
+        settings: { ...DEFAULT_SETTINGS }, 
+        stats: {} 
+    };
+
 
     async function init() {
-        const savedSett = localStorage.getItem(STORAGE_KEY);
-        const savedStats = localStorage.getItem(DATA_KEY);
-        if (savedSett) appData.settings = { ...appData.settings, ...JSON.parse(savedSett) };
-        if (savedStats) appData.stats = JSON.parse(savedStats);
+        // 1. 從本地讀取並與範本合併
+        const savedSett = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+        const savedStats = JSON.parse(localStorage.getItem(DATA_KEY) || '{}');
+        
+        // 核心：確保即便本地少欄位，也會被 DEFAULT 補齊
+        appData.settings = mergeDeep(DEFAULT_SETTINGS, savedSett);
+        appData.stats = savedStats;
 
         const lastCloud = localStorage.getItem('LAST_CLOUD_LOAD');
         const isPushPending = localStorage.getItem(PENDING_KEY) === 'true';
         const isUrlEmpty = !appData.settings.urls || appData.settings.urls.length === 0;
 
         if (appData.settings.binId && appData.settings.apiKey) {
-            // 如果本地沒網址，強制從雲端拉一次
-            if (isUrlEmpty) {
-                await loadFromCloud();
-                localStorage.removeItem(PENDING_KEY);
-            } 
-            // 如果有待處理的推送
-            else if (isPushPending) {
-                updateStatusUI('syncing');
-                await refreshPV(true); 
-                localStorage.removeItem(PENDING_KEY);
-            } 
-            // 檢查 CD 時間是否過期需要自動下載
-            else if (!lastCloud || (Date.now() - lastCloud > appData.settings.cloudCD * 60000)) {
-                await loadFromCloud();
+            if (isUrlEmpty || isPushPending || !lastCloud || (Date.now() - lastCloud > appData.settings.cloudCD * 60000)) {
+                await loadFromCloud(); // 雲端讀取內部也要執行 mergeDeep
             } else {
                 updateStatusUI('cache');
             }
@@ -174,6 +186,23 @@
                 refreshPV(false);
             }
         }
+    }
+
+    function mergeDeep(target, source) {
+        if (!source) return target;
+        
+        const output = { ...target };
+        Object.keys(target).forEach(key => {
+            if (source.hasOwnProperty(key)) {
+                // 如果是物件且不是陣列，遞迴合併
+                if (typeof target[key] === 'object' && target[key] !== null && !Array.isArray(target[key])) {
+                    output[key] = mergeDeep(target[key], source[key]);
+                } else {
+                    output[key] = source[key];
+                }
+            }
+        });
+        return output;
     }
 
     // 支援 Upstash 與 JSONBin 的通用雲端下載
@@ -205,22 +234,28 @@
             }
 
             if (cloudRecord) {
+                const remoteSettings = cloudRecord.settings || {};
+                const { binId: currentBin, apiKey: currentKey } = appData.settings; 
+                
                 appData.stats = cloudRecord.stats || {};
-                if (cloudRecord.settings) {
-                    // 保留目前的登入資訊，避免下載後被覆蓋成空的
-                    const { binId: _, apiKey: __, ...other } = cloudRecord.settings;
-                    appData.settings = { ...appData.settings, ...other };
-                }
+                // 這裡使用 mergeDeep 確保雲端新增欄位也能進來
+                appData.settings = mergeDeep(DEFAULT_SETTINGS, remoteSettings);
+                
+                // 重要：還原目前的 Key，避免雲端舊備份把正在用的 Key 蓋掉
+                appData.settings.binId = currentBin;
+                appData.settings.apiKey = currentKey;
+
                 localStorage.setItem(DATA_KEY, JSON.stringify(appData.stats));
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(appData.settings));
                 localStorage.setItem('LAST_CLOUD_LOAD', Date.now());
-                updateStatusUI('online');
+                
+                updateStatusUI('online'); // 成功才顯示 online
                 return true;
             }
         } catch (e) {
             console.error("雲端讀取失敗:", e);
         }
-        updateStatusUI('offline');
+        updateStatusUI('offline'); // 失敗顯示 offline
         return false;
     }
 
@@ -343,15 +378,19 @@
     }
 
     function saveSettings() {
+        // 拿目前的 settings 當基底，只更新 UI 有變動的欄位
         const s = {
+            ...appData.settings, 
             urls: document.getElementById('set-urls').value.split('\n').map(u => u.trim()).filter(u => u),
             binId: document.getElementById('set-bin-id').value.trim(),
             apiKey: document.getElementById('set-api-key').value.trim(),
             cloudCD: parseInt(document.getElementById('set-cloud-cd').value) || 0,
             pvCD: parseInt(document.getElementById('set-pv-cd').value) || 0
         };
+        
         if (s.urls.length > 0) localStorage.setItem(PENDING_KEY, 'true');
         else localStorage.removeItem(PENDING_KEY);
+        
         localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
         localStorage.removeItem('LAST_CLOUD_LOAD');
         location.reload();
@@ -375,18 +414,29 @@
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `Vercount_${new Date().toISOString().slice(0,10)}.json`; a.click();
     }
     function triggerImport() { document.getElementById('import-file').click(); }
+
+
     function handleFileImport(event) {
         const reader = new FileReader();
         reader.onload = (e) => {
-            const d = JSON.parse(e.target.result);
-            appData.stats = d.stats || {}; appData.settings = d.settings || appData.settings;
-            localStorage.setItem(DATA_KEY, JSON.stringify(appData.stats));
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(appData.settings));
-            localStorage.setItem(PENDING_KEY, 'true'); 
-            location.reload();
+            try {
+                const d = JSON.parse(e.target.result);
+                appData.stats = d.stats || {}; 
+                
+                // 使用 mergeDeep 確保匯入舊檔案時，缺少的欄位會用 DEFAULT 補齊
+                appData.settings = mergeDeep(DEFAULT_SETTINGS, d.settings || {});
+                
+                localStorage.setItem(DATA_KEY, JSON.stringify(appData.stats));
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(appData.settings));
+                localStorage.setItem(PENDING_KEY, 'true'); 
+                location.reload();
+            } catch(err) {
+                alert("匯入失敗，請檢查檔案格式");
+            }
         };
         reader.readAsText(event.target.files[0]);
     }
+
     window.onload = init;
 </script>
 

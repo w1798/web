@@ -8,58 +8,90 @@
  */
 
 
-// ==================== 資料結構 ====================
-let stockData = {};  // { "0056": { purchases: [], dividends: [], alias: "" } }
-let currentStock = '';
-let isEditMode = false;
+/**
+ * 將讀入的原始資料與預設範本合併，確保結構完整
+ */
+function migrateData(incoming) {
+    if (!incoming || typeof incoming !== 'object') return { ...DEFAULT_APP_DATA };
 
-// 雲端設定 (不隨股票資料上傳)
-let cloudSettings = {
+    let processedStockData = {};
+    
+    // 判斷是新版格式 {stockData, cloudSettings} 還是舊版格式 { "0056": ... }
+    const rawStocks = incoming.stockData || incoming;
+    
+    // 遍歷所有股票，確保每一支股票都有完整欄位
+    Object.keys(rawStocks).forEach(code => {
+        // 如果該 Key 剛好是 cloudSettings 則跳過 (針對舊版混雜格式)
+        if (code === 'cloudSettings') return;
+        
+        processedStockData[code] = {
+            ...DEFAULT_STOCK_ITEM,
+            ...rawStocks[code]
+        };
+    });
+
+    return {
+        stockData: processedStockData,
+        cloudSettings: {
+            ...DEFAULT_CLOUD_SETTINGS,
+            ...(incoming.cloudSettings || {})
+        }
+    };
+}
+
+
+// ==================== 預設範本 (用於向後相容) ====================
+const DEFAULT_STOCK_ITEM = {
+    purchases: [],
+    dividends: [],
+    alias: ''
+};
+
+const DEFAULT_CLOUD_SETTINGS = {
     url: '',
     token: ''
 };
 
+const DEFAULT_APP_DATA = {
+    stockData: {},
+    cloudSettings: DEFAULT_CLOUD_SETTINGS
+};
+
+let appData = migrateData(null); 
+let stockData = appData.stockData;
+let cloudSettings = appData.cloudSettings;
+
+let currentStock = '';
+let isEditMode = false;
+
+
 // ==================== 初始化 / 本地儲存 ====================
 function loadFromStorage() {
     const saved = localStorage.getItem('dividendManager');
-    if (saved) {
-        try {
-            const parsed = JSON.parse(saved);
-            // 分離股票資料與雲端設定
-            if (parsed.stockData) {
-                stockData = parsed.stockData;
-                cloudSettings = parsed.cloudSettings || { url: '', token: '' };
-            } else {
-                // 舊版資料相容
-                stockData = parsed;
-                cloudSettings = { url: '', token: '' };
-            }
-        } catch (e) {
-            stockData = {};
-            cloudSettings = { url: '', token: '' };
-        }
-    } else {
-        stockData = {};
-        cloudSettings = { url: '', token: '' };
+    try {
+        const parsed = saved ? JSON.parse(saved) : null;
+        appData = migrateData(parsed); // 👈 這裡就已經處理完所有新舊相容了
+    } catch (e) {
+        console.error("解析失敗", e);
+        appData = migrateData(null);
     }
-    // 確保每個股票都有必要欄位
-    Object.keys(stockData).forEach(code => {
-        if (!stockData[code].purchases) stockData[code].purchases = [];
-        if (!stockData[code].dividends) stockData[code].dividends = [];
-        if (!stockData[code].alias) stockData[code].alias = '';
-    });
-    // 載入雲端設定到輸入框
-    document.getElementById('cloudUrl').value = cloudSettings.url || '';
-    document.getElementById('cloudToken').value = cloudSettings.token || '';
+
+    // 統一重新指向引用
+    stockData = appData.stockData;
+    cloudSettings = appData.cloudSettings;
+
+    // 同步 UI
+    if(document.getElementById('cloudUrl')) document.getElementById('cloudUrl').value = cloudSettings.url || '';
+    if(document.getElementById('cloudToken')) document.getElementById('cloudToken').value = cloudSettings.token || '';
 }
 
 function saveToStorage() {
-    // 將股票資料與雲端設定分開儲存
-    const toSave = {
-        stockData: stockData,
-        cloudSettings: cloudSettings
-    };
-    localStorage.setItem('dividendManager', JSON.stringify(toSave));
+    // 1. 先確保 appData 內部的資料是最新的
+    appData.stockData = stockData;
+    appData.cloudSettings = cloudSettings;
+
+    // 2. 直接存入完整的 appData 物件
+    localStorage.setItem('dividendManager', JSON.stringify(appData));
 }
 
 // ==================== 解析股數 (k單位) ====================
@@ -917,19 +949,16 @@ document.getElementById('loadBtn').addEventListener('click', (e) => {
                         }
                         
                         if (response.ok && data) {
-                            stockData = data;
-                            Object.keys(stockData).forEach(code => {
-                                if (!stockData[code].purchases) stockData[code].purchases = [];
-                                if (!stockData[code].dividends) stockData[code].dividends = [];
-                                if (!stockData[code].alias) stockData[code].alias = '';
-                            });
+                            const migrated = migrateData({ stockData: data }); 
+                            appData = migrated; // 先更新總物件
+                            stockData = appData.stockData; // 再重新指向引用
+                            cloudSettings = appData.cloudSettings;
+                            
                             saveToStorage();
                             renderStockSelect();
-                            alert('✅ 雲端下載成功！');
-                        } else {
-                            const errorText = await response.text();
-                            alert(`❌ 下載失敗：${response.status} ${errorText}`);
+                            alert('✅ 雲端下載並自動補齊結構成功！');
                         }
+
                     } catch (error) {
                         alert(`❌ 下載錯誤：${error.message}`);
                     }
@@ -940,6 +969,9 @@ document.getElementById('loadBtn').addEventListener('click', (e) => {
         showCustomMenu(e.currentTarget, items);
     }
 });
+
+
+
 
 // ==================== 存檔按鈕功能 ====================
 document.getElementById('saveBtn').addEventListener('click', (e) => {
@@ -1052,34 +1084,22 @@ document.getElementById('importFile').addEventListener('change', (e) => {
     reader.onload = (event) => {
         try {
             const imported = JSON.parse(event.target.result);
-            if (typeof imported === 'object') {
-                if (confirm('匯入將會覆蓋現有所有資料，確定嗎？')) {
-                    if (imported.stockData) {
-                        stockData = imported.stockData;
-                        cloudSettings = imported.cloudSettings || { url: '', token: '' };
-                    } else {
-                        stockData = imported;
-                        cloudSettings = { url: '', token: '' };
-                    }
-                    
-                    Object.keys(stockData).forEach(code => {
-                        if (!stockData[code].purchases) stockData[code].purchases = [];
-                        if (!stockData[code].dividends) stockData[code].dividends = [];
-                        if (!stockData[code].alias) stockData[code].alias = '';
-                    });
-                    
-                    document.getElementById('cloudUrl').value = cloudSettings.url || '';
-                    document.getElementById('cloudToken').value = cloudSettings.token || '';
-                    
-                    saveToStorage();
-                    renderStockSelect();
-                    alert('匯入成功！');
-                }
-            } else {
-                alert('檔案格式錯誤');
+            if (confirm('匯入將會覆蓋現有所有資料，確定嗎？')) {
+                // ✅ 統一交給守門員處理，管他是新格式舊格式，進去出來就是標準格式
+                appData = migrateData(imported);
+                stockData = appData.stockData;
+                cloudSettings = appData.cloudSettings;
+                
+                // 更新 UI 並存檔
+                if(document.getElementById('cloudUrl')) document.getElementById('cloudUrl').value = cloudSettings.url || '';
+                if(document.getElementById('cloudToken')) document.getElementById('cloudToken').value = cloudSettings.token || '';
+                
+                saveToStorage();
+                renderStockSelect();
+                alert('匯入成功！');
             }
         } catch (error) {
-            alert('匯入失敗：不是有效的 JSON 檔案');
+            alert('匯入失敗：格式不正確');
         }
     };
     reader.readAsText(file);
