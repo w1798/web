@@ -459,6 +459,9 @@ input:focus, textarea:focus { outline: none; border-color: var(--primary-color);
     margin-bottom: 1rem; font-size: 1.1em; color: var(--text-primary);
     border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;
 }
+.settings-help-link { font-size: 0.85em; color: var(--primary-color); text-decoration: none; margin-left: auto; font-weight: 500; }
+.settings-help-link:hover { text-decoration: underline; }
+
 .settings-list { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
 .settings-list li {
     display: flex; justify-content: space-between; align-items: center;
@@ -508,7 +511,10 @@ input:focus, textarea:focus { outline: none; border-color: var(--primary-color);
     body { padding: 0.5rem; }
     .app-header { padding: 1rem; }
     .app-header h1 { font-size: 1.4rem; }
-    .student-grid, .group-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 0.75rem; }
+    .student-grid, .group-grid { 
+        grid-template-columns: repeat(var(--mobile-grid-cols, 2), 1fr) !important; 
+        gap: 0.75rem; 
+    }
     .student-avatar { width: 3.5em; height: 3.5em; }
     .student-points { right: -10px; font-size: 0.9em; padding: 0.15rem 0.4rem; }
     .modal-content { width: 95%; padding: 1.5rem; }
@@ -539,3 +545,11 @@ footer a:hover {
     color: var(--secondary-color);
     text-decoration: underline;
 }
+
+/* Cloud & Data Management UI */
+.input-with-btn { display: flex; gap: 0.5rem; width: 100%; margin-top: 0.25rem; }
+.input-with-btn input { flex: 1; }
+.data-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+.data-actions .btn { width: 100%; justify-content: center; }
+.danger-zone { border: 1px solid #fee2e2; background: #fff5f5; padding: 1.5rem; border-radius: 12px; margin-top: 2rem; }
+.danger-zone h4 { color: #b91c1c; margin-bottom: 0.5rem; }

@@ -53,6 +53,8 @@ document.addEventListener('DOMContentLoaded', () => {
         enableSound: false,
         studentCardHeight: 0,
         groupCardHeight: 0,
+        cloudBinId: '',
+        cloudApiKey: '',
         // Future parameters can be added here, they will auto-apply to existing users
     };
 
@@ -247,6 +249,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.documentElement.style.setProperty('--student-card-height', (settings.studentCardHeight || 0) + 'px');
         document.documentElement.style.setProperty('--group-card-height', (settings.groupCardHeight || 0) + 'px');
         
+        // Mobile grid: max 4 columns, or user setting if smaller
+        const mobileCols = Math.min(settings.columns, 4);
+        document.documentElement.style.setProperty('--mobile-grid-cols', mobileCols);
+
         // Update UI controls to match
         fontSizeSelect.value = settings.fontSize;
         gridColsRange.value = settings.columns;
@@ -263,6 +269,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const soundSettingCbx = document.getElementById('enableSoundSetting');
         if(soundSettingCbx) soundSettingCbx.checked = settings.enableSound;
+
+        // Cloud Inputs
+        const binIdInput = document.getElementById('cloudBinId');
+        const apiKeyInput = document.getElementById('cloudApiKey');
+        if(binIdInput) binIdInput.value = settings.cloudBinId || '';
+        if(apiKeyInput) apiKeyInput.value = settings.cloudApiKey || '';
     };
 
 
@@ -1217,7 +1229,7 @@ document.addEventListener('DOMContentLoaded', () => {
         _settingsSnapshot = JSON.stringify(settings);
         openModal(settingsModal);
         applySettings();
-        renderSettingsItems();
+        renderPointItems(); // Corrected name
         // Reset tabs to first
         switchSettingsTab('display');
     };
@@ -1465,6 +1477,7 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedStudentIds.clear();
         if(isMultiSelectMode) toggleMultiSelectMode();
         switchMainView('students');
+        renderStudents(); // Missing call restored
         renderPointItems();
         if(!reportsModal.classList.contains('hidden')) window.renderReports();
     };
@@ -1575,6 +1588,239 @@ document.addEventListener('DOMContentLoaded', () => {
         customAwardValue.value = '1';
     };
 
+    // --- Cloud & Data Management Logic ---
+
+    const getFullBackupData = () => {
+        const backup = {};
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.startsWith('cdData_')) {
+                const rawVal = localStorage.getItem(key);
+                let val;
+                try {
+                    val = JSON.parse(rawVal);
+                } catch(e) {
+                    val = rawVal; // Keep as string (e.g. currentClassId)
+                }
+
+                // Privacy: Exclude binId and apiKey from ALL settings objects in backup
+                if (key.includes('_settings') && typeof val === 'object') {
+                    const sCopy = { ...val };
+                    delete sCopy.cloudBinId;
+                    delete sCopy.cloudApiKey;
+                    backup[key] = sCopy;
+                } else {
+                    backup[key] = val;
+                }
+            }
+        }
+        return backup;
+    };
+
+    const restoreFromBackup = (data) => {
+        if (!data || typeof data !== 'object') return alert('無效的備份資料');
+        
+        // Before overwriting, keep the current cloud settings if they exist in the new data
+        // (Though usually we want to keep the LOCAL ones to avoid losing access)
+        const currentBinId = settings.cloudBinId;
+        const currentApiKey = settings.cloudApiKey;
+
+        Object.keys(data).forEach(key => {
+            if (key.startsWith('cdData_')) {
+                localStorage.setItem(key, JSON.stringify(data[key]));
+            }
+        });
+
+        // Restore cloud keys to current class settings to ensure we don't lose access after sync
+        const newSettings = JSON.parse(localStorage.getItem(`cdData_${currentClassId}_settings`)) || {};
+        newSettings.cloudBinId = currentBinId;
+        newSettings.cloudApiKey = currentApiKey;
+        localStorage.setItem(`cdData_${currentClassId}_settings`, JSON.stringify(newSettings));
+
+        alert('資料導入成功！即將重新載入頁面...');
+        location.reload();
+    };
+
+    // Cloud Actions
+    const cloudUploadBtn = document.getElementById('cloudUploadBtn');
+    const cloudDownloadBtn = document.getElementById('cloudDownloadBtn');
+    const resetCloudBinId = document.getElementById('resetCloudBinId');
+    const resetCloudApiKey = document.getElementById('resetCloudApiKey');
+
+    resetCloudBinId.onclick = () => {
+        if(confirm('確定要清除 Bin ID 嗎？')) {
+            settings.cloudBinId = '';
+            saveData();
+            applySettings();
+        }
+    };
+    resetCloudApiKey.onclick = () => {
+        if(confirm('確定要清除存取金鑰嗎？')) {
+            settings.cloudApiKey = '';
+            saveData();
+            applySettings();
+        }
+    };
+
+    document.getElementById('cloudBinId').onchange = (e) => {
+        settings.cloudBinId = e.target.value.trim();
+        saveData();
+    };
+    document.getElementById('cloudApiKey').onchange = (e) => {
+        settings.cloudApiKey = e.target.value.trim();
+        saveData();
+    };
+
+    cloudUploadBtn.onclick = async () => {
+        const binId = settings.cloudBinId;
+        const apiKey = settings.cloudApiKey;
+        if (!binId || !apiKey) return alert('請先設定 Bin ID 與存取金鑰！');
+
+        if (!confirm('確定要將本地資料同步至雲端嗎？（這將覆蓋雲端現有資料）')) return;
+
+        const isUpstash = binId.includes('upstash.io');
+        const data = getFullBackupData();
+        
+        try {
+            cloudUploadBtn.disabled = true;
+            cloudUploadBtn.textContent = '⏳ 上傳中...';
+            
+            let response;
+            if (isUpstash) {
+                // Upstash Redis (REST)
+                response = await fetch(binId, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${apiKey}` },
+                    body: JSON.stringify(['SET', 'classKudox_backup', JSON.stringify(data)])
+                });
+            } else {
+                // Jsonbin.io (Standard)
+                const url = binId.startsWith('http') ? binId : `https://api.jsonbin.io/v3/b/${binId}`;
+                response = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Access-Key': apiKey
+                    },
+                    body: JSON.stringify(data)
+                });
+            }
+
+            if (response.ok) alert('雲端備份成功！');
+            else throw new Error(await response.text());
+        } catch (err) {
+            alert('上傳失敗：' + err.message);
+        } finally {
+            cloudUploadBtn.disabled = false;
+            cloudUploadBtn.textContent = '📤 上傳至雲端';
+        }
+    };
+
+    cloudDownloadBtn.onclick = async () => {
+        const binId = settings.cloudBinId;
+        const apiKey = settings.cloudApiKey;
+        if (!binId || !apiKey) return alert('請先設定 Bin ID 與存取金鑰！');
+
+        if (!confirm('⚠️ 警告：從雲端下載將【完全覆蓋】目前的本地資料且無法復原！確定要下載嗎？')) return;
+
+        const isUpstash = binId.includes('upstash.io');
+
+        try {
+            cloudDownloadBtn.disabled = true;
+            cloudDownloadBtn.textContent = '⏳ 下載中...';
+
+            let response;
+            if (isUpstash) {
+                response = await fetch(`${binId}/GET/classKudox_backup`, {
+                    headers: { 'Authorization': `Bearer ${apiKey}` }
+                });
+            } else {
+                const url = binId.startsWith('http') ? binId : `https://api.jsonbin.io/v3/b/${binId}/latest`;
+                response = await fetch(url, {
+                    headers: { 'X-Access-Key': apiKey }
+                });
+            }
+
+            if (response.ok) {
+                const result = await response.json();
+                const data = isUpstash ? JSON.parse(result.result) : result.record;
+                restoreFromBackup(data);
+            } else {
+                throw new Error(await response.text());
+            }
+        } catch (err) {
+            alert('下載失敗：' + err.message);
+        } finally {
+            cloudDownloadBtn.disabled = false;
+            cloudDownloadBtn.textContent = '📥 從雲端下載';
+        }
+    };
+
+    // Local Data Actions
+    document.getElementById('exportJsonBtn').onclick = () => {
+        const data = getFullBackupData();
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const timestamp = new Date().toISOString().split('T')[0];
+        a.href = url;
+        a.download = `ClassKudox_Backup_${timestamp}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
+    const importJsonBtn = document.getElementById('importJsonBtn');
+    const importJsonFile = document.getElementById('importJsonFile');
+    importJsonBtn.onclick = () => importJsonFile.click();
+    importJsonFile.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (!confirm('⚠️ 警告：匯入 JSON 將【完全覆蓋】目前的本地資料！確定嗎？')) {
+            importJsonFile.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const data = JSON.parse(event.target.result);
+                restoreFromBackup(data);
+            } catch (err) {
+                alert('匯入失敗：無效的 JSON 檔案');
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    // --- Boot sequence ---
+    const bootSequence = () => {
+        try {
+            renderClassSelector();
+            applySettings();
+            renderStudents();
+            renderPointItems();
+        } catch(e) {
+            console.error("Boot Sequence Error:", e);
+        }
+    };
+
+    // Safely assign event listeners
+    const el = (id) => document.getElementById(id);
+    if(el('resetSystemBtn')) el('resetSystemBtn').onclick = () => {
+        if (confirm('💣 極度危險 💣\n點擊「確定」將會刪除所有班級、學生與紀錄，系統將恢復至初始狀態。\n這個動作無法復原！確定嗎？')) {
+            if (confirm('請最後一再次確認，真的要全面重置嗎？')) {
+                Object.keys(localStorage).forEach(key => {
+                    if (key.startsWith('cdData_')) localStorage.removeItem(key);
+                });
+                alert('系統已完成重置！');
+                location.reload();
+            }
+        }
+    };
+
     document.querySelectorAll('.reports-close').forEach(btn => {
         btn.onclick = () => {
             currentReportFilterStudentId = null;
@@ -1587,10 +1833,5 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.group-close').forEach(btn => btn.onclick = () => closeModal(manageGroupModal));
     document.querySelectorAll('.classes-close').forEach(btn => btn.onclick = () => closeModal(manageClassesModal));
 
-
-    // --- Boot sequence ---
-    renderClassSelector();
-    applySettings();
-    renderStudents();
-    renderPointItems();
+    bootSequence();
 });

@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?ver=1.00a">
+    <link rel="stylesheet" href="styles.css?ver=1.00c">
 </head>
 <body data-font-size="medium">
 
@@ -19,7 +19,6 @@
         <header class="app-header">
             <div>
                 <h1>班級榮譽星</h1>
-                <p class="subtitle">追蹤與分析學生表現</p>
             </div>
             
             <div class="header-actions">
@@ -376,6 +375,8 @@
                     <button class="settings-tab-btn active" data-settings-tab="display">🖥️ 顯示與聲音</button>
                     <button class="settings-tab-btn" data-settings-tab="positive">⭐ 優點項目</button>
                     <button class="settings-tab-btn" data-settings-tab="negative">🚩 待改進項目</button>
+                    <button class="settings-tab-btn" data-settings-tab="cloud">☁️ 雲端備份</button>
+                    <button class="settings-tab-btn" data-settings-tab="data">💾 資料管理</button>
                     <button class="settings-tab-btn" data-settings-tab="danger">⚠️ 危險區域</button>
                 </div>
 
@@ -440,6 +441,53 @@
                                 <label for="newNeedsWorkIgnore" class="small-text">不計入「報表」總分</label>
                             </div>
                             <button class="btn add-item-btn" id="addNeedsWorkBtn">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-tab-content" id="settingsCloudTab">
+                    <div class="settings-section">
+                        <h3>☁️ 雲端同步設定 
+                            <a href="https://w1798.github.io/web/JsonCloudGuide" target="_blank" class="settings-help-link">❓ 申請說明</a>
+                        </h3>
+                        <p class="small-text" style="margin-bottom:1rem; color:var(--text-secondary);">支援 Jsonbin.io 與 Upstash Redis。上傳時會自動排除您的金鑰資訊以保護隱私。</p>
+                        
+                        <div class="input-group">
+                            <label>Bin ID / URL (Upstash 請填完整 URL)</label>
+                            <div class="input-with-btn">
+                                <input type="text" id="cloudBinId" placeholder="例如：65f... 或 https://...">
+                                <button class="btn icon-btn" id="resetCloudBinId" title="重置">🧹</button>
+                            </div>
+                        </div>
+                        
+                        <div class="input-group" style="margin-top:1rem;">
+                            <label>Token / X-Access-Key</label>
+                            <div class="input-with-btn">
+                                <input type="password" id="cloudApiKey" placeholder="您的存取金鑰">
+                                <button class="btn icon-btn" id="resetCloudApiKey" title="重置">🧹</button>
+                            </div>
+                        </div>
+
+                        <div class="data-actions">
+                            <button class="btn secondary-btn" id="cloudUploadBtn">📤 上傳至雲端</button>
+                            <button class="btn secondary-btn" id="cloudDownloadBtn">📥 從雲端下載</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-tab-content" id="settingsDataTab">
+                    <div class="settings-section">
+                        <h3>💾 資料進階管理</h3>
+                        <div class="data-actions">
+                            <button class="btn secondary-btn" id="exportJsonBtn">📤 匯出 JSON 檔</button>
+                            <button class="btn secondary-btn" id="importJsonBtn">📥 匯入 JSON 檔</button>
+                        </div>
+                        <input type="file" id="importJsonFile" accept=".json" style="display:none;">
+
+                        <div class="danger-zone">
+                            <h4>☢️ 危險區域</h4>
+                            <p class="small-text">重置系統將刪除所有班級、學生與點數紀錄，並恢復至初始狀態。</p>
+                            <button class="btn warning-btn" id="resetSystemBtn" style="margin-top:1rem; background:#dc2626;">🧨 重置整個系統</button>
                         </div>
                     </div>
                 </div>
@@ -527,6 +575,6 @@
 </script>
 
 
-    <script src="script.js?ver=1.00b"></script>
+    <script src="script.js?ver=1.00c"></script>
 </body>
 </html>
