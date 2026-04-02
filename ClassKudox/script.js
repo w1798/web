@@ -46,18 +46,29 @@ document.addEventListener('DOMContentLoaded', () => {
     let pointItems = null;
     let settings = null;
 
+    // --- Default Templates (add new parameters here in the future) ---
+    const DEFAULT_SETTINGS = {
+        fontSize: 'medium',
+        columns: 5,
+        enableSound: false,
+        studentCardHeight: 0,
+        groupCardHeight: 0,
+        // Future parameters can be added here, they will auto-apply to existing users
+    };
+
     const loadClassData = () => {
         students = JSON.parse(localStorage.getItem(`cdData_${currentClassId}_students`)) || [];
         groups = JSON.parse(localStorage.getItem(`cdData_${currentClassId}_groups`)) || [];
         logs = JSON.parse(localStorage.getItem(`cdData_${currentClassId}_logs`)) || [];
-        pointItems = JSON.parse(localStorage.getItem(`cdData_${currentClassId}_items`)) || JSON.parse(JSON.stringify(defaultItems));
-        settings = JSON.parse(localStorage.getItem(`cdData_${currentClassId}_settings`)) || {
-            fontSize: 'medium',
-            columns: 5,
-            enableSound: false,
-            studentCardHeight: 0,
-            groupCardHeight: 0
-        };
+
+        // pointItems: merge stored with defaults (handles new item categories gracefully)
+        const storedItems = JSON.parse(localStorage.getItem(`cdData_${currentClassId}_items`));
+        pointItems = storedItems ? storedItems : JSON.parse(JSON.stringify(defaultItems));
+
+        // settings: always start with full defaults, then overlay stored values
+        // This guarantees any new parameter added in future will have a default for existing users
+        const storedSettings = JSON.parse(localStorage.getItem(`cdData_${currentClassId}_settings`)) || {};
+        settings = Object.assign({}, DEFAULT_SETTINGS, storedSettings);
     };
     loadClassData();
 
