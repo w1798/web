@@ -32,10 +32,15 @@
             </div>
         </header>
 
-        <!-- View Tabs (Students / Groups) -->
+        <!-- View Tabs (Students / Groups) + Inline Undo -->
         <div class="view-tabs">
             <button class="view-tab-btn active" data-view="students">🧑‍🎓 學生</button>
             <button class="view-tab-btn" data-view="groups">👥 群組</button>
+            <!-- Undo notice sits right in the tab row, always visible after an award -->
+            <div id="undoToast" class="undo-inline hidden">
+                <span id="undoMessage">已給予點數</span>
+                <button id="undoActionBtn" class="btn warning-btn">↩️ 復原</button>
+            </div>
         </div>
 
         <!-- Main Content Grid (Students) -->
@@ -62,11 +67,6 @@
         </div>
     </div>
 
-    <!-- Undo Toast Notification -->
-    <div id="undoToast" class="undo-toast hidden">
-        <span id="undoMessage">已給予點數</span>
-        <button id="undoActionBtn" class="btn warning-btn">↩️ 復原</button>
-    </div>
 
     <!-- ADD STUDENT MODAL -->
     <div id="addStudentModal" class="modal-overlay hidden">

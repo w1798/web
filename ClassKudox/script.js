@@ -485,16 +485,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
 
-    // --- Undo Logic ---
     const showUndoToast = (msg) => {
         undoMessage.textContent = msg;
         undoToast.classList.remove('hidden');
-        
+        // No auto-hide: stays until user clicks Undo, or next award action replaces it
         if(undoTimeout) clearTimeout(undoTimeout);
-        undoTimeout = setTimeout(() => {
-            undoToast.classList.add('hidden');
-            lastActionLogIds = [];
-        }, 6000);
+        undoTimeout = null;
     };
 
     undoActionBtn.onclick = () => {
