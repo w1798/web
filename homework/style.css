@@ -338,6 +338,22 @@ body, html {
     margin-left: 0;
 }
 
+.tcy {
+    -webkit-text-combine: horizontal;
+    text-combine-upright: all;
+    display: inline-block;
+    /* 調整數值，負值越大越往左偏 */
+    margin-right: 14px; 
+    /* 有時候也需要微調垂直位置 */
+    vertical-align: middle; 
+}
+
+/* 確保直書容器樣式正確 */
+.writing-vertical {
+    writing-mode: vertical-rl;
+    text-orientation: mixed; /* 這是關鍵，讓英數默認旋轉或保持直立 */
+}
+
 @media (max-width: 768px) {
     .modal-content { width: 100% !important; height: 100% !important; margin: 0 !important; border-radius: 0; }
     .header-bar { justify-content: center; text-align: center; }

@@ -241,6 +241,7 @@ function getDayName(dateString) {
 
 
 function applyBopoTransform(text) {
+    // 如果不是注音模式，直接回傳原始文字（包含 TCY 標籤）
     if (appData.displayMode !== 'bopomofo') return text;
     
     const lines = (appData.bopoMap || "").split('\n');
@@ -251,39 +252,42 @@ function applyBopoTransform(text) {
     });
 
     const tones = ["ˊ", "ˇ", "ˋ", "˙"];
-    const isRTL = appData.direction === 'rtl';
     const isVertical = appData.writingMode === 'vertical-rl';
-    const isBopomofoMode = appData.displayMode === 'bopomofo';
 
-    return text.split('').map(char => {
-        const bopo = map[char];
-        
-        if (!bopo) {
-            if (isVertical) {
-                return `<span class="plain-char">${char}</span>`;
-            }
-            return char;
+    // 關鍵修改：使用正則表達式，先切分出 TCY 標籤部分與一般文字部分
+    // [A-Za-z0-9~\-~－]+ 是我們定義要橫打的字元範圍
+    const parts = text.split(/(<span class="tcy">.*?<\/span>)/g);
+
+    return parts.map(part => {
+        // 如果這一部分是我們包好的 TCY 標籤，直接回傳，不進行注音轉換
+        if (part.startsWith('<span class="tcy">')) {
+            return part;
         }
 
-        if (isVertical) {
-            let tone = "";
-            let mainBopo = bopo;
-            const lastChar = bopo.slice(-1);
-            if (tones.includes(lastChar)) {
-                tone = lastChar;
-                mainBopo = bopo.slice(0, -1);
+        // 否則，對一般文字進行注音轉換處理
+        return part.split('').map(char => {
+            const bopo = map[char];
+            
+            if (!bopo) {
+                return isVertical ? `<span class="plain-char">${char}</span>` : char;
             }
 
-            const bopoChars = mainBopo.split('').map(c => `<span>${c}</span>`).join('');
-            
-            return `<span class="bopo-vertical-item">
+            if (isVertical) {
+                let tone = "";
+                let mainBopo = bopo;
+                const lastChar = bopo.slice(-1);
+                if (tones.includes(lastChar)) {
+                    tone = lastChar;
+                    mainBopo = bopo.slice(0, -1);
+                }
+                const bopoChars = mainBopo.split('').map(c => `<span>${c}</span>`).join('');
+                return `<span class="bopo-vertical-item">
                             <span class="bopo-tone">${tone}</span>
                             <span class="bopo-chars">${bopoChars}</span>
                         </span>`;            
-            
-        }
-        
-        return bopo;
+            }
+            return bopo;
+        }).join('');
     }).join('');
 }
 
@@ -414,8 +418,16 @@ function renderMain(isManual = false) {
                     } else {
                         prefix = symbol;
                     }
+                    // 在 renderMain 函式的 mb.innerHTML 映射邏輯中
                     const fullText = prefix + t;
-                    return `<li>${applyBopoTransform(fullText)}</li>`;
+
+                    // 新增這行：將連續的英數字與特定符號包上 tcy 標籤
+                    const wrappedText = fullText.replace(/[A-Za-z0-9~\-~－]+/g, (match) => {
+                        return `<span class="tcy">${match}</span>`;
+                    });
+
+                    // 最後再傳入轉換函式
+                    return `<li>${applyBopoTransform(wrappedText)}</li>`;
                 }).join('')}</ul>
             </div>
         `;
@@ -425,7 +437,19 @@ function renderMain(isManual = false) {
 }
 
 
-    
+/**
+ * 將連續的英數字、~、- 符號包裝在 span 中，以便在直書時橫向顯示
+ */
+function wrapHorizontalText(text) {
+    // 正規表達式說明：
+    // [A-Za-z0-9~\-~－]+ 匹配連續的英文字母、數字、以及各種波浪號與連字號
+    return text.replace(/[A-Za-z0-9~\-~－]+/g, (match) => {
+        // 如果長度太長（例如超過 4 個字），在直排可能會太擠，可視需求調整
+        return `<span class="tcy">${match}</span>`;
+    });
+}
+
+
 function ensureEditDaysExist(startDateStr) {
     // --- 修正處：檢查日期有效性 ---
     let current = new Date(startDateStr);
