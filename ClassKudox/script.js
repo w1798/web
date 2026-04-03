@@ -50,11 +50,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const DEFAULT_SETTINGS = {
         fontSize: 'medium',
         columns: 5,
+        groupColumns: 2,
         enableSound: false,
         studentCardHeight: 0,
         groupCardHeight: 0,
         cloudBinId: '',
         cloudApiKey: '',
+        autoBackupInterval: 0, // 0 means Off
         // Future parameters can be added here, they will auto-apply to existing users
     };
 
@@ -79,6 +81,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let isMultiSelectMode = false;
     let selectedStudentIds = new Set();
     
+    // Sync State: 0(Incomplete), 1(Waiting), 2(Error), 3(Synced)
+    let isDirty = (settings.cloudBinId && settings.cloudApiKey) ? 3 : 0;
+    const syncStatusEl = document.getElementById('syncStatus');
+    let autoBackupTimer = null;
+
     // Context for Award Modal
     let awardContextIds = []; // Array of student IDs to receive points
     let currentProfileId = null; // Used for Profile History / Editing
@@ -90,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentSort = 'score'; // 'score' or 'name'
 
-    const saveData = () => {
+    const saveData = (skipDirty = false) => {
         localStorage.setItem('cdData_classes', JSON.stringify(classes));
         localStorage.setItem('cdData_currentClassId', currentClassId);
         
@@ -99,6 +106,16 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem(`cdData_${currentClassId}_logs`, JSON.stringify(logs));
         localStorage.setItem(`cdData_${currentClassId}_items`, JSON.stringify(pointItems));
         localStorage.setItem(`cdData_${currentClassId}_settings`, JSON.stringify(settings));
+
+        if (!skipDirty) {
+            // Check if cloud config is complete
+            if (settings.cloudBinId && settings.cloudApiKey) {
+                isDirty = 1; // Waiting for sync
+            } else {
+                isDirty = 0; // Incomplete config
+            }
+            updateSyncStatus();
+        }
     };
 
 
@@ -246,17 +263,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const applySettings = () => {
         document.body.dataset.fontSize = settings.fontSize;
         document.documentElement.style.setProperty('--grid-cols', settings.columns);
+        document.documentElement.style.setProperty('--group-grid-cols', settings.groupColumns || 2);
         document.documentElement.style.setProperty('--student-card-height', (settings.studentCardHeight || 0) + 'px');
         document.documentElement.style.setProperty('--group-card-height', (settings.groupCardHeight || 0) + 'px');
         
-        // Mobile grid: max 4 columns, or user setting if smaller
-        const mobileCols = Math.min(settings.columns, 4);
-        document.documentElement.style.setProperty('--mobile-grid-cols', mobileCols);
+        // Mobile grid: max 4 columns
+        document.documentElement.style.setProperty('--mobile-grid-cols', Math.min(settings.columns, 4));
+        document.documentElement.style.setProperty('--mobile-group-cols', Math.min(settings.groupColumns || 2, 4));
 
         // Update UI controls to match
         fontSizeSelect.value = settings.fontSize;
         gridColsRange.value = settings.columns;
         gridColsLabel.textContent = settings.columns;
+
+        const gColsRange = document.getElementById('groupColsRange');
+        const gColsLabel = document.getElementById('groupColsLabel');
+        if(gColsRange) {
+            gColsRange.value = settings.groupColumns || 2;
+            gColsLabel.textContent = settings.groupColumns || 2;
+        }
         
         if(cardHeightRange) {
             cardHeightRange.value = settings.studentCardHeight || 0;
@@ -270,11 +295,59 @@ document.addEventListener('DOMContentLoaded', () => {
         const soundSettingCbx = document.getElementById('enableSoundSetting');
         if(soundSettingCbx) soundSettingCbx.checked = settings.enableSound;
 
-        // Cloud Inputs
+        // Cloud & Auto Backup
         const binIdInput = document.getElementById('cloudBinId');
         const apiKeyInput = document.getElementById('cloudApiKey');
+        const autoBackupSelect = document.getElementById('autoBackupInterval');
         if(binIdInput) binIdInput.value = settings.cloudBinId || '';
         if(apiKeyInput) apiKeyInput.value = settings.cloudApiKey || '';
+        if(autoBackupSelect) autoBackupSelect.value = settings.autoBackupInterval || 0;
+
+        initAutoBackup();
+        updateSyncStatus();
+    };
+
+    const updateSyncStatus = () => {
+        if (!syncStatusEl) return;
+        
+        let text = '載入中...';
+        let className = 'sync-badge state-0';
+
+        switch(isDirty) {
+            case 1:
+                text = '等待同步';
+                className = 'sync-badge state-1';
+                break;
+            case 2:
+                text = '同步錯誤';
+                className = 'sync-badge state-2';
+                break;
+            case 3:
+                text = '同步雲端';
+                className = 'sync-badge state-3';
+                break;
+            case 0:
+            default:
+                text = '本地資料';
+                className = 'sync-badge state-0';
+                break;
+        }
+
+        syncStatusEl.textContent = text;
+        syncStatusEl.className = className;
+    };
+
+    const initAutoBackup = () => {
+        if (autoBackupTimer) clearInterval(autoBackupTimer);
+        const intervalMins = parseInt(settings.autoBackupInterval);
+        if (intervalMins > 0) {
+            autoBackupTimer = setInterval(() => {
+                if (isDirty === 1 && settings.cloudBinId && settings.cloudApiKey) {
+                    console.log("Auto backing up...");
+                    performCloudUpload(true);
+                }
+            }, intervalMins * 60 * 1000);
+        }
     };
 
 
@@ -1244,7 +1317,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (_settingsSnapshot) {
             Object.assign(settings, JSON.parse(_settingsSnapshot));
             applySettings();
-            saveData();
+            saveData(true); // Don't mark as dirty when reverting
         }
         closeModal(settingsModal);
     };
@@ -1255,7 +1328,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (_settingsSnapshot) {
                 Object.assign(settings, JSON.parse(_settingsSnapshot));
                 applySettings();
-                saveData();
+                saveData(true); // Don't mark as dirty when reverting
             }
             closeModal(settingsModal);
         };
@@ -1399,6 +1472,19 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('#studentProfileModal .sub-tabs .sub-tab-btn').forEach(btn => {
         btn.onclick = () => switchAwardTab(btn.dataset.awardTab);
     });
+
+    document.getElementById('groupColsRange').oninput = (e) => {
+        settings.groupColumns = parseInt(e.target.value) || 2;
+        document.getElementById('groupColsLabel').textContent = settings.groupColumns;
+        document.documentElement.style.setProperty('--group-grid-cols', settings.groupColumns);
+        document.documentElement.style.setProperty('--mobile-group-cols', Math.min(settings.groupColumns, 4));
+        renderGroups();
+    };
+
+    document.getElementById('autoBackupInterval').onchange = (e) => {
+        settings.autoBackupInterval = parseInt(e.target.value) || 0;
+        initAutoBackup();
+    };
 
     // Top Level Buttons
     document.getElementById('addStudentBtn').onclick = () => openModal(addStudentModal);
@@ -1671,30 +1757,33 @@ document.addEventListener('DOMContentLoaded', () => {
         saveData();
     };
 
-    cloudUploadBtn.onclick = async () => {
+    const performCloudUpload = async (isAuto = false) => {
         const binId = settings.cloudBinId;
         const apiKey = settings.cloudApiKey;
-        if (!binId || !apiKey) return alert('請先設定 Bin ID 與存取金鑰！');
+        if (!binId || !apiKey) {
+            if(!isAuto) alert('請先設定 Bin ID 與存取金鑰！');
+            return;
+        }
 
-        if (!confirm('確定要將本地資料同步至雲端嗎？（這將覆蓋雲端現有資料）')) return;
+        if (!isAuto && !confirm('確定要將本地資料同步至雲端嗎？（這將覆蓋雲端現有資料）')) return;
 
         const isUpstash = binId.includes('upstash.io');
         const data = getFullBackupData();
         
         try {
-            cloudUploadBtn.disabled = true;
-            cloudUploadBtn.textContent = '⏳ 上傳中...';
+            if(!isAuto) {
+                cloudUploadBtn.disabled = true;
+                cloudUploadBtn.textContent = '⏳ 上傳中...';
+            }
             
             let response;
             if (isUpstash) {
-                // Upstash Redis (REST)
                 response = await fetch(binId, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${apiKey}` },
                     body: JSON.stringify(['SET', 'classKudox_backup', JSON.stringify(data)])
                 });
             } else {
-                // Jsonbin.io (Standard)
                 const url = binId.startsWith('http') ? binId : `https://api.jsonbin.io/v3/b/${binId}`;
                 response = await fetch(url, {
                     method: 'PUT',
@@ -1706,15 +1795,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
 
-            if (response.ok) alert('雲端備份成功！');
-            else throw new Error(await response.text());
+            if (response.ok) {
+                isDirty = 3; // Success
+                updateSyncStatus();
+                if(!isAuto) alert('雲端備份成功！');
+            } else {
+                throw new Error(await response.text());
+            }
         } catch (err) {
-            alert('上傳失敗：' + err.message);
+            isDirty = 2; // Error
+            updateSyncStatus();
+            if(!isAuto) alert('上傳失敗：' + err.message);
+            else console.error("Auto backup failed:", err);
         } finally {
-            cloudUploadBtn.disabled = false;
-            cloudUploadBtn.textContent = '📤 上傳至雲端';
+            if(!isAuto) {
+                cloudUploadBtn.disabled = false;
+                cloudUploadBtn.textContent = '📤 上傳至雲端';
+            }
         }
     };
+
+    cloudUploadBtn.onclick = () => performCloudUpload(false);
 
     cloudDownloadBtn.onclick = async () => {
         const binId = settings.cloudBinId;
@@ -1743,8 +1844,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (response.ok) {
                 const result = await response.json();
-                const data = isUpstash ? JSON.parse(result.result) : result.record;
+                const data = isUpstash ? JSON.parse(result.result) : (result.record || result);
                 restoreFromBackup(data);
+                isDirty = 3; // Synced after download
+                saveData(true); 
+                updateSyncStatus();
+                alert('雲端資料下載並恢復成功！');
             } else {
                 throw new Error(await response.text());
             }
