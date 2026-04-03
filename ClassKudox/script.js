@@ -339,14 +339,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const initAutoBackup = () => {
         if (autoBackupTimer) clearInterval(autoBackupTimer);
-        const intervalMins = parseInt(settings.autoBackupInterval);
-        if (intervalMins > 0) {
+        const intervalSec = parseInt(settings.autoBackupInterval);
+        if (intervalSec > 0) {
             autoBackupTimer = setInterval(() => {
                 if (isDirty === 1 && settings.cloudBinId && settings.cloudApiKey) {
                     console.log("Auto backing up...");
                     performCloudUpload(true);
                 }
-            }, intervalMins * 60 * 1000);
+            }, intervalSec * 1000);
         }
     };
 
