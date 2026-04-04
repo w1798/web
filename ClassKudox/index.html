@@ -98,7 +98,10 @@
             <div class="modal-body">
                 <div class="edit-profile-preview">
                     <img id="editStudentAvatarPreview" src="" class="student-avatar" alt="Avatar">
-                    <button id="randomizeAvatarBtn" class="btn secondary-btn small-btn">🎲 隨機變更頭像</button>
+                    <div style="display:flex; gap:0.5rem;">
+                        <button id="randomizeAvatarBtn" class="btn secondary-btn small-btn">🎲 隨機</button>
+                        <button id="openAvatarPickerBtn" class="btn secondary-btn small-btn">🙋‍♂️ 挑選頭像</button>
+                    </div>
                 </div>
                 <div class="input-group">
                     <label for="editStudentName">學生姓名</label>
@@ -177,6 +180,7 @@
                         <button class="sub-tab-btn" data-award-tab="needs-work">待改進</button>
                         <button class="sub-tab-btn" data-award-tab="custom">臨時自訂</button>
                     </div>
+                    <div id="groupAwardMembersPeek" class="hidden" style="display:flex; flex-wrap:wrap; gap:0.6rem; margin-bottom:1.5rem; padding:0.75rem; background:#f8fafc; border-radius:12px; border:1px solid var(--border-color); max-height:250px; overflow-y:auto; align-content: flex-start;"></div>
                     
                     <div class="award-content active" id="positiveItems"></div>
                     <div class="award-content" id="needsWorkItems"></div>
@@ -265,8 +269,9 @@
                         </div>
                     </div>
 
-                    <h3 style="font-size: 1em; border-bottom: 2px solid var(--border-color); padding-bottom: 0.4rem; margin-bottom: 0.75rem;" id="reportActivityTitle">
-                        全班最近紀錄
+                    <h3 style="font-size: 1em; border-bottom: 2px solid var(--border-color); padding-bottom: 0.4rem; margin-bottom: 0.75rem; display:flex; justify-content:space-between; align-items:center;" id="reportActivityHeader">
+                        <span id="reportActivityTitle">全班最近紀錄</span>
+                        <button id="resetReportFilterBtn" class="small-btn cancel-btn hidden">↩️ 回到全班</button>
                     </h3>
                     
                     <div class="reports-right-inner">
@@ -376,7 +381,7 @@
                     <button class="settings-tab-btn active" data-settings-tab="display">🖥️ 顯示與聲音</button>
                     <button class="settings-tab-btn" data-settings-tab="positive">⭐ 優點項目</button>
                     <button class="settings-tab-btn" data-settings-tab="negative">🚩 待改進項目</button>
-                    <button class="settings-tab-btn" data-settings-tab="cloud">☁️ 雲端備份</button>
+                    <button class="settings-tab-btn" data-settings-tab="cloud">☁️ 雲端同步</button>
                     <button class="settings-tab-btn" data-settings-tab="data">💾 資料管理</button>
                     <button class="settings-tab-btn" data-settings-tab="danger">⚠️ 危險區域</button>
                 </div>
@@ -413,6 +418,10 @@
                                 <label for="groupColsRange">群組每列顯示數量 <span id="groupColsLabel" class="highlight-badge">2</span></label>
                                 <input type="range" id="groupColsRange" min="1" max="10" value="2" style="width:100%">
                             </div>
+                            <div class="input-group" style="flex:1;">
+                                <label for="itemColsRange">行為項目每列個數 (連動點選學生卡片) <span id="itemColsLabel" class="highlight-badge">3</span></label>
+                                <input type="range" id="itemColsRange" min="1" max="10" value="3" style="width:100%">
+                            </div>
                         </div>
                         
                         <div class="settings-row" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
@@ -432,7 +441,10 @@
                             <div class="add-item-form">
                                 <div class="add-item-input-group">
                                     <label class="mobile-only-label">項目</label>
-                                    <input type="text" id="newPositiveLabel" placeholder="項目：例如 團隊合作">
+                                    <div style="display:flex; gap:0.5rem; width:100%;">
+                                        <button class="icon-select-btn" id="newPositiveIconBtn">⭐</button>
+                                        <input type="text" id="newPositiveLabel" placeholder="項目：例如 團隊合作" style="flex:1;">
+                                    </div>
                                 </div>
                                 <div class="add-item-input-group">
                                     <label class="mobile-only-label">分數</label>
@@ -442,10 +454,10 @@
                                     <input type="checkbox" id="newPositiveIgnore">
                                     <label for="newPositiveIgnore" class="small-text">不計入「報表」總分</label>
                                 </div>
-                                <button class="btn add-item-btn" id="addPositiveBtn">+</button>
+                                <button class="btn add-item-btn" id="addPositiveBtn" style="white-space: nowrap; padding: 0 1rem; flex-shrink: 0; min-width: max-content;">+增加</button>
                             </div>
                         </div>
-                        <ul id="settingsPositiveList" class="settings-list" style="margin-top:1rem;"></ul>
+                        <div id="settingsPositiveList" class="settings-point-grid" style="margin-top:1rem;"></div>
                         <div class="settings-footer-spacer"></div>
                     </div>
                 </div>
@@ -457,7 +469,10 @@
                             <div class="add-item-form">
                                 <div class="add-item-input-group">
                                     <label class="mobile-only-label">項目</label>
-                                    <input type="text" id="newNeedsWorkLabel" placeholder="項目：例如 上課講話">
+                                    <div style="display:flex; gap:0.5rem; width:100%;">
+                                        <button class="icon-select-btn" id="newNeedsWorkIconBtn">🚩</button>
+                                        <input type="text" id="newNeedsWorkLabel" placeholder="項目：例如 上課講話" style="flex:1;">
+                                    </div>
                                 </div>
                                 <div class="add-item-input-group">
                                     <label class="mobile-only-label">分數</label>
@@ -467,19 +482,17 @@
                                     <input type="checkbox" id="newNeedsWorkIgnore">
                                     <label for="newNeedsWorkIgnore" class="small-text">不計入「報表」總分</label>
                                 </div>
-                                <button class="btn add-item-btn" id="addNeedsWorkBtn">+</button>
+                                <button class="btn add-item-btn" id="addNeedsWorkBtn" style="white-space: nowrap; padding: 0 1rem; flex-shrink: 0; min-width: max-content;">+增加</button>
                             </div>
                         </div>
-                        <ul id="settingsNeedsWorkList" class="settings-list" style="margin-top:1rem;"></ul>
+                        <div id="settingsNeedsWorkList" class="settings-point-grid" style="margin-top:1rem;"></div>
                         <div class="settings-footer-spacer"></div>
                     </div>
                 </div>
 
                 <div class="settings-tab-content" id="settingsCloudTab">
                     <div class="settings-section">
-                        <h3>☁️ 雲端同步設定 
-                            <a href="https://w1798.github.io/web/JsonCloudGuide" target="_blank" class="settings-help-link">❓ 申請說明</a>
-                        </h3>
+                        <h3>☁️ 雲端同步設定 (<a href="https://jsonbin.io/app/bins" target="_blank" class="settings-help-link" style="text-decoration: underline;">申請說明</a>)</h3>
                         <p class="small-text" style="margin-bottom:1rem; color:var(--text-secondary);">支援 Jsonbin.io 與 Upstash Redis。上傳時會自動排除您的金鑰資訊以保護隱私。</p>
                         
                         <div class="input-group">
@@ -499,16 +512,15 @@
                         </div>
 
                         <div class="input-group" style="margin-top:1rem;">
-                            <label for="autoBackupInterval">☁️ 自動備份檢查頻率</label>
-                            <select id="autoBackupInterval" class="filter-select" style="width:100%;">
-                                <option value="0">無 (手動備份)</option>
-                                <option value="1">1 秒一次</option>
-                                <option value="5">5 秒一次</option>
-                                <option value="10">10 秒一次</option>
-                                <option value="20">20 秒一次</option>
+                            <label for="autoSyncInterval">☁️ 自動同步頻率 (最小 15 秒)</label>
+                            <select id="autoSyncInterval" class="filter-select" style="width:100%;">
+                                <option value="0">無 (手動同步)</option>
+                                <option value="15">15 秒一次</option>
                                 <option value="30">30 秒一次</option>
-                                <option value="60">60 秒一次</option>
+                                <option value="60">1 分鐘一次</option>
+                                <option value="300">5 分鐘一次</option>
                             </select>
+                            <div class="small-text" style="margin-top:0.3rem; color:var(--text-secondary);">若有其他裝置異動，系統將自動背景合併而不重整。</div>
                         </div>
 
                         <div class="data-actions">
@@ -549,8 +561,70 @@
             </div>
             <!-- Settings Footer -->
             <div class="settings-modal-footer">
-                <button id="settingsCancelBtn" class="btn cancel-btn">取消</button>
-                <button id="settingsConfirmBtn" class="btn primary-btn">✅ 確定儲存</button>
+                <button id="settingsCancelBtn" class="btn cancel-btn">返回</button>
+                <button id="settingsConfirmBtn" class="btn primary-btn hidden">✅ 確定儲存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ICON PICKER MODAL -->
+    <div id="iconPickerModal" class="modal-overlay hidden" style="z-index: 2000;">
+        <div class="modal-content" style="width: 90%; max-width: 950px; padding: 1.5rem;">
+            <div class="modal-header" style="margin-bottom: 1rem;">
+                <h2 style="font-size: 1.25rem;">選擇圖示</h2>
+                <button class="close-modal-btn icon-picker-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="iconPickerGrid" class="icon-picker-grid">
+                    <!-- Icons injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT POINT ITEM MODAL -->
+    <div id="editPointItemModal" class="modal-overlay hidden" style="z-index: 1500;">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>編輯行為項目</h2>
+                <button class="close-modal-btn edit-item-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label>圖示</label>
+                    <button class="icon-select-btn" id="editItemIconBtn">⭐</button>
+                </div>
+                <div class="input-group">
+                    <label>名稱</label>
+                    <input type="text" id="editItemLabel">
+                </div>
+                <div class="input-group">
+                    <label>點數</label>
+                    <input type="number" id="editItemValue">
+                </div>
+                <div class="checkbox-group" style="margin-top: 1rem;">
+                    <input type="checkbox" id="editItemIgnore">
+                    <label for="editItemIgnore">不計入「報表」總分</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn cancel-btn edit-item-close">取消</button>
+                <button class="btn primary-btn" id="saveEditItemBtn">儲存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AVATAR PICKER MODAL -->
+    <div id="avatarPickerModal" class="modal-overlay hidden" style="z-index: 2000;">
+        <div class="modal-content" style="width: 95%; max-width: 600px; padding: 1.5rem;">
+            <div class="modal-header" style="margin-bottom: 1rem;">
+                <h2 style="font-size: 1.25rem;">從隨機圖庫中挑選未使用過的頭像</h2>
+                <button class="close-modal-btn avatar-picker-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="avatarPickerGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 1rem; max-height: 50vh; overflow-y: auto; padding: 0.5rem;">
+                    <!-- Avatar items injected here -->
+                </div>
             </div>
         </div>
     </div>
@@ -623,6 +697,6 @@
 </script>
 
 
-    <script src="script.js?ver=1.00d"></script>
+    <script src="script.js?ver=1.00h"></script>
 </body>
 </html>
