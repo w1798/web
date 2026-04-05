@@ -240,7 +240,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const el = document.getElementById('undoMessage'); if(el) el.textContent = m; 
         const toast = document.getElementById('undoToast'); if(toast) toast.classList.remove('hidden'); 
         if(undoTimeout) clearTimeout(undoTimeout); 
-        undoTimeout = setTimeout(() => { const t = document.getElementById('undoToast'); if(t) t.classList.add('hidden'); }, 5000); 
+        // 依照使用者要求，不自動消失：undoTimeout = setTimeout(() => { const t = document.getElementById('undoToast'); if(t) t.classList.add('hidden'); }, 5000); 
+    };
+
+    const undoAction = () => {
+        if (!lastActionLogIds.length) return;
+        const set = new Set(lastActionLogIds);
+        logs = logs.filter(l => !set.has(l.id));
+        lastActionLogIds = [];
+        saveData();
+        const toast = document.getElementById('undoToast'); if(toast) toast.classList.add('hidden');
+        renderStudents(); if(currentView === 'groups') renderGroups();
     };
 
     // --- Actions & Helpers ---
@@ -315,7 +325,16 @@ document.addEventListener('DOMContentLoaded', () => {
             currentClassId = newId; localStorage.setItem('cdData_currentClassId', currentClassId); location.reload(); 
         };
         const l = document.getElementById('classList'); if(l) { l.innerHTML = ''; classes.forEach(c => {
-            const li = document.createElement('li'); li.innerHTML = `<span style="${c.isArchived?'text-decoration:line-through;color:#94a3b8;':''}">${c.name}</span><div style="display:flex;gap:0.4rem;"><button class="archive-btn btn small-btn">${c.isArchived?'解封存':'封存'}</button><button class="del-class-btn btn negative-btn small-btn">🗑️</button></div>`;
+            const li = document.createElement('li'); li.innerHTML = `<span style="${c.isArchived?'text-decoration:line-through;color:#94a3b8;':''}">${c.name}</span><div style="display:flex;gap:0.4rem;"><button class="rename-class-btn btn secondary-btn small-btn">✏️ 修改名稱</button><button class="archive-btn btn small-btn">${c.isArchived?'解封存':'封存'}</button><button class="del-class-btn btn negative-btn small-btn">🗑️</button></div>`;
+            li.querySelector('.rename-class-btn').onclick = () => {
+                const newName = prompt('請輸入新的班級名稱：', c.name);
+                if (newName && newName.trim() && newName.trim() !== c.name) {
+                    if (classes.some(x => x.name === newName.trim())) return alert('班級名稱已存在');
+                    c.name = newName.trim();
+                    saveData();
+                    renderClassSelector();
+                }
+            };
             li.querySelector('.archive-btn').onclick = () => { c.isArchived = !c.isArchived; saveData(); renderClassSelector(); };
             li.querySelector('.del-class-btn').onclick = () => { if(confirm('刪除？')) { classes = classes.filter(x=>x.id!==c.id); if(currentClassId===c.id) currentClassId=classes[0]?.id || ''; saveData(); location.reload(); } };
             l.appendChild(li);
@@ -381,11 +400,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const cloudVer = cloudData?.syncVersion || 0;
             console.log('[CloudSync] 雲端版本:', cloudVer, '本地版本:', localSyncVersion);
             if (!isManual && cloudVer !== 0 && cloudVer !== localSyncVersion) {
-                if (confirm(`雲端有更新的版本 (${cloudVer})，本機版本為 (${localSyncVersion})。\n是否要下載最新資料？\n(取消後將停止自動同步，除非點擊「上傳至雲端」強行覆蓋)`)) {
-                    await performCloudDownload(); return;
-                } else {
-                    isDirty = 2; updateSyncStatus(); isSyncing = false; return;
-                }
+                console.log(`[CloudSync] 雲端版本 (${cloudVer}) 不同，自動下載覆蓋...`);
+                await performCloudDownload(); return;
             }
             let toPush = getFullBackupData();
             const newVer = Date.now(); toPush.syncVersion = newVer;
@@ -393,7 +409,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('[CloudSync] 推送數據至雲端:', putUrl);
             const putResp = await fetch(putUrl, { method: isUpstash?'POST':'PUT', headers: isUpstash?h:{...h,'Content-Type':'application/json'}, body: JSON.stringify(toPush) });
             if (putResp.ok) { 
-                console.log('[CloudSync] 同步成功，新版本:', newVer);
+                console.log(`[CloudSync] 同步成功，新版本: ${newVer} (${new Date(newVer).toTimeString().split(' ')[0]})`);
                 if (cloudVer !== 0 && cloudVer !== localSyncVersion) restoreFromBackup(toPush, false); 
                 else { localSyncVersion = newVer; localStorage.setItem('cdData_syncVersion', String(newVer)); isDirty = 3; updateSyncStatus(); } 
             } else { throw new Error('雲端寫入失敗'); }
@@ -426,8 +442,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const cloudVer = cloudData?.syncVersion || 0;
                 console.log('[CloudSync] 預檢版本: 雲端', cloudVer, '本地', localSyncVersion);
                 if (cloudVer !== 0 && cloudVer !== localSyncVersion) {
-                    if (confirm(`發現雲端版本 (${cloudVer}) 與本機版本 (${localSyncVersion}) 不符。\n是否下載雲端最新資料？`)) { await performCloudDownload(); }
-                    else { isDirty = 2; updateSyncStatus(); }
+                    console.log(`[CloudSync] 預檢版本不同 (${cloudVer} vs ${localSyncVersion})，自動下載覆蓋...`);
+                    await performCloudDownload();
                 }
             }
         } catch(e) { console.error('[CloudSync] 預檢失敗:', e); }
@@ -519,6 +535,7 @@ document.addEventListener('DOMContentLoaded', () => {
         wire('reportsBtn', () => { currentProfileId = null; window.renderReports(); openModal(document.getElementById('reportsModal')); });
         wire('manageClassesBtn', () => { renderClassSelector(); openModal(document.getElementById('manageClassesModal')); });
         wire('resetReportFilterBtn', () => { currentProfileId = null; document.getElementById('resetReportFilterBtn')?.classList.add('hidden'); document.getElementById('reportActivityTitle').textContent = '全班最近紀錄'; window.renderReports(); });
+        wire('undoActionBtn', undoAction);
         
         wire('toggleMultiSelectBtn', toggleMultiSelectMode);
         wire('addStudentBtn', () => openModal(document.getElementById('addStudentModal')));
@@ -674,7 +691,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const sD = document.getElementById('startDateFilter'); if(sD) sD.onchange = window.renderReports;
         const eD = document.getElementById('endDateFilter'); if(eD) eD.onchange = window.renderReports;
 
-        wire('exportJsonBtn', () => { const b = getFullBackupData(); const blo = new Blob([JSON.stringify(b, null, 2)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blo); a.download = 'backup.json'; a.click(); });
+        wire('exportJsonBtn', () => { const b = getFullBackupData(); const blo = new Blob([JSON.stringify(b, null, 2)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blo); a.download = 'ClassKudox.json'; a.click(); });
         wire('importJsonBtn', () => document.getElementById('importJsonFile')?.click());
         const iFile = document.getElementById('importJsonFile'); if(iFile) iFile.onchange = (e) => { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = (ev) => { try { restoreFromBackup(JSON.parse(ev.target.result)); } catch(err) { alert('失敗'); } }; r.readAsText(f); };
         
