@@ -159,7 +159,7 @@
 
     <!-- STUDENT/GROUP PROFILE MODAL (Award Points & View History) -->
     <div id="studentProfileModal" class="modal-overlay hidden">
-        <div class="modal-content profile-modal">
+        <div class="modal-content profile-modal" style="width: 90%; max-width: 950px; padding: 1.5rem;">
             <div class="modal-header">
                 <h2 style="display:flex; align-items:center; gap: 0.5rem;">
                     <span id="currentProfileName"></span>
@@ -399,8 +399,8 @@
                                 </select>
                             </div>
                             <div class="input-group" style="flex:1;">
-                                <label for="gridColsRange">每列顯示人數 <span id="gridColsLabel" class="highlight-badge">5</span></label>
-                                <input type="range" id="gridColsRange" min="2" max="15" value="5" style="width:100%">
+                                <label for="gridColsRange">每列顯示人數 <span id="gridColsLabel" class="highlight-badge">10</span></label>
+                                <input type="range" id="gridColsRange" min="2" max="15" value="10" style="width:100%">
                             </div>
                         </div>
                         <div class="settings-row" style="margin-top: 1rem;">
@@ -415,12 +415,12 @@
                         </div>
                         <div class="settings-row" style="margin-top: 1rem;">
                             <div class="input-group" style="flex:1;">
-                                <label for="groupColsRange">群組每列顯示數量 <span id="groupColsLabel" class="highlight-badge">2</span></label>
-                                <input type="range" id="groupColsRange" min="1" max="10" value="2" style="width:100%">
+                                <label for="groupColsRange">群組每列顯示數量 <span id="groupColsLabel" class="highlight-badge">5</span></label>
+                                <input type="range" id="groupColsRange" min="1" max="10" value="5" style="width:100%">
                             </div>
                             <div class="input-group" style="flex:1;">
-                                <label for="itemColsRange">行為項目每列個數 (連動點選學生卡片) <span id="itemColsLabel" class="highlight-badge">3</span></label>
-                                <input type="range" id="itemColsRange" min="1" max="10" value="3" style="width:100%">
+                                <label for="itemColsRange">行為項目每列個數 (連動點選學生卡片) <span id="itemColsLabel" class="highlight-badge">5</span></label>
+                                <input type="range" id="itemColsRange" min="1" max="10" value="5" style="width:100%">
                             </div>
                         </div>
                         
@@ -535,15 +535,27 @@
 
                 <div class="settings-tab-content" id="settingsDataTab">
                     <div class="settings-section">
-                        <h3>💾 資料進階管理</h3>
+                        <h3>💾 資料進階管理 <span id="jsonSizeEst" style="font-size:0.85em; font-weight:normal; color:var(--text-secondary); margin-left: 10px;"></span></h3>
+                        <div class="input-group" style="margin-bottom:1.5rem; margin-top:1rem;">
+                            <label for="logRetentionSetting">🗑️ 自動刪除過期紀錄</label>
+                            <select id="logRetentionSetting" class="filter-select" style="width:100%;">
+                                <option value="0">無 (手動清理)</option>
+                                <option value="1">保留 1 個月</option>
+                                <option value="3">保留 3 個月</option>
+                                <option value="6">保留 6 個月</option>
+                                <option value="12">保留 1 年</option>
+                                <option value="24">保留 2 年</option>
+                            </select>
+                            <div class="small-text" style="margin-top:0.3rem; color:var(--text-secondary);">會於啟動時自動掃描清除所有班級過期紀錄，但學生總分仍會保留。</div>
+                        </div>
                         <div class="data-actions">
-                            <button class="btn secondary-btn" id="exportJsonBtn">📤 匯出 JSON 檔</button>
-                            <button class="btn secondary-btn" id="importJsonBtn">📥 匯入 JSON 檔</button>
+                            <button class="btn primary-btn" id="exportJsonBtn">📤 匯出 JSON 檔</button>
+                            <button class="btn primary-btn" id="importJsonBtn">📥 匯入 JSON 檔</button>
                         </div>
                         <input type="file" id="importJsonFile" accept=".json" style="display:none;">
 
                         <div class="data-actions" style="margin-top: 2rem; border-top: 1px dashed var(--border-color); padding-top: 1rem;">
-                            <button class="btn negative-btn" id="resetAllPointsBtn" style="width:100%">重置所有學生點數歸零 (學期末清算)</button>
+                            <button class="btn" id="resetAllPointsBtn" style="width:100%; background:var(--text-secondary); color:white; border:none; padding:10px;">重置所有學生點數歸零 (學期末清算)</button>
                         </div>
                         <div class="settings-footer-spacer"></div>
                     </div>
@@ -699,6 +711,6 @@
 </script>
 
 
-    <script src="script.js?ver=1.01b"></script>
+    <script src="script.js?ver=1.01a"></script>
 </body>
 </html>

@@ -3,7 +3,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- State & Settings ---
     let classes = JSON.parse(localStorage.getItem('cdData_classes')) || [];
     let currentClassId = localStorage.getItem('cdData_currentClassId');
-    let deletedClassIds = JSON.parse(localStorage.getItem('cdData_deletedClassIds')) || [];
     let cloudBinId = localStorage.getItem('cdData_cloudBinId') || '';
     let cloudApiKey = localStorage.getItem('cdData_cloudApiKey') || '';
     let autoSyncInterval = parseInt(localStorage.getItem('cdData_autoSyncInterval')) || 0;
@@ -11,21 +10,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const defaultItems = {
         positive: [
-            { id: 'p1', label: '幫助他人', value: 1, icon: '🤝', ignoreTotal: false },
-            { id: 'p2', label: '專心上課', value: 1, icon: '🎯', ignoreTotal: false },
-            { id: 'p3', label: '踴躍參與', value: 1, icon: '🙋', ignoreTotal: false },
-            { id: 'p4', label: '努力學習', value: 1, icon: '💪', ignoreTotal: false },
+            { id: 'p1', label: '幫助他人', value: 1, icon: '🤝' },
+            { id: 'p2', label: '專心上課', value: 1, icon: '🎯' },
+            { id: 'p3', label: '踴躍參與', value: 1, icon: '🙋' },
+            { id: 'p4', label: '努力學習', value: 1, icon: '💪' },
         ],
         needsWork: [
-            { id: 'n1', label: '不專心', value: -1, icon: '📵', ignoreTotal: false },
-            { id: 'n2', label: '上課講話', value: -1, icon: '🗣️', ignoreTotal: false },
-            { id: 'n3', label: '未帶學用品', value: -1, icon: '🤷', ignoreTotal: false },
+            { id: 'n1', label: '不專心', value: -1, icon: '📵' },
+            { id: 'n2', label: '上課講話', value: -1, icon: '🗣️' },
+            { id: 'n3', label: '未帶學用品', value: -1, icon: '🤷' },
         ]
     };
 
     if (classes.length === 0) {
-        let firstClassId = 'class_' + Date.now();
-        classes.push({ id: firstClassId, name: '我的班級' });
+        let firstClassId = '我的班級';
+        classes.push({ id: firstClassId });
         currentClassId = firstClassId;
         localStorage.setItem('cdData_classes', JSON.stringify(classes));
         localStorage.setItem('cdData_currentClassId', currentClassId);
@@ -34,8 +33,8 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('cdData_currentClassId', currentClassId);
     }
 
-    let students = [], groups = [], logs = [], pointItems = null, settings = null;
-    const DEFAULT_SETTINGS = { fontSize: 'medium', columns: 5, groupColumns: 2, itemColumns: 3, enableSound: false, studentCardHeight: 0, groupCardHeight: 0 };
+    let students = [], groups = [], logs = [], pointItems = null, settings = null, classMeta = null;
+    const DEFAULT_SETTINGS = { fontSize: 'medium', columns: 10, groupColumns: 5, itemColumns: 5, enableSound: false, studentCardHeight: 0, groupCardHeight: 0, logRetention: 0 };
 
     const loadClassData = () => {
         if(!currentClassId) return;
@@ -44,6 +43,8 @@ document.addEventListener('DOMContentLoaded', () => {
         logs = JSON.parse(localStorage.getItem(`cdData_${currentClassId}_logs`)) || [];
         const storedItems = JSON.parse(localStorage.getItem(`cdData_${currentClassId}_items`));
         pointItems = storedItems || JSON.parse(JSON.stringify(defaultItems));
+        classMeta = JSON.parse(localStorage.getItem(`cdData_${currentClassId}_meta`)) || { pNum: 30, nNum: 30, lNum: 0 };
+
         const storedSettings = JSON.parse(localStorage.getItem(`cdData_${currentClassId}_settings`)) || {};
         const { cloudBinId: _b, cloudApiKey: _k, autoSyncInterval: _a, ...cleaned } = storedSettings;
         settings = Object.assign({}, DEFAULT_SETTINGS, cleaned);
@@ -57,7 +58,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if(!currentClassId) return;
         localStorage.setItem('cdData_classes', JSON.stringify(classes));
         localStorage.setItem('cdData_currentClassId', currentClassId || '');
-        localStorage.setItem('cdData_deletedClassIds', JSON.stringify(deletedClassIds));
         localStorage.setItem('cdData_cloudBinId', cloudBinId);
         localStorage.setItem('cdData_cloudApiKey', cloudApiKey);
         localStorage.setItem('cdData_autoSyncInterval', String(autoSyncInterval));
@@ -67,6 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem(`cdData_${currentClassId}_logs`, JSON.stringify(logs));
         localStorage.setItem(`cdData_${currentClassId}_items`, JSON.stringify(pointItems));
         localStorage.setItem(`cdData_${currentClassId}_settings`, JSON.stringify(settings));
+        localStorage.setItem(`cdData_${currentClassId}_meta`, JSON.stringify(classMeta));
         if (!skipDirty) { isDirty = (cloudBinId && cloudApiKey) ? 1 : 0; }
         localStorage.setItem('cdData_isDirty', String(isDirty));
         updateSyncStatus();
@@ -94,6 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setVal('groupColsRange', settings.groupColumns || 2); setTxt('groupColsLabel', settings.groupColumns || 2);
         setVal('itemColsRange', settings.itemColumns || 3); setTxt('itemColsLabel', settings.itemColumns || 3);
         const ss = document.getElementById('enableSoundSetting'); if(ss) ss.checked = settings.enableSound;
+        const rr = document.getElementById('logRetentionSetting'); if(rr) rr.value = settings.logRetention || 0;
         updateSyncStatus();
     };
 
@@ -145,11 +147,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if(g) {
                 g.studentIds.forEach(sid => {
                     const s = students.find(x => x.id === sid); if(!s) return;
-                    const total = logs.filter(l => l.studentId === s.id).reduce((sum, l) => sum + l.points, 0);
+                    const total = s.currentPoints || 0;
                     const div = document.createElement('div');
                     div.style = "display:flex; align-items:center; gap:0.5rem; padding:8px 12px; border:1.5px solid var(--primary-color); border-radius:12px; background:white; font-size:0.95rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); flex-shrink:0;";
-                    div.innerHTML = `<img src="${s.avatarUrl || generateAvatar(s.name, s.avatarStyle)}" style="width:28px; height:28px; border-radius:50%; border:1px solid var(--border-color);">
-                        <span style="font-weight:700;">${s.name} <b style="color:var(--primary-color); margin-left:4px;">(${total})</b></span>`;
+                    div.innerHTML = `<img src="${s.avatarUrl || generateAvatar(s.id, s.avatarStyle)}" style="width:28px; height:28px; border-radius:50%; border:1px solid var(--border-color);">
+                        <span style="font-weight:700;">${s.id} <b style="color:var(--primary-color); margin-left:4px;">(${total})</b></span>`;
                     peek.appendChild(div);
                 });
             }
@@ -168,7 +170,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const awardPoints = (itemId, label, points, forcedIgnore = null) => {
         if(!awardContextIds.length) return;
         const now = Date.now(); let newIds = [];
-        awardContextIds.forEach(sid => { const logId = now + Math.random(); logs.push({ id: logId, studentId: sid, itemId, label, points: Number(points), timestamp: now, ignoreTotal: !!forcedIgnore }); newIds.push(logId); });
+        const isIgnore = !!forcedIgnore;
+        awardContextIds.forEach(sid => { 
+            classMeta.lNum = (classMeta.lNum || 0) + 1;
+            const logId = 'L' + classMeta.lNum; 
+            const logEntry = { id: logId, sID: sid, itemId, label, points: Number(points), TS: now };
+            if(isIgnore) logEntry.iSum = 1;
+            logs.push(logEntry); 
+            newIds.push(logId); 
+            const s = students.find(x => x.id === sid);
+            if(s) {
+                if(isIgnore) s.ignorePoints = (s.ignorePoints || 0) + Number(points);
+                else s.currentPoints = (s.currentPoints || 0) + Number(points);
+            }
+        });
         saveData(); createPointAnimation(points, awardContextIds.length); renderStudents(); if(currentView === 'groups') renderGroups();
         lastActionLogIds = newIds; showUndoToast(`${points > 0 ? '+' : ''}${points} 給予 ${awardContextIds.length} 位學生`);
         if(isMultiSelectMode) toggleMultiSelectMode();
@@ -184,14 +199,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if(groupId) {
             const g = groups.find(x => x.id === groupId);
             if(title) title.textContent = '編輯群組';
-            if(nameInp) nameInp.value = g.name;
+            if(nameInp) nameInp.value = g.id;
             students.forEach(s => {
                 const checked = g.studentIds.includes(s.id);
-                const total = logs.filter(l => l.studentId === s.id).reduce((sum, l) => sum + l.points, 0);
+                const total = s.currentPoints || 0;
                 grid.innerHTML += `<label class="selection-item" style="display:flex; align-items:center; gap:0.5rem; padding:8px; border:1px solid var(--border-color); border-radius:10px; background:white;">
                     <input type="checkbox" value="${s.id}" ${checked ? 'checked' : ''}>
-                    <img src="${s.avatarUrl || generateAvatar(s.name, s.avatarStyle)}" style="width:24px; height:24px; border-radius:50%;">
-                    <span style="font-size:0.9rem;">${s.name} (${total})</span>
+                    <img src="${s.avatarUrl || generateAvatar(s.id, s.avatarStyle)}" style="width:24px; height:24px; border-radius:50%;">
+                    <span style="font-size:0.9rem;">${s.id} (${total})</span>
                 </label>`;
             });
             document.getElementById('deleteGroupBtn').classList.remove('hidden');
@@ -199,11 +214,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if(title) title.textContent = '新增群組';
             if(nameInp) nameInp.value = '';
             students.forEach(s => {
-                const total = logs.filter(l => l.studentId === s.id).reduce((sum, l) => sum + l.points, 0);
+                const total = (s.currentPoints || 0) + (s.ignorePoints || 0);
                 grid.innerHTML += `<label class="selection-item" style="display:flex; align-items:center; gap:0.5rem; padding:8px; border:1px solid var(--border-color); border-radius:10px; background:white;">
                     <input type="checkbox" value="${s.id}">
-                    <img src="${s.avatarUrl || generateAvatar(s.name, s.avatarStyle)}" style="width:24px; height:24px; border-radius:50%;">
-                    <span style="font-size:0.9rem;">${s.name} (${total})</span>
+                    <img src="${s.avatarUrl || generateAvatar(s.id, s.avatarStyle)}" style="width:24px; height:24px; border-radius:50%;">
+                    <span style="font-size:0.9rem;">${s.id} (${total})</span>
                 </label>`;
             });
             document.getElementById('deleteGroupBtn').classList.add('hidden');
@@ -212,12 +227,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const openGroupDetailModal = (g) => {
-        const title = document.getElementById('groupDetailTitle'); if(title) title.textContent = g.name;
+        const title = document.getElementById('groupDetailTitle'); if(title) title.textContent = g.id;
         const list = document.getElementById('groupDetailStudentList'); if(list) {
             list.innerHTML = '';
             g.studentIds.forEach(sid => {
                 const s = students.find(x => x.id === sid); if(!s) return;
-                const li = document.createElement('li'); li.innerHTML = `<img src="${s.avatarUrl || generateAvatar(s.name, s.avatarStyle)}" class="student-avatar small-avatar"><span>${s.name}</span>`;
+                const li = document.createElement('li'); li.innerHTML = `<img src="${s.avatarUrl || generateAvatar(s.id, s.avatarStyle)}" class="student-avatar small-avatar"><span>${s.id}</span>`;
                 list.appendChild(li);
             });
         }
@@ -232,7 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('editItemLabel').value = item.label;
         document.getElementById('editItemValue').value = item.value;
         document.getElementById('editItemIconBtn').textContent = item.icon;
-        document.getElementById('editItemIgnore').checked = !!item.ignoreTotal;
+        document.getElementById('editItemIgnore').checked = item.iSum === 1;
         openModal(document.getElementById('editPointItemModal'));
     };
 
@@ -246,6 +261,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const undoAction = () => {
         if (!lastActionLogIds.length) return;
         const set = new Set(lastActionLogIds);
+        logs.filter(l => set.has(l.id)).forEach(l => {
+            const s = students.find(x => x.id === l.sID);
+            if(s) {
+                if(l.iSum === 1) s.ignorePoints = (s.ignorePoints || 0) - l.points;
+                else s.currentPoints = (s.currentPoints || 0) - l.points;
+            }
+        });
         logs = logs.filter(l => !set.has(l.id));
         lastActionLogIds = [];
         saveData();
@@ -264,12 +286,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const renderStudents = () => {
         const grid = document.getElementById('studentGrid'); if(!grid) return; grid.innerHTML = '';
-        [...students].sort((a,b) => a.name.localeCompare(b.name, 'zh-TW')).forEach(s => {
+        [...students].sort((a,b) => a.id.localeCompare(b.id, 'zh-TW')).forEach(s => {
             const card = document.createElement('div'); card.className = 'student-card' + (selectedStudentIds.has(s.id) ? ' selected' : '');
-            card.onclick = () => isMultiSelectMode ? toggleStudentSelection(s.id) : openAwardModal([s.id], s.name, null);
-            let total = logs.filter(l => l.studentId === s.id).reduce((sum, l) => sum + l.points, 0);
+            card.onclick = () => isMultiSelectMode ? toggleStudentSelection(s.id) : openAwardModal([s.id], s.id, null);
+            let total = (s.currentPoints || 0) + (s.ignorePoints || 0);
             const ptClass = 'student-points' + (total > 0 ? ' positive-total' : (total < 0 ? ' negative-total' : ''));
-            card.innerHTML = `${isMultiSelectMode ? `<div class="selection-check">${selectedStudentIds.has(s.id) ? '✓' : ''}</div>` : ''}<div class="student-avatar-wrapper"><img src="${s.avatarUrl || generateAvatar(s.name, s.avatarStyle)}" class="student-avatar"><div class="${ptClass}">${total}</div></div><div class="student-name">${s.name}</div>`;
+            card.innerHTML = `${isMultiSelectMode ? `<div class="selection-check">${selectedStudentIds.has(s.id) ? '✓' : ''}</div>` : ''}<div class="student-avatar-wrapper"><img src="${s.avatarUrl || generateAvatar(s.id, s.avatarStyle)}" class="student-avatar"><div class="${ptClass}">${total}</div></div><div class="student-name">${s.id}</div>`;
             grid.appendChild(card);
         });
     };
@@ -278,11 +300,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const grid = document.getElementById('groupGrid'); if(!grid) return; grid.innerHTML = '';
         groups.forEach(g => {
             const card = document.createElement('div'); card.className = 'student-card group-card';
-            let total = g.studentIds.reduce((sum, sid) => sum + logs.filter(l => l.studentId === sid).reduce((s, log) => s + log.points, 0), 0);
+            let total = g.studentIds.reduce((sum, sid) => { const s = students.find(x=>x.id===sid); return sum + (s ? ((s.currentPoints||0) + (s.ignorePoints||0)) : 0); }, 0);
             const ptClass = 'student-points' + (total > 0 ? ' positive-total' : (total < 0 ? ' negative-total' : ''));
-            card.innerHTML = `<button class="edit-group-inline-btn">⚙️</button><div class="group-icon">👥</div><div class="student-name">${g.name}</div><div class="group-member-count">${g.studentIds.length} 位成員</div><div class="${ptClass}">${total > 0 ? '+' : ''}${total}</div>`;
+            card.innerHTML = `<button class="edit-group-inline-btn">⚙️</button><div class="group-icon">👥</div><div class="student-name">${g.id}</div><div class="group-member-count">${g.studentIds.length} 位成員</div><div class="${ptClass}">${total > 0 ? '+' : ''}${total}</div>`;
             card.querySelector('.edit-group-inline-btn').onclick = (e) => { e.stopPropagation(); openManageGroupModal(g.id); };
-            card.onclick = () => g.studentIds.length ? openAwardModal(g.studentIds, g.name, g.id) : alert('群組內沒有學生');
+            card.onclick = () => g.studentIds.length ? openAwardModal(g.studentIds, g.id, g.id) : alert('群組內沒有學生');
             grid.appendChild(card);
         });
         const create = document.createElement('div'); create.className = 'student-card create-group-card'; create.onclick = () => openManageGroupModal();
@@ -291,23 +313,35 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const renderPointItems = () => {
-        const rGrid = (id, items, cat) => { const el = document.getElementById(id); if(!el) return; el.innerHTML = ''; items.slice().sort((a,b)=>a.label.localeCompare(b.label,'zh-TW')).forEach(item => { const btn = document.createElement('button'); btn.className = `point-item-btn ${cat}`; btn.innerHTML = `<div class="point-icon">${item.icon}</div><div class="point-label">${item.label}</div><div class="point-value">${item.value > 0 ? '+' : ''}${item.value}</div>`; btn.onclick = () => awardPoints(item.id, item.label, item.value, item.ignoreTotal); el.appendChild(btn); }); };
+        const rGrid = (id, items, cat) => { const el = document.getElementById(id); if(!el) return; el.innerHTML = ''; items.slice().sort((a,b)=>a.label.localeCompare(b.label,'zh-TW')).forEach(item => { const btn = document.createElement('button'); btn.className = `point-item-btn ${cat}`; btn.innerHTML = `<div class="point-icon">${item.icon}</div><div class="point-label">${item.label}${item.iSum===1?' (不計分)':''}</div><div class="point-value">${item.value > 0 ? '+' : ''}${item.value}</div>`; btn.onclick = () => awardPoints(item.id, item.label, item.value, item.iSum===1); el.appendChild(btn); }); };
         rGrid('positiveItems', pointItems.positive, 'positive'); rGrid('needsWorkItems', pointItems.needsWork, 'negative');
-        const rList = (id, items, cat) => { const el = document.getElementById(id); if(!el) return; el.innerHTML = ''; items.slice().sort((a,b)=>a.label.localeCompare(b.label,'zh-TW')).forEach(item => { const div = document.createElement('div'); div.className = `point-item-btn ${cat==='positive'?'positive':'negative'}`; div.onclick = () => openEditPointItemModal(cat, item.id); div.innerHTML = `<div class="point-icon">${item.icon}</div><div class="point-label">${item.label}</div><div class="point-value">${item.value > 0 ? '+' : ''}${item.value}</div><button class="remove-item-btn" onclick="event.stopPropagation(); window.removePointItem('${cat}', '${item.id}')">×</button>`; el.appendChild(div); }); };
+        const rList = (id, items, cat) => { const el = document.getElementById(id); if(!el) return; el.innerHTML = ''; items.slice().sort((a,b)=>a.label.localeCompare(b.label,'zh-TW')).forEach(item => { const div = document.createElement('div'); div.className = `point-item-btn ${cat==='positive'?'positive':'negative'}`; div.onclick = () => openEditPointItemModal(cat, item.id); div.innerHTML = `<div class="point-icon">${item.icon}</div><div class="point-label">${item.label}${item.iSum===1?' <small>(不計分)</small>':''}</div><div class="point-value">${item.value > 0 ? '+' : ''}${item.value}</div><button class="remove-item-btn" onclick="event.stopPropagation(); window.removePointItem('${cat}', '${item.id}')">×</button>`; el.appendChild(div); }); };
         rList('settingsPositiveList', pointItems.positive, 'positive'); rList('settingsNeedsWorkList', pointItems.needsWork, 'needsWork');
     };
 
     window.removePointItem = (cat, id) => { if(!confirm('刪除此項目？')) return; pointItems[cat] = pointItems[cat].filter(i => i.id !== id); saveData(); renderPointItems(); };
     
-    window.deleteLog = (id) => { if(!confirm('刪除此紀錄？')) return; logs = logs.filter(l => l.id != id); saveData(); renderHistory(); renderStudents(); if(currentView === 'groups') renderGroups(); if(!document.getElementById('reportsModal').classList.contains('hidden')) window.renderReports(); };
+    window.deleteLog = (id) => { 
+        if(!confirm('刪除此紀錄？')) return; 
+        const l = logs.find(x => x.id == id);
+        if(l) {
+            const s = students.find(x => x.id === l.sID);
+            if(s) {
+                if(l.iSum === 1) s.ignorePoints = (s.ignorePoints || 0) - l.points;
+                else s.currentPoints = (s.currentPoints || 0) - l.points;
+            }
+        }
+        logs = logs.filter(x => x.id != id); 
+        saveData(); renderHistory(); renderStudents(); if(currentView === 'groups') renderGroups(); if(!document.getElementById('reportsModal').classList.contains('hidden')) window.renderReports(); 
+    };
     
     const renderHistory = () => { 
         const list = document.getElementById('studentHistoryList'); if(!list) return; list.innerHTML = ''; 
-        const f = logs.filter(l => l.studentId === currentProfileId).sort((a,b)=>b.timestamp-a.timestamp); 
+        const f = logs.filter(l => l.sID === currentProfileId).sort((a,b)=>b.TS-a.TS); 
         if(!f.length) return list.innerHTML = '<li class="empty-state">無紀錄</li>'; 
         f.forEach(l => { 
             const li = document.createElement('li'); 
-            li.innerHTML = `<div class="history-item-left"><span class="history-date">${new Date(l.timestamp).toLocaleString()}</span><span class="history-label">${l.label}</span></div><div class="history-item-right ${l.points > 0 ? 'positive-val' : 'negative-val'}">${l.points > 0 ? '+' : ''}${l.points}<button class="delete-log-btn" onclick="window.deleteLog(${l.id})">🗑️</button></div>`; 
+            li.innerHTML = `<div class="history-item-left"><span class="history-date">${new Date(l.TS).toLocaleString()}</span><span class="history-label">${l.label}${l.iSum === 1 ? ' <small>(不計分)</small>' : ''}</span></div><div class="history-item-right ${l.points > 0 ? 'positive-val' : 'negative-val'}">${l.points > 0 ? '+' : ''}${l.points}<button class="delete-log-btn" onclick="window.deleteLog('${l.id}')">🗑️</button></div>`; 
             list.appendChild(li); 
         }); 
     };
@@ -315,7 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderClassSelector = () => {
         const classSelect = document.getElementById('classSelect'); if(!classSelect) return;
         classSelect.innerHTML = '';
-        classes.filter(c => !c.isArchived || c.id === currentClassId).forEach(c => { const opt = document.createElement('option'); opt.value = c.id; opt.textContent = c.name + (c.isArchived ? ' (封存)' : ''); if(c.id === currentClassId) opt.selected = true; classSelect.appendChild(opt); });
+        classes.filter(c => !c.isArchived || c.id === currentClassId).forEach(c => { const opt = document.createElement('option'); opt.value = c.id; opt.textContent = c.id + (c.isArchived ? ' (封存)' : ''); if(c.id === currentClassId) opt.selected = true; classSelect.appendChild(opt); });
         classSelect.onchange = async (e) => { 
             const newId = e.target.value;
             if (isDirty === 1) {
@@ -325,33 +359,34 @@ document.addEventListener('DOMContentLoaded', () => {
             currentClassId = newId; localStorage.setItem('cdData_currentClassId', currentClassId); location.reload(); 
         };
         const l = document.getElementById('classList'); if(l) { l.innerHTML = ''; classes.forEach(c => {
-            const li = document.createElement('li'); li.innerHTML = `<span style="${c.isArchived?'text-decoration:line-through;color:#94a3b8;':''}">${c.name}</span><div style="display:flex;gap:0.4rem;"><button class="rename-class-btn btn secondary-btn small-btn">✏️ 修改名稱</button><button class="archive-btn btn small-btn">${c.isArchived?'解封存':'封存'}</button><button class="del-class-btn btn negative-btn small-btn">🗑️</button></div>`;
+            const li = document.createElement('li'); li.innerHTML = `<span style="${c.isArchived?'text-decoration:line-through;color:#94a3b8;':''}">${c.id}</span><div style="display:flex;gap:0.4rem;"><button class="rename-class-btn btn secondary-btn small-btn">✏️ 修改名稱</button><button class="archive-btn btn small-btn">${c.isArchived?'解封存':'封存'}</button><button class="del-class-btn btn negative-btn small-btn">🗑️</button></div>`;
             li.querySelector('.rename-class-btn').onclick = () => {
-                const newName = prompt('請輸入新的班級名稱：', c.name);
-                if (newName && newName.trim() && newName.trim() !== c.name) {
-                    if (classes.some(x => x.name === newName.trim())) return alert('班級名稱已存在');
-                    c.name = newName.trim();
-                    saveData();
-                    renderClassSelector();
+                const newName = prompt('請輸入新的班級名稱：', c.id);
+                const n = newName?.trim();
+                if (n && n !== c.id) {
+                    if (classes.some(x => x.id === n)) return alert('班級名稱已存在');
+                    ['students','groups','logs','items','settings','meta'].forEach(suffix => {
+                        const val = localStorage.getItem(`cdData_${c.id}_${suffix}`);
+                        if(val) { localStorage.setItem(`cdData_${n}_${suffix}`, val); localStorage.removeItem(`cdData_${c.id}_${suffix}`); }
+                    });
+                    if (currentClassId === c.id) { currentClassId = n; localStorage.setItem('cdData_currentClassId', n); }
+                    c.id = n; saveData(); renderClassSelector();
                 }
             };
             li.querySelector('.archive-btn').onclick = () => { c.isArchived = !c.isArchived; saveData(); renderClassSelector(); };
             li.querySelector('.del-class-btn').onclick = () => { 
                 if(confirm('刪除？')) { 
-                    // 很完整地清除該班級所有 localStorage 資料
-                    ['students','groups','logs','items','settings'].forEach(suffix => {
+                    ['students','groups','logs','items','settings','meta'].forEach(suffix => {
                         localStorage.removeItem(`cdData_${c.id}_${suffix}`);
                     });
                     classes = classes.filter(x=>x.id!==c.id); 
                     if(currentClassId===c.id) currentClassId=classes[0]?.id || ''; 
-                    
-                    saveData(); 
-                    location.reload(); 
+                    saveData(); location.reload(); 
                 } 
             };
             l.appendChild(li);
         }); }
-        const cs = document.getElementById('copyFromClassSelect'); if(cs) { cs.innerHTML = '<option value="">不複製 (空白)</option>'; classes.forEach(c => { const opt = document.createElement('option'); opt.value = c.id; opt.textContent = c.name; cs.appendChild(opt); }); }
+        const cs = document.getElementById('copyFromClassSelect'); if(cs) { cs.innerHTML = '<option value="">不複製 (空白)</option>'; classes.forEach(c => { const opt = document.createElement('option'); opt.value = c.id; opt.textContent = c.id; cs.appendChild(opt); }); }
     };
 
     // --- Sync Logic ---
@@ -370,32 +405,7 @@ document.addEventListener('DOMContentLoaded', () => {
             isDirty = 3; applySettings(); renderStudents(); if(currentView === 'groups') renderGroups(); renderPointItems(); renderClassSelector(); updateSyncStatus();
         }
     };
-    const mergeLocalIntoCloud = (cloud) => {
-        const merged = { ...cloud };
-        for (let i = 0; i < localStorage.length; i++) {
-            const k = localStorage.key(i); if (!k.startsWith('cdData_') || k === 'cdData_cloudBinId' || k === 'cdData_cloudApiKey' || k === 'cdData_syncVersion') continue;
-            let lv; try { lv = JSON.parse(localStorage.getItem(k)); } catch(e) { lv = localStorage.getItem(k); }
-            const cv = cloud[k];
-            if (k === 'cdData_classes' && Array.isArray(lv) && Array.isArray(cv)) {
-                const m = new Map(); cv.forEach(c => m.set(c.name, c));
-                lv.forEach(l => { if (!m.has(l.name)) m.set(l.name, l); });
-                merged[k] = Array.from(m.values());
-            } else if (k === 'cdData_deletedClassIds' && Array.isArray(lv) && Array.isArray(cv)) {
-                merged[k] = Array.from(new Set([...lv, ...cv]));
-            } else if ((k.includes('_students') || k.includes('_groups')) && Array.isArray(lv) && Array.isArray(cv)) {
-                const m = new Map(); cv.forEach(c => m.set(String(c.id), c));
-                lv.forEach(l => { const ext = m.get(String(l.id)); if (!ext || (l.lastUpdated || 0) > (ext.lastUpdated || 0)) m.set(String(l.id), l); });
-                merged[k] = Array.from(m.values());
-            } else if (k.includes('_items') && lv && cv) {
-                const mi = { positive: new Map(), needsWork: new Map() };
-                ['positive', 'needsWork'].forEach(cat => { if(cv[cat]) cv[cat].forEach(c => mi[cat].set(String(c.id), c)); if(lv[cat]) lv[cat].forEach(l => { const ext = mi[cat].get(String(l.id)); if(!ext || (l.lastUpdated || 0) > (ext.lastUpdated || 0)) mi[cat].set(String(l.id), l); }); });
-                merged[k] = { positive: Array.from(mi.positive.values()), needsWork: Array.from(mi.needsWork.values()) };
-            } else if (k.includes('_logs') && Array.isArray(lv) && Array.isArray(cv)) {
-                const lm = new Map(); cv.forEach(c => lm.set(String(c.id), c)); lv.forEach(l => lm.set(String(l.id), l)); merged[k] = Array.from(lm.values());
-            } else { merged[k] = lv; }
-        }
-        return merged;
-    };
+    // Removed mergeLocalIntoCloud as we do full overwrites
 
     const performCloudUpload = async (isManual = false) => {
         if (!cloudBinId || !cloudApiKey || isSyncing) return;
@@ -489,63 +499,84 @@ document.addEventListener('DOMContentLoaded', () => {
         const list = document.getElementById('reportsList'); if(!list) return; list.innerHTML = '';
         const range = getReportsTimeRange();
         let data = students.map(s => {
-            let pts = logs.filter(l => l.studentId === s.id).reduce((sum, l) => {
-                if (range && (l.timestamp < range.start || l.timestamp > range.end)) return sum;
-                return sum + (l.ignoreTotal ? 0 : l.points);
+            let pts = logs.filter(l => l.sID === s.id).reduce((sum, l) => {
+                if (range && (l.TS < range.start || l.TS > range.end)) return sum;
+                return sum + (l.iSum === 1 ? 0 : l.points);
             }, 0);
             return { ...s, pts };
         });
-        if (currentSort === 'name') data.sort((a,b) => a.name.localeCompare(b.name, 'zh-TW')); else data.sort((a,b) => b.pts - a.pts);
+        if (currentSort === 'name') data.sort((a,b) => a.id.localeCompare(b.id, 'zh-TW')); else data.sort((a,b) => b.pts - a.pts);
         data.forEach((s, idx) => {
             const li = document.createElement('li'); li.className = 'report-item' + (currentProfileId === s.id ? ' active' : '');
             li.onclick = () => { 
                 currentProfileId = s.id; 
                 document.getElementById('resetReportFilterBtn')?.classList.remove('hidden');
-                document.getElementById('reportActivityTitle').textContent = s.name + ' 的紀錄'; 
+                document.getElementById('reportActivityTitle').textContent = s.id + ' 的紀錄'; 
                 window.renderReports(); 
                 window.scrollToReportLogs();
             };
-            li.innerHTML = `<div class="report-item-left"><span class="report-rank">#${idx+1}</span><img src="${s.avatarUrl || generateAvatar(s.name, s.avatarStyle)}" class="report-avatar"><span class="report-name">${s.name}</span></div><div class="report-item-right ${s.pts > 0 ? 'positive-val' : 'negative-val'}">${s.pts > 0 ? '+' : ''}${s.pts}</div>`;
+            li.innerHTML = `<div class="report-item-left"><span class="report-rank">#${idx+1}</span><img src="${s.avatarUrl || generateAvatar(s.id, s.avatarStyle)}" class="report-avatar"><span class="report-name">${s.id}</span></div><div class="report-item-right ${s.pts > 0 ? 'positive-val' : 'negative-val'}">${s.pts > 0 ? '+' : ''}${s.pts}</div>`;
             list.appendChild(li);
         });
         const alist = document.getElementById('reportActivityList'); if(alist) {
             alist.innerHTML = '';
-            let f = logs.filter(log => { if(range && (log.timestamp < range.start || log.timestamp > range.end)) return false; if(currentProfileId && log.studentId !== currentProfileId) return false; return true; }).sort((a,b)=>b.timestamp-a.timestamp);
+            let f = logs.filter(log => { if(range && (log.TS < range.start || log.TS > range.end)) return false; if(currentProfileId && log.sID !== currentProfileId) return false; return true; }).sort((a,b)=>b.TS-a.TS);
             f.slice(0,50).forEach(log => {
-                const s = students.find(x => x.id === log.studentId);
-                const li = document.createElement('li'); li.innerHTML = `<div class="history-item-left"><span class="history-date">${new Date(log.timestamp).toLocaleString()} • ${s?s.name:'未知'}</span><span class="history-label">${log.label}</span></div><div class="history-item-right ${log.points > 0 ? 'positive-val' : 'negative-val'}">${log.points > 0 ? '+' : ''}${log.points}<button class="delete-log-btn" onclick="window.deleteLog(${log.id})">🗑️</button></div>`;
+                const s = students.find(x => x.id === log.sID);
+                const li = document.createElement('li'); li.innerHTML = `<div class="history-item-left"><span class="history-date">${new Date(log.TS).toLocaleString()} • ${s?s.id:'未知'}</span><span class="history-label">${log.label}${log.iSum === 1 ? ' <small>(不計分)</small>' : ''}</span></div><div class="history-item-right ${log.points > 0 ? 'positive-val' : 'negative-val'}">${log.points > 0 ? '+' : ''}${log.points}<button class="delete-log-btn" onclick="window.deleteLog('${log.id}')">🗑️</button></div>`;
                 alist.appendChild(li);
             });
             renderPieChart(f);
         }
     };
 
-    const migrateToNameIds = () => {
-        let changed = false;
+    // Removed migrateToNameIds()
+
+    const performLogRetention = () => {
+        if (!settings || !settings.logRetention) return;
+        const retMonths = parseInt(settings.logRetention);
+        if (retMonths === 0) return;
+        const threshold = Date.now() - retMonths * 30 * 24 * 60 * 60 * 1000;
+        let dirty = false;
         classes.forEach(c => {
-            const nameId = 'class_' + encodeURIComponent(c.name);
-            if (c.id !== nameId) {
-                console.log(`[Migration] 遷移班級 ID: ${c.id} -> ${nameId}`);
-                ['students', 'groups', 'logs', 'items', 'settings'].forEach(suffix => {
-                    const oldKey = `cdData_${c.id}_${suffix}`, newKey = `cdData_${nameId}_${suffix}`;
-                    const val = localStorage.getItem(oldKey);
-                    if (val) { localStorage.setItem(newKey, val); localStorage.removeItem(oldKey); }
-                });
-                if (currentClassId === c.id) { currentClassId = nameId; localStorage.setItem('cdData_currentClassId', currentClassId); }
-                c.id = nameId; changed = true;
+            const lKey = `cdData_${c.id}_logs`, sKey = `cdData_${c.id}_students`;
+            let cLogs = JSON.parse(localStorage.getItem(lKey) || '[]');
+            if (cLogs.length === 0) return;
+            let cStudents = JSON.parse(localStorage.getItem(sKey) || '[]');
+            let nMigrate = false;
+            // 如果此班尚未快照轉移，需先試算
+            if (cStudents.length > 0 && cStudents[0].currentPoints === undefined) {
+                nMigrate = true;
+                cStudents.forEach(s => { s.currentPoints = 0; s.ignorePoints = 0; });
+                cLogs.forEach(l => { const s = cStudents.find(x => x.id === l.sID); if(s) { if(l.iSum === 1) s.ignorePoints+=l.points; else s.currentPoints+=l.points; } });
+            }
+            const oLen = cLogs.length; cLogs = cLogs.filter(l => l.TS >= threshold);
+            if (cLogs.length !== oLen || nMigrate) {
+                localStorage.setItem(lKey, JSON.stringify(cLogs));
+                if (nMigrate) localStorage.setItem(sKey, JSON.stringify(cStudents));
+                if (c.id === currentClassId) { logs = cLogs; if (nMigrate) students = cStudents; } // keep memory sync if it is current active class
+                dirty = true;
             }
         });
-        if (changed) saveData(true);
+        if (dirty) {
+            if (cloudBinId && cloudApiKey) { isDirty = 1; localStorage.setItem('cdData_isDirty', '1'); updateSyncStatus(); performCloudUpload(); }
+            console.log('[System] 完成過期紀錄清理與瘦身');
+        }
     };
 
     // --- Boot & Event Wiring ---
-    const bootSequence = () => {
-        migrateToNameIds(); loadClassData(); applySettings(); renderStudents(); renderPointItems(); renderClassSelector();
+    const bootSequence = async () => {
+        loadClassData(); applySettings(); renderStudents(); renderPointItems(); renderClassSelector();
         // 只有設定了自動同步頻率才在啟動時預載雲端資料，設定「無」時不主動同步
-        if (autoSyncInterval > 0) checkCloudSyncState();
+        if (autoSyncInterval > 0) await checkCloudSyncState();
+        performLogRetention();
         const wire = (id, fn) => { const el = document.getElementById(id); if(el) el.onclick = fn; };
         
-        wire('settingsBtn', () => { openModal(document.getElementById('settingsModal')); applySettings(); renderPointItems(); });
+        wire('settingsBtn', () => { 
+            const sz = document.getElementById('jsonSizeEst'); 
+            if(sz) sz.textContent = `(約 ${(JSON.stringify(getFullBackupData()).length / 1024).toFixed(1)} KB)`; 
+            openModal(document.getElementById('settingsModal')); applySettings(); renderPointItems(); 
+        });
         wire('reportsBtn', () => { currentProfileId = null; window.renderReports(); openModal(document.getElementById('reportsModal')); });
         wire('manageClassesBtn', () => { renderClassSelector(); openModal(document.getElementById('manageClassesModal')); });
         wire('resetReportFilterBtn', () => { currentProfileId = null; document.getElementById('resetReportFilterBtn')?.classList.add('hidden'); document.getElementById('reportActivityTitle').textContent = '全班最近紀錄'; window.renderReports(); });
@@ -564,32 +595,39 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const fsSel = document.getElementById('fontSizeSelect'); if(fsSel) fsSel.onchange = (e) => { settings.fontSize = e.target.value; applySettings(); saveData(); };
         const sSel = document.getElementById('enableSoundSetting'); if(sSel) sSel.onchange = (e) => { settings.enableSound = e.target.checked; saveData(); };
+        const retSel = document.getElementById('logRetentionSetting'); if(retSel) retSel.onchange = (e) => { settings.logRetention = parseInt(e.target.value); applySettings(); saveData(); performLogRetention(); };
 
-        wire('editProfileBtn', () => { const s = students.find(x => x.id === currentProfileId); if(!s) return; document.getElementById('editStudentName').value = s.name; document.getElementById('editStudentAvatarStyle').value = s.avatarStyle || 'fun-emoji'; document.getElementById('editStudentAvatarPreview').src = s.avatarUrl || generateAvatar(s.name, s.avatarStyle); closeModal(document.getElementById('studentProfileModal')); openModal(document.getElementById('editStudentModal')); });
+        wire('editProfileBtn', () => { const s = students.find(x => x.id === currentProfileId); if(!s) return; document.getElementById('editStudentName').value = s.id; document.getElementById('editStudentAvatarStyle').value = s.avatarStyle || 'fun-emoji'; document.getElementById('editStudentAvatarPreview').src = s.avatarUrl || generateAvatar(s.id, s.avatarStyle); closeModal(document.getElementById('studentProfileModal')); openModal(document.getElementById('editStudentModal')); });
         wire('saveEditStudentBtn', () => { 
             const nameInp = document.getElementById('editStudentName'); const s = students.find(x => x.id === currentProfileId);
             if(s && nameInp.value.trim()) { 
                 const newName = nameInp.value.trim();
-                if(newName !== s.name && students.some(x => x.name === newName)) return alert('姓名已存在');
-                s.name = newName; 
+                if(newName !== s.id && students.some(x => x.id === newName)) return alert('姓名已存在');
+                if(newName !== s.id) {
+                    logs.filter(l => l.sID === s.id).forEach(l => l.sID = newName);
+                    groups.forEach(g => { const idx = g.studentIds.indexOf(s.id); if(idx>-1) g.studentIds[idx] = newName; });
+                    if(currentProfileId === s.id) currentProfileId = newName;
+                    if(selectedStudentIds.has(s.id)) { selectedStudentIds.delete(s.id); selectedStudentIds.add(newName); }
+                    s.id = newName;
+                }
                 s.avatarStyle = document.getElementById('editStudentAvatarStyle').value; 
                 s.avatarUrl = document.getElementById('editStudentAvatarPreview').src; 
-                s.lastUpdated = Date.now(); saveData(); renderStudents(); closeModal(document.getElementById('editStudentModal')); 
+                saveData(); renderStudents(); closeModal(document.getElementById('editStudentModal')); 
             } else if(!nameInp.value.trim()) alert('請輸入姓名');
         });
-        wire('deleteStudentBtn', () => { if(confirm('刪除？')) { students = students.filter(x => x.id !== currentProfileId); logs = logs.filter(x => x.studentId !== currentProfileId); saveData(); renderStudents(); closeModal(document.getElementById('editStudentModal')); } });
+        wire('deleteStudentBtn', () => { if(confirm('刪除？')) { students = students.filter(x => x.id !== currentProfileId); logs = logs.filter(x => x.sID !== currentProfileId); saveData(); renderStudents(); closeModal(document.getElementById('editStudentModal')); } });
         wire('saveStudentBtn', () => { 
             const i = document.getElementById('newStudentName'); if(!i.value.trim()) return; 
             i.value.split('\n').forEach(n => { 
                 const name = n.trim(); if(name) {
-                    if(students.some(s => s.name === name)) { console.warn('跳過重複姓名:', name); return; }
-                    students.push({ id: 's'+Date.now()+Math.random(), name, lastUpdated:Date.now() }); 
+                    if(students.some(s => s.id === name)) { console.warn('跳過重複姓名:', name); return; }
+                    students.push({ id: name, currentPoints: 0, ignorePoints: 0 }); 
                 }
             }); 
             saveData(); renderStudents(); i.value = ''; closeModal(document.getElementById('addStudentModal')); 
         });
         
-        wire('saveGroupBtn', () => { const i = document.getElementById('groupNameInput'); const name = i.value.trim(); if(!name) return alert('請輸入名稱'); const sids = Array.from(document.querySelectorAll('#groupStudentSelectionGrid input:checked')).map(cb => cb.value); if(!sids.length) return alert('請選擇成員'); if(editingGroupId) { const g = groups.find(x=>x.id===editingGroupId); g.name = name; g.studentIds = sids; g.lastUpdated = Date.now(); } else { groups.push({ id: 'g'+Date.now(), name, studentIds: sids, lastUpdated: Date.now() }); } saveData(); renderGroups(); closeModal(document.getElementById('manageGroupModal')); });
+        wire('saveGroupBtn', () => { const i = document.getElementById('groupNameInput'); const name = i.value.trim(); if(!name) return alert('請輸入名稱'); const sids = Array.from(document.querySelectorAll('#groupStudentSelectionGrid input:checked')).map(cb => cb.value); if(!sids.length) return alert('請選擇成員'); if(editingGroupId) { if(editingGroupId !== name && groups.some(x=>x.id===name)) return alert('群組名稱已存在'); const g = groups.find(x=>x.id===editingGroupId); g.id = name; g.studentIds = sids; } else { if(groups.some(x=>x.id===name)) return alert('群組名稱已存在'); groups.push({ id: name, studentIds: sids }); } saveData(); renderGroups(); closeModal(document.getElementById('manageGroupModal')); });
         wire('deleteGroupBtn', () => { if(confirm('刪除群組？')) { groups = groups.filter(x => x.id !== editingGroupId); saveData(); renderGroups(); closeModal(document.getElementById('manageGroupModal')); } });
         wire('groupAwardPointsBtn', () => { 
             if(!awardContextIds.length) return; 
@@ -615,13 +653,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const l = document.getElementById('newPositiveLabel'); const v = document.getElementById('newPositiveValue'); const i = document.getElementById('newPositiveIconBtn'); const ign = document.getElementById('newPositiveIgnore'); if(!l.value.trim()) return; 
             const val = isNaN(parseInt(v.value)) ? 1 : parseInt(v.value);
             if (pointItems.positive.some(x => x.label === l.value.trim() && x.value === val)) return alert('項目名稱與分數已存在，請勿重複新增');
-            pointItems.positive.push({ id: 'p'+Date.now(), label: l.value.trim(), value: val, icon: i.textContent, ignoreTotal: ign.checked, lastUpdated: Date.now() }); saveData(); renderPointItems(); l.value = ''; v.value = '1'; 
+            classMeta.pNum = (classMeta.pNum || 30) + 1;
+            const item = { id: 'p'+classMeta.pNum, label: l.value.trim(), value: val, icon: i.textContent };
+            if (ign.checked) item.iSum = 1;
+            pointItems.positive.push(item); saveData(); renderPointItems(); l.value = ''; v.value = '1'; 
         });
         wire('addNeedsWorkBtn', () => { 
             const l = document.getElementById('newNeedsWorkLabel'); const v = document.getElementById('newNeedsWorkValue'); const i = document.getElementById('newNeedsWorkIconBtn'); const ign = document.getElementById('newNeedsWorkIgnore'); if(!l.value.trim()) return; 
             const val = isNaN(parseInt(v.value)) ? -1 : parseInt(v.value);
             if (pointItems.needsWork.some(x => x.label === l.value.trim() && x.value === val)) return alert('項目名稱與分數已存在，請勿重複新增');
-            pointItems.needsWork.push({ id: 'n'+Date.now(), label: l.value.trim(), value: val, icon: i.textContent, ignoreTotal: ign.checked, lastUpdated: Date.now() }); saveData(); renderPointItems(); l.value = ''; v.value = '-1'; 
+            classMeta.nNum = (classMeta.nNum || 30) + 1;
+            const item = { id: 'n'+classMeta.nNum, label: l.value.trim(), value: val, icon: i.textContent };
+            if (ign.checked) item.iSum = 1;
+            pointItems.needsWork.push(item); saveData(); renderPointItems(); l.value = ''; v.value = '-1'; 
         });
         
         wire('saveEditItemBtn', () => {
@@ -631,28 +675,34 @@ document.addEventListener('DOMContentLoaded', () => {
             const item = pointItems[editingPointItemCat].find(i => i.id === editingPointItemId);
             if(item) {
                 item.label = l; item.value = v; item.icon = document.getElementById('editItemIconBtn').textContent;
-                item.ignoreTotal = document.getElementById('editItemIgnore').checked;
-                item.lastUpdated = Date.now(); saveData(); renderPointItems(); closeModal(document.getElementById('editPointItemModal'));
+                if(document.getElementById('editItemIgnore').checked) item.iSum = 1; else delete item.iSum;
+                saveData(); renderPointItems(); closeModal(document.getElementById('editPointItemModal'));
             }
         });
 
         wire('createClassBtn', () => { 
             const n = document.getElementById('newClassName').value.trim(); if(!n) return; 
-            if(classes.some(c => c.name === n)) return alert('班級名稱已存在');
-            const id = 'class_' + encodeURIComponent(n); // Use name-based ID
-            let items = JSON.parse(JSON.stringify(defaultItems)), s = [], g = []; 
+            if(classes.some(c => c.id === n)) return alert('班級名稱已存在');
+            let items = JSON.parse(JSON.stringify(defaultItems)), s = [], g = [];
+            let cm = { pNum: 30, nNum: 30, lNum: 0 };
             const src = document.getElementById('copyFromClassSelect').value; 
             if(src) { 
                 if(document.getElementById('copyItemsCheckbox').checked) {
                     const si = JSON.parse(localStorage.getItem(`cdData_${src}_items`));
-                    if(si) items = si;
+                    if(si) {
+                        items.positive = [...(si.positive||[])].sort((a,b)=>a.label.localeCompare(b.label, 'zh-TW')).map((x, i) => ({...x, id: 'p'+(i+1)}));
+                        items.needsWork = [...(si.needsWork||[])].sort((a,b)=>a.label.localeCompare(b.label, 'zh-TW')).map((x, i) => ({...x, id: 'n'+(i+1)}));
+                    }
                 }
                 if(document.getElementById('copyStudentsCheckbox').checked) { s = JSON.parse(localStorage.getItem(`cdData_${src}_students`) || '[]'); g = JSON.parse(localStorage.getItem(`cdData_${src}_groups`) || '[]'); } 
-            } 
-            classes.push({ id, name: n }); 
-            localStorage.setItem(`cdData_${id}_items`, JSON.stringify(items)); 
-            localStorage.setItem(`cdData_${id}_students`, JSON.stringify(s.map(x=>({...x,lastUpdated:Date.now()})))); 
-            localStorage.setItem(`cdData_${id}_groups`, JSON.stringify(g.map(x=>({...x,lastUpdated:Date.now()})))); 
+            }
+            cm.pNum = Math.max(30, ...items.positive.map(x => parseInt(x.id.substring(1))||0));
+            cm.nNum = Math.max(30, ...items.needsWork.map(x => parseInt(x.id.substring(1))||0));
+            classes.push({ id: n }); 
+            localStorage.setItem(`cdData_${n}_items`, JSON.stringify(items)); 
+            localStorage.setItem(`cdData_${n}_students`, JSON.stringify(s)); 
+            localStorage.setItem(`cdData_${n}_groups`, JSON.stringify(g));
+            localStorage.setItem(`cdData_${n}_meta`, JSON.stringify(cm));
             saveData(); renderClassSelector(); document.getElementById('newClassName').value = ''; closeModal(document.getElementById('manageClassesModal'));
         });
         
@@ -668,11 +718,11 @@ document.addEventListener('DOMContentLoaded', () => {
         wire('copyPointsBtn', () => {
             const range = getReportsTimeRange();
             let data = students.map(s => {
-                let pts = logs.filter(l => l.studentId === s.id).reduce((sum, l) => {
-                    if (range && (l.timestamp < range.start || l.timestamp > range.end)) return sum;
-                    return sum + (l.ignoreTotal ? 0 : l.points);
+                let pts = logs.filter(l => l.sID === s.id).reduce((sum, l) => {
+                    if (range && (l.TS < range.start || l.TS > range.end)) return sum;
+                    return sum + (l.iSum === 1 ? 0 : l.points);
                 }, 0);
-                return { name: s.name, pts };
+                return { name: s.id, pts };
             });
             if (currentSort === 'name') data.sort((a,b) => a.name.localeCompare(b.name, 'zh-TW')); 
             else data.sort((a,b) => b.pts - a.pts);
@@ -685,12 +735,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const range = getReportsTimeRange();
             let csv = '\uFEFF姓名,項目,點數,時間\n';
             logs.filter(l => {
-                if (range && (l.timestamp < range.start || l.timestamp > range.end)) return false;
-                if (currentProfileId && l.studentId !== currentProfileId) return false;
+                if (range && (l.TS < range.start || l.TS > range.end)) return false;
+                if (currentProfileId && l.sID !== currentProfileId) return false;
                 return true;
             }).forEach(l => {
-                const s = students.find(x => x.id === l.studentId);
-                csv += `"${s?s.name:'未知'}","${l.label}",${l.points},"${new Date(l.timestamp).toLocaleString()}"\n`;
+                const s = students.find(x => x.id === l.sID);
+                csv += `"${s?s.id:'未知'}","${l.label}",${l.points},"${new Date(l.TS).toLocaleString()}"\n`;
             });
             const b = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'report.csv'; a.click();
