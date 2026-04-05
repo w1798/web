@@ -336,7 +336,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             };
             li.querySelector('.archive-btn').onclick = () => { c.isArchived = !c.isArchived; saveData(); renderClassSelector(); };
-            li.querySelector('.del-class-btn').onclick = () => { if(confirm('刪除？')) { classes = classes.filter(x=>x.id!==c.id); if(currentClassId===c.id) currentClassId=classes[0]?.id || ''; saveData(); location.reload(); } };
+            li.querySelector('.del-class-btn').onclick = () => { 
+                if(confirm('刪除？')) { 
+                    // 很完整地清除該班級所有 localStorage 資料
+                    ['students','groups','logs','items','settings'].forEach(suffix => {
+                        localStorage.removeItem(`cdData_${c.id}_${suffix}`);
+                    });
+                    classes = classes.filter(x=>x.id!==c.id); 
+                    if(currentClassId===c.id) currentClassId=classes[0]?.id || ''; 
+                    
+                    saveData(); 
+                    location.reload(); 
+                } 
+            };
             l.appendChild(li);
         }); }
         const cs = document.getElementById('copyFromClassSelect'); if(cs) { cs.innerHTML = '<option value="">不複製 (空白)</option>'; classes.forEach(c => { const opt = document.createElement('option'); opt.value = c.id; opt.textContent = c.name; cs.appendChild(opt); }); }
@@ -528,7 +540,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Boot & Event Wiring ---
     const bootSequence = () => {
-        migrateToNameIds(); loadClassData(); applySettings(); renderStudents(); renderPointItems(); renderClassSelector(); checkCloudSyncState();
+        migrateToNameIds(); loadClassData(); applySettings(); renderStudents(); renderPointItems(); renderClassSelector();
+        // 只有設定了自動同步頻率才在啟動時預載雲端資料，設定「無」時不主動同步
+        if (autoSyncInterval > 0) checkCloudSyncState();
         const wire = (id, fn) => { const el = document.getElementById(id); if(el) el.onclick = fn; };
         
         wire('settingsBtn', () => { openModal(document.getElementById('settingsModal')); applySettings(); renderPointItems(); });
