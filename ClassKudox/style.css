@@ -461,6 +461,13 @@ input:focus, textarea:focus { outline: none; border-color: var(--primary-color);
     cursor: pointer; transition: var(--transition); text-align: center; position: relative;
     font-size: 1em; /* Scale natively with body */
 }
+
+/* Manage Classes Modal Customization */
+.manage-classes-modal-content {
+    min-height: 550px; /* 桌機版確保有一定高度 */
+    height: 80vh;
+}
+
 .point-item-btn:hover { transform: translateY(-3px); box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-color: var(--primary-color); }
 .point-icon { font-size: 2em; margin-bottom: 0.5rem; }
 .point-label { font-size: 0.85em; font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem; }
@@ -731,6 +738,12 @@ footer a:hover {
 
     #editPointItemModal.modal-overlay { z-index: 10001 !important; }
     #iconPickerModal.modal-overlay, #avatarPickerModal.modal-overlay { z-index: 10002 !important; }
+    /* 讓班級管理在手機版維持原本的自適應高度 */
+    .manage-classes-modal-content {
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: 90vh !important;
+    }
 }
 
 /* Custom Icon Picker & Edit Item Styles */

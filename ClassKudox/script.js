@@ -1,7 +1,21 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- State & Settings ---
-    let classes = JSON.parse(localStorage.getItem('cdData_classes')) || [];
+    const safeLoad = (key, template) => {
+        try {
+            const raw = localStorage.getItem(key);
+            if (raw === null) return template;
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(template)) return Array.isArray(parsed) ? parsed : template;
+            if (typeof template === 'object' && template !== null) return Object.assign({}, template, parsed);
+            return parsed !== null ? parsed : template;
+        } catch (e) {
+            console.error(`[SafeLoad] 讀取 ${key} 失敗，使用預設值`, e);
+            return template;
+        }
+    };
+
+    let classes = safeLoad('cdData_classes', []);
     let currentClassId = localStorage.getItem('cdData_currentClassId');
     let cloudBinId = localStorage.getItem('cdData_cloudBinId') || '';
     let cloudApiKey = localStorage.getItem('cdData_cloudApiKey') || '';
@@ -38,14 +52,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const loadClassData = () => {
         if(!currentClassId) return;
-        students = JSON.parse(localStorage.getItem(`cdData_${currentClassId}_students`)) || [];
-        groups = JSON.parse(localStorage.getItem(`cdData_${currentClassId}_groups`)) || [];
-        logs = JSON.parse(localStorage.getItem(`cdData_${currentClassId}_logs`)) || [];
-        const storedItems = JSON.parse(localStorage.getItem(`cdData_${currentClassId}_items`));
-        pointItems = storedItems || JSON.parse(JSON.stringify(defaultItems));
-        classMeta = JSON.parse(localStorage.getItem(`cdData_${currentClassId}_meta`)) || { pNum: 30, nNum: 30, lNum: 0 };
+        students = safeLoad(`cdData_${currentClassId}_students`, []);
+        groups = safeLoad(`cdData_${currentClassId}_groups`, []);
+        logs = safeLoad(`cdData_${currentClassId}_logs`, []);
+        pointItems = safeLoad(`cdData_${currentClassId}_items`, JSON.parse(JSON.stringify(defaultItems)));
+        classMeta = safeLoad(`cdData_${currentClassId}_meta`, { pNum: 30, nNum: 30, lNum: 0 });
 
-        const storedSettings = JSON.parse(localStorage.getItem(`cdData_${currentClassId}_settings`)) || {};
+        if (students.length > 0 && students[0].currentPoints === undefined) {
+            students.forEach(s => { s.currentPoints = 0; s.ignorePoints = 0; });
+            logs.forEach(l => { const s = students.find(x => x.id === l.sID); if(s) { if(l.iSum === 1) s.ignorePoints+=l.points; else s.currentPoints+=l.points; } });
+            saveData(true);
+        }
+
+        const storedSettings = safeLoad(`cdData_${currentClassId}_settings`, {});
         const { cloudBinId: _b, cloudApiKey: _k, autoSyncInterval: _a, ...cleaned } = storedSettings;
         settings = Object.assign({}, DEFAULT_SETTINGS, cleaned);
     };
@@ -387,6 +406,7 @@ document.addEventListener('DOMContentLoaded', () => {
             l.appendChild(li);
         }); }
         const cs = document.getElementById('copyFromClassSelect'); if(cs) { cs.innerHTML = '<option value="">不複製 (空白)</option>'; classes.forEach(c => { const opt = document.createElement('option'); opt.value = c.id; opt.textContent = c.id; cs.appendChild(opt); }); }
+        const sm = document.getElementById('syncFromClassSelect'); if(sm) { sm.innerHTML = '<option value="">請選擇來源班級...</option>'; classes.filter(c => c.id !== currentClassId).forEach(c => { const opt = document.createElement('option'); opt.value = c.id; opt.textContent = c.id; sm.appendChild(opt); }); }
     };
 
     // --- Sync Logic ---
@@ -545,11 +565,6 @@ document.addEventListener('DOMContentLoaded', () => {
             let cStudents = JSON.parse(localStorage.getItem(sKey) || '[]');
             let nMigrate = false;
             // 如果此班尚未快照轉移，需先試算
-            if (cStudents.length > 0 && cStudents[0].currentPoints === undefined) {
-                nMigrate = true;
-                cStudents.forEach(s => { s.currentPoints = 0; s.ignorePoints = 0; });
-                cLogs.forEach(l => { const s = cStudents.find(x => x.id === l.sID); if(s) { if(l.iSum === 1) s.ignorePoints+=l.points; else s.currentPoints+=l.points; } });
-            }
             const oLen = cLogs.length; cLogs = cLogs.filter(l => l.TS >= threshold);
             if (cLogs.length !== oLen || nMigrate) {
                 localStorage.setItem(lKey, JSON.stringify(cLogs));
@@ -564,28 +579,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    
+
     // --- Boot & Event Wiring ---
     const bootSequence = async () => {
-        loadClassData(); applySettings(); renderStudents(); renderPointItems(); renderClassSelector();
-        // 只有設定了自動同步頻率才在啟動時預載雲端資料，設定「無」時不主動同步
-        if (autoSyncInterval > 0) await checkCloudSyncState();
-        performLogRetention();
         const wire = (id, fn) => { const el = document.getElementById(id); if(el) el.onclick = fn; };
         
+        // --- 第一階段：優先綁定 UI 事件 ---
+        // 確保系統設定與基本彈窗按鈕優先工作，即使資料讀取報錯，使用者仍能開啟設定重置
         wire('settingsBtn', () => { 
-            const sz = document.getElementById('jsonSizeEst'); 
-            if(sz) sz.textContent = `(約 ${(JSON.stringify(getFullBackupData()).length / 1024).toFixed(1)} KB)`; 
+            try {
+                const sz = document.getElementById('jsonSizeEst'); 
+                if(sz) sz.textContent = `(約 ${(JSON.stringify(getFullBackupData()).length / 1024).toFixed(1)} KB)`; 
+            } catch(e) {}
             openModal(document.getElementById('settingsModal')); applySettings(); renderPointItems(); 
         });
-        wire('reportsBtn', () => { currentProfileId = null; window.renderReports(); openModal(document.getElementById('reportsModal')); });
         wire('manageClassesBtn', () => { renderClassSelector(); openModal(document.getElementById('manageClassesModal')); });
+        wire('reportsBtn', () => { currentProfileId = null; window.renderReports(); openModal(document.getElementById('reportsModal')); });
         wire('resetReportFilterBtn', () => { currentProfileId = null; document.getElementById('resetReportFilterBtn')?.classList.add('hidden'); document.getElementById('reportActivityTitle').textContent = '全班最近紀錄'; window.renderReports(); });
         wire('undoActionBtn', undoAction);
-        
         wire('toggleMultiSelectBtn', toggleMultiSelectMode);
         wire('addStudentBtn', () => openModal(document.getElementById('addStudentModal')));
+        
         document.querySelectorAll('.view-tab-btn').forEach(b => b.onclick = () => switchMainView(b.dataset.view));
         document.querySelectorAll('.close-modal-btn, .cancel-btn, .settings-close, .profile-close, .add-close, .edit-student-close, .classes-close, .group-close, .group-detail-close, .reports-close').forEach(b => b.onclick = () => closeModal(b.closest('.modal-overlay')));
+        
         wire('cancelMultiBtn', toggleMultiSelectMode);
         wire('selectAllBtn', () => { if(selectedStudentIds.size === students.length) selectedStudentIds.clear(); else students.forEach(s => selectedStudentIds.add(s.id)); document.getElementById('multiSelectCount').textContent = `已選擇 ${selectedStudentIds.size} 位學生`; renderStudents(); });
         wire('multiAwardBtn', () => { if(!selectedStudentIds.size) return alert('請選擇學生'); openAwardModal(Array.from(selectedStudentIds), `已選 ${selectedStudentIds.size} 位`, null); });
@@ -596,6 +614,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const fsSel = document.getElementById('fontSizeSelect'); if(fsSel) fsSel.onchange = (e) => { settings.fontSize = e.target.value; applySettings(); saveData(); };
         const sSel = document.getElementById('enableSoundSetting'); if(sSel) sSel.onchange = (e) => { settings.enableSound = e.target.checked; saveData(); };
         const retSel = document.getElementById('logRetentionSetting'); if(retSel) retSel.onchange = (e) => { settings.logRetention = parseInt(e.target.value); applySettings(); saveData(); performLogRetention(); };
+
+        // --- 第二階段：資料載入與渲染 ---
+        try {
+            console.log('[System] 啟動資料載入與渲染流程...');
+            loadClassData(); 
+            applySettings(); 
+            renderStudents(); 
+            renderPointItems(); 
+            renderClassSelector();
+            
+            // 只有設定了自動同步頻率才在啟動時預載雲端資料
+            if (autoSyncInterval > 0) checkCloudSyncState();
+            performLogRetention();
+        } catch (err) {
+            console.error('[Critical Error] 系統載入失敗，但 UI 功能已嘗試載入:', err);
+            alert('系統載入資料時發生錯誤，您可在「系統設定」->「危險區域」中嘗試重設系統。');
+        }
 
         wire('editProfileBtn', () => { const s = students.find(x => x.id === currentProfileId); if(!s) return; document.getElementById('editStudentName').value = s.id; document.getElementById('editStudentAvatarStyle').value = s.avatarStyle || 'fun-emoji'; document.getElementById('editStudentAvatarPreview').src = s.avatarUrl || generateAvatar(s.id, s.avatarStyle); closeModal(document.getElementById('studentProfileModal')); openModal(document.getElementById('editStudentModal')); });
         wire('saveEditStudentBtn', () => { 
@@ -714,6 +749,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const binInp = document.getElementById('cloudBinId'); if(binInp) { binInp.value = cloudBinId; binInp.onchange = (e) => { cloudBinId = e.target.value; saveData(); if (autoSyncInterval > 0) checkCloudSyncState(); }; }
         const keyInp = document.getElementById('cloudApiKey'); if(keyInp) { keyInp.value = cloudApiKey; keyInp.onchange = (e) => { cloudApiKey = e.target.value; saveData(); if (autoSyncInterval > 0) checkCloudSyncState(); }; }
         const ivInp = document.getElementById('autoSyncInterval'); if(ivInp) { ivInp.value = autoSyncInterval; ivInp.onchange = (e) => { autoSyncInterval = parseInt(e.target.value); saveData(); }; }
+
+        wire('resetCloudBinId', () => { if(confirm('重置 URL 或 ID？')) { document.getElementById('cloudBinId').value = ''; cloudBinId = ''; saveData(); } });
+        wire('resetCloudApiKey', () => { if(confirm('重置 Key？')) { document.getElementById('cloudApiKey').value = ''; cloudApiKey = ''; saveData(); } });
+        wire('confirmSyncBehaviorsBtn', () => {
+            const src = document.getElementById('syncFromClassSelect').value;
+            if(!src) return alert('請選擇來源班級');
+            if(confirm('這將會覆蓋目前班級的行為設定，確定嗎？')) {
+                const si = JSON.parse(localStorage.getItem(`cdData_${src}_items`));
+                if(si) {
+                    pointItems.positive = [...(si.positive||[])].sort((a,b)=>a.label.localeCompare(b.label, 'zh-TW')).map((x, i) => ({...x, id: 'p'+(i+1)}));
+                    pointItems.needsWork = [...(si.needsWork||[])].sort((a,b)=>a.label.localeCompare(b.label, 'zh-TW')).map((x, i) => ({...x, id: 'n'+(i+1)}));
+                    classMeta.pNum = Math.max(30, ...pointItems.positive.map(x => parseInt(x.id.substring(1))||0));
+                    classMeta.nNum = Math.max(30, ...pointItems.needsWork.map(x => parseInt(x.id.substring(1))||0));
+                    saveData(); renderPointItems(); alert('行為項目已成功覆蓋綁定！');
+                }
+            }
+        });
 
         wire('copyPointsBtn', () => {
             const range = getReportsTimeRange();
