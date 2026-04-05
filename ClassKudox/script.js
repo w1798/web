@@ -661,8 +661,8 @@ document.addEventListener('DOMContentLoaded', () => {
         wire('cloudUploadBtn', () => performCloudUpload(true));
         wire('cloudDownloadBtn', () => { if(confirm('會覆蓋本地資料，確定？')) performCloudDownload(); });
         
-        const binInp = document.getElementById('cloudBinId'); if(binInp) { binInp.value = cloudBinId; binInp.onchange = (e) => { cloudBinId = e.target.value; saveData(); checkCloudSyncState(); }; }
-        const keyInp = document.getElementById('cloudApiKey'); if(keyInp) { keyInp.value = cloudApiKey; keyInp.onchange = (e) => { cloudApiKey = e.target.value; saveData(); checkCloudSyncState(); }; }
+        const binInp = document.getElementById('cloudBinId'); if(binInp) { binInp.value = cloudBinId; binInp.onchange = (e) => { cloudBinId = e.target.value; saveData(); if (autoSyncInterval > 0) checkCloudSyncState(); }; }
+        const keyInp = document.getElementById('cloudApiKey'); if(keyInp) { keyInp.value = cloudApiKey; keyInp.onchange = (e) => { cloudApiKey = e.target.value; saveData(); if (autoSyncInterval > 0) checkCloudSyncState(); }; }
         const ivInp = document.getElementById('autoSyncInterval'); if(ivInp) { ivInp.value = autoSyncInterval; ivInp.onchange = (e) => { autoSyncInterval = parseInt(e.target.value); saveData(); }; }
 
         wire('copyPointsBtn', () => {
