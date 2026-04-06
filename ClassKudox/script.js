@@ -375,9 +375,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const renderPointItems = () => {
-        const rGrid = (id, items, cat) => { const el = document.getElementById(id); if(!el) return; el.innerHTML = ''; items.slice().sort((a,b)=>a.lb.localeCompare(b.lb,'zh-TW')).forEach(item => { const btn = document.createElement('button'); btn.className = `point-item-btn ${cat}`; btn.innerHTML = `<div class="point-icon">${item.ic}</div><div class="point-label">${item.lb}${item.iSum===1?' (不計分)':''}</div><div class="point-value">${item.vl > 0 ? '+' : ''}${item.vl}</div>`; btn.onclick = () => awardPoints(item.id, item.lb, item.vl, item.iSum===1); el.appendChild(btn); }); };
+        const rGrid = (id, items, cat) => { const el = document.getElementById(id); if(!el) return; el.innerHTML = ''; items.slice().sort((a,b)=>a.lb.localeCompare(b.lb,'zh-TW')).forEach(item => { const btn = document.createElement('button'); btn.className = `point-item-btn ${cat}`; btn.innerHTML = `<div class="point-icon">${item.ic}</div><div class="point-label">${item.lb}${item.iSum===1?' (不列排)':''}</div><div class="point-value">${item.vl > 0 ? '+' : ''}${item.vl}</div>`; btn.onclick = () => awardPoints(item.id, item.lb, item.vl, item.iSum===1); el.appendChild(btn); }); };
         rGrid('positiveItems', pointItems.pos, 'positive'); rGrid('needsWorkItems', pointItems.neg, 'negative');
-        const rList = (id, items, cat) => { const el = document.getElementById(id); if(!el) return; el.innerHTML = ''; items.slice().sort((a,b)=>a.lb.localeCompare(b.lb,'zh-TW')).forEach(item => { const div = document.createElement('div'); div.className = `point-item-btn ${cat==='pos'?'positive':'negative'}`; div.onclick = () => openEditPointItemModal(cat, item.id); div.innerHTML = `<div class="point-icon">${item.ic}</div><div class="point-label">${item.lb}${item.iSum===1?' <small>(不計分)</small>':''}</div><div class="point-value">${item.vl > 0 ? '+' : ''}${item.vl}</div><button class="remove-item-btn" onclick="event.stopPropagation(); window.removePointItem('${cat}', '${item.id}')">×</button>`; el.appendChild(div); }); };
+        const rList = (id, items, cat) => { const el = document.getElementById(id); if(!el) return; el.innerHTML = ''; items.slice().sort((a,b)=>a.lb.localeCompare(b.lb,'zh-TW')).forEach(item => { const div = document.createElement('div'); div.className = `point-item-btn ${cat==='pos'?'positive':'negative'}`; div.onclick = () => openEditPointItemModal(cat, item.id); div.innerHTML = `<div class="point-icon">${item.ic}</div><div class="point-label">${item.lb}${item.iSum===1?' <small>(不列排)</small>':''}</div><div class="point-value">${item.vl > 0 ? '+' : ''}${item.vl}</div><button class="remove-item-btn" onclick="event.stopPropagation(); window.removePointItem('${cat}', '${item.id}')">×</button>`; el.appendChild(div); }); };
         rList('settingsPositiveList', pointItems.pos, 'pos'); rList('settingsNeedsWorkList', pointItems.neg, 'neg');
     };
 
@@ -403,7 +403,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(!f.length) return list.innerHTML = '<li class="empty-state">無紀錄</li>'; 
         f.forEach(l => { 
             const li = document.createElement('li'); 
-            li.innerHTML = `<div class="history-item-left"><span class="history-date">${new Date(l.TS).toLocaleString()}</span><span class="history-label">${l.lb}${l.iSum === 1 ? ' <small>(不計分)</small>' : ''}</span></div><div class="history-item-right ${l.pt > 0 ? 'positive-val' : 'negative-val'}">${l.pt > 0 ? '+' : ''}${l.pt}<button class="delete-log-btn" onclick="window.deleteLog('${l.id}')">🗑️</button></div>`; 
+            li.innerHTML = `<div class="history-item-left"><span class="history-date">${new Date(l.TS).toLocaleString()}</span><span class="history-label">${l.lb}${l.iSum === 1 ? ' <small>(不列排)</small>' : ''}</span></div><div class="history-item-right ${l.pt > 0 ? 'positive-val' : 'negative-val'}">${l.pt > 0 ? '+' : ''}${l.pt}<button class="delete-log-btn" onclick="window.deleteLog('${l.id}')">🗑️</button></div>`; 
             list.appendChild(li); 
         }); 
     };
@@ -611,7 +611,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let f = logs.filter(log => { if(range && (log.TS < range.start || log.TS > range.end)) return false; if(currentProfileId && log.sID !== currentProfileId) return false; return true; }).sort((a,b)=>b.TS-a.TS);
             f.slice(0,50).forEach(log => {
                 const s = students.find(x => x.id === log.sID);
-                const li = document.createElement('li'); li.innerHTML = `<div class="history-item-left"><span class="history-date">${new Date(log.TS).toLocaleString()} • ${s?s.id:'未知'}</span><span class="history-label">${log.lb}${log.iSum === 1 ? ' <small>(不計分)</small>' : ''}</span></div><div class="history-item-right ${log.pt > 0 ? 'positive-val' : 'negative-val'}">${log.pt > 0 ? '+' : ''}${log.pt}<button class="delete-log-btn" onclick="window.deleteLog('${log.id}')">🗑️</button></div>`;
+                const li = document.createElement('li'); li.innerHTML = `<div class="history-item-left"><span class="history-date">${new Date(log.TS).toLocaleString()} • ${s?s.id:'未知'}</span><span class="history-label">${log.lb}${log.iSum === 1 ? ' <small>(不列排)</small>' : ''}</span></div><div class="history-item-right ${log.pt > 0 ? 'positive-val' : 'negative-val'}">${log.pt > 0 ? '+' : ''}${log.pt}<button class="delete-log-btn" onclick="window.deleteLog('${log.id}')">🗑️</button></div>`;
                 alist.appendChild(li);
             });
             renderPieChart(f);
@@ -874,8 +874,8 @@ document.addEventListener('DOMContentLoaded', () => {
         wire('addPositiveBtn', () => { 
             const l = document.getElementById('newPositiveLabel'); const v = document.getElementById('newPositiveValue'); const i = document.getElementById('newPositiveIconBtn'); const ign = document.getElementById('newPositiveIgnore'); if(!l.value.trim()) return; 
             let val = isNaN(parseInt(v.value)) ? 1 : parseInt(v.value);
-            if (val < 0) val = 0; // 最低 0 分
-            if (pointItems.pos.some(x => x.lb === l.value.trim() && x.vl === val)) return alert('項目名稱與分數已存在，請勿重複新增');
+            if (val < 0) val = 0; // 最低 0 數
+            if (pointItems.pos.some(x => x.lb === l.value.trim() && x.vl === val)) return alert('項目名稱與數數已存在，請勿重複新增');
             classMeta.pNum = (classMeta.pNum || 0) + 1;
             const item = { id: 'p'+classMeta.pNum, lb: l.value.trim(), vl: val, ic: i.textContent };
             if (ign.checked) item.iSum = 1;
@@ -884,8 +884,8 @@ document.addEventListener('DOMContentLoaded', () => {
         wire('addNeedsWorkBtn', () => { 
             const l = document.getElementById('newNeedsWorkLabel'); const v = document.getElementById('newNeedsWorkValue'); const i = document.getElementById('newNeedsWorkIconBtn'); const ign = document.getElementById('newNeedsWorkIgnore'); if(!l.value.trim()) return; 
             let val = isNaN(parseInt(v.value)) ? -1 : parseInt(v.value);
-            if (val > 0) val = 0; // 最高 0 分
-            if (pointItems.neg.some(x => x.lb === l.value.trim() && x.vl === val)) return alert('項目名稱與分數已存在，請勿重複新增');
+            if (val > 0) val = 0; // 最高 0 數
+            if (pointItems.neg.some(x => x.lb === l.value.trim() && x.vl === val)) return alert('項目名稱與數數已存在，請勿重複新增');
             classMeta.nNum = (classMeta.nNum || 0) + 1;
             const item = { id: 'n'+classMeta.nNum, lb: l.value.trim(), vl: val, ic: i.textContent };
             if (ign.checked) item.iSum = 1;

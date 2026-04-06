@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?ver=1.01b">
+    <link rel="stylesheet" href="style.css?ver=1.01c">
 </head>
 <body data-font-size="medium">
 
@@ -26,7 +26,7 @@
                 <select id="classSelect" class="filter-select" style="max-width: 200px; font-weight: 600;"></select>
                 <button id="manageClassesBtn" class="btn icon-btn" title="班級管理">🏫</button>
                 <button id="toggleMultiSelectBtn" class="btn secondary-btn">☑️ 多選模式</button>
-                <button id="reportsBtn" class="btn reports-btn">📊 查看報表</button>
+                <button id="reportsBtn" class="btn reports-btn">📊 點數排名</button>
                 <button id="addStudentBtn" class="btn primary-btn">+ 新增學生</button>
                 <button id="settingsBtn" class="btn icon-btn" title="設定">⚙️</button>
             </div>
@@ -190,12 +190,12 @@
                             <input type="text" id="customAwardLabel" placeholder="例如：表現優良" value="兌換點數">
                         </div>
                         <div class="input-group">
-                            <label>點數 (正數加分，負數扣分)</label>
+                            <label>點數 (正數加點，負數扣點)</label>
                             <input type="number" id="customAwardValue" value="-10">
                         </div>
                         <div class="checkbox-group" style="margin-bottom: 1rem;">
                             <input type="checkbox" id="customAwardIgnore" checked>
-                            <label for="customAwardIgnore">不計入「報表」總分</label>
+                            <label for="customAwardIgnore">不列入排名</label>
                         </div>
                         <button class="btn primary-btn" id="saveCustomAwardBtn" style="width: 100%">給予點數</button>
                     </div>
@@ -215,11 +215,11 @@
     <div id="reportsModal" class="modal-overlay hidden">
         <div class="modal-content reports-modal-content" style="max-width: 1200px; width: 95%;">
             <div class="modal-header">
-                <h2>📊 班級報表與動態 <span class="report-title-note">(此報表僅顯示計入總分的項目)</span></h2>
+                <h2>📊 點數排名與動態 <span class="report-title-note">(此報表會排除不列入點數項目後的總點數)</span></h2>
                 <button class="close-modal-btn reports-close">&times;</button>
             </div>
             <div class="reports-info-banner hidden">
-                此報表僅顯示計入總分的項目。
+                此報表會排除不列入點數項目後的總點數。
             </div>
 
             <!-- Filter Bar above main content -->
@@ -229,7 +229,7 @@
                     <div class="sort-group" style="margin-bottom:1rem;">
                         <label style="font-size:0.85em; color:var(--text-secondary); font-weight:600; display:block; margin-bottom:0.4rem;">報表排序方式</label>
                         <div class="sort-tabs">
-                            <button class="sort-btn active" data-sort="score">🏆 分數</button>
+                            <button class="sort-btn active" data-sort="score">🏆 點數</button>
                             <button class="sort-btn" data-sort="name">📝 姓名</button>
                         </div>
                     </div>
@@ -251,7 +251,7 @@
                         <div class="input-group">
                             <label>時間範圍</label>
                             <select id="timeRangeFilter" class="filter-select">
-                                <option value="all">系統總分 (所有紀錄)</option>
+                                <option value="all">系統總點數 (所有紀錄)</option>
                                 <option value="today">今天</option>
                                 <option value="week">本週</option>
                                 <option value="month">本月</option>
@@ -432,7 +432,7 @@
                         <div class="settings-row" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
                             <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 500;">
                                 <input type="checkbox" id="enableSoundSetting" style="width: 1.2rem; height: 1.2rem;">
-                                🔊 開啟加扣分音效
+                                🔊 開啟加扣點音效
                             </label>
                         </div>
                         <div class="settings-footer-spacer"></div>
@@ -452,12 +452,12 @@
                                     </div>
                                 </div>
                                 <div class="add-item-input-group">
-                                    <label class="mobile-only-label">分數</label>
-                                    <input type="number" id="newPositiveValue" placeholder="分數" value="1" min="0">
+                                    <label class="mobile-only-label">點數</label>
+                                    <input type="number" id="newPositiveValue" placeholder="點數" value="1" min="0">
                                 </div>
                                 <div class="checkbox-group">
                                     <input type="checkbox" id="newPositiveIgnore">
-                                    <label for="newPositiveIgnore" class="small-text">不計入「報表」總分</label>
+                                    <label for="newPositiveIgnore" class="small-text">不列入排名</label>
                                 </div>
                                 <button class="btn add-item-btn" id="addPositiveBtn" style="white-space: nowrap; padding: 0 1rem; flex-shrink: 0; min-width: max-content;">+增加</button>
                             </div>
@@ -480,12 +480,12 @@
                                     </div>
                                 </div>
                                 <div class="add-item-input-group">
-                                    <label class="mobile-only-label">分數</label>
-                                    <input type="number" id="newNeedsWorkValue" placeholder="分數 (負數)" value="-1" max="0">
+                                    <label class="mobile-only-label">點數</label>
+                                    <input type="number" id="newNeedsWorkValue" placeholder="點數 (負數)" value="-1" max="0">
                                 </div>
                                 <div class="checkbox-group">
                                     <input type="checkbox" id="newNeedsWorkIgnore">
-                                    <label for="newNeedsWorkIgnore" class="small-text">不計入「報表」總分</label>
+                                    <label for="newNeedsWorkIgnore" class="small-text">不列入排名</label>
                                 </div>
                                 <button class="btn add-item-btn" id="addNeedsWorkBtn" style="white-space: nowrap; padding: 0 1rem; flex-shrink: 0; min-width: max-content;">+增加</button>
                             </div>
@@ -551,7 +551,7 @@
                                 <option value="12">保留 1 年</option>
                                 <option value="24">保留 2 年</option>
                             </select>
-                            <div class="small-text" style="margin-top:0.3rem; color:var(--text-secondary);">會於啟動時自動掃描清除所有班級過期紀錄，但學生總分仍會保留。</div>
+                            <div class="small-text" style="margin-top:0.3rem; color:var(--text-secondary);">會於啟動時自動掃描清除所有班級過期紀錄，但學生總點數仍會保留。</div>
                         </div>
                         <div class="data-actions">
                             <button class="btn primary-btn" id="exportJsonBtn">📤 匯出 JSON 檔</button>
@@ -626,7 +626,7 @@
                 </div>
                 <div class="checkbox-group" style="margin-top: 1rem;">
                     <input type="checkbox" id="editItemIgnore">
-                    <label for="editItemIgnore">不計入「報表」總分</label>
+                    <label for="editItemIgnore">不列入排名</label>
                 </div>
             </div>
             <div class="modal-footer">
@@ -719,6 +719,6 @@
 </script>
 
 
-    <script src="script.js?ver=1.01b"></script>
+    <script src="script.js?ver=1.01c"></script>
 </body>
 </html>
