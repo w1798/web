@@ -110,11 +110,11 @@
                 <div class="input-group">
                     <label for="editStudentAvatarStyle">頭像風格</label>
                     <select id="editStudentAvatarStyle" class="filter-select" style="width: 100%">
-                        <option value="fun-emoji">可愛表情 (預設)</option>
-                        <option value="bottts">機器人</option>
-                        <option value="avataaars">人物角色</option>
-                        <option value="adventurer">探險家</option>
-                        <option value="lorelei">小精靈</option>
+                        <option value="fe">可愛表情 (預設)</option>
+                        <option value="bot">機器人</option>
+                        <option value="ava">人物角色</option>
+                        <option value="adv">探險家</option>
+                        <option value="lor">小精靈</option>
                     </select>
                 </div>
             </div>
@@ -398,9 +398,9 @@
                             <div class="input-group" style="flex:1;">
                                 <label for="fontSizeSelect">字體大小</label>
                                 <select id="fontSizeSelect" class="filter-select">
-                                    <option value="small">小</option>
-                                    <option value="medium" selected>中</option>
-                                    <option value="large">大</option>
+                                    <option value="S">小</option>
+                                    <option value="M" selected>中</option>
+                                    <option value="L">大</option>
                                 </select>
                             </div>
                             <div class="input-group" style="flex:1;">
@@ -453,7 +453,7 @@
                                 </div>
                                 <div class="add-item-input-group">
                                     <label class="mobile-only-label">分數</label>
-                                    <input type="number" id="newPositiveValue" placeholder="分數" value="1" min="1">
+                                    <input type="number" id="newPositiveValue" placeholder="分數" value="1" min="0">
                                 </div>
                                 <div class="checkbox-group">
                                     <input type="checkbox" id="newPositiveIgnore">
@@ -481,7 +481,7 @@
                                 </div>
                                 <div class="add-item-input-group">
                                     <label class="mobile-only-label">分數</label>
-                                    <input type="number" id="newNeedsWorkValue" placeholder="分數 (負數)" value="-1" max="-1">
+                                    <input type="number" id="newNeedsWorkValue" placeholder="分數 (負數)" value="-1" max="0">
                                 </div>
                                 <div class="checkbox-group">
                                     <input type="checkbox" id="newNeedsWorkIgnore">
@@ -559,9 +559,7 @@
                         </div>
                         <input type="file" id="importJsonFile" accept=".json" style="display:none;">
 
-                        <div class="data-actions" style="margin-top: 2rem; border-top: 1px dashed var(--border-color); padding-top: 1rem;">
-                            <button class="btn" id="resetAllPointsBtn" style="width:100%; background:var(--text-secondary); color:white; border:none; padding:10px;">重置所有學生點數歸零 (學期末清算)</button>
-                        </div>
+
                         <div class="settings-footer-spacer"></div>
                     </div>
                 </div>
@@ -570,8 +568,13 @@
                     <div class="settings-section">
                         <div class="danger-zone">
                             <h4>☢️ 危險區域</h4>
-                            <p class="small-text">重置系統將刪除所有班級、學生與點數紀錄，並恢復至初始狀態。</p>
-                            <button class="btn warning-btn" id="resetSystemBtn" style="margin-top:1rem; background:#dc2626;">🧨 重置整個系統</button>
+                            <p class="small-text">點數重置 (學期末清算) 會清除學生目前的 cP 與 iP，並刪除點數紀錄，但不影響名單。</p>
+                            <div style="display:flex; gap:1rem; flex-wrap:wrap; margin-top:1rem;">
+                                <button class="btn secondary-btn" id="resetCurrentClassPointsBtn" style="flex:1; border-color:#ef4444; color:#ef4444;">🧹 重置「目前班級」學生點數歸零</button>
+                                <button class="btn secondary-btn" id="resetAllClassesPointsBtn" style="flex:1; border-color:#dc2626; color:#dc2626;">🔥 重置「所有班級」學生點數歸零</button>
+                            </div>
+                            <p class="small-text" style="margin-top:1.5rem; border-top:1px solid #fecaca; padding-top:1rem;">重置系統將刪除所有班級、學生與點數格式，並恢復至初始狀態。</p>
+                            <button class="btn warning-btn" id="resetSystemBtn" style="margin-top:0.5rem; background:#dc2626; width:100%;">🧨 重置整個系統 (刪除所有資料)</button>
                         </div>
                         <div class="settings-footer-spacer"></div>
                     </div>
