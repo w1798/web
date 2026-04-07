@@ -21,6 +21,62 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const StampTool = (() => {
+        const CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+        const EPOCH = 1735689600000; // 2026-01-01
+        const CHAR_MAP = Object.fromEntries([...CHARS].map((c, i) => [c, i]));
+        return {
+            encode: (date = Date.now()) => {
+                let diff = Math.floor((new Date(date).getTime() - EPOCH) / 100);
+                if (diff < 0) diff = 0;
+                let res = "";
+                while (diff > 0) { res = CHARS[diff % 62] + res; diff = Math.floor(diff / 62); }
+                return res.padStart(6, '0');
+            },
+            decode: (code) => {
+                let diff = 0;
+                for (let i = 0; i < code.length; i++) {
+                    const val = CHAR_MAP[code[i]];
+                    if (val !== undefined) diff = diff * 62 + val;
+                }
+                return new Date((diff * 100) + EPOCH);
+            }
+        };
+    })();
+
+    const compressJSON = async (obj) => {
+        try {
+            const str = JSON.stringify(obj);
+            const stream = new Blob([str]).stream().pipeThrough(new CompressionStream('gzip'));
+            const resp = new Response(stream);
+            const buf = await resp.arrayBuffer();
+            return btoa(String.fromCharCode(...new Uint8Array(buf)));
+        } catch(e) { console.error('壓縮失敗', e); return null; }
+    };
+
+    const decompressJSON = async (base64) => {
+        try {
+            const bin = atob(base64);
+            const buf = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+            const stream = new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'));
+            const resp = new Response(stream);
+            return await resp.json();
+        } catch(e) { console.error('解壓失敗', e); return null; }
+    };
+
+    /**
+     * Ops Action Codes:
+     * 1: LOG_CREATE (加點日誌)
+     * 2: LOG_DELETE (刪除日誌)
+     * 3: ITEM_UPSERT (行為項目新增/修改)
+     * 5: ITEM_DELETE (行為項目刪除)
+     */
+    const pushOp = (action, data) => {
+        if (!cloudBinId || !cloudApiKey || autoSyncInterval <= 0) return;
+        ops.push({ t: StampTool.encode(), a: action, d: data });
+    };
+
     // --- Avatar style mapping: short code <-> DiceBear style name ---
     const AS_MAP = { fe:'fun-emoji', bot:'bottts', ava:'avataaars', adv:'adventurer', lor:'lorelei' };
     const AS_REV = Object.fromEntries(Object.entries(AS_MAP).map(([k,v])=>[v,k]));
@@ -56,12 +112,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    let useGzip = 1; // 1: 壓縮上傳, 0: 直接格式化上傳 (測試用)
     let classes = safeLoad('CD_Cls', []);
     let currentClassId = localStorage.getItem('CD_cCId');
     let cloudBinId = localStorage.getItem('BId') || '';
     let cloudApiKey = localStorage.getItem('Key') || '';
     let autoSyncInterval = parseInt(localStorage.getItem('aSyn')) || 0;
-    let localSyncVersion = parseInt(localStorage.getItem('CD_sV')) || 0;
+    let localSyncVersion = localStorage.getItem('CD_sV') || '000000';
+    if (localSyncVersion.length > 8) localSyncVersion = '000000'; // 修正舊版數字戳
+
+    const fmtVer = (v) => { 
+        if (!v || v === '000000') return '000000(無版本)'; 
+        try { 
+            const d = StampTool.decode(v); 
+            const s = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+            return `${v}( ${s})`; 
+        } catch(e) { return v; } 
+    };
 
     const defaultItems = {
         pos: [
@@ -88,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('CD_cCId', currentClassId);
     }
 
-    let students = [], groups = [], logs = [], pointItems = null, settings = null, classMeta = null;
+    let students = [], groups = [], logs = [], pointItems = null, settings = null, ops = [], mSyn = 300;
     const DEFAULT_SETTINGS = { ftS: 'M', col: 10, gCol: 5, iCol: 5, eS: 0, sCH: 0, gCH: 0, lRet: 0 };
 
     const loadClassData = () => {
@@ -97,7 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
         groups = safeLoad(`CD_${currentClassId}_Gs`, []);
         logs = safeLoad(`CD_${currentClassId}_Ls`, []);
         pointItems = safeLoad(`CD_${currentClassId}_itm`, JSON.parse(JSON.stringify(defaultItems)));
-        classMeta = safeLoad(`CD_${currentClassId}_meta`, { pNum: 0, nNum: 0, lNum: 0 });
+        ops = safeLoad(`CD_${currentClassId}_Ops`, []);
 
         if (students.length > 0 && students[0].cP === undefined) {
             students.forEach(s => { s.cP = 0; s.iP = 0; });
@@ -125,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem(`CD_${currentClassId}_Ls`, JSON.stringify(logs));
         localStorage.setItem(`CD_${currentClassId}_itm`, JSON.stringify(pointItems));
         localStorage.setItem(`CD_${currentClassId}_set`, JSON.stringify(settings));
-        localStorage.setItem(`CD_${currentClassId}_meta`, JSON.stringify(classMeta));
+        localStorage.setItem(`CD_${currentClassId}_Ops`, JSON.stringify(ops));
         if (!skipDirty) { isDirty = (cloudBinId && cloudApiKey) ? 1 : 0; }
         localStorage.setItem('drty', String(isDirty));
         updateSyncStatus();
@@ -228,12 +295,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const awardPoints = (iID, lb, pt, forcedIgnore = null) => {
         if(!awardContextIds.length) return;
-        const now = Date.now(); let newIds = [];
+        const now = Date.now(); 
+        const tsHex = StampTool.encode(now);
+        let newIds = [];
         const isIgnore = !!forcedIgnore;
         awardContextIds.forEach(sid => { 
-            classMeta.lNum = (classMeta.lNum || 0) + 1;
-            const logId = 'L' + classMeta.lNum; 
-            const logEntry = { id: logId, sID: sid, iID, lb, pt: Number(pt), TS: now };
+            const logId = Math.random().toString(36).substring(2, 8); 
+            const logEntry = { id: logId, sID: sid, lb, pt: Number(pt), TS: tsHex };
             if(isIgnore) logEntry.iSum = 1;
             logs.push(logEntry); 
             newIds.push(logId); 
@@ -242,6 +310,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(isIgnore) s.iP = (s.iP || 0) + Number(pt);
                 else s.cP = (s.cP || 0) + Number(pt);
             }
+            const opData = { s: sid, lb, p: Number(pt), l: logId };
+            if(isIgnore) opData.is = 1;
+            pushOp(1, opData);
         });
         saveData(); createPointAnimation(pt, awardContextIds.length); renderStudents(); if(currentView === 'groups') renderGroups();
         lastActionLogIds = newIds; showUndoToast(`${pt > 0 ? '+' : ''}${pt} 給予 ${awardContextIds.length} 位學生`);
@@ -331,6 +402,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         logs = logs.filter(l => !set.has(l.id));
+        lastActionLogIds.forEach(lid => pushOp(2, lid));
         lastActionLogIds = [];
         saveData();
         const toast = document.getElementById('undoToast'); if(toast) toast.classList.add('hidden');
@@ -375,13 +447,20 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const renderPointItems = () => {
-        const rGrid = (id, items, cat) => { const el = document.getElementById(id); if(!el) return; el.innerHTML = ''; items.slice().sort((a,b)=>a.lb.localeCompare(b.lb,'zh-TW')).forEach(item => { const btn = document.createElement('button'); btn.className = `point-item-btn ${cat}`; btn.innerHTML = `<div class="point-icon">${item.ic}</div><div class="point-label">${item.lb}${item.iSum===1?' (不列排)':''}</div><div class="point-value">${item.vl > 0 ? '+' : ''}${item.vl}</div>`; btn.onclick = () => awardPoints(item.id, item.lb, item.vl, item.iSum===1); el.appendChild(btn); }); };
+        // 加扣點看到的
+        const rGrid = (id, items, cat) => { const el = document.getElementById(id); if(!el) return; el.innerHTML = ''; items.slice().sort((a,b)=>a.lb.localeCompare(b.lb,'zh-TW')).forEach(item => { const btn = document.createElement('button'); btn.className = `point-item-btn ${cat}`; btn.innerHTML = `<div class="point-icon">${item.ic}</div><div class="point-label">${item.lb}${item.iSum===1?'<small>(不列排)</small>':''}</div><div class="point-value">${item.vl > 0 ? '+' : ''}${item.vl}</div>`; btn.onclick = () => awardPoints(item.id, item.lb, item.vl, item.iSum===1); el.appendChild(btn); }); };
         rGrid('positiveItems', pointItems.pos, 'positive'); rGrid('needsWorkItems', pointItems.neg, 'negative');
-        const rList = (id, items, cat) => { const el = document.getElementById(id); if(!el) return; el.innerHTML = ''; items.slice().sort((a,b)=>a.lb.localeCompare(b.lb,'zh-TW')).forEach(item => { const div = document.createElement('div'); div.className = `point-item-btn ${cat==='pos'?'positive':'negative'}`; div.onclick = () => openEditPointItemModal(cat, item.id); div.innerHTML = `<div class="point-icon">${item.ic}</div><div class="point-label">${item.lb}${item.iSum===1?' <small>(不列排)</small>':''}</div><div class="point-value">${item.vl > 0 ? '+' : ''}${item.vl}</div><button class="remove-item-btn" onclick="event.stopPropagation(); window.removePointItem('${cat}', '${item.id}')">×</button>`; el.appendChild(div); }); };
+        // 設定裡看到的
+        const rList = (id, items, cat) => { const el = document.getElementById(id); if(!el) return; el.innerHTML = ''; items.slice().sort((a,b)=>a.lb.localeCompare(b.lb,'zh-TW')).forEach(item => { const div = document.createElement('div'); div.className = `point-item-btn ${cat==='pos'?'positive':'negative'}`; div.onclick = () => openEditPointItemModal(cat, item.id); div.innerHTML = `<div class="point-icon">${item.ic}</div><div class="point-label">${item.lb}${item.iSum===1?'<small>(不列排)</small>':''}</div><div class="point-value">${item.vl > 0 ? '+' : ''}${item.vl}</div><button class="remove-item-btn" onclick="event.stopPropagation(); window.removePointItem('${cat}', '${item.id}')">×</button>`; el.appendChild(div); }); };
         rList('settingsPositiveList', pointItems.pos, 'pos'); rList('settingsNeedsWorkList', pointItems.neg, 'neg');
     };
 
-    window.removePointItem = (cat, id) => { if(!confirm('刪除此項目？')) return; pointItems[cat] = pointItems[cat].filter(i => i.id !== id); saveData(); renderPointItems(); };
+    window.removePointItem = (cat, id) => { 
+        if(!confirm('刪除此項目？')) return; 
+        pointItems[cat] = pointItems[cat].filter(i => i.id !== id); 
+        pushOp(5, { c: cat, id: id });
+        saveData(); renderPointItems(); 
+    };
     
     window.deleteLog = (id) => { 
         if(!confirm('刪除此紀錄？')) return; 
@@ -394,16 +473,23 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         logs = logs.filter(x => x.id != id); 
+        pushOp(2, id);
         saveData(); renderHistory(); renderStudents(); if(currentView === 'groups') renderGroups(); if(!document.getElementById('reportsModal').classList.contains('hidden')) window.renderReports(); 
     };
     
     const renderHistory = () => { 
         const list = document.getElementById('studentHistoryList'); if(!list) return; list.innerHTML = ''; 
-        const f = logs.filter(l => l.sID === currentProfileId).sort((a,b)=>b.TS-a.TS); 
+        const f = logs.filter(l => l.sID === currentProfileId).sort((a,b) => {
+            if (typeof a.TS === 'number' && typeof b.TS === 'number') return b.TS - a.TS;
+            const sa = String(a.TS), sb = String(b.TS);
+            if (sa.length === sb.length) return sb.localeCompare(sa);
+            return sb.length - sa.length;
+        }); 
         if(!f.length) return list.innerHTML = '<li class="empty-state">無紀錄</li>'; 
         f.forEach(l => { 
             const li = document.createElement('li'); 
-            li.innerHTML = `<div class="history-item-left"><span class="history-date">${new Date(l.TS).toLocaleString()}</span><span class="history-label">${l.lb}${l.iSum === 1 ? ' <small>(不列排)</small>' : ''}</span></div><div class="history-item-right ${l.pt > 0 ? 'positive-val' : 'negative-val'}">${l.pt > 0 ? '+' : ''}${l.pt}<button class="delete-log-btn" onclick="window.deleteLog('${l.id}')">🗑️</button></div>`; 
+            const d = (typeof l.TS === 'number') ? new Date(l.TS) : StampTool.decode(l.TS);
+            li.innerHTML = `<div class="history-item-left"><span class="history-date">${d.toLocaleString()}</span><span class="history-label">${l.lb}${l.iSum === 1 ? '<small>(不列排)</small>' : ''}</span></div><div class="history-item-right ${l.pt > 0 ? 'positive-val' : 'negative-val'}">${l.pt > 0 ? '+' : ''}${l.pt}<button class="delete-log-btn" onclick="window.deleteLog('${l.id}')">🗑️</button></div>`; 
             list.appendChild(li); 
         }); 
     };
@@ -438,7 +524,7 @@ document.addEventListener('DOMContentLoaded', () => {
             li.querySelector('.archive-btn').onclick = () => { c.arc = !c.arc; saveData(); renderClassSelector(); };
             li.querySelector('.del-class-btn').onclick = () => { 
                 if(confirm('刪除？')) { 
-                    ['Stus','Gs','Ls','itm','set','meta'].forEach(suffix => {
+                    ['Stus','Gs','Ls','itm','set','Ops'].forEach(suffix => {
                         localStorage.removeItem(`CD_${c.id}_${suffix}`);
                     });
                     classes = classes.filter(x=>x.id!==c.id); 
@@ -461,15 +547,17 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- Sync Logic ---
-    const getFullBackupData = () => { 
+    const getFullBackupData = (includeOps = false) => { 
         const b = {}; 
         for (let i = 0; i < localStorage.length; i++) { 
             const k = localStorage.key(i); 
-            if (k.startsWith('CD_') || k === 'BId' || k === 'Key' || k === 'aSyn' || k === 'drty') { 
+            // 雲端同步時排除 BId, Key 與 _Ops
+            const isCloudExclusion = (!includeOps && (k === 'BId' || k === 'Key' || k.endsWith('_Ops')));
+            if (k.startsWith('CD_') && !isCloudExclusion) { 
                 try { b[k] = JSON.parse(localStorage.getItem(k)); } catch(e) { b[k] = localStorage.getItem(k); } 
             } 
         } 
-        b.sVer = localSyncVersion || 0; 
+        b.sVer = localSyncVersion; 
         return b; 
     };
     const restoreFromBackup = (data, reload = true) => {
@@ -480,8 +568,8 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('aSyn', String(autoSyncInterval));
         if (reload) location.reload();
         else { 
-            localSyncVersion = data.sVer || data.syncVersion || 0;
-            localStorage.setItem('CD_sV', String(localSyncVersion));
+            localSyncVersion = data.sVer || data.syncVersion || '000000';
+            localStorage.setItem('CD_sV', localSyncVersion);
             loadClassData(); 
             isDirty = 3; 
             applySettings(); 
@@ -500,60 +588,168 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isManual && !confirm('確定上傳至雲端？')) return;
         if (!isManual && isDirty !== 1) return;
         isSyncing = true; updateSyncStatus();
-        console.log('[CloudSync] 開始執行上傳同步流程...');
+        console.log(`[CloudSync] 開始執行上傳同步流程 (${useGzip?'GZIP':'格式化'})...`);
         try {
             const isUpstash = cloudBinId.includes('upstash.io'), h = isUpstash?{'Authorization':`Bearer ${cloudApiKey}`}:{'X-Access-Key':cloudApiKey};
-            const url = isUpstash ? (cloudBinId.startsWith('http') ? `${cloudBinId}/GET/classKudox_backup` : cloudBinId) : (cloudBinId.startsWith('http') ? cloudBinId : `https://api.jsonbin.io/v3/b/${cloudBinId}/latest`);
-            console.log('[CloudSync] 獲取雲端最新數據:', url);
-            const getResp = await fetch(url, { headers: h });
-            let cloudData = null; if (getResp.ok) { let r = await getResp.json(); cloudData = isUpstash?r.result:(r.record||r); if(typeof cloudData === 'string') cloudData = JSON.parse(cloudData); }
-            const cloudVer = cloudData?.sVer || cloudData?.syncVersion || 0;
-            console.log('[CloudSync] 雲端版本:', cloudVer, '本地版本:', localSyncVersion);
-            if (!isManual && cloudVer !== 0 && cloudVer !== localSyncVersion) {
-                console.log(`[CloudSync] 雲端版本 (${cloudVer}) 不同，自動背景下載覆蓋...`);
-                await performCloudDownload(false); return;
+            const newVer = StampTool.encode(); 
+            console.log(`[CloudSync] 準備上傳新版本: ${fmtVer(newVer)}，本地舊版本: ${fmtVer(localSyncVersion)}`);
+            const toPush = getFullBackupData(false);
+            toPush.sVer = newVer;
+            
+            let finalBody;
+            if (useGzip) {
+                const compressed = await compressJSON(toPush);
+                finalBody = isUpstash ? compressed : JSON.stringify({ record: compressed });
+            } else {
+                finalBody = JSON.stringify(toPush, null, 2);
             }
-            let toPush = getFullBackupData();
-            const newVer = Date.now(); toPush.sVer = newVer;
+
             const putUrl = isUpstash ? (cloudBinId.startsWith('http') ? `${cloudBinId}/SET/classKudox_backup` : cloudBinId) : (cloudBinId.startsWith('http') ? cloudBinId : `https://api.jsonbin.io/v3/b/${cloudBinId}`);
-            console.log('[CloudSync] 推送數據至雲端:', putUrl);
-            const putResp = await fetch(putUrl, { method: isUpstash?'POST':'PUT', headers: isUpstash?h:{...h,'Content-Type':'application/json'}, body: JSON.stringify(toPush) });
+            const putResp = await fetch(putUrl, { 
+                method: isUpstash?'POST':'PUT', 
+                headers: isUpstash?h:{...h,'Content-Type':'application/json'}, 
+                body: finalBody 
+            });
             if (putResp.ok) { 
-                console.log(`[CloudSync] 同步成功，新版本: ${newVer} (${new Date(newVer).toTimeString().split(' ')[0]})`);
-                if (cloudVer !== 0 && cloudVer !== localSyncVersion) restoreFromBackup(toPush, false); 
-                else { localSyncVersion = newVer; localStorage.setItem('cdData_syncVersion', String(newVer)); isDirty = 3; updateSyncStatus(); } 
+                const stepNum = (localSyncVersion === '000000') ? 'Step 5' : 'Step 6';
+                console.log(`[CloudSync] ${stepNum} 同步成功 (${useGzip?'已壓縮':'格式化'})，版本: ${fmtVer(newVer)}`);
+                localSyncVersion = newVer; localStorage.setItem('CD_sV', localSyncVersion);
+                isDirty = 3; updateSyncStatus();
             } else { throw new Error('雲端寫入失敗'); }
         } catch(e) { console.error('[CloudSync] 錯誤:', e); isDirty = 2; updateSyncStatus(); } finally { isSyncing = false; }
     };
 
+    const parseCloudData = async (raw) => {
+        let data = null;
+        try {
+            if (typeof raw === 'string') {
+                const trimmed = raw.trim();
+                if (trimmed.startsWith('{')) data = JSON.parse(trimmed);
+                else if (trimmed.length > 50) data = await decompressJSON(trimmed);
+            } else {
+                data = raw;
+            }
+            if (data && data.record && (!data.sVer && !data.syncVersion)) data = data.record;
+            // 統一欄位為 sVer
+            if (data && !data.sVer && data.syncVersion) data.sVer = data.syncVersion;
+        } catch(e) { console.error('[CloudSync] 解析失敗:', e); }
+        return data;
+    };
+
     const performCloudDownload = async (isManual = false) => {
         if(!cloudBinId || !cloudApiKey) return isManual ? alert('請先設定雲端') : null;
-        console.log(`[CloudSync] ${isManual ? '手動' : '背景'}下載中...`);
+        console.log(`[CloudSync] ${isManual ? '手動' : '背景'}下載中 (解壓)...`);
         try {
             const isUpstash = cloudBinId.includes('upstash.io');
             const url = isUpstash ? (cloudBinId.startsWith('http') ? `${cloudBinId}/GET/classKudox_backup` : cloudBinId) : (cloudBinId.startsWith('http') ? cloudBinId : `https://api.jsonbin.io/v3/b/${cloudBinId}/latest`);
             const resp = await fetch(url, { headers: isUpstash ? {'Authorization':`Bearer ${cloudApiKey}`} : {'X-Access-Key':cloudApiKey} });
             if(resp.ok) { 
-                let r = await resp.json(); let cloudData = isUpstash ? r.result : (r.record || r); if(typeof cloudData === 'string') cloudData = JSON.parse(cloudData);
-                console.log('[CloudSync] 下載成功，執行還原...');
-                restoreFromBackup(cloudData, isManual); // 手動才重整
+                let r = await resp.json(); let raw = isUpstash ? r.result : (r.record || r); 
+                let cloudData = await parseCloudData(raw);
+
+                if (!cloudData) throw new Error('解析雲端數據失敗');
+                const cloudVer = cloudData.sVer || '000000';
+                console.log(`[CloudSync] 下載成功，雲端版本: ${fmtVer(cloudVer)} (本地版本: ${fmtVer(localSyncVersion)})，執行衝突檢查與重播...`);
+                
+                const cL = cloudData[`CD_${currentClassId}_Ls`] || [];
+                const cS = cloudData[`CD_${currentClassId}_Stus`] || [];
+                const cItm = cloudData[`CD_${currentClassId}_itm`] || { pos: [], neg: [] };
+
+                // 1. 比對並移除已同步 Ops (自動同步 Step 3)
+                ops = ops.filter(o => {
+                    let k = true;
+                    if (o.a === 1) k = !cL.some(l => l.id === o.d.l); 
+                    else if (o.a === 2) k = cL.some(l => l.id == o.d);    
+                    else if (o.a === 3) { const its = cItm[o.d.type] || []; k = !its.some(it => it.id === o.d.i.id && it.lb === o.d.i.lb && it.ic === o.d.i.ic); }
+                    else if (o.a === 5) { const its = cItm[o.d.type] || []; k = its.some(it => it.id === o.d.id); }
+                    if (!k) console.log(`[CloudSync] Step 3 移除已同步 Op: a=${o.a}, id=${o.d.l || o.d.id || o.d}`);
+                    return k;
+                });
+                
+                // 2. 移除 7 天前的 Ops (自動同步 Step 3)
+                const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+                const sevenDaysHex = StampTool.encode(sevenDaysAgo);
+                ops = ops.filter(o => o.t >= sevenDaysHex);
+
+                // 3. 重播本地 Ops (Step 4)
+                ops.sort((a,b) => (a.t.length === b.t.length) ? a.t.localeCompare(b.t) : a.t.length - b.t.length).forEach(o => {
+                    if (o.a === 1) { // 加點重播
+                        cL.push({ id: o.d.l, sID: o.d.s, lb: o.d.lb, pt: o.d.p, TS: o.t, iSum: o.d.is });
+                        const s = cS.find(x => x.id === o.d.s);
+                        if (s) { if (o.d.is === 1) s.iP = (s.iP || 0) + o.d.p; else s.cP = (s.cP || 0) + o.d.p; }
+                    } else if (o.a === 2) { // 刪除重播
+                        const logIdx = cL.findIndex(l => l.id == o.d);
+                        if (logIdx !== -1) {
+                            const l = cL[logIdx]; const s = cS.find(x => x.id === l.sID);
+                            if (s) { if (l.iSum === 1) s.iP = (s.iP || 0) - l.pt; else s.cP = (s.cP || 0) - l.pt; }
+                            cL.splice(logIdx, 1);
+                        }
+                    }
+                });
+                
+                cloudData[`CD_${currentClassId}_Ls`] = cL;
+                cloudData[`CD_${currentClassId}_Stus`] = cS;
+                cloudData[`CD_${currentClassId}_itm`] = cItm; // 也要存回行為項目
+                cloudData[`CD_${currentClassId}_Ops`] = ops; 
+                
+                // 強制覆寫本地 Ops 以免重播後殘留
+                localStorage.setItem(`CD_${currentClassId}_Ops`, JSON.stringify(ops));
+                
+                restoreFromBackup(cloudData, isManual);
+                if (!isManual) { 
+                    isDirty = 1; saveData(); 
+                    console.log('[CloudSync] 重播完成，準備執行 Step 5 追趕上傳...');
+                    await performCloudUpload(false); 
+                }
             } else throw new Error('下載失敗');
         } catch(e) { console.error('[CloudSync] 下載錯誤:', e); if(isManual) alert(e.message); }
     };
 
     const checkCloudSyncState = async () => {
-        if (!cloudBinId || !cloudApiKey) return;
+        if (!cloudBinId || !cloudApiKey || isSyncing) return;
         try {
             const isUpstash = cloudBinId.includes('upstash.io'), h = isUpstash?{'Authorization':`Bearer ${cloudApiKey}`}:{'X-Access-Key':cloudApiKey};
-            const url = isUpstash ? (cloudBinId.startsWith('http') ? `${cloudBinId}/GET/classKudox_backup` : cloudBinId) : (cloudBinId.startsWith('http') ? cloudBinId : `https://api.jsonbin.io/v3/b/${cloudBinId}/latest`);
+            // 加上 t= 避免 JSONBin 快取導致 000000 問題
+            const url = isUpstash ? (cloudBinId.startsWith('http') ? `${cloudBinId}/GET/classKudox_backup` : cloudBinId) : (cloudBinId.startsWith('http') ? cloudBinId : `https://api.jsonbin.io/v3/b/${cloudBinId}/latest?t=${Date.now()}`);
             const getResp = await fetch(url, { headers: h });
             if (getResp.ok) { 
-                let r = await getResp.json(); let cloudData = isUpstash?r.result:(r.record||r); if(typeof cloudData === 'string') cloudData = JSON.parse(cloudData);
-                const cloudVer = cloudData?.sVer || cloudData?.syncVersion || 0;
-                console.log('[CloudSync] 預檢版本: 雲端', cloudVer, '本地', localSyncVersion);
-                if (cloudVer !== 0 && cloudVer !== localSyncVersion) {
-                    console.log(`[CloudSync] 預檢版本不同 (${cloudVer} vs ${localSyncVersion})，自動下載覆蓋...`);
-                    await performCloudDownload();
+                let r = await getResp.json(); 
+                let raw = isUpstash ? r.result : (r.record || r);
+                let cloudData = await parseCloudData(raw);
+                const cloudVer = cloudData?.sVer || '000000';
+
+                console.log(`[CloudSync] Step 1 取得雲端版本: ${fmtVer(cloudVer)}`);
+                console.log(`[CloudSync] Step 2 本地版本: ${fmtVer(localSyncVersion)}, 雲端版本: ${fmtVer(cloudVer)}`);
+                
+                // Step 3 預檢時也執行的一次性 Ops 清理 (靜默執行)
+                const cL = cloudData?.[`CD_${currentClassId}_Ls`] || [];
+                const cItm = cloudData?.[`CD_${currentClassId}_itm`] || { pos: [], neg: [] };
+                const oldOpsLen = ops.length;
+                ops = ops.filter(o => {
+                    let k = true;
+                    if (o.a === 1) k = !cL.some(l => l.id === o.d.l); 
+                    else if (o.a === 2) k = cL.some(l => l.id == o.d);    
+                    else if (o.a === 3) { const its = cItm[o.d.type] || []; k = !its.some(it => it.id === o.d.i.id && it.lb === o.d.i.lb && it.ic === o.d.i.ic); }
+                    else if (o.a === 5) { const its = cItm[o.d.type] || []; k = its.some(it => it.id === o.d.id); }
+                    return k;
+                });
+                if (ops.length < oldOpsLen) {
+                    console.log(`[CloudSync] Step 3 清理 Ops: 移除 ${oldOpsLen - ops.length} 筆重複或過期紀錄`);
+                    localStorage.setItem(`CD_${currentClassId}_Ops`, JSON.stringify(ops));
+                }
+
+                if (cloudVer !== localSyncVersion) {
+                    if (localSyncVersion < cloudVer) {
+                        console.log(`[CloudSync] Step 4 本地版本較舊，採用雲端資料 (還原中...)`);
+                        await performCloudDownload(false); 
+                    } else {
+                        // localSyncVersion > cloudVer 或其他異常
+                        console.log(`[CloudSync] Step 6 本地版本較新 (${fmtVer(localSyncVersion)})，執行覆蓋上傳`);
+                        await performCloudUpload(false);
+                    }
+                } else if (isDirty === 1) {
+                    console.log(`[CloudSync] Step 6 版本一致但本地有變動，執行覆蓋上傳`);
+                    await performCloudUpload(false);
                 }
             }
         } catch(e) { console.error('[CloudSync] 預檢失敗:', e); }
@@ -588,7 +784,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const range = getReportsTimeRange();
         let data = students.map(s => {
             let pts = logs.filter(l => l.sID === s.id).reduce((sum, l) => {
-                if (range && (l.TS < range.start || l.TS > range.end)) return sum;
+                const ts = (typeof l.TS === 'number') ? l.TS : StampTool.decode(l.TS).getTime();
+                if (range && (ts < range.start || ts > range.end)) return sum;
                 return sum + (l.iSum === 1 ? 0 : l.pt);
             }, 0);
             return { ...s, pts };
@@ -608,10 +805,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         const alist = document.getElementById('reportActivityList'); if(alist) {
             alist.innerHTML = '';
-            let f = logs.filter(log => { if(range && (log.TS < range.start || log.TS > range.end)) return false; if(currentProfileId && log.sID !== currentProfileId) return false; return true; }).sort((a,b)=>b.TS-a.TS);
+            let f = logs.filter(log => { 
+                const ts = (typeof log.TS === 'number') ? log.TS : StampTool.decode(log.TS).getTime();
+                if(range && (ts < range.start || ts > range.end)) return false; 
+                if(currentProfileId && log.sID !== currentProfileId) return false; 
+                return true; 
+            }).sort((a,b) => {
+                if (typeof a.TS === 'number' && typeof b.TS === 'number') return b.TS - a.TS;
+                const sa = String(a.TS), sb = String(b.TS);
+                if (sa.length === sb.length) return sb.localeCompare(sa);
+                return sb.length - sa.length;
+            });
             f.slice(0,50).forEach(log => {
                 const s = students.find(x => x.id === log.sID);
-                const li = document.createElement('li'); li.innerHTML = `<div class="history-item-left"><span class="history-date">${new Date(log.TS).toLocaleString()} • ${s?s.id:'未知'}</span><span class="history-label">${log.lb}${log.iSum === 1 ? ' <small>(不列排)</small>' : ''}</span></div><div class="history-item-right ${log.pt > 0 ? 'positive-val' : 'negative-val'}">${log.pt > 0 ? '+' : ''}${log.pt}<button class="delete-log-btn" onclick="window.deleteLog('${log.id}')">🗑️</button></div>`;
+                const d = (typeof log.TS === 'number') ? new Date(log.TS) : StampTool.decode(log.TS);
+                const li = document.createElement('li'); li.innerHTML = `<div class="history-item-left"><span class="history-date">${d.toLocaleString()} • ${s?s.id:'未知'}</span><span class="history-label">${log.lb}${log.iSum === 1 ? '<small>(不列排)</small>' : ''}</span></div><div class="history-item-right ${log.pt > 0 ? 'positive-val' : 'negative-val'}">${log.pt > 0 ? '+' : ''}${log.pt}<button class="delete-log-btn" onclick="window.deleteLog('${log.id}')">🗑️</button></div>`;
                 alist.appendChild(li);
             });
             renderPieChart(f);
@@ -631,7 +839,16 @@ document.addEventListener('DOMContentLoaded', () => {
             let cLogs = JSON.parse(localStorage.getItem(lKey) || '[]');
             if (cLogs.length === 0) return;
             let cStudents = JSON.parse(localStorage.getItem(sKey) || '[]');
-            const oLen = cLogs.length; cLogs = cLogs.filter(l => l.TS >= threshold);
+            const oLen = cLogs.length; cLogs = cLogs.filter(l => {
+                const ts = (typeof l.TS === 'number') ? l.TS : StampTool.decode(l.TS).getTime();
+                return ts >= threshold;
+            });
+            // 刪除大於 7 天的 Ops
+            let cOps = JSON.parse(localStorage.getItem(oKey) || '[]');
+            const sevenDaysHex = StampTool.encode(Date.now() - 7 * 24 * 60 * 60 * 1000);
+            cOps = cOps.filter(o => o.t >= sevenDaysHex);
+            localStorage.setItem(oKey, JSON.stringify(cOps));
+
             if (cLogs.length !== oLen) {
                 localStorage.setItem(lKey, JSON.stringify(cLogs));
                 if (c.id === currentClassId) { logs = cLogs; } 
@@ -639,9 +856,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         if (dirty) {
-            if (cloudBinId && cloudApiKey) { isDirty = 1; localStorage.setItem('cdData_isDirty', '1'); updateSyncStatus(); performCloudUpload(); }
+            if (cloudBinId && cloudApiKey) { isDirty = 1; localStorage.setItem('drty', '1'); updateSyncStatus(); performCloudUpload(); }
             console.log('[System] 完成過期紀錄清理與瘦身');
         }
+        // 清理超過 7 天的防僵屍 Ops
+        const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+        const oLen = ops.length;
+        ops = ops.filter(o => o.t > sevenDaysAgo);
+        if (ops.length !== oLen) { saveData(true); console.log(`[System] 已清理 ${oLen - ops.length} 筆過期 Ops`); }
     };
 
     const sanitizeAndCleanDatabase = () => {
@@ -775,12 +997,18 @@ document.addEventListener('DOMContentLoaded', () => {
         wire('settingsBtn', () => { 
             try {
                 const sz = document.getElementById('jsonSizeEst'); 
-                if(sz) sz.textContent = `(約 ${(JSON.stringify(getFullBackupData()).length / 1024).toFixed(1)} KB)`; 
+                if(sz) sz.textContent = `(約 ${(JSON.stringify(getFullBackupData(false)).length / 1024).toFixed(1)} KB)`; 
             } catch(e) {}
             openModal(document.getElementById('settingsModal')); applySettings(); renderPointItems(); 
         });
         wire('manageClassesBtn', () => { renderClassSelector(); openModal(document.getElementById('manageClassesModal')); });
-        wire('reportsBtn', () => { currentProfileId = null; window.renderReports(); openModal(document.getElementById('reportsModal')); });
+        wire('reportsBtn', () => { 
+            currentProfileId = null; 
+            const filter = document.getElementById('timeRangeFilter');
+            if(filter) filter.value = 'today'; // 預設今天
+            window.renderReports(); 
+            openModal(document.getElementById('reportsModal')); 
+        });
         wire('resetReportFilterBtn', () => { currentProfileId = null; document.getElementById('resetReportFilterBtn')?.classList.add('hidden'); document.getElementById('reportActivityTitle').textContent = '全班最近紀錄'; window.renderReports(); });
         wire('undoActionBtn', undoAction);
         wire('toggleMultiSelectBtn', toggleMultiSelectMode);
@@ -874,22 +1102,26 @@ document.addEventListener('DOMContentLoaded', () => {
         wire('addPositiveBtn', () => { 
             const l = document.getElementById('newPositiveLabel'); const v = document.getElementById('newPositiveValue'); const i = document.getElementById('newPositiveIconBtn'); const ign = document.getElementById('newPositiveIgnore'); if(!l.value.trim()) return; 
             let val = isNaN(parseInt(v.value)) ? 1 : parseInt(v.value);
-            if (val < 0) val = 0; // 最低 0 數
+            if (val < 0) val = 0;
             if (pointItems.pos.some(x => x.lb === l.value.trim() && x.vl === val)) return alert('項目名稱與數數已存在，請勿重複新增');
-            classMeta.pNum = (classMeta.pNum || 0) + 1;
-            const item = { id: 'p'+classMeta.pNum, lb: l.value.trim(), vl: val, ic: i.textContent };
+            const itemId = Math.random().toString(36).substring(2, 8);
+            const item = { id: itemId, lb: l.value.trim(), vl: val, ic: i.textContent };
             if (ign.checked) item.iSum = 1;
-            pointItems.pos.push(item); saveData(); renderPointItems(); l.value = ''; v.value = '1'; 
+            pointItems.pos.push(item); 
+            pushOp(3, { c: 'pos', i: item });
+            saveData(); renderPointItems(); l.value = ''; v.value = '1'; 
         });
         wire('addNeedsWorkBtn', () => { 
             const l = document.getElementById('newNeedsWorkLabel'); const v = document.getElementById('newNeedsWorkValue'); const i = document.getElementById('newNeedsWorkIconBtn'); const ign = document.getElementById('newNeedsWorkIgnore'); if(!l.value.trim()) return; 
             let val = isNaN(parseInt(v.value)) ? -1 : parseInt(v.value);
-            if (val > 0) val = 0; // 最高 0 數
+            if (val > 0) val = 0;
             if (pointItems.neg.some(x => x.lb === l.value.trim() && x.vl === val)) return alert('項目名稱與數數已存在，請勿重複新增');
-            classMeta.nNum = (classMeta.nNum || 0) + 1;
-            const item = { id: 'n'+classMeta.nNum, lb: l.value.trim(), vl: val, ic: i.textContent };
+            const itemId = Math.random().toString(36).substring(2, 8);
+            const item = { id: itemId, lb: l.value.trim(), vl: val, ic: i.textContent };
             if (ign.checked) item.iSum = 1;
-            pointItems.neg.push(item); saveData(); renderPointItems(); l.value = ''; v.value = '-1'; 
+            pointItems.neg.push(item); 
+            pushOp(3, { c: 'neg', i: item });
+            saveData(); renderPointItems(); l.value = ''; v.value = '-1'; 
         });
         
         wire('saveEditItemBtn', () => {
@@ -900,6 +1132,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if(item) {
                 item.lb = l; item.vl = v; item.ic = document.getElementById('editItemIconBtn').textContent;
                 if(document.getElementById('editItemIgnore').checked) item.iSum = 1; else delete item.iSum;
+                pushOp(3, { c: editingPointItemCat, i: item });
                 saveData(); renderPointItems(); closeModal(document.getElementById('editPointItemModal'));
             }
         });
@@ -912,11 +1145,6 @@ document.addEventListener('DOMContentLoaded', () => {
             // 預設為系統預設項目 (而非純空白)
             let items = JSON.parse(JSON.stringify(defaultItems));
             let s = [], g = [];
-            let cm = { 
-                pNum: items.pos.length, 
-                nNum: items.neg.length, 
-                lNum: 0 
-            };
             
             const src = document.getElementById('copyFromClassSelect').value; 
             const copyItems = document.getElementById('copyItemsCheckbox').checked;
@@ -928,10 +1156,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const siValue = localStorage.getItem(`CD_${src}_itm`);
                     const si = siValue ? JSON.parse(siValue) : null;
                     if (si) {
-                        items.pos = (si.pos||[]).sort((a,b)=>a.lb.localeCompare(b.lb, 'zh-TW')).map((x, i) => ({...x, id: 'p'+(i+1)}));
-                        items.neg = (si.neg||[]).sort((a,b)=>a.lb.localeCompare(b.lb, 'zh-TW')).map((x, i) => ({...x, id: 'n'+(i+1)}));
-                        cm.pNum = items.pos.length;
-                        cm.nNum = items.neg.length;
+                        items.pos = (si.pos||[]).sort((a,b)=>a.lb.localeCompare(b.lb, 'zh-TW')).map(x => ({...x, id: Math.random().toString(36).substring(2, 8)}));
+                        items.neg = (si.neg||[]).sort((a,b)=>a.lb.localeCompare(b.lb, 'zh-TW')).map(x => ({...x, id: Math.random().toString(36).substring(2, 8)}));
                         console.log(`[System] 已複製行為項目: 優點 ${items.pos.length}, 待改進 ${items.neg.length}`);
                     }
                 }
@@ -950,20 +1176,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log(`[System] 建立全新空白班級: "${n}" (使用系統預設項目)`);
             }
             
-            // 確保計數器與當前 items 長度同步
-            cm.pNum = items.pos.length;
-            cm.nNum = items.neg.length;
+
 
             classes.push({ id: n }); 
             
-            // 重點：在切換 ID 與 saveData 之前，必須先更新全域狀態指標，否則 saveData 會把舊班級資料存入新 Key 中
             students = s;
             pointItems = items;
             groups = g;
-            classMeta = cm;
-            logs = []; // 新班級紀錄必為空
+            logs = []; 
             currentClassId = n; 
-
             saveData(); 
             // 由於已經手動更新了全域變數，此處不需要再 loadClassData 否則會從硬碟重新讀取一次
             
@@ -980,9 +1201,9 @@ document.addEventListener('DOMContentLoaded', () => {
         wire('cloudUploadBtn', () => performCloudUpload(true));
         wire('cloudDownloadBtn', () => { if(confirm('會覆蓋本地資料，確定？')) performCloudDownload(true); });
         
-        const binInp = document.getElementById('cloudBinId'); if(binInp) { binInp.value = cloudBinId; binInp.onchange = (e) => { cloudBinId = e.target.value; saveData(); if (autoSyncInterval > 0) checkCloudSyncState(); }; }
-        const keyInp = document.getElementById('cloudApiKey'); if(keyInp) { keyInp.value = cloudApiKey; keyInp.onchange = (e) => { cloudApiKey = e.target.value; saveData(); if (autoSyncInterval > 0) checkCloudSyncState(); }; }
-        const ivInp = document.getElementById('autoSyncInterval'); if(ivInp) { ivInp.value = autoSyncInterval; ivInp.onchange = (e) => { autoSyncInterval = parseInt(e.target.value); saveData(); }; }
+        const binInp = document.getElementById('cloudBinId'); if(binInp) { binInp.value = cloudBinId; binInp.onchange = (e) => { cloudBinId = e.target.value; saveData(); startSyncTimer(); }; }
+        const keyInp = document.getElementById('cloudApiKey'); if(keyInp) { keyInp.value = cloudApiKey; keyInp.onchange = (e) => { cloudApiKey = e.target.value; saveData(); startSyncTimer(); }; }
+        const ivInp = document.getElementById('autoSyncInterval'); if(ivInp) { ivInp.value = autoSyncInterval; ivInp.onchange = (e) => { autoSyncInterval = parseInt(e.target.value); saveData(); startSyncTimer(); }; }
 
         wire('resetCloudBinId', () => { if(confirm('重置 URL 或 ID？')) { document.getElementById('cloudBinId').value = ''; cloudBinId = ''; saveData(); } });
         wire('resetCloudApiKey', () => { if(confirm('重置 Key？')) { document.getElementById('cloudApiKey').value = ''; cloudApiKey = ''; saveData(); } });
@@ -995,8 +1216,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(si) {
                     pointItems.pos = [...(si.pos||[])].sort((a,b)=>a.lb.localeCompare(b.lb, 'zh-TW')).map((x, i) => ({...x, id: 'p'+(i+1)}));
                     pointItems.neg = [...(si.neg||[])].sort((a,b)=>a.lb.localeCompare(b.lb, 'zh-TW')).map((x, i) => ({...x, id: 'n'+(i+1)}));
-                    classMeta.pNum = Math.max(30, ...pointItems.pos.map(x => parseInt(x.id.substring(1))||0));
-                    classMeta.nNum = Math.max(30, ...pointItems.neg.map(x => parseInt(x.id.substring(1))||0));
                     saveData(); renderPointItems(); alert('行為項目已成功覆蓋綁定！');
                 }
             }
@@ -1006,7 +1225,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const range = getReportsTimeRange();
             let data = students.map(s => {
                 let pts = logs.filter(l => l.sID === s.id).reduce((sum, l) => {
-                    if (range && (l.TS < range.start || l.TS > range.end)) return sum;
+                    const ts = (typeof l.TS === 'number') ? l.TS : StampTool.decode(l.TS).getTime();
+                    if (range && (ts < range.start || ts > range.end)) return sum;
                     return sum + (l.iSum === 1 ? 0 : l.pt);
                 }, 0);
                 return { name: s.id, pts };
@@ -1020,17 +1240,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
         wire('exportCsvBtn', () => {
             const range = getReportsTimeRange();
-            let csv = '\uFEFF姓名,項目,點數,時間\n';
-            logs.filter(l => {
-                if (range && (l.TS < range.start || l.TS > range.end)) return false;
-                if (currentProfileId && l.sID !== currentProfileId) return false;
+            // 矩陣式報表規畫
+            const filteredLogs = logs.filter(l => {
+                const ts = (typeof l.TS === 'number') ? l.TS : StampTool.decode(l.TS).getTime();
+                if (range && (ts < range.start || ts > range.end)) return false;
+                if (l.iSum === 1) return false; 
                 return true;
-            }).forEach(l => {
-                const s = students.find(x => x.id === l.sID);
-                csv += `"${s?s.id:'未知'}","${l.lb}",${l.pt},"${new Date(l.TS).toLocaleString()}"\n`;
             });
+            const validItems = [...new Set(filteredLogs.map(l => l.lb))].sort();
+            let csv = '\uFEFF姓名/項目,總點數,' + validItems.join(',') + '\n';
+            
+            students.forEach(s => {
+                const sLogs = filteredLogs.filter(l => l.sID === s.id);
+                if (sLogs.length === 0) return;
+                const total = sLogs.reduce((acc, l) => acc + l.pt, 0);
+                let row = `"${s.id}",${total}`;
+                validItems.forEach(itm => {
+                    const sum = sLogs.filter(l => l.lb === itm).reduce((acc, l) => acc + l.pt, 0);
+                    row += `,${sum}`;
+                });
+                csv += row + '\n';
+            });
+            
             const b = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'report.csv'; a.click();
+            const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `report_${new Date().toLocaleDateString()}.csv`; a.click();
         });
 
         const rRange = document.getElementById('timeRangeFilter'); if(rRange) {
@@ -1042,7 +1275,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const sD = document.getElementById('startDateFilter'); if(sD) sD.onchange = window.renderReports;
         const eD = document.getElementById('endDateFilter'); if(eD) eD.onchange = window.renderReports;
 
-        wire('exportJsonBtn', () => { const b = getFullBackupData(); const blo = new Blob([JSON.stringify(b, null, 2)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blo); a.download = 'ClassKudox.json'; a.click(); });
+        wire('exportJsonBtn', () => { const b = getFullBackupData(true); const blo = new Blob([JSON.stringify(b, null, 2)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blo); a.download = 'ClassKudox.json'; a.click(); });
         wire('importJsonBtn', () => document.getElementById('importJsonFile')?.click());
         const iFile = document.getElementById('importJsonFile'); if(iFile) iFile.onchange = (e) => { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = (ev) => { try { restoreFromBackup(JSON.parse(ev.target.result)); } catch(err) { alert('失敗'); } }; r.readAsText(f); };
         
@@ -1115,7 +1348,40 @@ document.addEventListener('DOMContentLoaded', () => {
             const s = students.find(x=>x.id===currentProfileId); if(s) s.aU = seed; 
         });
 
-        if(autoSyncInterval > 0) setInterval(performCloudUpload, Math.max(autoSyncInterval, 15) * 1000);
+        const startSyncTimer = () => {
+            if (autoSyncTimer) clearInterval(autoSyncTimer);
+            if (window.checkTimer) clearInterval(window.checkTimer);
+            if (!cloudBinId || !cloudApiKey || autoSyncInterval <= 0) return;
+            
+            console.log(`[CloudSync] 定時器啟動，頻率: ${autoSyncInterval}秒`);
+            
+            // 統合邏輯：由單一定時器管理
+            window.checkTimer = setInterval(() => {
+                if (isSyncing) return;
+                
+                if (isDirty === 1 && localSyncVersion !== '000000') {
+                    performCloudUpload(false);
+                    mSyn = 300; 
+                } else {
+                    mSyn--;
+                    if (mSyn <= 0) {
+                        mSyn = 300;
+                        console.log('[CloudSync] 閒置滿 300 秒，執行預檢...');
+                        checkCloudSyncState();
+                    }
+                }
+            }, 1000);
+
+            // 每隔指定間隔強制檢查一次上傳
+            autoSyncTimer = setInterval(() => {
+                if (isDirty === 1 && !isSyncing && localSyncVersion !== '000000') performCloudUpload(false);
+            }, Math.max(autoSyncInterval, 15) * 1000);
+
+            // 啟動後延遲跑一次預檢，確保先抓雲端
+            setTimeout(checkCloudSyncState, 1500);
+        };
+
+        startSyncTimer();
     };
 
     const createPointAnimation = (pts, count) => { for(let i=0; i<Math.min(count, 5); i++) { const el = document.createElement('div'); el.className = 'point-animation'; el.textContent = `${pts>0?'+':''}${pts}`; el.style.color = pts>0?'var(--positive-color)':'var(--negative-color)'; el.style.left = (50+Math.random()*10-5)+'%'; el.style.top = (40+Math.random()*10-5)+'%'; document.body.appendChild(el); setTimeout(() => el.remove(), 1000); } };
