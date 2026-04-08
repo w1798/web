@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'cdData_cloudBinId': 'BId',
         'cdData_cloudApiKey': 'Key',
         'cdData_autoSyncInterval': 'aSyn',
-        'cdData_syncVersion': 'CD_sV',
+        'cdData_syncVersion': 'sVer',
         'cdData_isDirty': 'drty'
     };
     // 預先遷移全局 Key
@@ -118,8 +118,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let cloudBinId = localStorage.getItem('BId') || '';
     let cloudApiKey = localStorage.getItem('Key') || '';
     let autoSyncInterval = parseInt(localStorage.getItem('aSyn')) || 0;
-    let localSyncVersion = localStorage.getItem('CD_sV') || '000000';
-    if (localSyncVersion.length > 8) localSyncVersion = '000000'; // 修正舊版數字戳
+    let localSyncVersion = localStorage.getItem('sVer') || '000000';
+    // 嚴格檢查版本號格式，若不符合 Base62 規範則重置 (防止出現 1 這種異常值)
+    if (localSyncVersion.length > 8 || localSyncVersion.length < 5) localSyncVersion = '000000';
 
     const fmtVer = (v) => { 
         if (!v || v === '000000') return '000000(無版本)'; 
@@ -179,6 +180,22 @@ document.addEventListener('DOMContentLoaded', () => {
     let isDirty = Number(localStorage.getItem('drty')) || ((cloudBinId && cloudApiKey) ? 3 : 0), isSyncing = false, autoSyncTimer = null; 
     let awardContextIds = [], currentProfileId = null, editingGroupId = null, currentGroupIdForAward = null, editingPointItemId = null, editingPointItemCat = null, lastActionLogIds = [], undoTimeout = null, currentSort = 'score';
 
+    const setDirty = (v) => {
+        const old = isDirty;
+        isDirty = v;
+        localStorage.setItem('drty', String(v));
+        mSyn = 300; // 只要 isDirty 有變動，mSyn 恢復到 300
+        updateSyncStatus();
+        
+        // 當 isDirty 從 0 變成 1 時，1秒後執行同步作業
+        if (old === 0 && v === 1) {
+            if (autoSyncInterval > 0 && cloudBinId && cloudApiKey) {
+                console.log('[CloudSync] 狀態從 0 轉 1，預約 1 秒後同步...');
+                setTimeout(() => { if (isDirty === 1) checkCloudSyncState(); }, 1000);
+            }
+        }
+    };
+
     const saveData = (skipDirty = false) => {
         if(!currentClassId) return;
         localStorage.setItem('CD_Cls', JSON.stringify(classes));
@@ -186,21 +203,31 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('BId', cloudBinId);
         localStorage.setItem('Key', cloudApiKey);
         localStorage.setItem('aSyn', String(autoSyncInterval));
-        localStorage.setItem('CD_sV', String(localSyncVersion));
+        localStorage.setItem('sVer', String(localSyncVersion));
         localStorage.setItem(`CD_${currentClassId}_Stus`, JSON.stringify(students));
         localStorage.setItem(`CD_${currentClassId}_Gs`, JSON.stringify(groups));
         localStorage.setItem(`CD_${currentClassId}_Ls`, JSON.stringify(logs));
         localStorage.setItem(`CD_${currentClassId}_itm`, JSON.stringify(pointItems));
         localStorage.setItem(`CD_${currentClassId}_set`, JSON.stringify(settings));
         localStorage.setItem(`CD_${currentClassId}_Ops`, JSON.stringify(ops));
-        if (!skipDirty) { isDirty = (cloudBinId && cloudApiKey) ? 1 : 0; }
-        localStorage.setItem('drty', String(isDirty));
-        updateSyncStatus();
+        
+        if (!skipDirty) { 
+            const hasCloud = (cloudBinId && cloudApiKey && autoSyncInterval > 0);
+            setDirty(hasCloud ? 1 : 0);
+        } else {
+            updateSyncStatus();
+        }
     };
 
     const updateSyncStatus = () => {
         const el = document.getElementById('syncStatus'); if (!el) return;
-        const s = [ {t:'本機儲存',c:'state-0'}, {t:'等待同步',c:'state-1'}, {t:'同步錯誤',c:'state-2'}, {t:'同步完成',c:'state-3'} ][isDirty] || {t:'本機儲存',c:'state-0'};
+        const s = [ 
+            {t:'本機儲存',c:'state-0'}, 
+            {t:'等待同步',c:'state-1'}, 
+            {t:'同步錯誤',c:'state-2'}, 
+            {t:'同步完成',c:'state-3'},
+            {t:'正在同步',c:'state-4'} 
+        ][isDirty] || {t:'本機儲存',c:'state-0'};
         el.textContent = s.t; el.className = 'sync-badge ' + s.c;
     };
 
@@ -569,7 +596,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (reload) location.reload();
         else { 
             localSyncVersion = data.sVer || data.syncVersion || '000000';
-            localStorage.setItem('CD_sV', localSyncVersion);
+            // sVer 已由 Object.keys loop (Line 591) 自動寫入 localStorage
             loadClassData(); 
             isDirty = 3; 
             applySettings(); 
@@ -583,176 +610,110 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     // Removed mergeLocalIntoCloud as we do full overwrites
 
-    const performCloudUpload = async (isManual = false) => {
-        if (!cloudBinId || !cloudApiKey || isSyncing) return;
-        if (isManual && !confirm('確定上傳至雲端？')) return;
-        if (!isManual && isDirty !== 1) return;
-        isSyncing = true; updateSyncStatus();
-        console.log(`[CloudSync] 開始執行上傳同步流程 (${useGzip?'GZIP':'格式化'})...`);
+    const performCloudUpload = async () => {
+        if (!cloudBinId || !cloudApiKey) return;
+        updateSyncStatus(); 
         try {
-            const isUpstash = cloudBinId.includes('upstash.io'), h = isUpstash?{'Authorization':`Bearer ${cloudApiKey}`}:{'X-Access-Key':cloudApiKey};
-            const newVer = StampTool.encode(); 
-            console.log(`[CloudSync] 準備上傳新版本: ${fmtVer(newVer)}，本地舊版本: ${fmtVer(localSyncVersion)}`);
-            const toPush = getFullBackupData(false);
-            toPush.sVer = newVer;
-            
-            let finalBody;
-            if (useGzip) {
-                const compressed = await compressJSON(toPush);
-                finalBody = isUpstash ? compressed : JSON.stringify({ record: compressed });
-            } else {
-                finalBody = JSON.stringify(toPush, null, 2);
-            }
-
+            const newVer = StampTool.encode();
+            const oldVer = localSyncVersion;
+            localSyncVersion = newVer; // 先更新，使壓縮資料內的 sVer 已是新版本
+            console.log(`[CloudSync連線] 準備同步上傳新版本: ${fmtVer(newVer)}，本地舊版本: ${fmtVer(oldVer)}`);
+            const toPush = getFullBackupData(false); // b.sVer 已是 newVer
+            const compressed = await compressJSON(toPush);
+            const isUpstash = cloudBinId.includes('upstash.io');
             const putUrl = isUpstash ? (cloudBinId.startsWith('http') ? `${cloudBinId}/SET/classKudox_backup` : cloudBinId) : (cloudBinId.startsWith('http') ? cloudBinId : `https://api.jsonbin.io/v3/b/${cloudBinId}`);
-            const putResp = await fetch(putUrl, { 
-                method: isUpstash?'POST':'PUT', 
-                headers: isUpstash?h:{...h,'Content-Type':'application/json'}, 
-                body: finalBody 
-            });
-            if (putResp.ok) { 
-                const stepNum = (localSyncVersion === '000000') ? 'Step 5' : 'Step 6';
-                console.log(`[CloudSync] ${stepNum} 同步成功 (${useGzip?'已壓縮':'格式化'})，版本: ${fmtVer(newVer)}`);
-                localSyncVersion = newVer; localStorage.setItem('CD_sV', localSyncVersion);
-                isDirty = 3; updateSyncStatus();
-            } else { throw new Error('雲端寫入失敗'); }
-        } catch(e) { console.error('[CloudSync] 錯誤:', e); isDirty = 2; updateSyncStatus(); } finally { isSyncing = false; }
+            const h = isUpstash ? {'Authorization':`Bearer ${cloudApiKey}`, 'Content-Type':'application/json'} : {'X-Access-Key':cloudApiKey, 'Content-Type':'application/json'};
+            // 直接上傳壓縮字串，不再包者 {v, d}
+            const resp = await fetch(putUrl, { method:'PUT', headers:h, body:JSON.stringify({ d: compressed }) });
+            if (resp.ok) { 
+                console.log(`[CloudSync] 同步成功 (版本: ${newVer}, 時間: ${new Date().toLocaleString()})`);
+                localStorage.setItem('sVer', localSyncVersion);
+                // 上傳成功 = 雲端已包含所有 Ops 效果，清空 Ops
+                ops = [];
+                localStorage.setItem(`CD_${currentClassId}_Ops`, '[]');
+                console.log(`[CloudSync] Ops 已清空 (同步完成狀態)`);
+                setDirty(3);
+            } else {
+                localSyncVersion = oldVer; // 上傳失敗恢復舊版本
+                throw new Error('雲端寫入失敗');
+            }
+        } catch(e) { console.error('[CloudSync] 上傳錯誤:', e); setDirty(2); }
     };
 
     const parseCloudData = async (raw) => {
         let data = null;
         try {
             if (typeof raw === 'string') {
-                const trimmed = raw.trim();
-                if (trimmed.startsWith('{')) data = JSON.parse(trimmed);
-                else if (trimmed.length > 50) data = await decompressJSON(trimmed);
-            } else {
-                data = raw;
+                const tr = raw.trim();
+                // 新格式：直接是壓縮字串
+                if (tr.length > 50 && !tr.startsWith('{')) data = await decompressJSON(tr);
+                else if (tr.startsWith('{')) {
+                    const parsed = JSON.parse(tr);
+                    // 舊格式相容：{v, d} 包裝
+                    if (parsed.d && typeof parsed.d === 'string') data = await decompressJSON(parsed.d);
+                    else data = parsed;
+                }
+            } else if (typeof raw === 'object' && raw !== null) {
+                if (raw.d && typeof raw.d === 'string') data = await decompressJSON(raw.d);
+                else data = raw;
             }
-            if (data && data.record && (!data.sVer && !data.syncVersion)) data = data.record;
-            // 統一欄位為 sVer
-            if (data && !data.sVer && data.syncVersion) data.sVer = data.syncVersion;
+            if (data) {
+                if (!data.sVer) data.sVer = data.v || data.syncVersion || '000000';
+            }
         } catch(e) { console.error('[CloudSync] 解析失敗:', e); }
         return data;
     };
 
-    const performCloudDownload = async (isManual = false) => {
-        if(!cloudBinId || !cloudApiKey) return isManual ? alert('請先設定雲端') : null;
-        console.log(`[CloudSync] ${isManual ? '手動' : '背景'}下載中 (解壓)...`);
-        try {
-            const isUpstash = cloudBinId.includes('upstash.io');
-            const url = isUpstash ? (cloudBinId.startsWith('http') ? `${cloudBinId}/GET/classKudox_backup` : cloudBinId) : (cloudBinId.startsWith('http') ? cloudBinId : `https://api.jsonbin.io/v3/b/${cloudBinId}/latest`);
-            const resp = await fetch(url, { headers: isUpstash ? {'Authorization':`Bearer ${cloudApiKey}`} : {'X-Access-Key':cloudApiKey} });
-            if(resp.ok) { 
-                let r = await resp.json(); let raw = isUpstash ? r.result : (r.record || r); 
-                let cloudData = await parseCloudData(raw);
-
-                if (!cloudData) throw new Error('解析雲端數據失敗');
-                const cloudVer = cloudData.sVer || '000000';
-                console.log(`[CloudSync] 下載成功，雲端版本: ${fmtVer(cloudVer)} (本地版本: ${fmtVer(localSyncVersion)})，執行衝突檢查與重播...`);
-                
-                const cL = cloudData[`CD_${currentClassId}_Ls`] || [];
-                const cS = cloudData[`CD_${currentClassId}_Stus`] || [];
-                const cItm = cloudData[`CD_${currentClassId}_itm`] || { pos: [], neg: [] };
-
-                // 1. 比對並移除已同步 Ops (自動同步 Step 3)
-                ops = ops.filter(o => {
-                    let k = true;
-                    if (o.a === 1) k = !cL.some(l => l.id === o.d.l); 
-                    else if (o.a === 2) k = cL.some(l => l.id == o.d);    
-                    else if (o.a === 3) { const its = cItm[o.d.type] || []; k = !its.some(it => it.id === o.d.i.id && it.lb === o.d.i.lb && it.ic === o.d.i.ic); }
-                    else if (o.a === 5) { const its = cItm[o.d.type] || []; k = its.some(it => it.id === o.d.id); }
-                    if (!k) console.log(`[CloudSync] Step 3 移除已同步 Op: a=${o.a}, id=${o.d.l || o.d.id || o.d}`);
-                    return k;
-                });
-                
-                // 2. 移除 7 天前的 Ops (自動同步 Step 3)
-                const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-                const sevenDaysHex = StampTool.encode(sevenDaysAgo);
-                ops = ops.filter(o => o.t >= sevenDaysHex);
-
-                // 3. 重播本地 Ops (Step 4)
-                ops.sort((a,b) => (a.t.length === b.t.length) ? a.t.localeCompare(b.t) : a.t.length - b.t.length).forEach(o => {
-                    if (o.a === 1) { // 加點重播
-                        cL.push({ id: o.d.l, sID: o.d.s, lb: o.d.lb, pt: o.d.p, TS: o.t, iSum: o.d.is });
-                        const s = cS.find(x => x.id === o.d.s);
-                        if (s) { if (o.d.is === 1) s.iP = (s.iP || 0) + o.d.p; else s.cP = (s.cP || 0) + o.d.p; }
-                    } else if (o.a === 2) { // 刪除重播
-                        const logIdx = cL.findIndex(l => l.id == o.d);
-                        if (logIdx !== -1) {
-                            const l = cL[logIdx]; const s = cS.find(x => x.id === l.sID);
-                            if (s) { if (l.iSum === 1) s.iP = (s.iP || 0) - l.pt; else s.cP = (s.cP || 0) - l.pt; }
-                            cL.splice(logIdx, 1);
-                        }
-                    }
-                });
-                
-                cloudData[`CD_${currentClassId}_Ls`] = cL;
-                cloudData[`CD_${currentClassId}_Stus`] = cS;
-                cloudData[`CD_${currentClassId}_itm`] = cItm; // 也要存回行為項目
-                cloudData[`CD_${currentClassId}_Ops`] = ops; 
-                
-                // 強制覆寫本地 Ops 以免重播後殘留
-                localStorage.setItem(`CD_${currentClassId}_Ops`, JSON.stringify(ops));
-                
-                restoreFromBackup(cloudData, isManual);
-                if (!isManual) { 
-                    isDirty = 1; saveData(); 
-                    console.log('[CloudSync] 重播完成，準備執行 Step 5 追趕上傳...');
-                    await performCloudUpload(false); 
-                }
-            } else throw new Error('下載失敗');
-        } catch(e) { console.error('[CloudSync] 下載錯誤:', e); if(isManual) alert(e.message); }
-    };
-
     const checkCloudSyncState = async () => {
-        if (!cloudBinId || !cloudApiKey || isSyncing) return;
+        if (isSyncing || !cloudBinId || !cloudApiKey) return;
+        isSyncing = true; setDirty(4); 
+
+        console.log(`[CloudSync連線] Step 1 開始預檢及下載雲端版本...`);
         try {
             const isUpstash = cloudBinId.includes('upstash.io'), h = isUpstash?{'Authorization':`Bearer ${cloudApiKey}`}:{'X-Access-Key':cloudApiKey};
-            // 加上 t= 避免 JSONBin 快取導致 000000 問題
             const url = isUpstash ? (cloudBinId.startsWith('http') ? `${cloudBinId}/GET/classKudox_backup` : cloudBinId) : (cloudBinId.startsWith('http') ? cloudBinId : `https://api.jsonbin.io/v3/b/${cloudBinId}/latest?t=${Date.now()}`);
-            const getResp = await fetch(url, { headers: h });
-            if (getResp.ok) { 
-                let r = await getResp.json(); 
-                let raw = isUpstash ? r.result : (r.record || r);
-                let cloudData = await parseCloudData(raw);
-                const cloudVer = cloudData?.sVer || '000000';
+            
+            const resp = await fetch(url, { headers: h });
+            if (resp.ok) {
+                const r = await resp.json();
+                const raw = isUpstash ? r.result : (r.record || r);
+                const cloudData = await parseCloudData(raw);
+                if (!cloudData) throw new Error('解析雲端數據失敗');
 
+                const cloudVer = cloudData.sVer || '000000';
                 console.log(`[CloudSync] Step 1 取得雲端版本: ${fmtVer(cloudVer)}`);
-                console.log(`[CloudSync] Step 2 本地版本: ${fmtVer(localSyncVersion)}, 雲端版本: ${fmtVer(cloudVer)}`);
                 
-                // Step 3 預檢時也執行的一次性 Ops 清理 (靜默執行)
-                const cL = cloudData?.[`CD_${currentClassId}_Ls`] || [];
-                const cItm = cloudData?.[`CD_${currentClassId}_itm`] || { pos: [], neg: [] };
-                const oldOpsLen = ops.length;
-                ops = ops.filter(o => {
-                    let k = true;
-                    if (o.a === 1) k = !cL.some(l => l.id === o.d.l); 
-                    else if (o.a === 2) k = cL.some(l => l.id == o.d);    
-                    else if (o.a === 3) { const its = cItm[o.d.type] || []; k = !its.some(it => it.id === o.d.i.id && it.lb === o.d.i.lb && it.ic === o.d.i.ic); }
-                    else if (o.a === 5) { const its = cItm[o.d.type] || []; k = its.some(it => it.id === o.d.id); }
-                    return k;
-                });
-                if (ops.length < oldOpsLen) {
-                    console.log(`[CloudSync] Step 3 清理 Ops: 移除 ${oldOpsLen - ops.length} 筆重複或過期紀錄`);
-                    localStorage.setItem(`CD_${currentClassId}_Ops`, JSON.stringify(ops));
-                }
+                const vComp = localSyncVersion.localeCompare(cloudVer);
+                let label = '一致';
+                if (vComp < 0) label = '本地為舊';
+                else if (vComp > 0) label = '本地較新';
+                console.log(`[CloudSync] Step 2 本地版本: ${fmtVer(localSyncVersion)} (${label}), 雲端版本: ${fmtVer(cloudVer)}`);
 
-                if (cloudVer !== localSyncVersion) {
-                    if (localSyncVersion < cloudVer) {
-                        console.log(`[CloudSync] Step 4 本地版本較舊，採用雲端資料 (還原中...)`);
-                        await performCloudDownload(false); 
-                    } else {
-                        // localSyncVersion > cloudVer 或其他異常
-                        console.log(`[CloudSync] Step 6 本地版本較新 (${fmtVer(localSyncVersion)})，執行覆蓋上傳`);
-                        await performCloudUpload(false);
-                    }
-                } else if (isDirty === 1) {
-                    console.log(`[CloudSync] Step 6 版本一致但本地有變動，執行覆蓋上傳`);
-                    await performCloudUpload(false);
+                if (vComp < 0) {
+                    console.log(`[CloudSync] Step 4 執行還原、清理重複 Ops 並重播...`);
+                    const cL = cloudData[`CD_${currentClassId}_Ls`] || [];
+                    const oldLen = ops.length;
+                    ops = ops.filter(o => {
+                        if (o.a === 1) return !cL.some(l => l.id === o.d.l); 
+                        return o.t >= cloudVer; 
+                    });
+                    if (ops.length < oldLen) console.log(`[CloudSync] Step 4 清理重複或過期 Ops: ${oldLen} -> ${ops.length}`);
+
+                    restoreFromBackup(cloudData, false);
+                    localSyncVersion = cloudVer; 
+                    await performCloudUpload();
+                } else if (isDirty === 1 || isDirty === 4 || vComp > 0) {
+                    console.log(`[CloudSync] Step 3 執行覆蓋同步上傳...`);
+                    await performCloudUpload();
+                } else {
+                    setDirty(3); // 無變動且版本一致
                 }
-            }
-        } catch(e) { console.error('[CloudSync] 預檢失敗:', e); }
+            } else throw new Error('預檢連線失敗');
+        } catch (e) { 
+            console.error("[CloudSync] 預檢報錯:", e); setDirty(2);
+        } finally {
+            isSyncing = false; 
+        }
     };
 
     // --- Reports System ---
@@ -874,7 +835,7 @@ document.addEventListener('DOMContentLoaded', () => {
             'cdData_cloudBinId': 'BId',
             'cdData_cloudApiKey': 'Key',
             'cdData_autoSyncInterval': 'aSyn',
-            'cdData_syncVersion': 'CD_sV',
+            'cdData_syncVersion': 'sVer',
             'cdData_isDirty': 'drty'
         };
         const S_STYLE_MAP = { 'fun-emoji':'fe', 'bottts':'bot', 'avataaars':'ava', 'adventurer':'adv', 'lorelei':'lor' };
@@ -1038,8 +999,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderPointItems(); 
             renderClassSelector();
             
-            // 只有設定了自動同步頻率才在啟動時預載雲端資料
-            if (autoSyncInterval > 0) checkCloudSyncState();
+            // 定時器與啟動預檢由 startSyncTimer 統一管理，此處不重複呼叫
             performLogRetention();
         } catch (err) {
             console.error('[Critical Error] 系統載入失敗，但 UI 功能已嘗試載入:', err);
@@ -1349,36 +1309,31 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const startSyncTimer = () => {
-            if (autoSyncTimer) clearInterval(autoSyncTimer);
             if (window.checkTimer) clearInterval(window.checkTimer);
-            if (!cloudBinId || !cloudApiKey || autoSyncInterval <= 0) return;
+            if (autoSyncTimer) clearInterval(autoSyncTimer);
+            if (!cloudBinId || !cloudApiKey) return;
             
             console.log(`[CloudSync] 定時器啟動，頻率: ${autoSyncInterval}秒`);
             
-            // 統合邏輯：由單一定時器管理
             window.checkTimer = setInterval(() => {
                 if (isSyncing) return;
-                
-                if (isDirty === 1 && localSyncVersion !== '000000') {
-                    performCloudUpload(false);
-                    mSyn = 300; 
-                } else {
+                if (isDirty === 3) {
                     mSyn--;
                     if (mSyn <= 0) {
                         mSyn = 300;
-                        console.log('[CloudSync] 閒置滿 300 秒，執行預檢...');
+                        console.log('[CloudSync] 閒置滿 300 秒，執行強制同步預檢...');
                         checkCloudSyncState();
                     }
                 }
             }, 1000);
 
-            // 每隔指定間隔強制檢查一次上傳
-            autoSyncTimer = setInterval(() => {
-                if (isDirty === 1 && !isSyncing && localSyncVersion !== '000000') performCloudUpload(false);
-            }, Math.max(autoSyncInterval, 15) * 1000);
+            if (autoSyncInterval > 0) {
+                autoSyncTimer = setInterval(() => {
+                    if (isDirty === 1 && !isSyncing) checkCloudSyncState();
+                }, Math.max(autoSyncInterval, 15) * 1000);
+            }
 
-            // 啟動後延遲跑一次預檢，確保先抓雲端
-            setTimeout(checkCloudSyncState, 1500);
+            setTimeout(() => { if (!isSyncing) checkCloudSyncState(); }, 1500);
         };
 
         startSyncTimer();
