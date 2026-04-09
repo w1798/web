@@ -11,6 +11,8 @@ const DEFAULT_STATE = {
     total: 25, 
     absent: 0,
     theme: 'default',
+    cardFontSize: 'medium',
+    swapPanels: false,
     subjects: [
         { name: '國語', specialRoom: 0 }, 
         { name: '自然', specialRoom: 0 }, 
@@ -149,6 +151,20 @@ function syncUI() {
     document.getElementById('totalCount').innerText = state.total;
     document.getElementById('absentCount').innerText = state.absent;
     
+    // Apple specific font sizes and panel swapping layout setting
+    document.body.dataset.cardFontSize = state.cardFontSize || 'medium';
+    
+    const container = document.querySelector('.app-container');
+    if (container) {
+        if (state.swapPanels) {
+            container.style.flexDirection = 'row-reverse';
+        } else {
+            // Check if it's mobile view or not; if responsive kick in, the swap should ideally handle it gracefully or be reset.
+            // On desktop, default is 'row'.
+            container.style.flexDirection = window.innerWidth <= 768 ? 'column' : 'row';
+        }
+    }
+    
     const clock = document.getElementById('clockSection');
     const reminder = document.getElementById('reminderSection');
     const iconBtn = document.getElementById('toggleIcon');
@@ -239,8 +255,7 @@ function renderSchedule() {
         return `
             <div class="card" id="card-${idx}">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <select onchange="state.schedule[${idx}].subject = this.value; saveToLocal(); renderSchedule();" 
-                            style="font-size: 1.6rem; font-weight: 900; border: none; background: #f1f5f9; border-radius: 8px; cursor:pointer; color: var(--primary);">
+                    <select onchange="state.schedule[${idx}].subject = this.value; saveToLocal(); renderSchedule();" class="card-subject-select">
                         ${state.subjects.map(o => `<option value="${o.name}" ${o.name === item.subject ? 'selected' : ''}>${o.name}</option>`).join('')}
                     </select>
                     <div class="time-range-group">
@@ -352,6 +367,10 @@ function toggleModal(show) {
     if (show) { 
         tempState = JSON.parse(JSON.stringify(state)); 
         document.getElementById('inputTheme').value = tempState.theme;
+        const fontSel = document.getElementById('inputCardFontSize');
+        if(fontSel) fontSel.value = tempState.cardFontSize || 'medium';
+        const swapCbox = document.getElementById('inputSwapPanels');
+        if(swapCbox) swapCbox.checked = !!tempState.swapPanels;
         document.getElementById('inputTotal').value = tempState.total; 
         document.getElementById('inputAbsent').value = tempState.absent; 
         document.getElementById('examReminders').value = tempState.reminders.exam.join('\n'); 
@@ -364,6 +383,10 @@ function toggleModal(show) {
 
 function saveSettingsFromModal() { 
     state.theme = document.getElementById('inputTheme').value;
+    const fontSel = document.getElementById('inputCardFontSize');
+    if(fontSel) state.cardFontSize = fontSel.value;
+    const swapCbox = document.getElementById('inputSwapPanels');
+    if(swapCbox) state.swapPanels = swapCbox.checked;
     state.total = parseInt(document.getElementById('inputTotal').value); 
     state.absent = parseInt(document.getElementById('inputAbsent').value); 
     state.subjects = tempState.subjects; 
