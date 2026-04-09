@@ -1,5 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
 
+    // 全域圖片捕獲，避免外部 Avatar API (例如 DiceBear) 回傳 504 Timeout 時畫面產生破圖
+    const fallbackSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23e2e8f0"/><circle cx="50" cy="45" r="20" fill="%2394a3b8"/><path d="M20 100 C 20 60, 80 60, 80 100" fill="%2394a3b8"/></svg>`;
+    window.addEventListener('error', function(e) {
+        if (e.target.tagName && e.target.tagName.toLowerCase() === 'img') {
+            if (e.target.src !== fallbackSvg) e.target.src = fallbackSvg;
+        }
+    }, true);
+
     // --- State & Settings ---
     const safeLoad = (key, template) => {
         try {
@@ -366,7 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const total = s.cP || 0;
                 grid.innerHTML += `<label class="selection-item" style="display:flex; align-items:center; gap:0.5rem; padding:8px; border:1px solid var(--border-color); border-radius:10px; background:white;">
                     <input type="checkbox" value="${s.id}" ${checked ? 'checked' : ''}>
-                    <img src="${s.aU || generateAvatar(s.id, s.aS)}" style="width:24px; height:24px; border-radius:50%;">
+                    <img src="${getAvatarUrl(s.aU || s.id, s.aS)}" style="width:24px; height:24px; border-radius:50%;">
                     <span style="font-size:0.9rem;">${s.id} (${total})</span>
                 </label>`;
             });
@@ -378,7 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const total = (s.cP || 0) + (s.iP || 0);
                 grid.innerHTML += `<label class="selection-item" style="display:flex; align-items:center; gap:0.5rem; padding:8px; border:1px solid var(--border-color); border-radius:10px; background:white;">
                     <input type="checkbox" value="${s.id}">
-                    <img src="${s.aU || generateAvatar(s.id, s.aS)}" style="width:24px; height:24px; border-radius:50%;">
+                    <img src="${getAvatarUrl(s.aU || s.id, s.aS)}" style="width:24px; height:24px; border-radius:50%;">
                     <span style="font-size:0.9rem;">${s.id} (${total})</span>
                 </label>`;
             });
@@ -576,11 +584,28 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Sync Logic ---
     const getFullBackupData = (includeOps = false) => { 
         const b = {}; 
-        for (let i = 0; i < localStorage.length; i++) { 
+        // 取得有效班級清單，轉為 Set 方便比對
+        const validClassIds = new Set(classes.map(c => c.id));
+        
+        for (let i = localStorage.length - 1; i >= 0; i--) { 
             const k = localStorage.key(i); 
-            // 雲端同步時排除 BId, Key 與 _Ops
+            if (!k.startsWith('CD_')) continue;
+            
+            // 分析此 key 是否為班級專屬附屬資料，格式 CD_[ClassID]_[Suffix]
+            const match = k.match(/^CD_(.+)_(Stus|Gs|Ls|itm|set|Ops|meta)$/);
+            if (match) {
+                const cid = match[1];
+                if (!validClassIds.has(cid)) {
+                    // 如果這筆資料不屬於任何現存的班級，代表是已被刪除的殭屍資料 (Zombie Data)
+                    console.log(`[System] 清除殭屍資料: ${k}`);
+                    localStorage.removeItem(k);
+                    continue; // 已經清除了，直接跳過不加入備份
+                }
+            }
+
+            // 雲端同步時排除特定的 Key 與 Ops
             const isCloudExclusion = (!includeOps && (k === 'BId' || k === 'Key' || k.endsWith('_Ops')));
-            if (k.startsWith('CD_') && !isCloudExclusion) { 
+            if (!isCloudExclusion) { 
                 try { b[k] = JSON.parse(localStorage.getItem(k)); } catch(e) { b[k] = localStorage.getItem(k); } 
             } 
         } 
@@ -588,6 +613,16 @@ document.addEventListener('DOMContentLoaded', () => {
         return b; 
     };
     const restoreFromBackup = (data, reload = true) => {
+        // 1. 先清理所有舊有的 CD_ 鍵，避免已被另一端刪除的班級資料變成殭屍 (Zombie data) 回捲
+        // 但保留本機未同步的 Ops 紀錄
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+            const k = localStorage.key(i);
+            if (k.startsWith('CD_') && !k.endsWith('_Ops')) {
+                localStorage.removeItem(k);
+            }
+        }
+
+        // 2. 寫入從雲端來的最新資料
         Object.keys(data).forEach(k => { localStorage.setItem(k, typeof data[k] === 'string' ? data[k] : JSON.stringify(data[k])); });
         // 保護本地同步設定不被覆蓋
         localStorage.setItem('BId', cloudBinId); 
@@ -596,7 +631,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (reload) location.reload();
         else { 
             localSyncVersion = data.sVer || data.syncVersion || '000000';
-            // sVer 已由 Object.keys loop (Line 591) 自動寫入 localStorage
+            // sVer 已由 Object.keys loop 自動寫入 localStorage
+            // 重要：重新載入全域班級變數，防止記憶體舊資料在 saveData 時覆蓋新雲端設定
+            classes = safeLoad('CD_Cls', []);
+            currentClassId = localStorage.getItem('CD_cCId');
             loadClassData(); 
             isDirty = 3; 
             applySettings(); 
@@ -693,14 +731,53 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.log(`[CloudSync] Step 4 執行還原、清理重複 Ops 並重播...`);
                     const cL = cloudData[`CD_${currentClassId}_Ls`] || [];
                     const oldLen = ops.length;
-                    ops = ops.filter(o => {
+                    const oldClassId = currentClassId;
+
+                    // 把過濾過、需要重播的 ops 暫存起來，避免被 loadClassData 覆寫
+                    let pendingOps = ops.filter(o => {
                         if (o.a === 1) return !cL.some(l => l.id === o.d.l); 
                         return o.t >= cloudVer; 
                     });
-                    if (ops.length < oldLen) console.log(`[CloudSync] Step 4 清理重複或過期 Ops: ${oldLen} -> ${ops.length}`);
+                    if (pendingOps.length < oldLen) console.log(`[CloudSync] Step 4 清理重複或過期 Ops: ${oldLen} -> ${pendingOps.length}`);
 
                     restoreFromBackup(cloudData, false);
                     localSyncVersion = cloudVer; 
+                    
+                    if (currentClassId === oldClassId) {
+                        ops = pendingOps; // 把剛剛過濾好的 ops 蓋回記憶體
+                        if (ops.length > 0) {
+                            console.log(`[CloudSync] Step 4 執行殘留 Ops 的點數與 Log 還原...`);
+                            let modified = false;
+                            ops.forEach(o => {
+                                if (o.a === 1) { // 重新套用加扣點
+                                    const sid = o.d.s;
+                                    const s = students.find(x => x.id === sid);
+                                    if (s) {
+                                        if (o.d.is === 1) s.iP = (s.iP || 0) + o.d.p;
+                                        else s.cP = (s.cP || 0) + o.d.p;
+                                        
+                                        // 把動作加回 logs 中
+                                        logs.push({ id: o.d.l, sID: sid, lb: o.d.lb, pt: o.d.p, TS: o.t, iSum: o.d.is === 1 ? 1 : undefined });
+                                        modified = true;
+                                    }
+                                }
+                            });
+                            
+                            if (modified) {
+                                saveData(); // 將重新套用後的點數與 logs 寫入 localstorage
+                                renderStudents();
+                                if(currentView === 'groups') renderGroups();
+                            } else {
+                                localStorage.setItem(`CD_${currentClassId}_Ops`, JSON.stringify(ops));
+                            }
+                        } else {
+                            localStorage.setItem(`CD_${currentClassId}_Ops`, '[]');
+                        }
+                    } else if (pendingOps.length > 0) {
+                        // 如果同步後目前班級不一樣了，純粹將這包殘留 Ops 原樣保存至原先班級
+                        localStorage.setItem(`CD_${oldClassId}_Ops`, JSON.stringify(pendingOps));
+                    }
+
                     await performCloudUpload();
                 } else if (isDirty === 1 || isDirty === 4 || vComp > 0) {
                     console.log(`[CloudSync] Step 3 執行覆蓋同步上傳...`);

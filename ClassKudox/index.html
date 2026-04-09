@@ -517,15 +517,13 @@
                         </div>
 
                         <div class="input-group" style="margin-top:1rem;">
-                            <label for="autoSyncInterval">☁️ 自動同步頻率 (最小 10 秒)</label>
+                            <label for="autoSyncInterval">☁️ 自動同步頻率 (資料有異動才會同步，最小 15 秒)</label>
                             <select id="autoSyncInterval" class="filter-select" style="width:100%;">
                                 <option value="0">無 (手動同步)</option>
-                                <option value="10">10 秒一次</option>
                                 <option value="15">15 秒一次</option>
                                 <option value="30">30 秒一次</option>
                                 <option value="60">1 分鐘一次</option>
                                 <option value="120">2 分鐘一次</option>
-                                <option value="300">5 分鐘一次</option>
                             </select>
                             <div class="small-text" style="margin-top:0.3rem; color:var(--text-secondary);">若有其他裝置異動，系統將自動背景合併而不重整。</div>
                         </div>
@@ -677,8 +675,6 @@
 
 <script>
 (function() {
-    return; // 取消此行可停止計數，直接在這裡回傳，後面的代碼完全不執行
-    
     // 計數器這樣無論是 /web/ 還是 /web 都會統一變成 /web 
     const path = window.location.pathname.replace(/\/$/, ""); 
     const TIME_KEY = `VERCOUNT_TIME_${path}`; // 每個分頁獨立計算冷卻時間
