@@ -2,7 +2,9 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>博客來資料快速轉換器</title>
+    <title>博客來書單一鍵轉</title>
+    <!-- 引入 ExcelJS (支援精細格式如置中、框線、寬度設定) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
     <style>
         :root {
             --primary-color: #007bff;
@@ -77,7 +79,7 @@
 
 <div class="app-main">
     <div class="container">
-        <h2>博客來資料快速轉換器 <span id="count" class="count-badge">0</span></h2>
+        <h2>博客來書單一鍵轉 <span id="count" class="count-badge">0</span></h2>
         
         <div class="step-box">
             <div><span class="step-num">1</span> 在「博客來」點進書籍的頁面，按下 <b>Ctrl + A</b> 全選，再按 <b>Ctrl + C</b> 複製。</div>
@@ -90,6 +92,7 @@
 
         <div class="toolbar" style="border-top: 1px dashed #ccc; padding-top: 15px;">
             <span class="step-num">3</span>
+            <button class="btn-copy" onclick="downloadXLSX()" style="background: #217346;">下載 .xlsx 檔</button> 或
             <button class="btn-copy" onclick="copyAllToExcel(true)">複製 Excel 格式</button>
             <button class="btn-copy" onclick="copyAllToExcel(false)" style="background: var(--info-color);">(備用)複製無引號版</button>
             <span class="step-num">4</span>
@@ -233,6 +236,70 @@
         navigator.clipboard.writeText(output).then(() => {
             showStatus("✅ 已複製全部 " + booksList.length + " 筆資料，請至 Excel 貼上");
         });
+    }
+
+    async function downloadXLSX() {
+        if (booksList.length === 0) return alert("目前清單內沒有資料可匯出");
+
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('圖書清單');
+
+        // B、I欄2.5倍寬 (以基礎寬度10衡量，即為25)
+        // C、G、H 1.5倍寬 (約15)
+        // 其他 1倍 (10)
+        sheet.columns = [
+            { header: '優先順序', key: 'idx',       width: 10 },
+            { header: '書名',     key: 'title',     width: 25 },
+            { header: '出版社',   key: 'publisher', width: 15 },
+            { header: '單位',     key: 'unit',      width: 10 },
+            { header: '數量',     key: 'count',     width: 10 },
+            { header: '售價',     key: 'price',     width: 10 },
+            { header: '著者',     key: 'author',    width: 15 },
+            { header: '出版日期', key: 'pubDate',   width: 15 },
+            { header: 'ISBN',     key: 'isbn',      width: 25 }
+        ];
+
+        booksList.forEach((data, index) => {
+            sheet.addRow({
+                idx: index + 1,
+                title: data.title,
+                publisher: data.publisher,
+                unit: data.unit,
+                count: data.count,
+                price: data.price,
+                author: data.author,
+                pubDate: data.pubDate,
+                isbn: data.isbn
+            });
+        });
+
+        // 樣式調整: 內容置中與單框線
+        sheet.eachRow((row, rowNumber) => {
+            row.eachCell((cell, colNumber) => {
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                cell.border = {
+                    top: {style:'thin'},
+                    left: {style:'thin'},
+                    bottom: {style:'thin'},
+                    right: {style:'thin'}
+                };
+                if (colNumber === 9 && rowNumber > 1) { // 確保 ISBN 儲存格以文字型式解釋
+                    cell.numFmt = '@';
+                }
+            });
+        });
+
+        // 匯出 buffer 下載
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = "圖書館圖書補充調查表.xlsx";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        showStatus("✅ 已下載 XLSX 檔案");
     }
 
     function showStatus(text) {
