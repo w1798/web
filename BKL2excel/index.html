@@ -30,17 +30,17 @@
 <div class="container">
     <h2>博客來書籍資料轉換 <span id="count" class="count-badge">0</span></h2>
     
-    <div class="toolbar">
-        <button class="btn-paste" onclick="pasteContent()">📋 點擊貼上</button>
-        <button class="btn-clear" onclick="clearInput()">🗑️ 清除輸入框</button>
+    <div class="toolbar">1.在「博客來」找到書之後，Ctrl + A 全選，Ctrl + C 複製之後
+        <button class="btn-paste" onclick="pasteContent()">2. 點擊貼上</button>
+        <button class="btn-clear" onclick="clearInput()">清除輸入框</button>
     </div>
 
     <textarea id="rawInput" placeholder="請貼上網頁內容..."></textarea>
     
     <div class="toolbar">
-        <button class="btn-parse" onclick="processData()">🚀 開始解析</button>
-        <button id="copyBtn" class="btn-copy" onclick="copyAllToExcel()">👉 複製 Excel 格式</button>
-        <button class="btn-reset" onclick="resetAllData()">🧹 重置所有資料</button>
+        <button class="btn-parse" onclick="processData()">3. 開始解析</button>(請貼完所有的之後)
+        <button id="copyBtn" class="btn-copy" onclick="copyAllToExcel()">4. 複製 Excel 格式</button>
+        <button class="btn-reset" onclick="resetAllData()">5. 重置所有資料</button>
         <span id="statusMsg" class="msg"></span>
     </div>
 
