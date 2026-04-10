@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>BKL Data Flow - 博客來資料快速轉換器</title>
+    <title>博客來資料快速轉換器</title>
     <style>
         :root {
             --primary-color: #007bff;
@@ -33,7 +33,7 @@
         textarea { width: 100%; height: 150px; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: #fafafa; transition: border 0.3s; }
         textarea:focus { border-color: var(--primary-color); outline: none; }
         
-        .toolbar { margin: 15px 0; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .toolbar { margin: 15px 0; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; padding-left: 15px; }
         
         button { padding: 10px 20px; font-size: 15px; font-weight: bold; cursor: pointer; border: none; border-radius: 6px; transition: 0.2s; display: flex; align-items: center; gap: 6px; }
         .btn-paste { background: var(--info-color); color: white; }
@@ -53,7 +53,7 @@
         tr:nth-child(even) { background-color: #fafafa; }
         
         .msg { color: var(--success-color); font-weight: bold; margin-left: 10px; animation: fadeIn 0.3s; }
-        .count-badge { background: #e52222; color: white; padding: 2px 10px; border-radius: 20px; font-size: 14px; margin-left: 10px; }
+        .count-badge { background: #777777; color: white; padding: 2px 10px; border-radius: 20px; font-size: 14px; margin-left: 10px; }
 
         /* 頁尾 */
         footer { margin-top: 40px; padding: 20px; text-align: center; font-size: 14px; color: #777; border-top: 1px solid #eee; }
@@ -80,27 +80,19 @@
         <h2>博客來資料快速轉換器 <span id="count" class="count-badge">0</span></h2>
         
         <div class="step-box">
-            <div><span class="step-num">1</span> 在「博客來」書籍頁面按下 <b>Ctrl + A</b> 全選，再按 <b>Ctrl + C</b> 複製。</div>
+            <div><span class="step-num">1</span> 在「博客來」點進書籍的頁面，按下 <b>Ctrl + A</b> 全選，再按 <b>Ctrl + C</b> 複製。</div>
         </div>
 
         <div class="toolbar">
             <span class="step-num">2</span>
-            <button class="btn-paste" onclick="pasteContent()">點擊貼上資料</button>
-            <button class="btn-clear" onclick="clearInput()">清除輸入框</button>
-        </div>
-
-        <textarea id="rawInput" placeholder="等待貼上內容..."></textarea>
-        
-        <div class="toolbar">
-            <span class="step-num">3</span>
-            <button class="btn-parse" onclick="processData()">開始解析 (累加)</button>
-            <span style="font-size: 13px; color: #666;">(完成所有書籍解析後再執行下一步)</span>
+            <button class="btn-paste" onclick="pasteAndProcess()">按我貼上並分析資料</button>
         </div>
 
         <div class="toolbar" style="border-top: 1px dashed #ccc; padding-top: 15px;">
+            <span class="step-num">3</span>
+            <button class="btn-copy" onclick="copyAllToExcel(true)">複製 Excel 格式</button>
+            <button class="btn-copy" onclick="copyAllToExcel(false)" style="background: var(--info-color);">(備用)複製無引號版</button>
             <span class="step-num">4</span>
-            <button id="copyBtn" class="btn-copy" onclick="copyAllToExcel()">複製 Excel 格式</button>
-            <span class="step-num">5</span>
             <button class="btn-reset" onclick="resetAllData()">重置所有資料</button>
             <span id="statusMsg" class="msg"></span>
         </div>
@@ -109,7 +101,7 @@
             <table id="resultTable">
                 <thead>
                     <tr>
-                        <th>書名</th><th>出版社</th><th>單位</th><th>數量</th><th>售價</th><th>著者</th><th>出版日期</th><th>ISBN</th>
+                        <th>書名</th><th>出版社</th><th>單位</th><th>數量</th><th>售價</th><th>著者</th><th>出版日期</th><th>ISBN</th><th>操作</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
@@ -150,19 +142,14 @@
         mainArea.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    async function pasteContent() {
+    async function pasteAndProcess() {
         try {
             const text = await navigator.clipboard.readText();
-            document.getElementById('rawInput').value = text;
-            showStatus("已貼上！");
+            if (!text.trim()) { alert("剪貼簿內沒有資料可供讀取！"); return; }
+            processData(text);
         } catch (err) {
-            alert("瀏覽器不允許讀取剪貼簿，請手動按 Ctrl+V 貼上");
+            alert("瀏覽器不允許自動讀取剪貼簿，請確定網頁有權限或環境支援");
         }
-    }
-
-    function clearInput() {
-        document.getElementById('rawInput').value = "";
-        showStatus("輸入框已清空");
     }
 
     function resetAllData() {
@@ -174,10 +161,16 @@
         }
     }
 
-    function processData() {
-        const raw = document.getElementById('rawInput').value;
-        if (!raw.trim()) { alert("輸入框內沒有資料可供解析！"); return; }
+    function deleteRow(index) {
+        if (confirm("確定要刪除這筆資料嗎？")) {
+            booksList.splice(index, 1);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(booksList));
+            renderTable();
+            showStatus("已刪除該筆資料");
+        }
+    }
 
+    function processData(raw) {
         const lines = raw.split('\n').map(l => l.trim()).filter(l => l !== "");
         let title = "";
         
@@ -204,17 +197,17 @@
         localStorage.setItem(STORAGE_KEY, JSON.stringify(booksList));
         
         renderTable();
-        document.getElementById('rawInput').value = ""; 
         showStatus("已解析並加入清單！");
     }
 
     function renderTable() {
         const tbody = document.getElementById('tableBody');
-        tbody.innerHTML = booksList.map(data => `
+        tbody.innerHTML = booksList.map((data, index) => `
             <tr>
                 <td>${data.title}</td><td>${data.publisher}</td><td>${data.unit}</td>
                 <td>${data.count}</td><td>${data.price}</td><td>${data.author}</td>
                 <td>${data.pubDate}</td><td>${data.isbn}</td>
+                <td><button onclick="deleteRow(${index})" style="padding: 6px 12px; font-size: 13px; background: var(--danger-color); color: white;">刪除</button></td>
             </tr>
         `).join('');
         document.getElementById('count').innerText = booksList.length;
@@ -225,12 +218,17 @@
         return match ? match[1].trim() : "";
     }
 
-    function copyAllToExcel() {
+    function copyAllToExcel(forceText) {
         if (booksList.length === 0) return alert("目前清單內沒有資料可複製");
         
-        const output = booksList.map(data => 
-            `${data.title}\t${data.publisher}\t${data.unit}\t${data.count}\t${data.price}\t${data.author}\t${data.pubDate}\t${data.isbn}`
-        ).join('\n');
+        const output = booksList.map(data => {
+            if (forceText) {
+                const q = (str) => `"${str || ''}"`;
+                return `${q(data.title)}\t${q(data.publisher)}\t${q(data.unit)}\t${q(data.count)}\t${q(data.price)}\t${q(data.author)}\t${q(data.pubDate)}\t${q(data.isbn)}`;
+            } else {
+                return `${data.title}\t${data.publisher}\t${data.unit}\t${data.count}\t${data.price}\t${data.author}\t${data.pubDate}\t${data.isbn}`;
+            }
+        }).join('\n');
 
         navigator.clipboard.writeText(output).then(() => {
             showStatus("✅ 已複製全部 " + booksList.length + " 筆資料，請至 Excel 貼上");
