@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const StampTool = (() => {
         const CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-        const EPOCH = 1735689600000; // 2026-01-01
+        const EPOCH = 1735689600000; // 2026-01-01 至少可以使用到 2200年(YAGNI)
         const CHAR_MAP = Object.fromEntries([...CHARS].map((c, i) => [c, i]));
         return {
             encode: (date = Date.now()) => {
