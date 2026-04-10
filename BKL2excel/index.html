@@ -2,66 +2,153 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>博客來資料快速轉換器 (多筆累加版)</title>
+    <title>BKL Data Flow - 博客來資料快速轉換器</title>
     <style>
-        body { font-family: "Microsoft JhengHei", sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
-        .container { max-width: 1000px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h2 { border-left: 6px solid #e52222; padding-left: 15px; margin-bottom: 20px; }
-        textarea { width: 100%; height: 150px; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: #fafafa; }
+        :root {
+            --primary-color: #007bff;
+            --success-color: #28a745;
+            --danger-color: #d32f2f;
+            --info-color: #607d8b;
+        }
+
+        body { font-family: "Microsoft JhengHei", sans-serif; background: #f0f2f5; margin: 0; padding: 0; color: #333; }
+        
+        /* 主操作視窗設定 */
+        .app-main { 
+            height: 100vh; 
+            overflow-y: auto; 
+            padding: 20px; 
+            box-sizing: border-box; 
+            scroll-behavior: smooth;
+        }
+
+        .container { max-width: 1000px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: relative; }
+        
+        h2 { border-left: 6px solid #e52222; padding-left: 15px; margin-bottom: 25px; color: #2c3e50; }
+        
+        /* 步驟樣式 */
+        .step-box { background: #fff9db; border-left: 4px solid #fcc419; padding: 15px; margin-bottom: 20px; border-radius: 4px; }
+        .step-num { display: inline-block; background: #e52222; color: white; width: 24px; height: 24px; border-radius: 50%; text-align: center; line-height: 24px; font-weight: bold; margin-right: 8px; }
+
+        textarea { width: 100%; height: 150px; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: #fafafa; transition: border 0.3s; }
+        textarea:focus { border-color: var(--primary-color); outline: none; }
+        
         .toolbar { margin: 15px 0; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-        button { padding: 10px 18px; font-size: 15px; font-weight: bold; cursor: pointer; border: none; border-radius: 6px; transition: 0.2s; }
-        .btn-paste { background: #607d8b; color: white; }
+        
+        button { padding: 10px 20px; font-size: 15px; font-weight: bold; cursor: pointer; border: none; border-radius: 6px; transition: 0.2s; display: flex; align-items: center; gap: 6px; }
+        .btn-paste { background: var(--info-color); color: white; }
         .btn-clear { background: #9e9e9e; color: white; }
-        .btn-parse { background: #007bff; color: white; }
-        .btn-copy { background: #28a745; color: white; }
-        .btn-reset { background: #d32f2f; color: white; } /* 重置按鈕顏色 */
+        .btn-parse { background: var(--primary-color); color: white; }
+        .btn-copy { background: var(--success-color); color: white; }
+        .btn-reset { background: var(--danger-color); color: white; }
+        
         button:hover { opacity: 0.85; transform: translateY(-1px); }
         button:active { transform: translateY(1px); }
-        #resultArea { margin-top: 20px; }
-        table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
+
+        /* 表格樣式 */
+        #resultArea { margin-top: 30px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; background: white; }
         th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background: #f8f9fa; position: sticky; top: 0; }
-        .msg { color: #28a745; font-weight: bold; margin-left: 10px; display: none; }
-        .count-badge { background: #e52222; color: white; padding: 2px 8px; border-radius: 20px; font-size: 12px; }
+        th { background: #f8f9fa; position: sticky; top: -21px; z-index: 10; box-shadow: 0 2px 2px -1px rgba(0,0,0,0.1); }
+        tr:nth-child(even) { background-color: #fafafa; }
+        
+        .msg { color: var(--success-color); font-weight: bold; margin-left: 10px; animation: fadeIn 0.3s; }
+        .count-badge { background: #e52222; color: white; padding: 2px 10px; border-radius: 20px; font-size: 14px; margin-left: 10px; }
+
+        /* 頁尾 */
+        footer { margin-top: 40px; padding: 20px; text-align: center; font-size: 14px; color: #777; border-top: 1px solid #eee; }
+        footer a { color: #555; text-decoration: none; font-weight: bold; }
+        footer a:hover { text-decoration: underline; }
+
+        /* 回到頂部按鈕 */
+        #backToTop {
+            position: fixed; bottom: 30px; right: 30px;
+            width: 50px; height: 50px; background: #2c3e50; color: white;
+            border: none; border-radius: 50%; cursor: pointer;
+            font-size: 24px; display: none; /* 初始隱藏 */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 100; transition: opacity 0.3s;
+        }
+        #backToTop.show { display: block; animation: fadeIn 0.3s; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>博客來書籍資料轉換 <span id="count" class="count-badge">0</span></h2>
-    
-    <div class="toolbar">1.在「博客來」找到書之後，Ctrl + A 全選，Ctrl + C 複製之後
-        <button class="btn-paste" onclick="pasteContent()">2. 點擊貼上</button>
-        <button class="btn-clear" onclick="clearInput()">清除輸入框</button>
-    </div>
+<div class="app-main">
+    <div class="container">
+        <h2>博客來資料快速轉換器 <span id="count" class="count-badge">0</span></h2>
+        
+        <div class="step-box">
+            <div><span class="step-num">1</span> 在「博客來」書籍頁面按下 <b>Ctrl + A</b> 全選，再按 <b>Ctrl + C</b> 複製。</div>
+        </div>
 
-    <textarea id="rawInput" placeholder="請貼上網頁內容..."></textarea>
-    
-    <div class="toolbar">
-        <button class="btn-parse" onclick="processData()">3. 開始解析</button>(請貼完所有的之後)
-        <button id="copyBtn" class="btn-copy" onclick="copyAllToExcel()">4. 複製 Excel 格式</button>
-        <button class="btn-reset" onclick="resetAllData()">5. 重置所有資料</button>
-        <span id="statusMsg" class="msg"></span>
-    </div>
+        <div class="toolbar">
+            <span class="step-num">2</span>
+            <button class="btn-paste" onclick="pasteContent()">點擊貼上資料</button>
+            <button class="btn-clear" onclick="clearInput()">清除輸入框</button>
+        </div>
 
-    <div id="resultArea">
-        <table id="resultTable">
-            <thead>
-                <tr>
-                    <th>書名</th><th>出版社</th><th>單位</th><th>數量</th><th>售價</th><th>著者</th><th>出版日期</th><th>ISBN</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody"></tbody>
-        </table>
+        <textarea id="rawInput" placeholder="等待貼上內容..."></textarea>
+        
+        <div class="toolbar">
+            <span class="step-num">3</span>
+            <button class="btn-parse" onclick="processData()">開始解析 (累加)</button>
+            <span style="font-size: 13px; color: #666;">(完成所有書籍解析後再執行下一步)</span>
+        </div>
+
+        <div class="toolbar" style="border-top: 1px dashed #ccc; padding-top: 15px;">
+            <span class="step-num">4</span>
+            <button id="copyBtn" class="btn-copy" onclick="copyAllToExcel()">複製 Excel 格式</button>
+            <span class="step-num">5</span>
+            <button class="btn-reset" onclick="resetAllData()">重置所有資料</button>
+            <span id="statusMsg" class="msg"></span>
+        </div>
+
+        <div id="resultArea">
+            <table id="resultTable">
+                <thead>
+                    <tr>
+                        <th>書名</th><th>出版社</th><th>單位</th><th>數量</th><th>售價</th><th>著者</th><th>出版日期</th><th>ISBN</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+
+        <footer>
+          <a href="https://w1798.github.io/web/" target="_blank">&copy; 2026<script>const y=new Date().getFullYear(); if(y>2026)document.write("-"+y);</script> Charles Nextime</a> · 
+          <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">GPLv3</a>
+          <span id="busuanzi_container_page_pv">
+    本頁使用量 <span id="busuanzi_value_page_pv"></span> 次
+</span>
+        </footer>
     </div>
 </div>
 
+<button id="backToTop" onclick="scrollToTop()" title="回到頂部">↑</button>
+
 <script>
     const STORAGE_KEY = 'books_data_list';
+    const mainArea = document.querySelector('.app-main');
+    const backToTopBtn = document.getElementById('backToTop');
     let booksList = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 
-    // 初始化讀取舊資料
+    // 初始化讀取
     window.onload = renderTable;
+
+    // 捲動偵測
+    mainArea.addEventListener('scroll', () => {
+        if (mainArea.scrollTop > 300) {
+            backToTopBtn.classList.add('show');
+        } else {
+            backToTopBtn.classList.remove('show');
+        }
+    });
+
+    function scrollToTop() {
+        mainArea.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
     async function pasteContent() {
         try {
@@ -69,7 +156,7 @@
             document.getElementById('rawInput').value = text;
             showStatus("已貼上！");
         } catch (err) {
-            alert("請手動按 Ctrl+V 貼上");
+            alert("瀏覽器不允許讀取剪貼簿，請手動按 Ctrl+V 貼上");
         }
     }
 
@@ -78,24 +165,22 @@
         showStatus("輸入框已清空");
     }
 
-    // 重置所有資料
     function resetAllData() {
-        if (confirm("確定要刪除所有已儲存的書籍資料嗎？")) {
+        if (confirm("確定要刪除所有已儲存的書籍資料嗎？(這將清空所有紀錄)")) {
             localStorage.removeItem(STORAGE_KEY);
             booksList = [];
             renderTable();
-            showStatus("資料已全部重置");
+            showStatus("資料已重置");
         }
     }
 
     function processData() {
         const raw = document.getElementById('rawInput').value;
-        if (!raw.trim()) { alert("請先貼上資料！"); return; }
+        if (!raw.trim()) { alert("輸入框內沒有資料可供解析！"); return; }
 
         const lines = raw.split('\n').map(l => l.trim()).filter(l => l !== "");
         let title = "";
         
-        // 搜尋邏輯
         const navIndex = lines.findIndex(l => l.includes("!上頁"));
         if (navIndex > 0) {
             title = lines[navIndex - 1];
@@ -115,13 +200,12 @@
             isbn: extract(raw, /ISBN：\s*(\d+)/)
         };
 
-        // 新增到陣列開頭 (最新的在上面)
         booksList.unshift(book);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(booksList));
         
         renderTable();
-        document.getElementById('rawInput').value = ""; // 解析完自動清空輸入框
-        showStatus("解析成功並已儲存！");
+        document.getElementById('rawInput').value = ""; 
+        showStatus("已解析並加入清單！");
     }
 
     function renderTable() {
@@ -142,15 +226,14 @@
     }
 
     function copyAllToExcel() {
-        if (booksList.length === 0) return alert("沒有資料可複製");
+        if (booksList.length === 0) return alert("目前清單內沒有資料可複製");
         
-        // 將所有物件轉為 Tab 分隔的字串
         const output = booksList.map(data => 
             `${data.title}\t${data.publisher}\t${data.unit}\t${data.count}\t${data.price}\t${data.author}\t${data.pubDate}\t${data.isbn}`
         ).join('\n');
 
         navigator.clipboard.writeText(output).then(() => {
-            showStatus("✅ 已複製全部 " + booksList.length + " 筆資料");
+            showStatus("✅ 已複製全部 " + booksList.length + " 筆資料，請至 Excel 貼上");
         });
     }
 
@@ -160,6 +243,68 @@
         msg.style.display = 'inline';
         setTimeout(() => { msg.style.display = 'none'; }, 3000);
     }
+</script>
+
+
+<style>
+#busuanzi_container_page_pv {
+    color: #888;
+    font-size: 0.9rem;
+    margin-left: 15px;
+    border-left: 1px solid rgba(128, 128, 128, 0.5); /* 計數器加一條細細的分隔線 */
+    padding-left: 15px;
+}
+
+#busuanzi_value_page_pv {
+    color: #00b894;
+    font-weight: bold;
+}
+</style>
+
+
+<script>
+(function() {
+    // return; // 取消此行可停止計數，直接在這裡回傳，後面的代碼完全不執行
+
+    // 計數器這樣無論是 /web/ 還是 /web 都會統一變成 /web 
+    const path = window.location.pathname.replace(/\/$/, ""); 
+    const TIME_KEY = `VERCOUNT_TIME_${path}`; // 每個分頁獨立計算冷卻時間
+    const VAL_KEY = `VERCOUNT_VAL_${path}`;   // 每個分頁獨立存儲 PV 數
+    
+    const COOL_DOWN = 30 * 60 * 1000; 
+    const now = Date.now();
+    const lastVisit = localStorage.getItem(TIME_KEY);
+    
+    // 計算剩餘秒數
+    const timeLeft = lastVisit ? Math.ceil((parseInt(lastVisit) + COOL_DOWN - now) / 1000) : 0;
+
+    if (timeLeft <= 0) {
+        console.log(`%c[Vercount]%c 路徑 ${path} 冷卻結束，更新數據...`, "color:#00b894;font-weight:bold", "color:inherit");
+        
+        const script = document.createElement('script');
+        script.src = "https://events.vercount.one/js";
+        script.defer = true;
+        
+        script.onload = () => {
+            setTimeout(() => {
+                const pvVal = document.getElementById('busuanzi_value_page_pv')?.innerText;
+                if (pvVal) {
+                    localStorage.setItem(VAL_KEY, pvVal);
+                    localStorage.setItem(TIME_KEY, now); // 成功抓到才更新時間
+                }
+            }, 1500);
+        };
+        document.head.appendChild(script);
+    } else {
+        const lastVal = localStorage.getItem(VAL_KEY) || "--";
+        console.log(`%c[Vercount]%c ${path} 冷卻中（剩 ${timeLeft} 秒）。顯示舊值：${lastVal}`, "color:#f1c40f;font-weight:bold", "color:inherit");
+
+        window.addEventListener('load', () => {
+            const pvSpan = document.getElementById('busuanzi_value_page_pv');
+            if (pvSpan) pvSpan.innerText = lastVal;
+        });
+    }
+})();
 </script>
 
 </body>
