@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>博客來資料快速轉換器 (多筆累加版)</title>
+    <style>
+        body { font-family: "Microsoft JhengHei", sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { border-left: 6px solid #e52222; padding-left: 15px; margin-bottom: 20px; }
+        textarea { width: 100%; height: 150px; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: #fafafa; }
+        .toolbar { margin: 15px 0; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        button { padding: 10px 18px; font-size: 15px; font-weight: bold; cursor: pointer; border: none; border-radius: 6px; transition: 0.2s; }
+        .btn-paste { background: #607d8b; color: white; }
+        .btn-clear { background: #9e9e9e; color: white; }
+        .btn-parse { background: #007bff; color: white; }
+        .btn-copy { background: #28a745; color: white; }
+        .btn-reset { background: #d32f2f; color: white; } /* 重置按鈕顏色 */
+        button:hover { opacity: 0.85; transform: translateY(-1px); }
+        button:active { transform: translateY(1px); }
+        #resultArea { margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background: #f8f9fa; position: sticky; top: 0; }
+        .msg { color: #28a745; font-weight: bold; margin-left: 10px; display: none; }
+        .count-badge { background: #e52222; color: white; padding: 2px 8px; border-radius: 20px; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>博客來書籍資料轉換 <span id="count" class="count-badge">0</span></h2>
+    
+    <div class="toolbar">
+        <button class="btn-paste" onclick="pasteContent()">📋 點擊貼上</button>
+        <button class="btn-clear" onclick="clearInput()">🗑️ 清除輸入框</button>
+    </div>
+
+    <textarea id="rawInput" placeholder="請貼上網頁內容..."></textarea>
+    
+    <div class="toolbar">
+        <button class="btn-parse" onclick="processData()">🚀 開始解析</button>
+        <button id="copyBtn" class="btn-copy" onclick="copyAllToExcel()">👉 複製 Excel 格式</button>
+        <button class="btn-reset" onclick="resetAllData()">🧹 重置所有資料</button>
+        <span id="statusMsg" class="msg"></span>
+    </div>
+
+    <div id="resultArea">
+        <table id="resultTable">
+            <thead>
+                <tr>
+                    <th>書名</th><th>出版社</th><th>單位</th><th>數量</th><th>售價</th><th>著者</th><th>出版日期</th><th>ISBN</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const STORAGE_KEY = 'books_data_list';
+    let booksList = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+
+    // 初始化讀取舊資料
+    window.onload = renderTable;
+
+    async function pasteContent() {
+        try {
+            const text = await navigator.clipboard.readText();
+            document.getElementById('rawInput').value = text;
+            showStatus("已貼上！");
+        } catch (err) {
+            alert("請手動按 Ctrl+V 貼上");
+        }
+    }
+
+    function clearInput() {
+        document.getElementById('rawInput').value = "";
+        showStatus("輸入框已清空");
+    }
+
+    // 重置所有資料
+    function resetAllData() {
+        if (confirm("確定要刪除所有已儲存的書籍資料嗎？")) {
+            localStorage.removeItem(STORAGE_KEY);
+            booksList = [];
+            renderTable();
+            showStatus("資料已全部重置");
+        }
+    }
+
+    function processData() {
+        const raw = document.getElementById('rawInput').value;
+        if (!raw.trim()) { alert("請先貼上資料！"); return; }
+
+        const lines = raw.split('\n').map(l => l.trim()).filter(l => l !== "");
+        let title = "";
+        
+        // 搜尋邏輯
+        const navIndex = lines.findIndex(l => l.includes("!上頁"));
+        if (navIndex > 0) {
+            title = lines[navIndex - 1];
+        } else {
+            const titleMatch = raw.match(/<title>博客來-(.*?)<\/title>/i);
+            title = titleMatch ? titleMatch[1].trim() : "未知書名";
+        }
+
+        const book = {
+            title: title,
+            publisher: extract(raw, /出版社：\s*([^\n<]+)/),
+            unit: "本",
+            count: 1,
+            price: extract(raw, /定價：\s*(\d+)/),
+            author: extract(raw, /作者：\s*([^\n<]+)/),
+            pubDate: extract(raw, /出版日期：\s*(\d{4}\/\d{2}\/\d{2})/),
+            isbn: extract(raw, /ISBN：\s*(\d+)/)
+        };
+
+        // 新增到陣列開頭 (最新的在上面)
+        booksList.unshift(book);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(booksList));
+        
+        renderTable();
+        document.getElementById('rawInput').value = ""; // 解析完自動清空輸入框
+        showStatus("解析成功並已儲存！");
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = booksList.map(data => `
+            <tr>
+                <td>${data.title}</td><td>${data.publisher}</td><td>${data.unit}</td>
+                <td>${data.count}</td><td>${data.price}</td><td>${data.author}</td>
+                <td>${data.pubDate}</td><td>${data.isbn}</td>
+            </tr>
+        `).join('');
+        document.getElementById('count').innerText = booksList.length;
+    }
+
+    function extract(text, regex) {
+        const match = text.match(regex);
+        return match ? match[1].trim() : "";
+    }
+
+    function copyAllToExcel() {
+        if (booksList.length === 0) return alert("沒有資料可複製");
+        
+        // 將所有物件轉為 Tab 分隔的字串
+        const output = booksList.map(data => 
+            `${data.title}\t${data.publisher}\t${data.unit}\t${data.count}\t${data.price}\t${data.author}\t${data.pubDate}\t${data.isbn}`
+        ).join('\n');
+
+        navigator.clipboard.writeText(output).then(() => {
+            showStatus("✅ 已複製全部 " + booksList.length + " 筆資料");
+        });
+    }
+
+    function showStatus(text) {
+        const msg = document.getElementById('statusMsg');
+        msg.innerText = text;
+        msg.style.display = 'inline';
+        setTimeout(() => { msg.style.display = 'none'; }, 3000);
+    }
+</script>
+
+</body>
+</html>
