@@ -53,28 +53,38 @@ body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background:
 .schedule-scroll-area { flex-grow: 1; overflow-y: auto; padding-right: 4px; }
 .add-session-btn { width: 100%; padding: 15px; margin: 10px 0; border: 2px dashed #cbd5e1; background: white; border-radius: 12px; color: #94a3b8; font-size: 1.2rem; font-weight: bold; cursor: pointer; }
 
-.card { background: var(--card-bg, white); border: 2px solid var(--card-border, var(--slate-100)); border-radius: 1.2rem; padding: 12px 16px; margin-bottom: 8px; transition: all 0.3s; color: var(--card-text, var(--slate-700)); }
+.card { background: var(--card-bg, white); border: 2px solid var(--card-border, var(--slate-100)); border-radius: 1.2rem; padding: 16px 20px; font-size: 1.15em; margin-bottom: 8px; transition: all 0.3s; color: var(--card-text, var(--slate-700)); }
 .card.active { background: var(--card-active-bg, var(--yellow-bg)); border-color: var(--card-active-border, var(--yellow-border)); }
 .time-range-group { display: flex; align-items: center; }
-.time-range-input { font-size: 1.3rem; font-weight: bold; border: 1px solid var(--card-border, #e2e8f0); background: var(--card-input-bg, #f8fafc); border-radius: 6px; width: 160px; padding: 6px; color: var(--card-text, var(--slate-700)); }
-.card-row-2 { display: flex; align-items: center; justify-content: flex-start; gap: 15px; margin-top: 10px; font-weight: 900; color: var(--card-text, var(--slate-700)); font-size: 1.3rem; }
-.actual-num { font-size: 1.8rem; color: var(--card-text, var(--slate-700)); opacity: 1; }
-.card-subject-select { font-size: 1.6rem; font-weight: 900; border: none; background: var(--card-input-bg, #f1f5f9); border-radius: 8px; cursor: pointer; color: var(--card-input-text, var(--primary)); padding: 4px; }
+.time-range-input { font-size: 1.6rem; font-weight: bold; border: 1px solid var(--card-border, #e2e8f0); background: var(--card-input-bg, #f8fafc); border-radius: 6px; width: 200px; padding: 10px; color: var(--card-text, var(--slate-700)); }
+.card-row-2 { display: flex; align-items: center; justify-content: flex-start; gap: 15px; margin-top: 10px; font-weight: 900; color: var(--card-text, var(--slate-700)); font-size: 1.6rem; }
+.actual-num { font-size: 2.2rem; color: var(--card-text, var(--slate-700)); opacity: 1; }
+.card-subject-select { font-size: 2rem; font-weight: 900; border: none; background: var(--card-input-bg, #f1f5f9); border-radius: 8px; cursor: pointer; color: var(--card-input-text, var(--primary)); padding: 8px; }
 
 /* Font size modifier classes applied to body */
-body[data-card-font-size="small"] .card { font-size: 0.85em; padding: 8px 12px; }
-body[data-card-font-size="small"] .time-range-input { font-size: 1rem; width: 120px; }
-body[data-card-font-size="small"] .card-row-2 { font-size: 1rem; }
-body[data-card-font-size="small"] .actual-num { font-size: 1.4rem; }
-body[data-card-font-size="small"] .card-subject-select { font-size: 1.2rem; }
-body[data-card-font-size="small"] .time-display { font-size: 8rem; }
+body[data-card-font-size="small"] .card { font-size: 1em; padding: 12px 16px; }
+body[data-card-font-size="small"] .time-range-input { font-size: 1.3rem; width: 160px; padding: 6px; }
+body[data-card-font-size="small"] .card-row-2 { font-size: 1.3rem; }
+body[data-card-font-size="small"] .actual-num { font-size: 1.8rem; }
+body[data-card-font-size="small"] .card-subject-select { font-size: 1.6rem; padding: 4px; }
 
-body[data-card-font-size="large"] .card { font-size: 1.15em; padding: 16px 20px; }
-body[data-card-font-size="large"] .time-range-input { font-size: 1.6rem; width: 200px; padding: 10px; }
-body[data-card-font-size="large"] .card-row-2 { font-size: 1.6rem; }
-body[data-card-font-size="large"] .actual-num { font-size: 2.2rem; }
-body[data-card-font-size="large"] .card-subject-select { font-size: 2rem; padding: 8px; }
-body[data-card-font-size="large"] .time-display { font-size: 9rem; }
+body[data-card-font-size="large"] .card { font-size: 1.3em; padding: 20px 24px; }
+body[data-card-font-size="large"] .time-range-input { font-size: 2rem; width: 220px; padding: 12px; }
+body[data-card-font-size="large"] .card-row-2 { font-size: 1.8rem; }
+body[data-card-font-size="large"] .actual-num { font-size: 2.6rem; }
+body[data-card-font-size="large"] .card-subject-select { font-size: 2.4rem; padding: 12px; }
+
+body[data-card-font-size="xlarge"] .card { font-size: 1.5em; padding: 24px 28px; }
+body[data-card-font-size="xlarge"] .time-range-input { font-size: 2.4rem; width: 260px; padding: 14px; }
+body[data-card-font-size="xlarge"] .card-row-2 { font-size: 2.2rem; }
+body[data-card-font-size="xlarge"] .actual-num { font-size: 3.2rem; }
+body[data-card-font-size="xlarge"] .card-subject-select { font-size: 3rem; padding: 16px; }
+
+/* Font size modifier classes for time displaying */
+body[data-time-font-size="small"] .time-display { font-size: 8.5rem; }
+body[data-time-font-size="medium"] .time-display { font-size: 9rem; }
+body[data-time-font-size="large"] .time-display { font-size: 9.5rem; }
+body[data-time-font-size="xlarge"] .time-display { font-size: 10rem; }
 
 /* 音訊控制 */
 .audio-controls { display: flex; align-items: center; gap: 8px; }
@@ -86,7 +96,7 @@ body[data-card-font-size="large"] .time-display { font-size: 9rem; }
 .panel-right { width: 50%; height: 100%; display: flex; flex-direction: column; position: relative; }
 .clock-section { background: var(--clock-bg); color: white; height: 50%; display: flex; align-items: center; justify-content: center; position: absolute; top: 0; left: 0; right: 0; transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1); z-index: 10; overflow: hidden; }
 .clock-section.full { height: 100% !important; }
-.time-display { font-family: monospace; font-weight: 900; font-size: 8.5rem; transition: font-size 0.3s; }
+.time-display { font-family: monospace; font-weight: 900; font-size: 9rem; transition: font-size 0.3s; }
 
 .toggle-reminders-btn { position: absolute; top: 20px; right: 20px; background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3); padding: 8px 12px; border-radius: 8px; color: white; cursor: pointer; font-size: 1.2rem; z-index: 100; }
 

@@ -12,6 +12,7 @@ const DEFAULT_STATE = {
     absent: 0,
     theme: 'default',
     cardFontSize: 'medium',
+    timeFontSize: 'medium',
     swapPanels: false,
     subjects: [
         { name: '國語', specialRoom: 0 }, 
@@ -153,6 +154,7 @@ function syncUI() {
     
     // Apple specific font sizes and panel swapping layout setting
     document.body.dataset.cardFontSize = state.cardFontSize || 'medium';
+    document.body.dataset.timeFontSize = state.timeFontSize || 'medium';
     
     const container = document.querySelector('.app-container');
     if (container) {
@@ -369,6 +371,8 @@ function toggleModal(show) {
         document.getElementById('inputTheme').value = tempState.theme;
         const fontSel = document.getElementById('inputCardFontSize');
         if(fontSel) fontSel.value = tempState.cardFontSize || 'medium';
+        const timeFontSel = document.getElementById('inputTimeFontSize');
+        if(timeFontSel) timeFontSel.value = tempState.timeFontSize || 'medium';
         const swapCbox = document.getElementById('inputSwapPanels');
         if(swapCbox) swapCbox.checked = !!tempState.swapPanels;
         document.getElementById('inputTotal').value = tempState.total; 
@@ -385,6 +389,8 @@ function saveSettingsFromModal() {
     state.theme = document.getElementById('inputTheme').value;
     const fontSel = document.getElementById('inputCardFontSize');
     if(fontSel) state.cardFontSize = fontSel.value;
+    const timeFontSel = document.getElementById('inputTimeFontSize');
+    if(timeFontSel) state.timeFontSize = timeFontSel.value;
     const swapCbox = document.getElementById('inputSwapPanels');
     if(swapCbox) state.swapPanels = swapCbox.checked;
     state.total = parseInt(document.getElementById('inputTotal').value); 

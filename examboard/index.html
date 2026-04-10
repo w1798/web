@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>數位考場看板 by Charles Nextime</title>
-    <link rel="stylesheet" href="style.css?ver=1.28">
+    <link rel="stylesheet" href="style.css?ver=1.01b">
 </head>
 <body class="theme-default">
 
@@ -91,11 +91,22 @@
                     </div>
 
                     <div class="inline-group">
+                        <label>時間字體大小</label>
+                        <select id="inputTimeFontSize" class="short-select-theme">
+                            <option value="small">小</option>
+                            <option value="medium">中</option>
+                            <option value="large">大</option>
+                            <option value="xlarge">特大</option>
+                        </select>
+                    </div>
+
+                    <div class="inline-group">
                         <label>卡片字體大小</label>
                         <select id="inputCardFontSize" class="short-select-theme">
                             <option value="small">小</option>
-                            <option value="medium">中 (預設)</option>
+                            <option value="medium">中</option>
                             <option value="large">大</option>
+                            <option value="xlarge">特大</option>
                         </select>
                     </div>
 
@@ -193,7 +204,7 @@
 })();
 </script>
 
-<script src="script.js?ver=1.01a"></script>
+<script src="script.js?ver=1.01b"></script>
 
 </body>
 </html>
