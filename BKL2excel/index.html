@@ -79,7 +79,7 @@
 
 <div class="app-main">
     <div class="container">
-        <h2>博客來書單一鍵轉 <span id="count" class="count-badge">0</span></h2>
+        <h2>博客來書單一鍵轉 (支援 金石堂 誠品) <span id="count" class="count-badge">0</span></h2>
         
         <div class="step-box">
             <div><span class="step-num">1</span> 在「博客來」點進書籍的頁面，按下 <b>Ctrl + A</b> 全選，再按 <b>Ctrl + C</b> 複製。</div>
@@ -175,26 +175,147 @@
 
     function processData(raw) {
         const lines = raw.split('\n').map(l => l.trim()).filter(l => l !== "");
-        let title = "";
+        let isBKL = raw.includes("博客來") || lines.some(l => l.includes("!上頁"));
+        let isKing = raw.includes("金石堂") || lines.includes("售票") || lines.includes("左箭右箭");
+        let isEslite = raw.includes("誠品") || raw.includes("誠名") || (lines.includes("作") && lines.some(l => l === "者："));
         
+        let title = null;
+
+        // 1. 優先處理具有強特徵的標記
         const navIndex = lines.findIndex(l => l.includes("!上頁"));
+        const arrowIdx = lines.findIndex(l => l === "左箭右箭");
+        const authorSepIdx = lines.findIndex(l => l === "者：");
+        const ticketIdx = lines.findIndex(l => l === "售票");
+        const esliteExIdx = lines.findIndex(l => l === "誠品獨家");
+        const authorLineIdx = lines.findIndex(l => l.startsWith("作者：") || l.startsWith("作者:"));
+
         if (navIndex > 0) {
             title = lines[navIndex - 1];
-        } else {
-            const titleMatch = raw.match(/<title>博客來-(.*?)<\/title>/i);
-            title = titleMatch ? titleMatch[1].trim() : "未知書名";
+        } else if (arrowIdx >= 2) {
+            title = lines[arrowIdx - 2];
+        } else if (authorSepIdx >= 3 && lines[authorSepIdx - 1] === "作") {
+            title = lines[authorSepIdx - 3];
+            if (title === "誠品獨家" && authorSepIdx >= 2) title = lines[authorSepIdx - 2];
+        } else if (authorLineIdx >= 1) {
+            let i = authorLineIdx - 1;
+            while (i >= 0) {
+                const l = lines[i];
+                const isRating = l.startsWith("(") && l.endsWith(")") && /^\(\d+(\.\d+)?\)$/.test(l);
+                const isVersion = l.startsWith("平裝") || l.startsWith("電子書") || l.startsWith("精裝");
+                if (isVersion || l === "看相關系列" || l === "主題活動試閱" ||
+                    l.includes("優惠價") || l.includes("定價") || 
+                    l.includes("可購買版本") || isRating ||
+                    (l.length > 0 && !/[\u4e00-\u9fa5]/.test(l))) {
+                    i--;
+                    continue;
+                }
+                break;
+            }
+            if (i >= 0) title = lines[i];
+        } else if (ticketIdx >= 0 && ticketIdx + 2 < lines.length) {
+            title = lines[ticketIdx + 2];
         }
 
+        // 2. 如果都沒有強特徵，再找關鍵字行
+        if (!title) {
+            const titleLine = lines.find(l => l.startsWith("書名 :") || l.startsWith("書名："));
+            if (titleLine) {
+                title = titleLine.replace(/^書名[\s:：]+/, "");
+            } else {
+                const authorLineIdx = lines.findIndex(l => l.startsWith("作者："));
+                if (authorLineIdx >= 1) {
+                    let i = authorLineIdx - 1;
+                    while (i >= 0) {
+                        const l = lines[i];
+                        const isRating = l.startsWith("(") && l.endsWith(")") && /^\(\d+(\.\d+)?\)$/.test(l);
+                        const isVersion = l.startsWith("平裝") || l.startsWith("電子書") || l.startsWith("精裝");
+                        if (isVersion || l === "看相關系列" || l === "主題活動試閱" ||
+                            l.includes("優惠價") || l.includes("定價") || 
+                            l.includes("可購買版本") || isRating ||
+                            (l.length > 0 && !/[\u4e00-\u9fa5]/.test(l))) {
+                            i--;
+                            continue;
+                        }
+                        break;
+                    }
+                    if (i >= 0) title = lines[i];
+                }
+            }
+        }
+        
+        title = title || "未知書名";
+
+        let publisher = extract(raw, /出版社：\s*([^\n<]+)/);
+        if (!publisher) {
+            const idx = lines.findIndex(l => l === "社：");
+            if (idx >= 2 && lines[idx - 1] === "版" && lines[idx - 2] === "出") {
+                publisher = lines[idx + 1];
+            }
+        }
+
+        let price = extract(raw, /定價：\s*(\d+)/);
+        if (!price) {
+            const paperIdx = lines.findIndex(l => l === "紙本書");
+            if (paperIdx >= 0 && paperIdx + 2 < lines.length) {
+                price = lines[paperIdx + 2];
+            } else {
+                const idx = lines.findIndex(l => l === "數量");
+                if (idx >= 1 && lines[idx - 1] === "回饋" && idx + 3 < lines.length) {
+                    price = lines[idx + 3];
+                } else {
+                    const kingIdx = lines.findIndex(l => l.includes("金石堂金幣"));
+                    if (kingIdx >= 1) {
+                        for (let j = 1; j <= 4; j++) {
+                            if (kingIdx - j >= 0) {
+                                const priceLine = lines[kingIdx - j];
+                                const numMatches = priceLine.match(/(\d+)(?=元)/g);
+                                if (numMatches) {
+                                    price = numMatches[numMatches.length - 1];
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        let author = extract(raw, /(?:作者|編者)：\s*([^\n<]+)/);
+        if (!author) {
+            const idx = lines.findIndex(l => l === "者：");
+            if (idx >= 1 && (lines[idx - 1] === "作" || lines[idx - 1] === "編")) {
+                author = lines[idx + 1];
+            }
+        }
+
+        let pubDate = extract(raw, /(?:出版日期|出版年份|出版日)：\s*([^\n<]+)/);
+        if (!pubDate) {
+            const idx = lines.findIndex(l => l === "期：");
+            if (idx >= 3 && lines[idx - 1] === "日" && lines[idx - 2] === "版" && lines[idx - 3] === "出") {
+                pubDate = lines[idx + 1];
+            }
+        }
+
+        let isbn = extract(raw, /(?:ISBN13\s*\/|EAN貨碼\s*\/|ISBN[：:]?)\s*([\d\-xX]{9,})/i);
+        if (isbn) isbn = isbn.replace(/-/g, '');
+
+        const clean = s => (s || "").replace(/[\s]*追蹤/g, '').trim();
+
         const book = {
-            title: title,
-            publisher: extract(raw, /出版社：\s*([^\n<]+)/),
+            title: clean(title) || "未知書名",
+            publisher: clean(publisher),
             unit: "本",
             count: 1,
-            price: extract(raw, /定價：\s*(\d+)/),
-            author: extract(raw, /作者：\s*([^\n<]+)/),
-            pubDate: extract(raw, /出版日期：\s*(\d{4}\/\d{2}\/\d{2})/),
-            isbn: extract(raw, /ISBN：\s*(\d+)/)
+            price: clean(price),
+            author: clean(author),
+            pubDate: clean(pubDate),
+            isbn: clean(isbn)
         };
+
+        if (book.isbn && booksList.some(b => b.isbn === book.isbn)) {
+            alert(`已跳過！清單中已存在相同 ISBN 的書籍。\n書名：${book.title}\nISBN：${book.isbn}`);
+            return;
+        }
 
         booksList.unshift(book);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(booksList));
