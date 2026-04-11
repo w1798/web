@@ -1,3 +1,48 @@
+/**
+ * Charles Nextime Web Tools Portal - Core Logic
+ * Copyright (c) 2026 Charles Nextime
+ * Licensed under the GNU General Public License v3.0
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation.
+ */
+
+// 負責載入多個外部套件的函式
+function initLibraries() {
+    const libs = [
+        {
+            name: 'exceljs',
+            url: 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js'
+        }
+    ];
+
+    libs.forEach(lib => {
+        const script = document.createElement('script');
+        script.src = lib.url;
+        script.async = false;
+
+        script.onerror = function() {
+            // 自動從 url 提取檔名 (例如: exceljs.min.js)
+            const fileName = lib.url.split('/').pop();
+            const fallbackPath = `libs/${fileName}`;
+
+            console.warn(`${lib.name} 外部載入失敗，嘗試從本地載入: ${fallbackPath}`);
+            
+            const fallbackScript = document.createElement('script');
+            fallbackScript.src = fallbackPath;
+            document.head.appendChild(fallbackScript);
+        };
+
+        document.head.appendChild(script);
+    });
+}
+
+// 執行載入
+initLibraries();
+
+
+
+
 const STORAGE_KEY = 'books_data_list';
 const CONTEXT_KEY = 'last_processed_context';
 const mainArea = document.querySelector('.app-main');
@@ -366,35 +411,4 @@ function showStatus(text) {
     setTimeout(() => { msg.style.display = 'none'; }, 3000);
 }
 
-// Vercount 計數器邏輯
-(function() {
-    const path = window.location.pathname.replace(/\/$/, ""); 
-    const TIME_KEY = `VERCOUNT_TIME_${path}`;
-    const VAL_KEY = `VERCOUNT_VAL_${path}`;
-    const COOL_DOWN = 30 * 60 * 1000; 
-    const now = Date.now();
-    const lastVisit = localStorage.getItem(TIME_KEY);
-    const timeLeft = lastVisit ? Math.ceil((parseInt(lastVisit) + COOL_DOWN - now) / 1000) : 0;
 
-    if (timeLeft <= 0) {
-        const script = document.createElement('script');
-        script.src = "https://events.vercount.one/js";
-        script.defer = true;
-        script.onload = () => {
-            setTimeout(() => {
-                const pvVal = document.getElementById('busuanzi_value_page_pv')?.innerText;
-                if (pvVal) {
-                    localStorage.setItem(VAL_KEY, pvVal);
-                    localStorage.setItem(TIME_KEY, now);
-                }
-            }, 1500);
-        };
-        document.head.appendChild(script);
-    } else {
-        const lastVal = localStorage.getItem(VAL_KEY) || "--";
-        window.addEventListener('load', () => {
-            const pvSpan = document.getElementById('busuanzi_value_page_pv');
-            if (pvSpan) pvSpan.innerText = lastVal;
-        });
-    }
-})();
