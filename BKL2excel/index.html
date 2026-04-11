@@ -10,7 +10,7 @@
             --primary-color: #007bff;
             --success-color: #28a745;
             --danger-color: #d32f2f;
-            --info-color: #607d8b;
+            --info-color: #F00078;
         }
 
         body { font-family: "Microsoft JhengHei", sans-serif; background: #f0f2f5; margin: 0; padding: 0; color: #333; }
@@ -73,13 +73,44 @@
         #backToTop.show { display: block; animation: fadeIn 0.3s; }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* 編輯與輔助工具樣式 */
+        .title-cell { position: relative; padding: 0 !important; }
+        .editable-content { 
+            display: block; padding: 12px; min-height: 1.2em; 
+            cursor: text; outline: none; transition: background 0.2s;
+        }
+        .editable-content:hover { background: #fffde7; }
+        .editable-content:focus { background: #fffbe6; box-shadow: inset 0 0 0 1px #fcc419; }
+        
+        .assistant-btn { 
+            position: absolute; right: 5px; top: 12px;
+            background: #e52222; color: white; border: none; border-radius: 4px;
+            padding: 3px 8px; font-size: 11px; cursor: pointer; opacity: 0.7;
+            z-index: 5;
+        }
+        .assistant-btn:hover { opacity: 1; }
+
+        .assistant-menu {
+            position: absolute; right: 5px; top: 40px; 
+            background: white; border: 1px solid #ccc;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2); border-radius: 8px;
+            width: 380px; max-height: 300px; overflow-y: auto; z-index: 1000;
+            display: none; padding: 5px 0;
+        }
+        .assistant-item {
+            padding: 10px 15px; font-size: 13px; cursor: pointer; border-bottom: 1px solid #eee;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left;
+        }
+        .assistant-item:hover { background: #f0f2f5; color: var(--primary-color); }
+        .assistant-item.current { background: #fff9db; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="app-main">
     <div class="container">
-        <h2>博客來書單一鍵轉 (支援 金石堂 誠品) <span id="count" class="count-badge">0</span></h2>
+        <h2>博客來書單一鍵轉 (<small>支援 金石堂 誠品</small>) <span id="count" class="count-badge">0</span></h2>
         
         <div class="step-box">
             <div><span class="step-num">1</span> 在「博客來」點進書籍的頁面，按下 <b>Ctrl + A</b> 全選，再按 <b>Ctrl + C</b> 複製。</div>
@@ -94,7 +125,7 @@
             <span class="step-num">3</span>
             <button class="btn-copy" onclick="downloadXLSX()" style="background: #217346;">下載 .xlsx 檔</button> 或
             <button class="btn-copy" onclick="copyAllToExcel(true)">複製 Excel 格式</button>
-            <button class="btn-copy" onclick="copyAllToExcel(false)" style="background: var(--info-color);">(備用)複製無引號版</button>
+            <button class="btn-copy" onclick="copyAllToExcel(false)" style="background: #BEBEBE;">(備用)複製無引號版</button>
             <span class="step-num">4</span>
             <button class="btn-reset" onclick="resetAllData()">重置所有資料</button>
             <span id="statusMsg" class="msg"></span>
@@ -125,9 +156,11 @@
 
 <script>
     const STORAGE_KEY = 'books_data_list';
+    const CONTEXT_KEY = 'last_processed_context';
     const mainArea = document.querySelector('.app-main');
     const backToTopBtn = document.getElementById('backToTop');
     let booksList = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    let lastContext = JSON.parse(localStorage.getItem(CONTEXT_KEY)) || [];
 
     // 初始化讀取
     window.onload = renderTable;
@@ -175,6 +208,9 @@
 
     function processData(raw) {
         const lines = raw.split('\n').map(l => l.trim()).filter(l => l !== "");
+        lastContext = lines;
+        localStorage.setItem(CONTEXT_KEY, JSON.stringify(lastContext));
+
         let isBKL = raw.includes("博客來") || lines.some(l => l.includes("!上頁"));
         let isKing = raw.includes("金石堂") || lines.includes("售票") || lines.includes("左箭右箭");
         let isEslite = raw.includes("誠品") || raw.includes("誠名") || (lines.includes("作") && lines.some(l => l === "者："));
@@ -326,15 +362,77 @@
 
     function renderTable() {
         const tbody = document.getElementById('tableBody');
-        tbody.innerHTML = booksList.map((data, index) => `
-            <tr>
-                <td>${data.title}</td><td>${data.publisher}</td><td>${data.unit}</td>
-                <td>${data.count}</td><td>${data.price}</td><td>${data.author}</td>
-                <td>${data.pubDate}</td><td>${data.isbn}</td>
-                <td><button onclick="deleteRow(${index})" style="padding: 6px 12px; font-size: 13px; background: var(--danger-color); color: white;">刪除</button></td>
-            </tr>
-        `).join('');
+        tbody.innerHTML = booksList.map((data, index) => {
+            const isLatest = index === 0;
+            return `
+                <tr>
+                    <td class="title-cell">
+                        <div class="editable-content" contenteditable="true" onblur="updateCell(${index}, 'title', this)">${data.title}</div>
+                        ${isLatest ? `<button class="assistant-btn" onclick="toggleAssistant(event)">輔助更換</button><div id="asstMenu" class="assistant-menu"></div>` : ''}
+                    </td>
+                    <td style="padding:0;"><div class="editable-content" contenteditable="true" onblur="updateCell(${index}, 'publisher', this)">${data.publisher}</div></td>
+                    <td style="padding:0;"><div class="editable-content" contenteditable="true" onblur="updateCell(${index}, 'unit', this)">${data.unit}</div></td>
+                    <td style="padding:0;"><div class="editable-content" contenteditable="true" onblur="updateCell(${index}, 'count', this)">${data.count}</div></td>
+                    <td style="padding:0;"><div class="editable-content" contenteditable="true" onblur="updateCell(${index}, 'price', this)">${data.price}</div></td>
+                    <td style="padding:0;"><div class="editable-content" contenteditable="true" onblur="updateCell(${index}, 'author', this)">${data.author}</div></td>
+                    <td style="padding:0;"><div class="editable-content" contenteditable="true" onblur="updateCell(${index}, 'pubDate', this)">${data.pubDate}</div></td>
+                    <td style="padding:0;"><div class="editable-content" contenteditable="true" onblur="updateCell(${index}, 'isbn', this)">${data.isbn}</div></td>
+                    <td><button onclick="deleteRow(${index})" style="padding: 6px 12px; font-size: 13px; background: var(--danger-color); color: white;">刪除</button></td>
+                </tr>
+            `;
+        }).join('');
         document.getElementById('count').innerText = booksList.length;
+    }
+
+    function updateCell(index, key, element) {
+        const newVal = element.innerText.trim();
+        if (booksList[index][key] !== newVal) {
+            booksList[index][key] = newVal;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(booksList));
+            showStatus("已更新欄位內容");
+        }
+    }
+
+    function toggleAssistant(event) {
+        event.stopPropagation();
+        const menu = document.getElementById('asstMenu');
+        if (menu.style.display === 'block') {
+            menu.style.display = 'none';
+            return;
+        }
+
+        const currentTitle = booksList[0].title;
+        let foundIdx = lastContext.indexOf(currentTitle);
+        if (foundIdx === -1) {
+            // 模糊搜尋，找包含或相似的
+            foundIdx = lastContext.findIndex(l => l.includes(currentTitle) || currentTitle.includes(l));
+        }
+
+        const start = Math.max(0, foundIdx - 10);
+        const end = Math.min(lastContext.length, (foundIdx === -1 ? 20 : foundIdx + 11));
+        
+        let html = '';
+        for (let i = start; i < end; i++) {
+            const line = lastContext[i];
+            const isCurrent = (i === foundIdx);
+            html += `<div class="assistant-item ${isCurrent ? 'current' : ''}" onclick="selectTitle('${line.replace(/'/g, "\\'")}')">${line}</div>`;
+        }
+        
+        if (!html) html = '<div class="assistant-item">尚無上下文資料，請重新貼上一次</div>';
+        
+        menu.innerHTML = html;
+        menu.style.display = 'block';
+        
+        // 點擊外面關閉
+        const closeMenu = () => { menu.style.display = 'none'; document.removeEventListener('click', closeMenu); };
+        setTimeout(() => document.addEventListener('click', closeMenu), 10);
+    }
+
+    function selectTitle(newTitle) {
+        booksList[0].title = newTitle;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(booksList));
+        renderTable();
+        showStatus("書名已修正");
     }
 
     function extract(text, regex) {
