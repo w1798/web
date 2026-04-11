@@ -2,6 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>博客來書單一鍵轉</title>
     <!-- 引入 ExcelJS (支援精細格式如置中、框線、寬度設定) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
@@ -92,10 +93,10 @@
         .assistant-btn:hover { opacity: 1; }
 
         .assistant-menu {
-            position: absolute; right: 5px; top: 40px; 
+            position: absolute; left: 0; top: 42px; 
             background: white; border: 1px solid #ccc;
             box-shadow: 0 4px 12px rgba(0,0,0,0.2); border-radius: 8px;
-            width: 380px; max-height: 300px; overflow-y: auto; z-index: 1000;
+            width: min(380px, 92vw); max-height: 300px; overflow-y: auto; z-index: 1000;
             display: none; padding: 5px 0;
         }
         .assistant-item {
@@ -104,6 +105,31 @@
         }
         .assistant-item:hover { background: #f0f2f5; color: var(--primary-color); }
         .assistant-item.current { background: #fff9db; font-weight: bold; }
+
+        /* 手機版優化 */
+        @media (max-width: 600px) {
+            .app-main { padding: 10px; }
+            .container { padding: 15px; border-radius: 0; margin: -10px; width: calc(100% + 20px); box-shadow: none; }
+            h2 { font-size: 1.2rem; margin-bottom: 15px; }
+            .toolbar { padding-left: 0; gap: 8px; }
+            button { width: 100%; justify-content: center; padding: 12px; }
+            
+            table, thead, tbody, th, td, tr { display: block; }
+            thead tr { position: absolute; top: -9999px; left: -9999px; }
+            tr { border: 1px solid #ddd; margin-bottom: 20px; background: white !important; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+            td { border: none; border-bottom: 1px solid #eee; position: relative; padding-left: 85px !important; min-height: 48px; display: flex; align-items: center; text-align: left; }
+            td:last-child { border-bottom: none; background: #fafafa; }
+            td::before { 
+                content: attr(data-label);
+                position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+                width: 70px; font-weight: bold; color: #888; font-size: 12px;
+            }
+            .title-cell { padding-top: 45px !important; padding-left: 0 !important; display: block; }
+            .title-cell::before { top: 15px; transform: none; }
+            .assistant-btn { top: 10px; right: 10px; background: #dc3545; opacity: 1; }
+            .assistant-menu { width: calc(100vw - 50px); left: 5px; top: 48px; }
+            .editable-content { padding: 12px 10px !important; width: 100%; }
+        }
     </style>
 </head>
 <body>
@@ -366,18 +392,18 @@
             const isLatest = index === 0;
             return `
                 <tr>
-                    <td class="title-cell">
+                    <td class="title-cell" data-label="書名">
                         <div class="editable-content" contenteditable="true" onblur="updateCell(${index}, 'title', this)">${data.title}</div>
                         ${isLatest ? `<button class="assistant-btn" onclick="toggleAssistant(event)">輔助更換</button><div id="asstMenu" class="assistant-menu"></div>` : ''}
                     </td>
-                    <td style="padding:0;"><div class="editable-content" contenteditable="true" onblur="updateCell(${index}, 'publisher', this)">${data.publisher}</div></td>
-                    <td style="padding:0;"><div class="editable-content" contenteditable="true" onblur="updateCell(${index}, 'unit', this)">${data.unit}</div></td>
-                    <td style="padding:0;"><div class="editable-content" contenteditable="true" onblur="updateCell(${index}, 'count', this)">${data.count}</div></td>
-                    <td style="padding:0;"><div class="editable-content" contenteditable="true" onblur="updateCell(${index}, 'price', this)">${data.price}</div></td>
-                    <td style="padding:0;"><div class="editable-content" contenteditable="true" onblur="updateCell(${index}, 'author', this)">${data.author}</div></td>
-                    <td style="padding:0;"><div class="editable-content" contenteditable="true" onblur="updateCell(${index}, 'pubDate', this)">${data.pubDate}</div></td>
-                    <td style="padding:0;"><div class="editable-content" contenteditable="true" onblur="updateCell(${index}, 'isbn', this)">${data.isbn}</div></td>
-                    <td><button onclick="deleteRow(${index})" style="padding: 6px 12px; font-size: 13px; background: var(--danger-color); color: white;">刪除</button></td>
+                    <td style="padding:0;" data-label="出版社"><div class="editable-content" contenteditable="true" onblur="updateCell(${index}, 'publisher', this)">${data.publisher}</div></td>
+                    <td style="padding:0;" data-label="單位"><div class="editable-content" contenteditable="true" onblur="updateCell(${index}, 'unit', this)">${data.unit}</div></td>
+                    <td style="padding:0;" data-label="數量"><div class="editable-content" contenteditable="true" onblur="updateCell(${index}, 'count', this)">${data.count}</div></td>
+                    <td style="padding:0;" data-label="售價"><div class="editable-content" contenteditable="true" onblur="updateCell(${index}, 'price', this)">${data.price}</div></td>
+                    <td style="padding:0;" data-label="著者"><div class="editable-content" contenteditable="true" onblur="updateCell(${index}, 'author', this)">${data.author}</div></td>
+                    <td style="padding:0;" data-label="出版日期"><div class="editable-content" contenteditable="true" onblur="updateCell(${index}, 'pubDate', this)">${data.pubDate}</div></td>
+                    <td style="padding:0;" data-label="ISBN"><div class="editable-content" contenteditable="true" onblur="updateCell(${index}, 'isbn', this)">${data.isbn}</div></td>
+                    <td data-label="操作"><button onclick="deleteRow(${index})" style="padding: 6px 12px; font-size: 13px; background: var(--danger-color); color: white; width: auto;">刪除</button></td>
                 </tr>
             `;
         }).join('');
