@@ -287,4 +287,22 @@ function toggleTheme() {
     localStorage.setItem('theme', isLight ? 'light' : 'dark');
 }
 
-window.onload = () => { if (localStorage.getItem('theme') === 'light') toggleTheme(); };
+function initSelects() {
+    const populate = (id, min, max) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        let html = '';
+        for (let i = min; i <= max; i++) {
+            html += `<option value="${i}">${i}</option>`;
+        }
+        el.innerHTML = html;
+    };
+    populate('headCount', 0, 9);
+    populate('tailCount', 0, 9);
+    populate('numPad', 1, 9);
+}
+
+window.onload = () => { 
+    initSelects();
+    if (localStorage.getItem('theme') === 'light') toggleTheme(); 
+};
