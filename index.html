@@ -223,7 +223,7 @@
         .simple-view .card { padding: 15px 12px; text-align: left; }
         .simple-view .card p { display: none; }
         .simple-view .card h2 {font-size: 1.1rem;}
-        .simple-view .card-stats { position: static; margin-top: 8px; }
+        .simple-view .card-stats { position: static; margin-top: 8px; text-align: right; }
 
         /* --- 懸停提示與行數限制 (桌機版專用) --- */
         @media (hover: hover) and (min-width: 851px) {
@@ -362,7 +362,7 @@
             color: rgba(255,255,255,0.7);
             text-align: center;
             padding: 8px;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             backdrop-filter: blur(5px);
             z-index: 1000;
         }
@@ -370,7 +370,7 @@
 
         #busuanzi_container_page_pv {
             color: #888;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             margin-left: 15px;
             border-left: 1px solid rgba(128, 128, 128, 0.5);
             padding-left: 15px;
@@ -426,7 +426,7 @@
             </div>
         </header>
         <div id="link-container" class="simple-view"></div>
-        <div id="comment-area" class="giscus-container" style="margin-top: 50px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 30px; padding-bottom: 150px;">
+        <div id="comment-area" class="giscus-container" style="margin-top: 50px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 30px; padding-bottom: 150px; padding-left: 20px; padding-right: 20px;">
         <div class="giscus"></div>
         </div>
         
@@ -452,9 +452,9 @@
         <a href="https://nextime5.blogspot.com" target="_blank" style="color: inherit; text-decoration: none;">&copy; 2026<script>
   const y = new Date().getFullYear();
   if (y > 2026) document.write("-" + y);
-</script> Charles Nextime</a> · <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" style="color: inherit; text-decoration: none;">GPLv3</a>
+</script> Charles Nextime</a>·<a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" style="color: inherit; text-decoration: none;">GPLv3</a>
         <span id="busuanzi_container_page_pv">
-            本頁使用量 <span id="busuanzi_value_page_pv"></span> 次
+            訪問 <span id="busuanzi_value_page_pv"></span> 次
         </span>
     </footer>
 
@@ -598,9 +598,44 @@
                 block: 'nearest'    // 垂直方向保持不動
             });
 
-            // --- 新增：手機版點選後自動回頂端 ---
-            if (window.innerWidth <= 850) {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+            // --- 新增：點選後自動回頂端 ---
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // --- 新增：手勢偵測與導覽控制 ---
+        let touchStartX = 0;
+        let touchStartY = 0;
+        
+        window.addEventListener('touchstart', e => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+
+        window.addEventListener('touchend', e => {
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+            const dx = touchEndX - touchStartX;
+            const dy = touchEndY - touchStartY;
+
+            // 門檻：水平滑動距離 > 80px，且水平位移顯著大於垂直位移（防誤觸捲動）
+            if (Math.abs(dx) > 80 && Math.abs(dx) > Math.abs(dy)) {
+                if (dx < 0) {
+                    navigateCategory(1); // 向右滑 -> 前一個 (左邊) 
+                } else {
+                    navigateCategory(-1); //向左滑 -> 次一個 (右邊)
+                }
+            }
+        }, { passive: true });
+
+        function navigateCategory(direction) {
+            if (window.innerWidth > 850) return; // 僅限手機版
+            const cats = ['all', 'fav', 'daily', 'milestone', 'edit', 'doc', 'tool'];
+            let currentIdx = cats.indexOf(currentCategory);
+            let nextIdx = currentIdx + direction;
+            if (nextIdx >= 0 && nextIdx < cats.length) {
+                const nextCat = cats[nextIdx];
+                const nextEl = document.getElementById(`nav-${nextCat}`);
+                if (nextEl) filterLinks(nextCat, nextEl);
             }
         }
 
@@ -642,9 +677,11 @@
 
         function updateSidebarCounts() {
             const favorites = JSON.parse(localStorage.getItem('my_favorites') || '[]');
+            const validFavorites = favorites.filter(id => links.some(l => l.id === id));
+            
             const categories = {
                 all: { label: '全部彙整', count: links.length },
-                fav: { label: '我的最愛', count: favorites.length },
+                fav: { label: '我的最愛', count: validFavorites.length },
                 daily: { label: '教學日常', count: links.filter(l => l.category === 'daily').length },
                 milestone: { label: '階段任務', count: links.filter(l => l.category === 'milestone').length },
                 edit: { label: '文件編輯', count: links.filter(l => l.category === 'edit').length },
