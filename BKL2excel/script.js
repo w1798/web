@@ -9,27 +9,36 @@
 
 // 負責載入多個外部套件的函式
 function initLibraries() {
-    const libs = [
-        {
-            name: 'exceljs',
-            url: 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js'
-        }
+    // 這裡只需要填入網址字串即可
+    const libUrls = [
+        'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js'
     ];
 
-    libs.forEach(lib => {
+    libUrls.forEach(url => {
         const script = document.createElement('script');
-        script.src = lib.url;
+        script.src = url;
         script.async = false;
 
-        script.onerror = function() {
-            // 自動從 url 提取檔名 (例如: exceljs.min.js)
-            const fileName = lib.url.split('/').pop();
-            const fallbackPath = `libs/${fileName}`;
+        // 從 URL 提取完整檔名 (例如: exceljs.min.js)
+        const fileName = new URL(url).pathname.split('/').pop();
 
-            console.warn(`${lib.name} 外部載入失敗，嘗試從本地載入: ${fallbackPath}`);
+        // 情況 A：外部載入成功
+        script.onload = function() {
+            console.log(`%c[成功] 外部庫已載入: ${fileName}`, 'color: #4CAF50; font-weight: bold;');
+        };
+
+        // 情況 B：外部載入失敗，啟動備援
+        script.onerror = function() {
+            const fallbackPath = `libs/${fileName}`;
+            console.warn(`[失敗] 外部庫載入失敗，嘗試本地載入: ${fallbackPath}`);
             
             const fallbackScript = document.createElement('script');
             fallbackScript.src = fallbackPath;
+            
+            // 本地載入的成功/失敗監聽（選配）
+            fallbackScript.onload = () => console.log(`%c[備援成功] 已從本地載入: ${fileName}`, 'color: #FF9800; font-weight: bold;');
+            fallbackScript.onerror = () => console.error(`[重大錯誤] 本地備援檔案不存在: ${fallbackPath}`);
+
             document.head.appendChild(fallbackScript);
         };
 
