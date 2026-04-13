@@ -408,7 +408,7 @@ body[data-font-size="large"] { font-size: 18px; }
 }
 .award-content.active { display: grid; }
 #customAwardArea.active { display: flex !important; flex-direction: column !important; gap: 1rem; }
-.history-list { list-style: none; max-height: 50vh; overflow-y: auto; padding-right: 5px; display: flex; flex-direction: column; gap: 0.5rem; }
+.history-list { list-style: none; max-height: 70vh; overflow-y: auto; padding-right: 5px; display: flex; flex-direction: column; gap: 0.5rem; }
 .history-list li {
     display: flex; justify-content: space-between; align-items: center;
     background: rgba(255, 255, 255, 0.8); padding: 0.75rem 1rem;
@@ -796,3 +796,125 @@ footer a:hover {
 }
 .edit-group-inline-btn:hover { border-color: var(--primary-color); transform: scale(1.1); }
 
+
+
+/* --- 2. 班級點數總覽 (Class Summary Overview) --- */
+.clickable-title {
+    cursor: pointer;
+    color: var(--primary-color);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    transition: color 0.2s;
+}
+
+.clickable-title:hover {
+    color: var(--primary-dark);
+}
+
+.summary-modal-wrapper {
+    background: white;
+    width: 95vw;
+    height: 95vh;
+    display: flex;
+    flex-direction: column;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+#classSummaryTitle {
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.summary-close {
+    width: auto !important;
+    padding: 0 1.5rem !important;
+    font-size: 1.1rem !important;
+    border-radius: 10px !important;
+    border: 1.5px solid var(--border-color) !important;
+    background: #f1f5f9 !important;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    padding: 20px;
+    overflow-y: auto;
+    align-content: flex-start;
+}
+
+@media (min-width: 1200px) {
+    .summary-grid {
+        grid-template-columns: repeat(8, 1fr);
+    }
+}
+
+.summary-box {
+    border: 1.5px solid var(--border-color);
+    padding: 16px 12px;
+    border-radius: 12px;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    min-height: 100px;
+}
+
+.summary-box:hover {
+    border-color: var(--primary-color);
+    background: #f8fafc;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.summary-seq {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.summary-name {
+    font-weight: 700;
+    color: #1e293b;
+    font-size: 1.2rem;
+    margin-bottom: 6px;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.summary-points {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--primary-color);
+}
+
+.summary-points.negative {
+    color: #ef4444;
+}
+
+@media (max-width: 600px) {
+    .summary-grid {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        padding: 12px;
+        gap: 8px;
+    }
+    .summary-box {
+        padding: 12px 8px;
+        min-height: 80px;
+    }
+    #classSummaryTitle {
+        font-size: 1.4rem;
+    }
+}

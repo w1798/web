@@ -863,6 +863,51 @@ document.addEventListener('DOMContentLoaded', () => {
             renderPieChart(f);
         }
     };
+    
+    const showClassSummary = () => {
+        const content = document.getElementById('classSummaryContent'); if(!content) return;
+        content.innerHTML = '';
+        
+        // 使用與報表相同的時間範圍邏輯計算點數
+        const range = getReportsTimeRange();
+        let data = students.map(s => {
+            let pts = logs.filter(l => l.sID === s.id).reduce((sum, l) => {
+                const ts = (typeof l.TS === 'number') ? l.TS : StampTool.decode(l.TS).getTime();
+                if (range && (ts < range.start || ts > range.end)) return sum;
+                return sum + (l.iSum === 1 ? 0 : l.pt);
+            }, 0);
+            return { ...s, pts };
+        });
+        
+        // 使用目前報表的排序方式 (姓名或點數)
+        if (currentSort === 'name') {
+            data.sort((a,b) => a.id.localeCompare(b.id, 'zh-TW'));
+        } else {
+            data.sort((a,b) => b.pts - a.pts);
+        }
+        
+        data.forEach((s, idx) => {
+            const box = document.createElement('div');
+            box.className = 'summary-box';
+            box.onclick = () => {
+                // 不再關閉總覽視窗，讓個人資料視窗（z-index 較高）直接蓋在上面
+                // 關閉個人資料視窗後就會回到總覽視窗
+                openAwardModal([s.id], s.id, null);
+                setTimeout(() => switchProfileTab('history'), 50);
+            };
+            
+            const isNeg = s.pts < 0;
+            const ptsText = s.pts > 0 ? `+${s.pts}` : s.pts;
+            box.innerHTML = `
+                <div class="summary-seq">${idx + 1}</div>
+                <div class="summary-name">${s.id}</div>
+                <div class="summary-points ${isNeg ? 'negative' : ''}">${ptsText}</div>
+            `;
+            content.appendChild(box);
+        });
+        
+        openModal(document.getElementById('classSummaryModal'));
+    };
 
     // Removed migrateToNameIds()
 
@@ -1053,7 +1098,8 @@ document.addEventListener('DOMContentLoaded', () => {
         wire('addStudentBtn', () => openModal(document.getElementById('addStudentModal')));
         
         document.querySelectorAll('.view-tab-btn').forEach(b => b.onclick = () => switchMainView(b.dataset.view));
-        document.querySelectorAll('.close-modal-btn, .cancel-btn, .settings-close, .profile-close, .add-close, .edit-student-close, .classes-close, .group-close, .group-detail-close, .reports-close').forEach(b => b.onclick = () => closeModal(b.closest('.modal-overlay')));
+        document.querySelectorAll('.close-modal-btn, .cancel-btn, .settings-close, .profile-close, .add-close, .edit-student-close, .classes-close, .group-close, .group-detail-close, .reports-close, .summary-close').forEach(b => b.onclick = () => closeModal(b.closest('.modal-overlay')));
+        wire('rankingTitle', showClassSummary);
         
         wire('cancelMultiBtn', toggleMultiSelectMode);
         wire('selectAllBtn', () => { if(selectedStudentIds.size === students.length) selectedStudentIds.clear(); else students.forEach(s => selectedStudentIds.add(s.id)); document.getElementById('multiSelectCount').textContent = `已選擇 ${selectedStudentIds.size} 位學生`; renderStudents(); });
