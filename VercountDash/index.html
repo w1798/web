@@ -66,7 +66,7 @@
                     <th style="width: 15%;">即時 PV (對比)</th>
                     <th style="width: 15%; text-align:right;">全站 PV (對比)</th>
                     <th style="width: 15%; text-align:right;">全站 UV (對比)</th>
-                    <th style="width: 20%; text-align:center;">30日趨勢</th>
+                    <th style="width: 20%; text-align:center;">14日趨勢</th>
                 </tr>
             </thead>
             <tbody id="stats-body"></tbody>
@@ -155,21 +155,23 @@
 
 
     async function init() {
-        // 1. 從本地讀取並與範本合併
         const savedSett = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
         const savedStats = JSON.parse(localStorage.getItem(DATA_KEY) || '{}');
         
-        // 核心：確保即便本地少欄位，也會被 DEFAULT 補齊
         appData.settings = mergeDeep(DEFAULT_SETTINGS, savedSett);
         appData.stats = savedStats;
 
         const lastCloud = localStorage.getItem('LAST_CLOUD_LOAD');
-        const isPushPending = localStorage.getItem(PENDING_KEY) === 'true';
+        const isPushPending = localStorage.getItem(PENDING_KEY) === 'true'; // 這行是關鍵
         const isUrlEmpty = !appData.settings.urls || appData.settings.urls.length === 0;
 
         if (appData.settings.binId && appData.settings.apiKey) {
-            if (isUrlEmpty || isPushPending || !lastCloud || (Date.now() - lastCloud > appData.settings.cloudCD * 60000)) {
-                await loadFromCloud(); // 雲端讀取內部也要執行 mergeDeep
+            // 修改這裡：如果是 PENDING (代表剛手動改過設定)，「不要」從雲端讀取
+            if (isPushPending) {
+                console.log("偵測到在地變更，跳過雲端讀取以防覆蓋");
+                updateStatusUI('cache'); 
+            } else if (isUrlEmpty || !lastCloud || (Date.now() - lastCloud > appData.settings.cloudCD * 60000)) {
+                await loadFromCloud();
             } else {
                 updateStatusUI('cache');
             }
@@ -179,11 +181,12 @@
         
         renderUI();
         
-        // 自動定時更新 PV
+        // 如果是 Pending 狀態或是時間到了，執行更新並推送到雲端
         if (!isUrlEmpty) {
             const lastSync = localStorage.getItem('LAST_SYNC_TIME');
-            if (!lastSync || (appData.settings.pvCD === 0) || (Date.now() - lastSync > appData.settings.pvCD * 60000)) {
-                refreshPV(false);
+            if (isPushPending || !lastSync || (appData.settings.pvCD === 0) || (Date.now() - lastSync > appData.settings.pvCD * 60000)) {
+                await refreshPV(isPushPending); // 執行完後 refreshPV 內部應清除 PENDING_KEY
+                localStorage.removeItem(PENDING_KEY); // 強制清除確保下次恢復正常雲端讀取
             }
         }
     }
@@ -283,7 +286,7 @@
                         logs[logs.length-1] = entry;
                     } else {
                         logs.push(entry);
-                        if (logs.length > 30) logs.shift();
+                        if (logs.length > 14) logs.shift();
                     }
                 } catch (e) {}
             }
