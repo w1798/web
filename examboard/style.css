@@ -54,7 +54,7 @@ body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background:
 .add-session-btn { width: 100%; padding: 15px; margin: 10px 0; border: 2px dashed #cbd5e1; background: white; border-radius: 12px; color: #94a3b8; font-size: 1.2rem; font-weight: bold; cursor: pointer; }
 
 .card { background: var(--card-bg, white); border: 2px solid var(--card-border, var(--slate-100)); border-radius: 1.2rem; padding: 16px 20px; font-size: 1.15em; margin-bottom: 8px; transition: all 0.3s; color: var(--card-text, var(--slate-700)); }
-.card.active { background: var(--card-active-bg, var(--yellow-bg)); border-color: var(--card-active-border, var(--yellow-border)); }
+.card.active { background: var(--card-active-bg, var(--yellow-bg)); border-color: var(--card-active-border, var(--yellow-border)); border-width: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
 .time-range-group { display: flex; align-items: center; }
 .time-range-input { font-size: 1.6rem; font-weight: bold; border: 1px solid var(--card-border, #e2e8f0); background: var(--card-input-bg, #f8fafc); border-radius: 6px; width: 200px; padding: 10px; color: var(--card-text, var(--slate-700)); }
 .card-row-2 { display: flex; align-items: center; justify-content: flex-start; gap: 15px; margin-top: 10px; font-weight: 900; color: var(--card-text, var(--slate-700)); font-size: 1.6rem; }
