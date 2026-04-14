@@ -81,10 +81,10 @@ body[data-card-font-size="xlarge"] .actual-num { font-size: 3.2rem; }
 body[data-card-font-size="xlarge"] .card-subject-select { font-size: 3rem; padding: 16px; }
 
 /* Font size modifier classes for time displaying */
-body[data-time-font-size="small"] .time-display { font-size: 8.5rem; }
-body[data-time-font-size="medium"] .time-display { font-size: 9rem; }
-body[data-time-font-size="large"] .time-display { font-size: 9.5rem; }
-body[data-time-font-size="xlarge"] .time-display { font-size: 10rem; }
+body[data-time-font-size="small"] .time-display { font-size: 9rem; }
+body[data-time-font-size="medium"] .time-display { font-size: 9.5rem; }
+body[data-time-font-size="large"] .time-display { font-size: 10rem; }
+body[data-time-font-size="xlarge"] .time-display { font-size: 10.5rem; }
 
 /* 音訊控制 */
 .audio-controls { display: flex; align-items: center; gap: 8px; }
