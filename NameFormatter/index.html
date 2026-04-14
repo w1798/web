@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>姓名格式轉換工具</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px; /* 縮小邊距 */
+            font-size: 18px;
+        }
+        .container {
+            background: white;
+            padding: 20px 30px; /* 緊湊內距 */
+            border-radius: 12px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 800px;
+        }
+        /* 標題與連結放在同一列 */
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        h2 { margin: 0; font-size: 24px; color: #333; }
+        
+        .external-link {
+            color: #1976d2;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .external-link:hover { text-decoration: underline; }
+
+        p { color: #666; font-size: 16px; margin: 8px 0; }
+
+        textarea {
+            width: 100%;
+            height: 120px; /* 縮小高度防止跨頁 */
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .btn-paste { background-color: #e3f2fd; color: #1976d2; }
+        .btn-clear { background-color: #ffebee; color: #d32f2f; }
+        .btn-copy { background-color: #4caf50; color: white; }
+
+        .output-label { font-weight: bold; font-size: 16px; margin-bottom: 5px; display: block; }
+        .output-area {
+            background: #f9f9f9;
+            padding: 12px;
+            border-radius: 8px;
+            border: 2px dashed #bbb;
+            word-break: break-all;
+            min-height: 40px;
+            font-size: 20px;
+            font-family: monospace;
+            line-height: 1.2;
+        }
+
+        footer {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #888;
+            text-align: center;
+        }
+        footer a { color: #666; text-decoration: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-row">
+        <h2>姓名中譯英格式轉換器</h2>
+        <a href="https://www.boca.gov.tw/sp-natr-batchform-1.html" target="_blank" class="external-link">
+            🔗 外文姓名中譯英系統(外交部領事事務局)
+        </a>
+    </div>
+
+    <p>輸入姓名（一列一個）：</p>
+    <textarea id="inputNames" placeholder="王小明&#10;歐陽小美"></textarea>
+
+    <div class="button-group">
+        <button class="btn-paste" onclick="pasteText()">貼上</button>
+        <button class="btn-clear" onclick="clearAll()">清除</button>
+        <button class="btn-copy" onclick="copyResult()">複製結果</button>
+    </div>
+
+    <span class="output-label">轉換結果：</span>
+    <div id="output" class="output-area">...</div>
+</div>
+
+<footer>
+  <a href="https://w1798.github.io/web/" target="_blank">&copy; 2026<script>const y=new Date().getFullYear(); if(y>2026)document.write("-"+y);</script> Charles Nextime</a> · 
+  <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">GPLv3</a>
+  <span id="busuanzi_container_page_pv">
+    本頁使用量 <span id="busuanzi_value_page_pv"></span> 次
+</span>
+</footer>
+
+<script>
+/**
+ * Charles Nextime Web Tools Portal - Core Logic
+ * Copyright (c) 2026 Charles Nextime
+ * Licensed under the GNU General Public License v3.0
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation.
+ */
+ 
+    const inputEl = document.getElementById('inputNames');
+    const outputEl = document.getElementById('output');
+
+    inputEl.addEventListener('input', transformNames);
+
+    function transformNames() {
+        const text = inputEl.value.trim();
+        if (!text) {
+            outputEl.innerText = "...";
+            return;
+        }
+        const lines = text.split(/\r?\n/).filter(line => line.trim() !== "");
+        const formattedList = lines.map(name => {
+            const cleanName = name.replace(/\s+/g, '');
+            if (cleanName.length === 2) return `${cleanName[0]},${cleanName[1]}`;
+            if (cleanName.length === 3) return `${cleanName[0]},${cleanName[1]},${cleanName[2]}`;
+            if (cleanName.length >= 4) return `${cleanName.substring(0,2)},${cleanName[2]},${cleanName[3]}`;
+            return cleanName; 
+        });
+        outputEl.innerText = formattedList.join(';');
+    }
+
+    async function pasteText() {
+        try {
+            inputEl.value = await navigator.clipboard.readText();
+            transformNames();
+        } catch (err) { alert('請手動貼上'); }
+    }
+
+    function clearAll() {
+        inputEl.value = '';
+        outputEl.innerText = '...';
+    }
+
+    function copyResult() {
+        const result = outputEl.innerText;
+        if (result === "...") return;
+        navigator.clipboard.writeText(result).then(() => alert('已複製！'));
+    }
+</script>
+
+
+
+<style>
+#busuanzi_container_page_pv {
+    color: #888;
+    font-size: 0.9rem;
+    margin-left: 15px;
+    border-left: 1px solid rgba(128, 128, 128, 0.5); /* 計數器加一條細細的分隔線 */
+    padding-left: 15px;
+}
+
+#busuanzi_value_page_pv {
+    color: #00b894;
+    font-weight: bold;
+}
+</style>
+
+
+<script>
+(function() {
+    // return; // 取消此行可停止計數，直接在這裡回傳，後面的代碼完全不執行
+    
+    // 計數器這樣無論是 /web/ 還是 /web 都會統一變成 /web 
+    const path = window.location.pathname.replace(/\/$/, ""); 
+    const TIME_KEY = `VERCOUNT_TIME_${path}`; // 每個分頁獨立計算冷卻時間
+    const VAL_KEY = `VERCOUNT_VAL_${path}`;   // 每個分頁獨立存儲 PV 數
+    
+    const COOL_DOWN = 30 * 60 * 1000; 
+    const now = Date.now();
+    const lastVisit = localStorage.getItem(TIME_KEY);
+    
+    // 計算剩餘秒數
+    const timeLeft = lastVisit ? Math.ceil((parseInt(lastVisit) + COOL_DOWN - now) / 1000) : 0;
+
+    if (timeLeft <= 0) {
+        console.log(`%c[Vercount]%c 路徑 ${path} 冷卻結束，更新數據...`, "color:#00b894;font-weight:bold", "color:inherit");
+        
+        const script = document.createElement('script');
+        script.src = "https://events.vercount.one/js";
+        script.defer = true;
+        
+        script.onload = () => {
+            setTimeout(() => {
+                const pvVal = document.getElementById('busuanzi_value_page_pv')?.innerText;
+                if (pvVal) {
+                    localStorage.setItem(VAL_KEY, pvVal);
+                    localStorage.setItem(TIME_KEY, now); // 成功抓到才更新時間
+                }
+            }, 1500);
+        };
+        document.head.appendChild(script);
+    } else {
+        const lastVal = localStorage.getItem(VAL_KEY) || "--";
+        console.log(`%c[Vercount]%c ${path} 冷卻中（剩 ${timeLeft} 秒）。顯示舊值：${lastVal}`, "color:#f1c40f;font-weight:bold", "color:inherit");
+
+        window.addEventListener('load', () => {
+            const pvSpan = document.getElementById('busuanzi_value_page_pv');
+            if (pvSpan) pvSpan.innerText = lastVal;
+        });
+    }
+})();
+</script>
+
+
+</body>
+</html>
