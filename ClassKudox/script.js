@@ -460,9 +460,35 @@ document.addEventListener('DOMContentLoaded', () => {
             card.onclick = () => isMultiSelectMode ? toggleStudentSelection(s.id) : openAwardModal([s.id], s.id, null);
             let total = (s.cP || 0) + (s.iP || 0);
             const ptClass = 'student-points' + (total > 0 ? ' positive-total' : (total < 0 ? ' negative-total' : ''));
-            card.innerHTML = `${isMultiSelectMode ? `<div class="selection-check">${selectedStudentIds.has(s.id) ? '✓' : ''}</div>` : ''}<div class="student-avatar-wrapper"><img src="${getAvatarUrl(s.aU||s.id, s.aS)}" class="student-avatar"><div class="${ptClass}">${total}</div></div><div class="student-name">${s.id}</div>`;
+            card.innerHTML = `${isMultiSelectMode ? `<div class="selection-check">${selectedStudentIds.has(s.id) ? '\u2713' : ''}</div>` : ''}<div class="student-avatar-wrapper"><img src="${getAvatarUrl(s.aU||s.id, s.aS)}" class="student-avatar"><div class="${ptClass}">${total}</div></div><div class="student-name">${s.id}</div>`;
             grid.appendChild(card);
         });
+        // Feature 4: On mobile, also render group cards inline
+        if (window.innerWidth <= 600) {
+            groups.forEach(g => {
+                const card = document.createElement('div'); card.className = 'student-card group-card';
+                let total = g.sIds.reduce((sum, sid) => { const s = students.find(x=>x.id===sid); return sum + (s ? ((s.cP||0) + (s.iP||0)) : 0); }, 0);
+                const ptClass = 'student-points' + (total > 0 ? ' positive-total' : (total < 0 ? ' negative-total' : ''));
+                const allSel = isMultiSelectMode && g.sIds.length > 0 && g.sIds.every(id => selectedStudentIds.has(id));
+                if (allSel) card.classList.add('selected');
+                card.innerHTML = `<div class="group-icon">\ud83d\udc65</div><div class="student-name">${g.id}</div><div class="group-member-count">${g.sIds.length} \u4f4d</div><div class="${ptClass}">${total > 0 ? '+' : ''}${total}</div>`;
+                card.onclick = () => {
+                    if (isMultiSelectMode) {
+                        const allSelected = g.sIds.length > 0 && g.sIds.every(id => selectedStudentIds.has(id));
+                        g.sIds.forEach(id => allSelected ? selectedStudentIds.delete(id) : selectedStudentIds.add(id));
+                        const countEl = document.getElementById('multiSelectCount'); 
+                        if (countEl) countEl.textContent = `\u5df2\u9078\u64c7 ${selectedStudentIds.size} \u4f4d\u5b78\u751f`;
+                        renderStudents();
+                    } else {
+                        g.sIds.length ? openAwardModal(g.sIds, g.id, g.id) : alert('\u7fa4\u7d44\u5167\u6c92\u6709\u5b78\u751f');
+                    }
+                };
+                grid.appendChild(card);
+            });
+            const create = document.createElement('div'); create.className = 'student-card create-group-card'; create.onclick = () => openManageGroupModal();
+            create.innerHTML = `<div class="student-avatar" style="background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:2rem;color:#94a3b8">+</div><div class="student-name">\u65b0\u589e\u7fa4\u7d44</div>`;
+            grid.appendChild(create);
+        }
     };
 
     const renderGroups = () => {
@@ -471,13 +497,27 @@ document.addEventListener('DOMContentLoaded', () => {
             const card = document.createElement('div'); card.className = 'student-card group-card';
             let total = g.sIds.reduce((sum, sid) => { const s = students.find(x=>x.id===sid); return sum + (s ? ((s.cP||0) + (s.iP||0)) : 0); }, 0);
             const ptClass = 'student-points' + (total > 0 ? ' positive-total' : (total < 0 ? ' negative-total' : ''));
-            card.innerHTML = `<button class="edit-group-inline-btn">⚙️</button><div class="group-icon">👥</div><div class="student-name">${g.id}</div><div class="group-member-count">${g.sIds.length} 位成員</div><div class="${ptClass}">${total > 0 ? '+' : ''}${total}</div>`;
+            // Feature 5: Visual selection state for groups in multi-select
+            const allSel = isMultiSelectMode && g.sIds.length > 0 && g.sIds.every(id => selectedStudentIds.has(id));
+            if (allSel) card.classList.add('selected');
+            card.innerHTML = `<button class="edit-group-inline-btn">\u2699\ufe0f</button><div class="group-icon">\ud83d\udc65</div><div class="student-name">${g.id}</div><div class="group-member-count">${g.sIds.length} \u4f4d\u6210\u54e1</div><div class="${ptClass}">${total > 0 ? '+' : ''}${total}</div>`;
             card.querySelector('.edit-group-inline-btn').onclick = (e) => { e.stopPropagation(); openManageGroupModal(g.id); };
-            card.onclick = () => g.sIds.length ? openAwardModal(g.sIds, g.id, g.id) : alert('群組內沒有學生');
+            // Feature 5: Multi-select toggles all group members
+            card.onclick = () => {
+                if (isMultiSelectMode) {
+                    const allSelected = g.sIds.length > 0 && g.sIds.every(id => selectedStudentIds.has(id));
+                    g.sIds.forEach(id => allSelected ? selectedStudentIds.delete(id) : selectedStudentIds.add(id));
+                    const countEl = document.getElementById('multiSelectCount');
+                    if (countEl) countEl.textContent = `\u5df2\u9078\u64c7 ${selectedStudentIds.size} \u4f4d\u5b78\u751f`;
+                    renderStudents(); renderGroups();
+                } else {
+                    g.sIds.length ? openAwardModal(g.sIds, g.id, g.id) : alert('\u7fa4\u7d44\u5167\u6c92\u6709\u5b78\u751f');
+                }
+            };
             grid.appendChild(card);
         });
         const create = document.createElement('div'); create.className = 'student-card create-group-card'; create.onclick = () => openManageGroupModal();
-        create.innerHTML = `<div class="student-avatar" style="background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:2rem;color:#94a3b8">+</div><div class="student-name">新增群組</div>`;
+        create.innerHTML = `<div class="student-avatar" style="background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:2rem;color:#94a3b8">+</div><div class="student-name">\u65b0\u589e\u7fa4\u7d44</div>`;
         grid.appendChild(create);
     };
 
@@ -889,12 +929,7 @@ document.addEventListener('DOMContentLoaded', () => {
         data.forEach((s, idx) => {
             const box = document.createElement('div');
             box.className = 'summary-box';
-            box.onclick = () => {
-                // 不再關閉總覽視窗，讓個人資料視窗（z-index 較高）直接蓋在上面
-                // 關閉個人資料視窗後就會回到總覽視窗
-                openAwardModal([s.id], s.id, null);
-                setTimeout(() => switchProfileTab('history'), 50);
-            };
+            box.onclick = () => openStudentSummaryDetail(s.id);
             
             const isNeg = s.pts < 0;
             const ptsText = s.pts > 0 ? `+${s.pts}` : s.pts;
@@ -907,6 +942,45 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         openModal(document.getElementById('classSummaryModal'));
+    };
+
+    // Feature 2: Aggregated student summary detail within time range
+    const openStudentSummaryDetail = (id) => {
+        const range = getReportsTimeRange();
+        const studentLogs = logs.filter(l => {
+            if (l.sID !== id) return false;
+            if (l.iSum === 1) return false;
+            const ts = typeof l.TS === 'number' ? l.TS : StampTool.decode(l.TS).getTime();
+            if (range && (ts < range.start || ts > range.end)) return false;
+            return true;
+        });
+        const agg = {};
+        studentLogs.forEach(l => { agg[l.lb] = (agg[l.lb] || 0) + l.pt; });
+        
+        const grid = document.getElementById('summaryDetailGrid');
+        const titleEl = document.getElementById('summaryDetailStudentName');
+        const totalEl = document.getElementById('summaryDetailTotal');
+        if (!grid || !titleEl || !totalEl) return;
+        
+        titleEl.textContent = id + ' \u7684\u9ede\u6578\u6458\u8981';
+        
+        const total = Object.values(agg).reduce((s, v) => s + v, 0);
+        totalEl.textContent = total > 0 ? `\u7e3d\u8a08\uff1a+${total}` : `\u7e3d\u8a08\uff1a${total}`;
+        totalEl.style.color = total > 0 ? 'var(--positive-color)' : (total < 0 ? 'var(--negative-color)' : 'var(--text-secondary)');
+        
+        grid.innerHTML = '';
+        const entries = Object.entries(agg).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
+        if (!entries.length) {
+            grid.innerHTML = `<p style="grid-column:1/-1; text-align:center; color:var(--text-secondary); padding:1rem;">\u6b64\u6642\u9593\u7bc4\u570d\u5167\u7121\u9ede\u6578\u8a18\u9304</p>`;
+        } else {
+            entries.forEach(([lb, pts]) => {
+                const card = document.createElement('div');
+                card.className = `summary-detail-card ${pts > 0 ? 'positive' : 'negative'}`;
+                card.innerHTML = `<div class="detail-label">${lb}</div><div class="detail-pts">${pts > 0 ? '+' : ''}${pts}</div>`;
+                grid.appendChild(card);
+            });
+        }
+        openModal(document.getElementById('classSummaryStudentDetailModal'));
     };
 
     // Removed migrateToNameIds()

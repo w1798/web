@@ -13,9 +13,7 @@
 <body data-font-size="medium">
 
     <!-- App Container -->
-    <div class="app-container">
-        
-        <!-- Header -->
+    <div class="app-container">        <!-- Header -->
         <header class="app-header">
             <div class="header-left">
                 <h1>班級榮譽星</h1>
@@ -23,6 +21,8 @@
             </div>
             
             <div class="header-actions">
+                <button class="view-tab-btn active header-tab" data-view="students">🧑‍🎓 學生</button>
+                <button class="view-tab-btn header-tab" data-view="groups">👥 群組</button>
                 <select id="classSelect" class="filter-select" style="max-width: 200px; font-weight: 600;"></select>
                 <button id="manageClassesBtn" class="btn icon-btn" title="班級管理">🏫</button>
                 <button id="toggleMultiSelectBtn" class="btn secondary-btn">☑️ 多選模式</button>
@@ -32,11 +32,8 @@
             </div>
         </header>
 
-        <!-- View Tabs (Students / Groups) + Inline Undo -->
-        <div class="view-tabs">
-            <button class="view-tab-btn active" data-view="students">🧑‍🎓 學生</button>
-            <button class="view-tab-btn" data-view="groups">👥 群組</button>
-            <!-- Undo notice sits right in the tab row, always visible after an award -->
+        <!-- Undo Toast Strip -->
+        <div class="undo-strip">
             <div id="undoToast" class="undo-inline hidden">
                 <span id="undoMessage">已給予點數</span>
                 <button id="undoActionBtn" class="btn warning-btn">↩️ 復原</button>
@@ -233,8 +230,8 @@
                             <button class="sort-btn" data-sort="name">📝 姓名</button>
                         </div>
                     </div>
-                    <h3 style="margin-bottom: 0.5rem; font-size: 1em; border-bottom: 2px solid var(--border-color); padding-bottom: 0.4rem; display: flex; justify-content: space-between; align-items: center;">
-                        <span id="rankingTitle" class="clickable-title">排名</span>
+                    <h3 class="report-panel-header">
+                        <span id="rankingTitle" class="clickable-title">排名總表</span>
                         <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
                             <button id="copyPointsBtn" class="small-btn primary-btn" style="font-size: 0.75em; padding: 0.15rem 0.4rem;">📋 複製</button>
                             <button id="resetReportFilterBtn" class="small-btn secondary-btn hidden" style="font-size: 0.75em; padding: 0.15rem 0.4rem;">全班</button>
@@ -661,8 +658,21 @@
         </div>
     </div>
 
+    <!-- STUDENT SUMMARY DETAIL MODAL -->
+    <div id="classSummaryStudentDetailModal" class="modal-overlay hidden" style="z-index: 2200;">
+        <div class="modal-content" style="max-width: 640px;">
+            <div class="modal-header">
+                <h2 id="summaryDetailStudentName">學生名稱</h2>
+                <button class="close-modal-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="summaryDetailTotal" style="text-align:center; font-size:1.4rem; font-weight:800; margin-bottom:1rem; color:var(--primary-color);"></div>
+                <div id="summaryDetailGrid" class="summary-detail-grid"></div>
+            </div>
+        </div>
+    </div>
 
-    <footer>
+
       <a href="https://w1798.github.io/web/" target="_blank">&copy; 2026<script>const y=new Date().getFullYear(); if(y>2026)document.write("-"+y);</script> Charles Nextime</a> · 
       <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">GPLv3</a>
       <span id="busuanzi_container_page_pv">
