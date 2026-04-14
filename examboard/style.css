@@ -69,22 +69,22 @@ body[data-card-font-size="small"] .actual-num { font-size: 1.8rem; }
 body[data-card-font-size="small"] .card-subject-select { font-size: 1.6rem; padding: 4px; }
 
 body[data-card-font-size="large"] .card { font-size: 1.3em; padding: 20px 24px; }
-body[data-card-font-size="large"] .time-range-input { font-size: 2rem; width: 220px; padding: 12px; }
+body[data-card-font-size="large"] .time-range-input { font-size: 1.9rem; width: 220px; padding: 12px; }
 body[data-card-font-size="large"] .card-row-2 { font-size: 1.8rem; }
 body[data-card-font-size="large"] .actual-num { font-size: 2.6rem; }
 body[data-card-font-size="large"] .card-subject-select { font-size: 2.4rem; padding: 12px; }
 
-body[data-card-font-size="xlarge"] .card { font-size: 1.5em; padding: 24px 28px; }
-body[data-card-font-size="xlarge"] .time-range-input { font-size: 2.4rem; width: 260px; padding: 14px; }
-body[data-card-font-size="xlarge"] .card-row-2 { font-size: 2.2rem; }
-body[data-card-font-size="xlarge"] .actual-num { font-size: 3.2rem; }
-body[data-card-font-size="xlarge"] .card-subject-select { font-size: 3rem; padding: 16px; }
+body[data-card-font-size="xlarge"] .card { font-size: 1.4em; padding: 22px 26px; }
+body[data-card-font-size="xlarge"] .time-range-input { font-size: 2rem; width: 225px; padding: 13px; }
+body[data-card-font-size="xlarge"] .card-row-2 { font-size: 2rem; }
+body[data-card-font-size="xlarge"] .actual-num { font-size: 3rem; }
+body[data-card-font-size="xlarge"] .card-subject-select { font-size: 2.6rem; padding: 14px; }
 
 /* Font size modifier classes for time displaying */
 body[data-time-font-size="small"] .time-display { font-size: 9rem; }
 body[data-time-font-size="medium"] .time-display { font-size: 9.5rem; }
-body[data-time-font-size="large"] .time-display { font-size: 10rem; }
-body[data-time-font-size="xlarge"] .time-display { font-size: 10.5rem; }
+body[data-time-font-size="large"] .time-display { font-size: 10.4rem; }
+body[data-time-font-size="xlarge"] .time-display { font-size: 11rem; }
 
 /* 音訊控制 */
 .audio-controls { display: flex; align-items: center; gap: 8px; }
