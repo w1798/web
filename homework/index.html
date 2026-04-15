@@ -21,7 +21,7 @@
                     <button onclick="cloudSync('DOWNLOAD')">從雲端下載</button>
                 </div>
             </div>
-            <input type="file" id="fileInput" style="display:none" onchange="importJSON(event)">
+            <input type="file" id="fileInput" style="display:none" accept=".json,.gz" onchange="importJSON(event)">
             
             
             <div class="dropdown">
@@ -402,6 +402,6 @@
 </script>
 
 
-    <script src="script.js?ver=1.03d"></script>
+    <script src="script.js?ver=1.03e"></script>
 </body>
 </html>

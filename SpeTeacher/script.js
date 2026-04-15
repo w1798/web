@@ -79,6 +79,28 @@ let myChart = null;
 
 const STORAGE_KEY = 'attention_app_data';
 
+// --- Gzip 壓縮/解壓工具 ---
+const compressJSON = async (obj) => {
+    const str = JSON.stringify(obj);
+    const stream = new Blob([str]).stream().pipeThrough(new CompressionStream('gzip'));
+    const buf = await new Response(stream).arrayBuffer();
+    return btoa(String.fromCharCode(...new Uint8Array(buf)));
+};
+
+const decompressJSON = async (base64) => {
+    const bin = atob(base64);
+    const buf = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+    const stream = new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'));
+    return await new Response(stream).json();
+};
+
+const decompressBinary = async (arrayBuffer) => {
+    const stream = new Blob([arrayBuffer]).stream().pipeThrough(new DecompressionStream('gzip'));
+    const text = await new Response(stream).text();
+    return JSON.parse(text);
+};
+
 // --- 初始化 (安全掛載) ---
 window.onload = function() {
     // 1. 資料載入與合併 (向後相容的核心)
@@ -665,28 +687,60 @@ window.exportExcel = function() {
 };
 
 // 基礎功能：上傳、下載、匯入、匯出
-function fileExport() {
-    const data = JSON.stringify({ state, local: localStorage.getItem('custom_dimensions') });
-    const blob = new Blob([data], { type: 'application/json' });
+async function fileExport() {
+    const dataObj = { state, local: localStorage.getItem('custom_dimensions') };
+    const compressed = await compressJSON(dataObj);
+    const raw = atob(compressed);
+    const bytes = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+    const blob = new Blob([bytes], { type: 'application/gzip' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `backup_${new Date().getTime()}.json`;
+    a.download = `SpeTeacher_backup_${new Date().getTime()}.gz`;
     a.click();
 }
 
 function fileImport() {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.json';
+    input.accept = '.json,.gz';
     input.onchange = e => {
-        const reader = new FileReader();
-        reader.onload = event => {
-            const imported = JSON.parse(event.target.result);
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const isGz = file.name.endsWith('.gz');
+        
+        const applyImport = (imported) => {
             if(imported.local) localStorage.setItem('custom_dimensions', imported.local);
+            // state 的還原在重整後 bootSequence 會做，若想立即生效可在此 localStorage.setItem(STORAGE_KEY...)
+            if(imported.state) localStorage.setItem(STORAGE_KEY, JSON.stringify(imported.state));
             alert("匯入成功，即將刷新");
             location.reload();
         };
-        reader.readAsText(e.target.files[0]);
+
+        if (isGz) {
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                try {
+                    const imported = await decompressBinary(event.target.result);
+                    applyImport(imported);
+                } catch(err) {
+                    alert('匯入失敗：無法解壓縮 .gz 檔案，請確認格式正確');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        } else {
+            const reader = new FileReader();
+            reader.onload = event => {
+                try {
+                    const imported = JSON.parse(event.target.result);
+                    applyImport(imported);
+                } catch(err) {
+                    alert('匯入失敗，請檢查 JSON 檔案格式');
+                }
+            };
+            reader.readAsText(file);
+        }
     };
     input.click();
 }
@@ -705,15 +759,16 @@ window.cloudUpload = async function() {
 
     if (isUpstash) {
         // Upstash Redis REST 格式：/set/key/value
-        // 注意：這裡假設你把資料存在一個固定的 key 叫 "speteacher_data"
         url = `${cloud.binId}/set/speteacher_data`; 
-        options.body = JSON.stringify(state);
+        const compressed = await compressJSON(state);
+        options.body = JSON.stringify(compressed);
+        options.headers['Content-Type'] = 'application/json';
     } else {
-        // JSONBin v3 格式：確保 URL 是正確的 API 路徑
-        // 確保你的 cloud.binId 包含了 https://api.jsonbin.io/v3/b/ 
+        // JSONBin v3 格式
         options.method = 'PUT';
         options.headers = { 'Content-Type': 'application/json', 'X-Access-Key': cloud.apiKey };
-        options.body = JSON.stringify(state);
+        const compressed = await compressJSON(state);
+        options.body = JSON.stringify({ d: compressed });
     }
 
     try {
@@ -756,7 +811,18 @@ window.cloudDownload = async function() {
         const result = await res.json();
         
         // 3. 解析資料 (JSONBin 的資料在 record 欄位中)
-        const remoteData = isUpstash ? result.result : result.record;
+        const raw = isUpstash ? result.result : result.record;
+        
+        let remoteData = null;
+        if (raw) {
+            if (typeof raw === 'string') {
+                try { remoteData = await decompressJSON(raw); } catch(e) { remoteData = JSON.parse(raw); }
+            } else if (raw.d && typeof raw.d === 'string') {
+                try { remoteData = await decompressJSON(raw.d); } catch(e) { remoteData = raw; }
+            } else {
+                remoteData = raw;
+            }
+        }
         
         if (remoteData) {
             // 合併資料到 state
@@ -767,7 +833,7 @@ window.cloudDownload = async function() {
             alert("資料下載成功，頁面將自動重新整理。");
             location.reload();
         } else {
-            alert("無法解析雲端資料格式");
+            alert("無法解析雲端資料格式或內容為空");
         }
     } catch(e) { 
         alert("下載錯誤: " + e.message); 

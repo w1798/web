@@ -16,6 +16,28 @@ const DEFAULT_VALS = {
     bopoMap: "國:ㄍㄨㄛˊ\n習:ㄒㄧˊ\n生:ㄕㄥ\n字:ㄗˋ\n圈:ㄑㄩㄢ\n詞:ㄘˊ\n數:ㄕㄨˋ\n作:ㄗㄨㄛˋ\n文:ㄨㄣˊ\n卷:ㄐㄩㄢˋ\n閱:ㄩㄝˋ\n心:ㄒㄧㄣ\n假:ㄐㄧㄚˋ\n日:ㄖˋ\n評:ㄆㄧㄥˊ\n量:ㄌㄧㄤˊ\n親:ㄑㄧㄣ\n職:ㄓˊ\n教:ㄐㄧㄠˋ\n育:ㄩˋ\n校:ㄒㄧㄠˋ\n外:ㄨㄞˋ\n學:ㄒㄩㄝˊ\n運:ㄩㄣˋ\n動:ㄉㄨㄥˋ\n會:ㄏㄨㄟˋ\n學:ㄒㄩㄝˊ\n習:ㄒㄧˊ\n單:ㄉㄢ\n通:ㄊㄨㄥ\n知:ㄓ\n頁:ㄧㄝˋ\n一:ㄧ\n兩:ㄌㄧㄤˇ\n張:ㄓㄤ\n訂:ㄉㄧㄥˋ\n簽:ㄑㄧㄢ\n正:ㄓㄥˋ\n名:ㄇㄧㄥˊ\n交:ㄐㄧㄠ\n發:ㄈㄚ\n收:ㄕㄡ" 
 };
 
+// --- Gzip 壓縮/解壓工具 ---
+const compressJSON = async (obj) => {
+    const str = JSON.stringify(obj);
+    const stream = new Blob([str]).stream().pipeThrough(new CompressionStream('gzip'));
+    const buf = await new Response(stream).arrayBuffer();
+    return btoa(String.fromCharCode(...new Uint8Array(buf)));
+};
+
+const decompressJSON = async (base64) => {
+    const bin = atob(base64);
+    const buf = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+    const stream = new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'));
+    return await new Response(stream).json();
+};
+
+const decompressBinary = async (arrayBuffer) => {
+    const stream = new Blob([arrayBuffer]).stream().pipeThrough(new DecompressionStream('gzip'));
+    const text = await new Response(stream).text();
+    return JSON.parse(text);
+};
+
 
 let appData = {
     theme: 'theme-ocean', cols: 5, mainShowCount: 7, editCols: 7, editShowCount: 28,
@@ -1150,18 +1172,19 @@ async function cloudSync(method = 'UPLOAD') {
         if (method === 'UPLOAD') {
             if (!confirm("確定要將【本地資料】上傳至雲端嗎？\n注意：這會覆蓋雲端的資料。")) return;
             
-            // 複製一份資料進行清理，不要影響到目前的 appData
             const uploadData = JSON.parse(JSON.stringify(appData));
             delete uploadData.binId;
             delete uploadData.apiKey;
+            
+            const compressed = await compressJSON(uploadData);
 
             let response;
             if (isUpstash) {
                 // Upstash: 資料必須轉成字串存入
                 response = await fetch(`${binId}/set/${storageKey}`, {
                     method: 'POST',
-                    headers: { 'Authorization': `Bearer ${apiKey}` },
-                    body: JSON.stringify(uploadData)
+                    headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(compressed)
                 });
             } else {
                 // JSONBin
@@ -1171,7 +1194,7 @@ async function cloudSync(method = 'UPLOAD') {
                         'Content-Type': 'application/json',
                         'X-Access-Key': apiKey
                     },
-                    body: JSON.stringify(uploadData)
+                    body: JSON.stringify({ d: compressed })
                 });
             }
 
@@ -1192,9 +1215,14 @@ async function cloudSync(method = 'UPLOAD') {
                 // 關鍵：Upstash 取回後需解析 result 欄位
                 if (res && res.result) {
                     try {
-                        fetchedData = JSON.parse(res.result);
+                        const raw = res.result;
+                        if (typeof raw === 'string' && raw.includes('{') === false && raw.includes('[') === false) {
+                            fetchedData = await decompressJSON(raw);
+                        } else {
+                            fetchedData = JSON.parse(raw);
+                        }
                     } catch (e) {
-                        console.error("解析雲端 JSON 失敗", e);
+                         try { fetchedData = JSON.parse(res.result); } catch(err) { console.error("解析雲端 JSON 失敗", e); }
                     }
                 }
             } else {
@@ -1202,7 +1230,10 @@ async function cloudSync(method = 'UPLOAD') {
                     headers: { 'X-Access-Key': apiKey }
                 });
                 const res = await response.json();
-                fetchedData = res.record;
+                const raw = res.record;
+                if (raw && typeof raw.d === 'string') {
+                    try { fetchedData = await decompressJSON(raw.d); } catch(e) { fetchedData = raw; }
+                } else { fetchedData = raw; }
             }
 
             if (fetchedData && typeof fetchedData === 'object') {
@@ -1256,19 +1287,39 @@ function resetApp() {
     }
 }
 
-function exportJSON() {
-    const blob = new Blob([JSON.stringify(appData, null, 2)], {type: 'application/json'});
+async function exportJSON() {
+    const compressed = await compressJSON(appData);
+    const raw = atob(compressed);
+    const bytes = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+    const blob = new Blob([bytes], {type: 'application/gzip'});
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-    a.download = `homework_${new Date().toISOString().split('T')[0]}.json`; a.click();
+    a.download = `homework_${new Date().toISOString().split('T')[0]}.gz`; a.click();
 }
 function importJSON(e) {
     const file = e.target.files[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(evt) {
-        try { appData = JSON.parse(evt.target.result); localStorage.setItem('homework_v1', JSON.stringify(appData)); renderMain(); alert("匯入成功"); }
-        catch(err) { alert("格式錯誤"); }
-    };
-    reader.readAsText(file);
+    const isGz = file.name.endsWith('.gz');
+
+    if (isGz) {
+        const reader = new FileReader();
+        reader.onload = async function(evt) {
+            try { 
+                appData = await decompressBinary(evt.target.result); 
+                localStorage.setItem('homework_v1', JSON.stringify(appData)); 
+                renderMain(); 
+                alert("匯入成功"); 
+            }
+            catch(err) { alert("解壓縮或格式錯誤"); }
+        };
+        reader.readAsArrayBuffer(file);
+    } else {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            try { appData = JSON.parse(evt.target.result); localStorage.setItem('homework_v1', JSON.stringify(appData)); renderMain(); alert("匯入成功"); }
+            catch(err) { alert("格式錯誤"); }
+        };
+        reader.readAsText(file);
+    }
 }
 
 // 專門重置 Bin ID 或 API Key 的畫面欄位

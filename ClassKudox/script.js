@@ -73,6 +73,14 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch(e) { console.error('解壓失敗', e); return null; }
     };
 
+    const decompressBinary = async (arrayBuffer) => {
+        try {
+            const stream = new Blob([arrayBuffer]).stream().pipeThrough(new DecompressionStream('gzip'));
+            const resp = new Response(stream);
+            return await resp.json();
+        } catch(e) { console.error('解壓縮二進位失敗', e); return null; }
+    };
+
     /**
      * Ops Action Codes:
      * 1: LOG_CREATE (加點日誌)
@@ -1432,9 +1440,46 @@ document.addEventListener('DOMContentLoaded', () => {
         const sD = document.getElementById('startDateFilter'); if(sD) sD.onchange = window.renderReports;
         const eD = document.getElementById('endDateFilter'); if(eD) eD.onchange = window.renderReports;
 
-        wire('exportJsonBtn', () => { const b = getFullBackupData(true); const blo = new Blob([JSON.stringify(b, null, 2)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blo); a.download = 'ClassKudox.json'; a.click(); });
+        wire('exportJsonBtn', async () => { 
+            const b = getFullBackupData(true); 
+            const compressed = await compressJSON(b);
+            if (!compressed) return alert('匯出壓縮失敗');
+            const raw = atob(compressed);
+            const bytes = new Uint8Array(raw.length);
+            for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+            const blo = new Blob([bytes], {type:'application/gzip'}); 
+            const a = document.createElement('a'); 
+            a.href = URL.createObjectURL(blo); 
+            a.download = `ClassKudox_${new Date().toLocaleDateString().replace(/\//g,'')}.gz`; 
+            a.click(); 
+        });
         wire('importJsonBtn', () => document.getElementById('importJsonFile')?.click());
-        const iFile = document.getElementById('importJsonFile'); if(iFile) iFile.onchange = (e) => { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = (ev) => { try { restoreFromBackup(JSON.parse(ev.target.result)); } catch(err) { alert('失敗'); } }; r.readAsText(f); };
+        const iFile = document.getElementById('importJsonFile'); 
+        if(iFile) {
+            iFile.accept = ".json,.gz";
+            iFile.onchange = (e) => { 
+                const f = e.target.files[0]; 
+                if(!f) return; 
+                if (f.name.endsWith('.gz')) {
+                    const r = new FileReader(); 
+                    r.onload = async (ev) => { 
+                        try { 
+                            const parsed = await decompressBinary(ev.target.result);
+                            if(parsed) restoreFromBackup(parsed);
+                            else alert('解壓縮失敗');
+                        } catch(err) { alert('匯入失敗'); } 
+                    }; 
+                    r.readAsArrayBuffer(f);
+                } else {
+                    const r = new FileReader(); 
+                    r.onload = (ev) => { 
+                        try { restoreFromBackup(JSON.parse(ev.target.result)); } 
+                        catch(err) { alert('匯入失敗'); } 
+                    }; 
+                    r.readAsText(f); 
+                }
+            };
+        }
         
         wire('resetAllClassesPointsBtn', () => { 
             if(confirm('重置「所有班級」學生的點數與紀錄？此動作無法復原。')) { 

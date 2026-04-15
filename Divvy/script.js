@@ -64,6 +64,28 @@ let cloudSettings = appData.cloudSettings;
 let currentStock = '';
 let isEditMode = false;
 
+// --- Gzip 壓縮/解壓工具 ---
+const compressJSON = async (obj) => {
+    const str = JSON.stringify(obj);
+    const stream = new Blob([str]).stream().pipeThrough(new CompressionStream('gzip'));
+    const buf = await new Response(stream).arrayBuffer();
+    return btoa(String.fromCharCode(...new Uint8Array(buf)));
+};
+
+const decompressJSON = async (base64) => {
+    const bin = atob(base64);
+    const buf = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+    const stream = new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'));
+    return await new Response(stream).json();
+};
+
+const decompressBinary = async (arrayBuffer) => {
+    const stream = new Blob([arrayBuffer]).stream().pipeThrough(new DecompressionStream('gzip'));
+    const text = await new Response(stream).text();
+    return JSON.parse(text);
+};
+
 
 // ==================== 初始化 / 本地儲存 ====================
 function loadFromStorage() {
@@ -943,9 +965,24 @@ document.getElementById('loadBtn').addEventListener('click', (e) => {
                             if (response.ok) {
                                 const json = await response.json();
                                 if (json.result) {
-                                    data = JSON.parse(json.result);
+                                    try {
+                                        const raw = json.result;
+                                        if (typeof raw === 'string' && raw.includes('{') === false && raw.includes('[') === false) {
+                                            data = await decompressJSON(raw);
+                                        } else {
+                                            data = JSON.parse(raw);
+                                        }
+                                    } catch(e) {
+                                        data = JSON.parse(json.result);
+                                        console.error(e);
+                                    }
                                 }
                             }
+                        }
+                        
+                        // 若為 JSONBin，對 .d 屬性做解壓縮
+                        if (cloudSettings.url.match(/^[a-zA-Z0-9]+$/) && data && typeof data.d === 'string') {
+                            try { data = await decompressJSON(data.d); } catch(e) { /* ignore */ }
                         }
                         
                         if (response.ok && data) {
@@ -979,35 +1016,37 @@ document.getElementById('saveBtn').addEventListener('click', (e) => {
     
     if (!hasCloud) {
         // 沒有雲端設定：直接匯出
-        const toSave = {
-            stockData: stockData,
-            cloudSettings: cloudSettings
-        };
-        const dataStr = JSON.stringify(toSave, null, 2);
-        const blob = new Blob([dataStr], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `divvy-${new Date().toISOString().slice(0,10)}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
+        (async () => {
+            const toSave = { stockData: stockData, cloudSettings: cloudSettings };
+            const compressed = await compressJSON(toSave);
+            const raw = atob(compressed);
+            const bytes = new Uint8Array(raw.length);
+            for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+            const blob = new Blob([bytes], { type: 'application/gzip' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `divvy-${new Date().toISOString().slice(0,10)}.gz`;
+            a.click();
+            URL.revokeObjectURL(url);
+        })();
     } else {
         // 有雲端設定：顯示選單
         const items = [
             {
                 icon: '📥',
                 text: '匯出到本地',
-                action: () => {
-                    const toSave = {
-                        stockData: stockData,
-                        cloudSettings: cloudSettings
-                    };
-                    const dataStr = JSON.stringify(toSave, null, 2);
-                    const blob = new Blob([dataStr], { type: 'application/json' });
+                action: async () => {
+                    const toSave = { stockData: stockData, cloudSettings: cloudSettings };
+                    const compressed = await compressJSON(toSave);
+                    const raw = atob(compressed);
+                    const bytes = new Uint8Array(raw.length);
+                    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+                    const blob = new Blob([bytes], { type: 'application/gzip' });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `divvy-${new Date().toISOString().slice(0,10)}.json`;
+                    a.download = `divvy-${new Date().toISOString().slice(0,10)}.gz`;
                     a.click();
                     URL.revokeObjectURL(url);
                 }
@@ -1020,7 +1059,11 @@ document.getElementById('saveBtn').addEventListener('click', (e) => {
                         return;
                     }
                     
-                    const uploadData = JSON.stringify(stockData);
+                    const toUpload = {
+                        stockData: stockData,
+                        cloudSettings: cloudSettings
+                    };
+                    const compressed = await compressJSON(toUpload);
                     
                     try {
                         let response;
@@ -1033,7 +1076,7 @@ document.getElementById('saveBtn').addEventListener('click', (e) => {
                                     'Content-Type': 'application/json',
                                     'X-Access-Key': cloudSettings.token
                                 },
-                                body: JSON.stringify(stockData)
+                                body: JSON.stringify({ d: compressed })
                             });
                             
                             if (response.ok) {
@@ -1053,7 +1096,7 @@ document.getElementById('saveBtn').addEventListener('click', (e) => {
                                     'Authorization': `Bearer ${cloudSettings.token}`,
                                     'Content-Type': 'application/json'
                                 },
-                                body: uploadData
+                                body: JSON.stringify(compressed)
                             });
                             
                             const responseText = await response.text();
@@ -1079,30 +1122,40 @@ document.getElementById('saveBtn').addEventListener('click', (e) => {
 document.getElementById('importFile').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        try {
-            const imported = JSON.parse(event.target.result);
-            if (confirm('匯入將會覆蓋現有所有資料，確定嗎？')) {
-                // ✅ 統一交給守門員處理，管他是新格式舊格式，進去出來就是標準格式
-                appData = migrateData(imported);
-                stockData = appData.stockData;
-                cloudSettings = appData.cloudSettings;
-                
-                // 更新 UI 並存檔
-                if(document.getElementById('cloudUrl')) document.getElementById('cloudUrl').value = cloudSettings.url || '';
-                if(document.getElementById('cloudToken')) document.getElementById('cloudToken').value = cloudSettings.token || '';
-                
-                saveToStorage();
-                renderStockSelect();
-                alert('匯入成功！');
-            }
-        } catch (error) {
-            alert('匯入失敗：格式不正確');
+    const isGz = file.name.endsWith('.gz');
+
+    const handleImportedData = (imported) => {
+        if (confirm('匯入將會覆蓋現有所有資料，確定嗎？')) {
+            appData = migrateData(imported);
+            stockData = appData.stockData;
+            cloudSettings = appData.cloudSettings;
+            if(document.getElementById('cloudUrl')) document.getElementById('cloudUrl').value = cloudSettings.url || '';
+            if(document.getElementById('cloudToken')) document.getElementById('cloudToken').value = cloudSettings.token || '';
+            saveToStorage();
+            renderStockSelect();
+            alert('匯入成功！');
         }
     };
-    reader.readAsText(file);
+
+    if (isGz) {
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            try {
+                const imported = await decompressBinary(event.target.result);
+                handleImportedData(imported);
+            } catch (error) { alert('匯入失敗：格式不正確或無法解壓縮'); }
+        };
+        reader.readAsArrayBuffer(file);
+    } else {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const imported = JSON.parse(event.target.result);
+                handleImportedData(imported);
+            } catch (error) { alert('匯入失敗：格式不正確'); }
+        };
+        reader.readAsText(file);
+    }
     e.target.value = '';
 });
 

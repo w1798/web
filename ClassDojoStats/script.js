@@ -59,6 +59,22 @@ const DEFAULT_DATA = {
     students: []
 };
 
+// --- Gzip 壓縮/解壓工具 ---
+const compressJSON = async (obj) => {
+    const str = JSON.stringify(obj);
+    const stream = new Blob([str]).stream().pipeThrough(new CompressionStream('gzip'));
+    const buf = await new Response(stream).arrayBuffer();
+    return btoa(String.fromCharCode(...new Uint8Array(buf)));
+};
+
+const decompressJSON = async (base64) => {
+    const bin = atob(base64);
+    const buf = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+    const stream = new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'));
+    return await new Response(stream).json();
+};
+
 let appData = JSON.parse(JSON.stringify(DEFAULT_DATA));
 
 
@@ -227,29 +243,53 @@ function saveSettings() {
     toggleModal('settingsModal', false);
 }
 
-// 雲端同步邏輯 (自動判斷 Upstash 或 JSONBin)
 async function cloudAction(action) {
     const { binId, apiKey } = appData.cloudConfig;
     if (!binId || !apiKey) return alert("⚠️ 請先在『設定』填寫雲端資訊！");
+    
+    if (action === 'upload') {
+        if (!confirm("⚠️ 確定要將【本地資料】上傳至雲端嗎？\n注意：這會覆蓋雲端上的舊資料。")) return;
+    } else if (action === 'download') {
+        if (!confirm("⚠️ 確定要從雲端下載資料嗎？\n注意：這會覆蓋本地的所有學生與設定資料。")) return;
+    }
+    
     const isUpstash = binId.includes('upstash.io');
     
     try {
         if (action === 'upload') {
             const payload = { ...appData }; delete payload.cloudConfig;
+            const compressed = await compressJSON(payload);
+            
             if (isUpstash) {
-                await fetch(binId, { method: 'POST', headers: { 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify(["SET", "classdojo_backup", JSON.stringify(payload)]) });
+                await fetch(binId, { method: 'POST', headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }, body: JSON.stringify(["SET", "classdojo_backup", JSON.stringify(compressed)]) });
             } else {
-                await fetch(`https://api.jsonbin.io/v3/b/${binId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Access-Key': apiKey }, body: JSON.stringify(payload) });
+                await fetch(`https://api.jsonbin.io/v3/b/${binId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Access-Key': apiKey }, body: JSON.stringify({ d: compressed }) });
             }
             alert("✅ 上傳成功");
         } else {
             let data;
             if (isUpstash) {
                 const res = await fetch(`${binId}/get/classdojo_backup`, { headers: { 'Authorization': `Bearer ${apiKey}` } });
-                const json = await res.json(); data = JSON.parse(json.result);
+                const json = await res.json();
+                if (json && json.result) {
+                    try {
+                        const raw = json.result;
+                        if (typeof raw === 'string' && raw.includes('{') === false && raw.includes('[') === false) {
+                            data = await decompressJSON(raw);
+                        } else {
+                            data = JSON.parse(raw);
+                        }
+                    } catch(e) {
+                         data = JSON.parse(json.result);
+                    }
+                }
             } else {
                 const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, { headers: { 'X-Access-Key': apiKey } });
-                const json = await res.json(); data = json.record;
+                const json = await res.json(); 
+                const raw = json.record;
+                if (raw && typeof raw.d === 'string') {
+                    try { data = await decompressJSON(raw.d); } catch(e) { data = raw; }
+                } else { data = raw; }
             }
 
 

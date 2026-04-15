@@ -18,6 +18,28 @@ const DEFAULT_LABELS = {
 
 let state = getInitialState();
 
+// --- Gzip 壓縮/解壓工具 ---
+const compressJSON = async (obj) => {
+    const str = JSON.stringify(obj);
+    const stream = new Blob([str]).stream().pipeThrough(new CompressionStream('gzip'));
+    const buf = await new Response(stream).arrayBuffer();
+    return btoa(String.fromCharCode(...new Uint8Array(buf)));
+};
+
+const decompressJSON = async (base64) => {
+    const bin = atob(base64);
+    const buf = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+    const stream = new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'));
+    return await new Response(stream).json();
+};
+
+const decompressBinary = async (arrayBuffer) => {
+    const stream = new Blob([arrayBuffer]).stream().pipeThrough(new DecompressionStream('gzip'));
+    const text = await new Response(stream).text();
+    return JSON.parse(text);
+};
+
 
 /**
  * 取得初始的完整 State 範本
@@ -494,10 +516,16 @@ function copyTotalList() {
     navigator.clipboard.writeText(document.getElementById('totalListDynamicBody').innerText).then(() => alert("已複製！"));
 }
 
-function exportData() {
+async function exportData() {
+    const compressed = await compressJSON(state);
+    const raw = atob(compressed);
+    const bytes = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+    const blob = new Blob([bytes], { type: 'application/gzip' });
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([JSON.stringify(state)], {type: "application/json"}));
-    a.download = `Markit_Backup.json`; a.click();
+    a.href = URL.createObjectURL(blob);
+    a.download = `Markit_Backup_${new Date().getTime()}.gz`; 
+    a.click();
 }
 
 function addAssignment() {
@@ -570,23 +598,22 @@ async function cloudSync(method = 'UPLOAD') {
             delete uploadData.settings.binId;
             delete uploadData.settings.apiKey;
 
+            const compressed = await compressJSON(uploadData);
+
             let res;
             if (isUpstash) {
                 // Upstash (Redis SET)
                 res = await fetch(binId.startsWith('http') ? binId : `https://${binId}`, {
-                    method: 'POST', // Upstash REST API 通常使用 POST 或 PUT 送出指令
-                    headers: { 'Authorization': `Bearer ${apiKey}` },
-                    body: JSON.stringify(["SET", "markit_backup", JSON.stringify(uploadData)])
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(["SET", "markit_backup", compressed])
                 });
             } else {
                 // JSONBin.io (PUT)
                 res = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
                     method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Access-Key': apiKey
-                    },
-                    body: JSON.stringify(uploadData)
+                    headers: { 'Content-Type': 'application/json', 'X-Access-Key': apiKey },
+                    body: JSON.stringify({ d: compressed })
                 });
             }
 
@@ -604,14 +631,20 @@ async function cloudSync(method = 'UPLOAD') {
                     headers: { 'Authorization': `Bearer ${apiKey}` }
                 });
                 const json = await res.json();
-                downloadedData = JSON.parse(json.result); 
+                const raw = json.result;
+                if (typeof raw === 'string') {
+                    try { downloadedData = await decompressJSON(raw); } catch(e) { downloadedData = JSON.parse(raw); }
+                } else { downloadedData = raw; }
             } else {
                 // JSONBin.io (GET)
                 res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
                     headers: { 'X-Access-Key': apiKey }
                 });
                 const json = await res.json();
-                downloadedData = json.record;
+                const raw = json.record;
+                if (raw && typeof raw.d === 'string') {
+                    try { downloadedData = await decompressJSON(raw.d); } catch(e) { downloadedData = raw; }
+                } else { downloadedData = raw; }
             }
 
             if (downloadedData) {
@@ -656,14 +689,36 @@ function triggerImport() {
 
 
 function importData(e) {
-    const reader = new FileReader();
-    reader.onload = (ev) => { 
-        const imported = JSON.parse(ev.target.result);
-        state = mergeWithDefault(imported); // 自動補齊缺失欄位
+    const file = e.target.files[0];
+    if (!file) return;
+    const isGz = file.name.endsWith('.gz');
+
+    const applyImport = (imported) => {
+        state = mergeWithDefault(imported);
         saveData(); 
+        alert('匯入成功，即將刷新');
         location.reload(); 
     };
-    reader.readAsText(e.target.files[0]);
+
+    if (isGz) {
+        const reader = new FileReader();
+        reader.onload = async (ev) => {
+            try {
+                const imported = await decompressBinary(ev.target.result);
+                applyImport(imported);
+            } catch(err) { alert('匯入失敗：無法解壓縮 .gz 檔案，請確認格式正確'); }
+        };
+        reader.readAsArrayBuffer(file);
+    } else {
+        const reader = new FileReader();
+        reader.onload = (ev) => { 
+            try {
+                const imported = JSON.parse(ev.target.result);
+                applyImport(imported);
+            } catch(err) { alert('匯入失敗，請檢查 JSON 檔案格式'); }
+        };
+        reader.readAsText(file);
+    }
 }
 function resetSystem() { if(confirm("確定重置系統？")) { localStorage.removeItem('MarkIt'); location.reload(); } }
 

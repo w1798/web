@@ -66,7 +66,7 @@
                     <th style="width: 15%;">即時 PV (對比)</th>
                     <th style="width: 15%; text-align:right;">全站 PV (對比)</th>
                     <th style="width: 15%; text-align:right;">全站 UV (對比)</th>
-                    <th style="width: 20%; text-align:center;">14日趨勢</th>
+                    <th style="width: 20%; text-align:center;" id="trend-th">14日趨勢</th>
                 </tr>
             </thead>
             <tbody id="stats-body"></tbody>
@@ -107,6 +107,17 @@
                     <div><label>雲端緩衝 (分)</label><input type="number" id="set-cloud-cd" style="width:60px" class="form-control"></div>
                     <div><label>PV 抓取緩衝 (分)</label><input type="number" id="set-pv-cd" style="width:60px" class="form-control"></div>
                 </div>
+                <div style="margin-top:15px;">
+                    <label style="font-weight:600;">📅 保存日期 (趨勢顯示天數)</label>
+                    <select id="set-log-days" class="form-control" style="margin-top:6px;">
+                        <option value="3">3 天</option>
+                        <option value="7">7 天</option>
+                        <option value="14">14 天（預設）</option>
+                        <option value="21">21 天</option>
+                        <option value="30">30 天</option>
+                        <option value="60">60 天</option>
+                    </select>
+                </div>
             </div>
         </div>
         <div style="padding:15px 25px; border-top:1px solid #eee; text-align:right;">
@@ -116,7 +127,7 @@
     </div>
 </div>
 
-<input type="file" id="import-file" style="display:none;" accept=".json" onchange="handleFileImport(event)">
+<input type="file" id="import-file" style="display:none;" accept=".json,.gz" onchange="handleFileImport(event)">
 
 <script>
 /**
@@ -135,8 +146,31 @@
         urls: [],
         cloudCD: 60,
         pvCD: 60,
+        logDays: 14,         // 保存日期（趨勢天數），預設 14 天
         theme: 'light',      // 假設未來新增的參數
         autoRefresh: true    // 假設未來新增的參數
+    };
+
+    // --- Gzip 壓縮/解壓工具 ---
+    const compressJSON = async (obj) => {
+        const str = JSON.stringify(obj);
+        const stream = new Blob([str]).stream().pipeThrough(new CompressionStream('gzip'));
+        const buf = await new Response(stream).arrayBuffer();
+        return btoa(String.fromCharCode(...new Uint8Array(buf)));
+    };
+
+    const decompressJSON = async (base64) => {
+        const bin = atob(base64);
+        const buf = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+        const stream = new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'));
+        return await new Response(stream).json();
+    };
+
+    const decompressBinary = async (arrayBuffer) => {
+        const stream = new Blob([arrayBuffer]).stream().pipeThrough(new DecompressionStream('gzip'));
+        const text = await new Response(stream).text();
+        return JSON.parse(text);
     };
 
     const DEFAULT_DATA = {
@@ -225,14 +259,22 @@
                     headers: { 'Authorization': `Bearer ${apiKey}` }
                 });
                 const data = await res.json();
-                cloudRecord = data.result ? JSON.parse(data.result) : null;
+                if (data.result) {
+                    try { cloudRecord = await decompressJSON(data.result); }
+                    catch(e) { cloudRecord = JSON.parse(data.result); }
+                }
             } else {
                 const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
                     headers: { 'X-Access-Key': apiKey }
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    cloudRecord = data.record;
+                    const raw = data.record;
+                    if (raw && typeof raw.d === 'string') {
+                        try { cloudRecord = await decompressJSON(raw.d); } catch(e) { cloudRecord = raw; }
+                    } else {
+                        cloudRecord = raw;
+                    }
                 }
             }
 
@@ -286,7 +328,8 @@
                         logs[logs.length-1] = entry;
                     } else {
                         logs.push(entry);
-                        if (logs.length > 14) logs.shift();
+                        const maxDays = appData.settings.logDays || 14;
+                        if (logs.length > maxDays) logs.shift();
                     }
                 } catch (e) {}
             }
@@ -294,25 +337,25 @@
             localStorage.setItem(DATA_KEY, JSON.stringify(appData.stats));
             localStorage.setItem('LAST_SYNC_TIME', Date.now());
 
-            // 2. 推送到雲端
+            // 2. 推送到雲端（gzip 壓縮後上傳）
             if (binId && apiKey) {
                 const isUpstash = binId.includes('upstash.io');
                 const storageKey = 'vercount_v1';
                 const { binId: _, apiKey: __, ...safeSettings } = appData.settings;
-                const uploadBody = JSON.stringify({ settings: safeSettings, stats: appData.stats });
+                const compressed = await compressJSON({ settings: safeSettings, stats: appData.stats });
 
                 let res;
                 if (isUpstash) {
                     res = await fetch(`${binId}/set/${storageKey}`, {
                         method: 'POST',
-                        headers: { 'Authorization': `Bearer ${apiKey}` },
-                        body: uploadBody
+                        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify(compressed)
                     });
                 } else {
                     res = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json', 'X-Access-Key': apiKey },
-                        body: uploadBody
+                        body: JSON.stringify({ d: compressed })
                     });
                 }
                 if (res.ok) updateStatusUI('online');
@@ -328,6 +371,9 @@
     function renderUI() {
         const tbody = document.getElementById('stats-body');
         tbody.innerHTML = "";
+        // 更新趨勢欄標題為目前設定的天數
+        const trendTh = document.getElementById('trend-th');
+        if (trendTh) trendTh.textContent = `${appData.settings.logDays || 14}日趨勢`;
         if (!appData.settings.urls) return;
         appData.settings.urls.forEach((url, i) => {
             const logs = appData.stats[url] || [];
@@ -376,6 +422,7 @@
             document.getElementById('set-api-key').value = appData.settings.apiKey || '';
             document.getElementById('set-cloud-cd').value = appData.settings.cloudCD;
             document.getElementById('set-pv-cd').value = appData.settings.pvCD;
+            document.getElementById('set-log-days').value = String(appData.settings.logDays || 14);
             document.getElementById('settings-overlay').style.display = 'block';
         } else document.getElementById('settings-overlay').style.display = 'none';
     }
@@ -388,7 +435,8 @@
             binId: document.getElementById('set-bin-id').value.trim(),
             apiKey: document.getElementById('set-api-key').value.trim(),
             cloudCD: parseInt(document.getElementById('set-cloud-cd').value) || 0,
-            pvCD: parseInt(document.getElementById('set-pv-cd').value) || 0
+            pvCD: parseInt(document.getElementById('set-pv-cd').value) || 0,
+            logDays: parseInt(document.getElementById('set-log-days').value) || 14
         };
         
         if (s.urls.length > 0) localStorage.setItem(PENDING_KEY, 'true');
@@ -412,32 +460,59 @@
     }
 
     function resetField(id) { if(confirm("確定清空嗎？")) document.getElementById(id).value = ""; }
-    function exportData() {
-        const blob = new Blob([JSON.stringify({ settings: appData.settings, stats: appData.stats }, null, 2)], { type: 'application/json' });
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `Vercount_${new Date().toISOString().slice(0,10)}.json`; a.click();
+    async function exportData() {
+        const compressed = await compressJSON({ settings: appData.settings, stats: appData.stats });
+        // 將 base64 字串存成二進位 .gz 檔案
+        const raw = atob(compressed);
+        const bytes = new Uint8Array(raw.length);
+        for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+        const blob = new Blob([bytes], { type: 'application/gzip' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `Vercount_${new Date().toISOString().slice(0,10)}.gz`;
+        a.click();
     }
     function triggerImport() { document.getElementById('import-file').click(); }
 
 
     function handleFileImport(event) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const d = JSON.parse(e.target.result);
-                appData.stats = d.stats || {}; 
-                
-                // 使用 mergeDeep 確保匯入舊檔案時，缺少的欄位會用 DEFAULT 補齊
-                appData.settings = mergeDeep(DEFAULT_SETTINGS, d.settings || {});
-                
-                localStorage.setItem(DATA_KEY, JSON.stringify(appData.stats));
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(appData.settings));
-                localStorage.setItem(PENDING_KEY, 'true'); 
-                location.reload();
-            } catch(err) {
-                alert("匯入失敗，請檢查檔案格式");
-            }
+        const file = event.target.files[0];
+        if (!file) return;
+        const isGz = file.name.endsWith('.gz');
+
+        const applyImport = (d) => {
+            appData.stats = d.stats || {};
+            appData.settings = mergeDeep(DEFAULT_SETTINGS, d.settings || {});
+            localStorage.setItem(DATA_KEY, JSON.stringify(appData.stats));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appData.settings));
+            localStorage.setItem(PENDING_KEY, 'true');
+            location.reload();
         };
-        reader.readAsText(event.target.files[0]);
+
+        if (isGz) {
+            // 讀取二進位 Gzip，解壓後還原
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const d = await decompressBinary(e.target.result);
+                    applyImport(d);
+                } catch(err) {
+                    alert('匯入失敗：無法解壓縮 .gz 檔案，請確認格式正確');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        } else {
+            // 讀取純文字 JSON
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    applyImport(JSON.parse(e.target.result));
+                } catch(err) {
+                    alert('匯入失敗，請檢查 JSON 檔案格式');
+                }
+            };
+            reader.readAsText(file);
+        }
     }
 
     window.onload = init;
