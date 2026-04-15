@@ -469,7 +469,7 @@
         const blob = new Blob([bytes], { type: 'application/gzip' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `Vercount_${new Date().toISOString().slice(0,10)}.gz`;
+        a.download = `Vercount_${new Date().toISOString().slice(0,10)}.json.gz`;
         a.click();
     }
     function triggerImport() { document.getElementById('import-file').click(); }

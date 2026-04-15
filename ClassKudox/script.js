@@ -52,9 +52,9 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     })();
 
-    const compressJSON = async (obj) => {
+    const compressJSON = async (obj, formatted = false) => {
         try {
-            const str = JSON.stringify(obj);
+            const str = formatted ? JSON.stringify(obj, null, 2) : JSON.stringify(obj);
             const stream = new Blob([str]).stream().pipeThrough(new CompressionStream('gzip'));
             const resp = new Response(stream);
             const buf = await resp.arrayBuffer();
@@ -1442,7 +1442,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         wire('exportJsonBtn', async () => { 
             const b = getFullBackupData(true); 
-            const compressed = await compressJSON(b);
+            const compressed = await compressJSON(b, true);
             if (!compressed) return alert('匯出壓縮失敗');
             const raw = atob(compressed);
             const bytes = new Uint8Array(raw.length);
@@ -1450,7 +1450,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const blo = new Blob([bytes], {type:'application/gzip'}); 
             const a = document.createElement('a'); 
             a.href = URL.createObjectURL(blo); 
-            a.download = `ClassKudox_${new Date().toLocaleDateString().replace(/\//g,'')}.gz`; 
+            a.download = `ClassKudox_${new Date().toLocaleDateString().replace(/\//g,'')}.json.gz`; 
             a.click(); 
         });
         wire('importJsonBtn', () => document.getElementById('importJsonFile')?.click());
