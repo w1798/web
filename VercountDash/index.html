@@ -152,8 +152,8 @@
     };
 
     // --- Gzip 壓縮/解壓工具 ---
-    const compressJSON = async (obj) => {
-        const str = JSON.stringify(obj);
+    const compressJSON = async (obj, indent = 0) => {
+        const str = indent ? JSON.stringify(obj, null, indent) : JSON.stringify(obj);
         const stream = new Blob([str]).stream().pipeThrough(new CompressionStream('gzip'));
         const buf = await new Response(stream).arrayBuffer();
         return btoa(String.fromCharCode(...new Uint8Array(buf)));
@@ -521,8 +521,12 @@
     }
 
     function resetField(id) { if(confirm("確定清空嗎？")) document.getElementById(id).value = ""; }
+    
     async function exportData() {
-        const compressed = await compressJSON({ settings: appData.settings, stats: appData.stats });
+        // 匯出時排除敏感的雲端金鑰，並且提供給 compressJSON 第 2 個參數進行縮排美化
+        const { binId: _, apiKey: __, ...safeSettings } = appData.settings;
+        const compressed = await compressJSON({ settings: safeSettings, stats: appData.stats }, 2);
+        
         // 將 base64 字串存成二進位 .gz 檔案
         const raw = atob(compressed);
         const bytes = new Uint8Array(raw.length);
