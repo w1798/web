@@ -1,9 +1,26 @@
 const axios = require('axios');
+const zlib = require('zlib');
+const util = require('util');
 
 const JSONBIN_ID = process.env.JSONBIN_BIN_ID;
 const JSONBIN_KEY = process.env.JSONBIN_KEY;
 const UPSTASH_URL = process.env.UPSTASH_REST_URL;
 const UPSTASH_TOKEN = process.env.UPSTASH_REST_TOKEN;
+
+const gunzip = util.promisify(zlib.gunzip);
+const gzip = util.promisify(zlib.gzip);
+
+async function decompressJSON(base64Str) {
+    const buffer = Buffer.from(base64Str, 'base64');
+    const decompressed = await gunzip(buffer);
+    return JSON.parse(decompressed.toString('utf-8'));
+}
+
+async function compressJSON(obj) {
+    const jsonStr = JSON.stringify(obj);
+    const compressed = await gzip(jsonStr);
+    return compressed.toString('base64');
+}
 
 // 核心處理函式：給入資料、回傳更新後的資料
 async function updateDataRecord(fullData) {
@@ -73,19 +90,31 @@ async function run() {
             throw new Error("Upstash 中找不到 vercount_v1 紀錄，無法開始任務。");
         }
 
-        const masterData = JSON.parse(res.data.result);
-        console.log("✅ 已從 Upstash 取得權威名單。");
+        let masterData;
+        try {
+            masterData = await decompressJSON(res.data.result);
+            console.log("✅ 成功從 Upstash 取得並解壓縮權威名單。");
+        } catch (e) {
+            console.log("⚠️ 解壓縮失敗，嘗試以純 JSON 解析 (可能是舊格式)。");
+            masterData = JSON.parse(res.data.result);
+        }
 
         // 2. 拿這份名單去抓所有 Vercount 數據並進行更新
         const updatedData = await updateDataRecord(masterData);
         console.log("✅ 數據更新處理完成。");
 
         // 3. 同時更新回 Upstash 與 JSONBin
-        const upstashUpdate = axios.post(`${UPSTASH_URL}/set/vercount_v1`, JSON.stringify(updatedData), {
-            headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` }
+        console.log("⏳ 正在壓縮資料並上傳...");
+        const compressedData = await compressJSON(updatedData);
+
+        const upstashUpdate = axios.post(`${UPSTASH_URL}/set/vercount_v1`, JSON.stringify(compressedData), {
+            headers: { 
+                Authorization: `Bearer ${UPSTASH_TOKEN}`,
+                'Content-Type': 'application/json' 
+            }
         });
 
-        const jsonbinUpdate = axios.put(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}`, updatedData, {
+        const jsonbinUpdate = axios.put(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}`, { d: compressedData }, {
             headers: { 
                 'Content-Type': 'application/json', 
                 'X-Access-Key': JSONBIN_KEY 
