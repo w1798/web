@@ -50,7 +50,7 @@
                 <button class="btn btn-danger" onclick="fullSystemReset()">🗑️ 全域重置</button>
                 <button class="btn btn-export" onclick="exportData()">📤 匯出備份</button>
                 <button class="btn btn-import" onclick="triggerImport()">📥 匯入雲端</button>
-                <button class="btn btn-sync" onclick="refreshPV(true)">⚡ 立即更新</button>
+                <button class="btn btn-sync" onclick="handleManualRefresh()">⚡ 立即更新</button>
                 <button class="btn btn-config" onclick="toggleSettings(true)">⚙️ 系統設定</button>
             </div>
         </div>
@@ -160,7 +160,11 @@
     };
 
     const decompressJSON = async (base64) => {
-        const bin = atob(base64);
+        let cleanBase64 = String(base64).trim();
+        if (cleanBase64.startsWith('"') && cleanBase64.endsWith('"')) {
+            cleanBase64 = cleanBase64.slice(1, -1);
+        }
+        const bin = atob(cleanBase64);
         const buf = new Uint8Array(bin.length);
         for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
         const stream = new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'));
@@ -197,17 +201,18 @@
 
         const lastCloud = localStorage.getItem('LAST_CLOUD_LOAD');
         const isPushPending = localStorage.getItem(PENDING_KEY) === 'true'; // 這行是關鍵
-        const isUrlEmpty = !appData.settings.urls || appData.settings.urls.length === 0;
+        let isUrlEmpty = !appData.settings.urls || appData.settings.urls.length === 0;
 
         if (appData.settings.binId && appData.settings.apiKey) {
-            // 修改這裡：如果是 PENDING (代表剛手動改過設定)，「不要」從雲端讀取
             if (isPushPending) {
-                console.log("偵測到在地變更，跳過雲端讀取以防覆蓋");
+                console.log("[VercountDash] 偵測到「儲存並同步」，以本地端資料為主更新雲端...");
                 updateStatusUI('cache'); 
-            } else if (isUrlEmpty || !lastCloud || (Date.now() - lastCloud > appData.settings.cloudCD * 60000)) {
-                await loadFromCloud();
             } else {
-                updateStatusUI('cache');
+                console.log("[VercountDash] 網頁載入，從雲端下載最新資料...");
+                await loadFromCloud();
+                
+                // 重新判斷網址是否為空（可能從雲端抓下來了）
+                isUrlEmpty = !appData.settings.urls || appData.settings.urls.length === 0;
             }
         } else {
             updateStatusUI('offline');
@@ -219,6 +224,7 @@
         if (!isUrlEmpty) {
             const lastSync = localStorage.getItem('LAST_SYNC_TIME');
             if (isPushPending || !lastSync || (appData.settings.pvCD === 0) || (Date.now() - lastSync > appData.settings.pvCD * 60000)) {
+                console.log("[VercountDash] 開始抓取最新 PV 與準備更新雲端...");
                 await refreshPV(isPushPending); // 執行完後 refreshPV 內部應清除 PENDING_KEY
                 localStorage.removeItem(PENDING_KEY); // 強制清除確保下次恢復正常雲端讀取
             }
@@ -244,6 +250,7 @@
 
     // 支援 Upstash 與 JSONBin 的通用雲端下載
     async function loadFromCloud() {
+        console.log("[VercountDash] 開始執行雲端下載流程...");
         const { binId, apiKey } = appData.settings;
         if (!binId || !apiKey) return false;
 
@@ -255,23 +262,49 @@
             let cloudRecord = null;
 
             if (isUpstash) {
+                console.log("[VercountDash] 連接至 Upstash 獲取資料...");
                 const res = await fetch(`${binId}/get/${storageKey}`, {
                     headers: { 'Authorization': `Bearer ${apiKey}` }
                 });
+                console.log(`[VercountDash] Upstash 回應狀態碼: ${res.status}`);
                 const data = await res.json();
                 if (data.result) {
-                    try { cloudRecord = await decompressJSON(data.result); }
-                    catch(e) { cloudRecord = JSON.parse(data.result); }
+                    console.log("[VercountDash] 嘗試將 Upstash 取得資料進行 gzip 解壓縮...");
+                    try { 
+                        let dOutput = data.result;
+                        if(typeof dOutput === 'string') {
+                            dOutput = dOutput.trim();
+                            if(dOutput.startsWith('"') && dOutput.endsWith('"')) {
+                                dOutput = dOutput.slice(1, -1);
+                            }
+                        }
+                        cloudRecord = await decompressJSON(dOutput); 
+                        console.log("[VercountDash] 解壓縮成功。");
+                    }
+                    catch(e) { 
+                        console.log("[VercountDash] 解壓縮失敗，退回使用 JSON.parse 解析。錯誤: ", e);
+                        cloudRecord = JSON.parse(data.result); 
+                        if (typeof cloudRecord === 'string') cloudRecord = JSON.parse(cloudRecord); // 針對防爆再解一次
+                    }
                 }
             } else {
+                console.log("[VercountDash] 連接至 JSONBin 獲取資料...");
                 const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
                     headers: { 'X-Access-Key': apiKey }
                 });
+                console.log(`[VercountDash] JSONBin 回應狀態碼: ${res.status}`);
                 if (res.ok) {
                     const data = await res.json();
                     const raw = data.record;
                     if (raw && typeof raw.d === 'string') {
-                        try { cloudRecord = await decompressJSON(raw.d); } catch(e) { cloudRecord = raw; }
+                        console.log("[VercountDash] 嘗試將 JSONBin 取得之 d 欄位進行 gzip 解壓縮...");
+                        try { 
+                            cloudRecord = await decompressJSON(raw.d); 
+                            console.log("[VercountDash] 解壓縮成功。");
+                        } catch(e) { 
+                            console.log("[VercountDash] 解壓縮失敗，直接取原始內容。");
+                            cloudRecord = raw; 
+                        }
                     } else {
                         cloudRecord = raw;
                     }
@@ -279,29 +312,45 @@
             }
 
             if (cloudRecord) {
-                const remoteSettings = cloudRecord.settings || {};
-                const { binId: currentBin, apiKey: currentKey } = appData.settings; 
-                
-                appData.stats = cloudRecord.stats || {};
-                // 這裡使用 mergeDeep 確保雲端新增欄位也能進來
-                appData.settings = mergeDeep(DEFAULT_SETTINGS, remoteSettings);
-                
-                // 重要：還原目前的 Key，避免雲端舊備份把正在用的 Key 蓋掉
-                appData.settings.binId = currentBin;
-                appData.settings.apiKey = currentKey;
+                console.log("[VercountDash] 成功取得並解析雲端數據，正在同步至本地...");
+                // 如果雲端為空但 parse 後是空物件，這裡做保護
+                if (typeof cloudRecord === 'object' && cloudRecord !== null && !cloudRecord.settings) {
+                    console.log("[VercountDash] 雲端格式好像不是 Vercount，可能剛建立");
+                } else {
+                    const remoteSettings = cloudRecord.settings || {};
+                    const { binId: currentBin, apiKey: currentKey } = appData.settings; 
+                    
+                    appData.stats = cloudRecord.stats || {};
+                    // 這裡使用 mergeDeep 確保雲端新增欄位也能進來
+                    appData.settings = mergeDeep(DEFAULT_SETTINGS, remoteSettings);
+                    
+                    // 重要：還原目前的 Key，避免雲端舊備份把正在用的 Key 蓋掉
+                    appData.settings.binId = currentBin;
+                    appData.settings.apiKey = currentKey;
 
-                localStorage.setItem(DATA_KEY, JSON.stringify(appData.stats));
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(appData.settings));
-                localStorage.setItem('LAST_CLOUD_LOAD', Date.now());
+                    localStorage.setItem(DATA_KEY, JSON.stringify(appData.stats));
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(appData.settings));
+                    localStorage.setItem('LAST_CLOUD_LOAD', Date.now());
+                }
                 
                 updateStatusUI('online'); // 成功才顯示 online
+                console.log("[VercountDash] 雲端下載並合併結束");
                 return true;
             }
         } catch (e) {
-            console.error("雲端讀取失敗:", e);
+            console.error("[VercountDash] 雲端讀取失敗:", e);
         }
         updateStatusUI('offline'); // 失敗顯示 offline
         return false;
+    }
+
+    // 立即更新與下載整合
+    async function handleManualRefresh() {
+        console.log("[VercountDash] 啟動強制要求：先下載後上傳");
+        if (appData.settings.binId && appData.settings.apiKey) {
+            await loadFromCloud();
+        }
+        await refreshPV(true);
     }
 
     // 支援 Upstash 與 JSONBin 的通用雲端上傳
@@ -339,29 +388,41 @@
 
             // 2. 推送到雲端（gzip 壓縮後上傳）
             if (binId && apiKey) {
+                console.log("[VercountDash] 準備推送數據至雲端...");
                 const isUpstash = binId.includes('upstash.io');
                 const storageKey = 'vercount_v1';
                 const { binId: _, apiKey: __, ...safeSettings } = appData.settings;
+                
+                console.log("[VercountDash] 進行 Gzip 資料壓縮...");
                 const compressed = await compressJSON({ settings: safeSettings, stats: appData.stats });
 
                 let res;
                 if (isUpstash) {
+                    console.log("[VercountDash] 使用 Upstash 上傳介面...");
                     res = await fetch(`${binId}/set/${storageKey}`, {
                         method: 'POST',
                         headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
                         body: JSON.stringify(compressed)
                     });
                 } else {
+                    console.log("[VercountDash] 使用 JSONBin 上傳介面...");
                     res = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json', 'X-Access-Key': apiKey },
                         body: JSON.stringify({ d: compressed })
                     });
                 }
-                if (res.ok) updateStatusUI('online');
+                
+                console.log(`[VercountDash] 推送結果: ${res.status}`);
+                if (res.ok) {
+                    console.log("[VercountDash] 雲端資料更新成功！");
+                    updateStatusUI('online');
+                } else {
+                    console.error("[VercountDash] 雲端更新失敗!");
+                }
             }
         } catch (e) {
-            console.error("同步出錯:", e);
+            console.error("[VercountDash] 同步出錯:", e);
         } finally {
             renderUI();
         }
