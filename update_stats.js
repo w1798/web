@@ -11,7 +11,11 @@ const gunzip = util.promisify(zlib.gunzip);
 const gzip = util.promisify(zlib.gzip);
 
 async function decompressJSON(base64Str) {
-    const buffer = Buffer.from(base64Str, 'base64');
+    let cleanBase64 = String(base64Str).trim();
+    if (cleanBase64.startsWith('"') && cleanBase64.endsWith('"')) {
+        cleanBase64 = cleanBase64.slice(1, -1);
+    }
+    const buffer = Buffer.from(cleanBase64, 'base64');
     const decompressed = await gunzip(buffer);
     return JSON.parse(decompressed.toString('utf-8'));
 }
