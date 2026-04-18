@@ -324,6 +324,11 @@ body[data-font-size="large"] { font-size: 18px; }
     font-family: var(--font-main); font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: var(--transition);
 }
 .sort-btn.active { background: white; color: var(--text-primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+.report-view-btn {
+    flex: 1; border: none; background: transparent; padding: 0.5rem 1rem; border-radius: 8px;
+    font-family: var(--font-main); font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: var(--transition);
+}
+.report-view-btn.active { background: var(--primary-color); color: white; box-shadow: 0 2px 5px rgba(79,70,229,0.25); }
 
 /* Report Info Banner - hidden by default */
 .reports-info-banner {
@@ -1053,4 +1058,96 @@ footer a:hover {
     #classSummaryTitle {
         font-size: 1.4rem;
     }
+}
+
+/* --- Treasure System --- */
+.treasure-award-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 0.5rem;
+}
+
+.treasure-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    border: 1.5px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1rem 1.25rem;
+    transition: var(--transition);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+.treasure-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(79,70,229,0.1);
+}
+
+.treasure-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.treasure-icon {
+    font-size: 1.8em;
+}
+.treasure-name {
+    font-weight: 700;
+    font-size: 1.05em;
+    color: var(--text-primary);
+}
+
+.treasure-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+.treasure-minus, .treasure-plus {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 1.2em;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: var(--transition);
+}
+.treasure-minus {
+    background: #fee2e2;
+    color: var(--negative-color);
+    border: 1.5px solid #fecaca;
+}
+.treasure-minus:hover {
+    background: var(--negative-color);
+    color: white;
+    transform: scale(1.15);
+}
+.treasure-plus {
+    background: #dcfce7;
+    color: var(--positive-color);
+    border: 1.5px solid #bbf7d0;
+}
+.treasure-plus:hover {
+    background: var(--positive-color);
+    color: white;
+    transform: scale(1.15);
+}
+.treasure-qty {
+    font-size: 1.4em;
+    font-weight: 800;
+    min-width: 32px;
+    text-align: center;
+    color: var(--primary-color);
+}
+
+/* --- Preset Custom Items Grid (inside award modal) --- */
+.preset-custom-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--item-grid-cols, 3), 1fr);
+    gap: 0.6rem;
 }

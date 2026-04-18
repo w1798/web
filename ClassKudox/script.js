@@ -179,6 +179,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     let students = [], groups = [], logs = [], pointItems = null, settings = null, ops = [], mSyn = 300;
+    let customItems = []; // 預設自訂項目名稱 (字串陣列, e.g. ['兌換點數', '分領獎品'])
+    let treasureDefs = []; // 寶物定義 [{id, lb, ic}]
     const DEFAULT_SETTINGS = { ftS: 'M', col: 10, gCol: 5, iCol: 5, eS: 0, sCH: 0, gCH: 0, lRet: 0 };
 
     const loadClassData = () => {
@@ -187,7 +189,12 @@ document.addEventListener('DOMContentLoaded', () => {
         groups = safeLoad(`CD_${currentClassId}_Gs`, []);
         logs = safeLoad(`CD_${currentClassId}_Ls`, []);
         pointItems = safeLoad(`CD_${currentClassId}_itm`, JSON.parse(JSON.stringify(defaultItems)));
+        customItems = safeLoad(`CD_${currentClassId}_cItm`, []);
+        treasureDefs = safeLoad(`CD_${currentClassId}_tDef`, []);
         ops = safeLoad(`CD_${currentClassId}_Ops`, []);
+
+        // 初始化學生寶物欄位
+        students.forEach(s => { if (!s.tr) s.tr = {}; });
 
         if (students.length > 0 && students[0].cP === undefined) {
             students.forEach(s => { s.cP = 0; s.iP = 0; });
@@ -201,6 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentView = 'students', isMultiSelectMode = false, selectedStudentIds = new Set();
     let isDirty = Number(localStorage.getItem('drty')) || ((cloudBinId && cloudApiKey) ? 3 : 0), isSyncing = false, autoSyncTimer = null; 
     let awardContextIds = [], currentProfileId = null, editingGroupId = null, currentGroupIdForAward = null, editingPointItemId = null, editingPointItemCat = null, lastActionLogIds = [], undoTimeout = null, currentSort = 'score';
+    let currentReportView = 'points'; // 'points' | 'treasure'
 
     const setDirty = (v) => {
         const old = isDirty;
@@ -230,6 +238,8 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem(`CD_${currentClassId}_Gs`, JSON.stringify(groups));
         localStorage.setItem(`CD_${currentClassId}_Ls`, JSON.stringify(logs));
         localStorage.setItem(`CD_${currentClassId}_itm`, JSON.stringify(pointItems));
+        localStorage.setItem(`CD_${currentClassId}_cItm`, JSON.stringify(customItems));
+        localStorage.setItem(`CD_${currentClassId}_tDef`, JSON.stringify(treasureDefs));
         localStorage.setItem(`CD_${currentClassId}_set`, JSON.stringify(settings));
         localStorage.setItem(`CD_${currentClassId}_Ops`, JSON.stringify(ops));
         localStorage.setItem('CD_SysOps', JSON.stringify(sysOps));
@@ -291,8 +301,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const switchProfileTab = (tab) => {
         document.querySelectorAll('.main-tabs .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.profileTab === tab));
         const awardTab = document.getElementById('profileAwardTab'); if(awardTab) awardTab.classList.toggle('active', tab === 'award');
+        const treasTab = document.getElementById('profileTreasureTab'); if(treasTab) treasTab.classList.toggle('active', tab === 'treasure');
         const histTab = document.getElementById('profileHistoryTab'); if(histTab) histTab.classList.toggle('active', tab === 'history');
         if(tab === 'history') renderHistory();
+        if(tab === 'treasure') renderStudentTreasures();
     };
 
     const switchAwardTab = (tab) => {
@@ -427,12 +439,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const openEditPointItemModal = (cat, itemId) => {
         editingPointItemCat = cat; editingPointItemId = itemId;
-        const item = pointItems[cat].find(i => i.id === itemId); if(!item) return;
+        const modal = document.getElementById('editPointItemModal');
+        const header = modal.querySelector('h2');
+        const valGroup = document.getElementById('editItemValue').parentElement;
+        const ignGroup = document.getElementById('editItemIgnore').parentElement;
+
+        let item;
+        if (cat === 'treasure') {
+            item = treasureDefs.find(i => i.id === itemId); if(!item) return;
+            header.textContent = '編輯寶物';
+            valGroup.style.display = 'none';
+            ignGroup.style.display = 'none';
+        } else {
+            item = pointItems[cat].find(i => i.id === itemId); if(!item) return;
+            header.textContent = '編輯行為項目';
+            valGroup.style.display = 'flex';
+            ignGroup.style.display = 'flex';
+            document.getElementById('editItemValue').value = item.vl;
+            document.getElementById('editItemIgnore').checked = item.iSum === 1;
+        }
+
         document.getElementById('editItemLabel').value = item.lb;
-        document.getElementById('editItemValue').value = item.vl;
         document.getElementById('editItemIconBtn').textContent = item.ic;
-        document.getElementById('editItemIgnore').checked = item.iSum === 1;
-        openModal(document.getElementById('editPointItemModal'));
+        openModal(modal);
     };
 
     const showUndoToast = (m) => { 
@@ -543,6 +572,112 @@ document.addEventListener('DOMContentLoaded', () => {
         // 設定裡看到的
         const rList = (id, items, cat) => { const el = document.getElementById(id); if(!el) return; el.innerHTML = ''; items.slice().sort((a,b)=>a.lb.localeCompare(b.lb,'zh-TW')).forEach(item => { const div = document.createElement('div'); div.className = `point-item-btn ${cat==='pos'?'positive':'negative'}`; div.onclick = () => openEditPointItemModal(cat, item.id); div.innerHTML = `<div class="point-icon">${item.ic}</div><div class="point-label">${item.lb}${item.iSum===1?'<small>(不列排)</small>':''}</div><div class="point-value">${item.vl > 0 ? '+' : ''}${item.vl}</div><button class="remove-item-btn" onclick="event.stopPropagation(); window.removePointItem('${cat}', '${item.id}')">×</button>`; el.appendChild(div); }); };
         rList('settingsPositiveList', pointItems.pos, 'pos'); rList('settingsNeedsWorkList', pointItems.neg, 'neg');
+        renderCustomDropdown();
+        renderTreasureSettings();
+    };
+
+    // --- 自訂項目下拉選單 (在給予點數 -> 臨時自訂 中顯示) ---
+    const renderCustomDropdown = () => {
+        const sel = document.getElementById('customAwardLabel'); if(!sel) return;
+        sel.innerHTML = '';
+        // 固定預設選項
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = '兌換點數'; defaultOpt.textContent = '兌換點數';
+        sel.appendChild(defaultOpt);
+        // 從 customItems (字串陣列) 產生選項
+        customItems.forEach(name => {
+            if (name === '兌換點數') return; // 避免重複
+            const opt = document.createElement('option');
+            opt.value = name; opt.textContent = name;
+            sel.appendChild(opt);
+        });
+    };
+
+    // --- 設定頁載入 textarea ---
+    const loadCustomTextarea = () => {
+        const ta = document.getElementById('customItemsTextarea'); if(!ta) return;
+        ta.value = customItems.join('\n');
+    };
+
+    // --- 寶物設定頁渲染 ---
+    const renderTreasureSettings = () => {
+        const el = document.getElementById('settingsTreasureList'); if(!el) return;
+        el.innerHTML = '';
+        treasureDefs.slice().sort((a,b)=>a.lb.localeCompare(b.lb,'zh-TW')).forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'point-item-btn positive';
+            div.onclick = () => openEditPointItemModal('treasure', item.id);
+            div.innerHTML = `<div class="point-icon">${item.ic}</div><div class="point-label">${item.lb}</div><button class="remove-item-btn" onclick="event.stopPropagation(); window.removeTreasureDef('${item.id}')">×</button>`;
+            el.appendChild(div);
+        });
+    };
+
+    window.removeTreasureDef = (id) => {
+        if(!confirm('刪除此寶物？學生已持有的該種寶物也會清除。')) return;
+        treasureDefs = treasureDefs.filter(i => i.id !== id);
+        students.forEach(s => { if(s.tr) delete s.tr[id]; });
+        saveData(); renderPointItems();
+    };
+
+    // --- 學生寶物 UI (在學生彈窗中的「寶物」分頁) ---
+    const renderStudentTreasures = () => {
+        const el = document.getElementById('studentTreasureList'); if(!el) return;
+        el.innerHTML = '';
+        if (!treasureDefs.length) {
+            el.innerHTML = '<p style="text-align:center; color:var(--text-secondary); padding:2rem;">尚未定義寶物，請先在「系統設定 → 寶物設定」中新增寶物種類。</p>';
+            return;
+        }
+        const ids = awardContextIds;
+        const isMulti = ids.length > 1;
+        treasureDefs.slice().sort((a,b)=>a.lb.localeCompare(b.lb,'zh-TW')).forEach(td => {
+            const card = document.createElement('div');
+            card.className = 'treasure-card';
+            // 如果是多人，顯示 "---" 而不是具體數字
+            let qtyText = '---';
+            if (!isMulti) {
+                const s = students.find(x => x.id === ids[0]);
+                qtyText = (s && s.tr && s.tr[td.id]) ? s.tr[td.id] : 0;
+            }
+            card.innerHTML = `
+                <div class="treasure-info">
+                    <span class="treasure-icon">${td.ic}</span>
+                    <span class="treasure-name">${td.lb}</span>
+                </div>
+                <div class="treasure-controls">
+                    <button class="btn treasure-minus" data-tid="${td.id}">−</button>
+                    <span class="treasure-qty">${qtyText}</span>
+                    <button class="btn treasure-plus" data-tid="${td.id}">+</button>
+                </div>
+            `;
+            card.querySelector('.treasure-minus').onclick = () => awardTreasure(td.id, -1);
+            card.querySelector('.treasure-plus').onclick = () => awardTreasure(td.id, 1);
+            el.appendChild(card);
+        });
+    };
+
+    const awardTreasure = (treasureId, qty) => {
+        const td = treasureDefs.find(t => t.id === treasureId);
+        if (!td) return;
+        awardContextIds.forEach(sid => {
+            const s = students.find(x => x.id === sid);
+            if (!s) return;
+            if (!s.tr) s.tr = {};
+            s.tr[treasureId] = (s.tr[treasureId] || 0) + qty;
+            if (s.tr[treasureId] < 0) s.tr[treasureId] = 0;
+            // 寶物變動也記錄到 logs (點數設為 0，純紀錄)
+            const logId = Math.random().toString(36).substring(2, 8);
+            const tsHex = StampTool.encode();
+            const qtyText = qty > 0 ? `+${qty}` : `${qty}`;
+            const logLabel = `${td.ic}${td.lb} ${qtyText}`;
+            const logEntry = { id: logId, sID: sid, lb: logLabel, pt: 0, TS: tsHex, iSum: 1, trId: treasureId, trQty: qty };
+            logs.push(logEntry);
+            pushOp(1, { s: sid, lb: logLabel, p: 0, l: logId, is: 1, ti: treasureId, tq: qty });
+        });
+        saveData();
+        renderStudentTreasures();
+        renderStudents();
+        createPointAnimation(qty, awardContextIds.length);
+        showUndoToast(`${qty > 0 ? '+' : ''}${qty} ${td.lb} 給予 ${awardContextIds.length} 位學生`);
     };
 
     window.removePointItem = (cat, id) => { 
@@ -558,8 +693,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if(l) {
             const s = students.find(x => x.id === l.sID);
             if(s) {
-                if(l.iSum === 1) s.iP = (s.iP || 0) - l.pt;
-                else s.cP = (s.cP || 0) - l.pt;
+                if (l.trId && l.trQty) {
+                    if (s.tr) s.tr[l.trId] = (s.tr[l.trId] || 0) - l.trQty;
+                    if (s.tr && s.tr[l.trId] < 0) s.tr[l.trId] = 0;
+                } else {
+                    if(l.iSum === 1) s.iP = (s.iP || 0) - l.pt;
+                    else s.cP = (s.cP || 0) - l.pt;
+                }
             }
         }
         logs = logs.filter(x => x.id != id); 
@@ -579,7 +719,9 @@ document.addEventListener('DOMContentLoaded', () => {
         f.forEach(l => { 
             const li = document.createElement('li'); 
             const d = (typeof l.TS === 'number') ? new Date(l.TS) : StampTool.decode(l.TS);
-            li.innerHTML = `<div class="history-item-left"><span class="history-date">${d.toLocaleString()}</span><span class="history-label">${l.lb}${l.iSum === 1 ? '<small>(不列排)</small>' : ''}</span></div><div class="history-item-right ${l.pt > 0 ? 'positive-val' : 'negative-val'}">${l.pt > 0 ? '+' : ''}${l.pt}<button class="delete-log-btn" onclick="window.deleteLog('${l.id}')">🗑️</button></div>`; 
+            const isTreasure = !!l.trId;
+            const rightContent = isTreasure ? `<button class="delete-log-btn" onclick="window.deleteLog('${l.id}')">🗑️</button>` : `${l.pt > 0 ? '+' : ''}${l.pt}<button class="delete-log-btn" onclick="window.deleteLog('${l.id}')">🗑️</button>`;
+            li.innerHTML = `<div class="history-item-left"><span class="history-date">${d.toLocaleString()}</span><span class="history-label">${l.lb}${l.iSum === 1 && !isTreasure ? '<small>(不列排)</small>' : ''}</span></div><div class="history-item-right ${isTreasure ? '' : (l.pt > 0 ? 'positive-val' : 'negative-val')}">${rightContent}</div>`; 
             list.appendChild(li); 
         }); 
     };
@@ -621,7 +763,7 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             li.querySelector('.del-class-btn').onclick = () => { 
                 if(confirm('刪除？')) { 
-                    ['Stus','Gs','Ls','itm','set','Ops'].forEach(suffix => {
+                    ['Stus','Gs','Ls','itm','cItm','tDef','set','Ops'].forEach(suffix => {
                         localStorage.removeItem(`CD_${c.id}_${suffix}`);
                     });
                     classes = classes.filter(x=>x.id!==c.id); 
@@ -655,7 +797,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!k.startsWith('CD_')) continue;
             
             // 分析此 key 是否為班級專屬附屬資料，格式 CD_[ClassID]_[Suffix]
-            const match = k.match(/^CD_(.+)_(Stus|Gs|Ls|itm|set|Ops|meta)$/);
+            const match = k.match(/^CD_(.+)_(Stus|Gs|Ls|itm|cItm|tDef|set|Ops|meta)$/);
             if (match) {
                 const cid = match[1];
                 if (!validClassIds.has(cid)) {
@@ -871,9 +1013,14 @@ document.addEventListener('DOMContentLoaded', () => {
                                     const sid = o.d.s;
                                     const s = students.find(x => x.id === sid);
                                     if (s) {
-                                        if (o.d.is === 1) s.iP = (s.iP || 0) + o.d.p;
-                                        else s.cP = (s.cP || 0) + o.d.p;
-                                        logs.push({ id: o.d.l, sID: sid, lb: o.d.lb, pt: o.d.p, TS: o.t, iSum: o.d.is === 1 ? 1 : undefined });
+                                        if (o.d.is === 1 && !o.d.ti) s.iP = (s.iP || 0) + o.d.p;
+                                        else if (!o.d.ti) s.cP = (s.cP || 0) + o.d.p;
+                                        logs.push({ id: o.d.l, sID: sid, lb: o.d.lb, pt: o.d.p, TS: o.t, iSum: o.d.is === 1 ? 1 : undefined, trId: o.d.ti, trQty: o.d.tq });
+                                        if (o.d.ti && o.d.tq) {
+                                            if (!s.tr) s.tr = {};
+                                            s.tr[o.d.ti] = (s.tr[o.d.ti] || 0) + o.d.tq;
+                                            if (s.tr[o.d.ti] < 0) s.tr[o.d.ti] = 0;
+                                        }
                                         modified = true;
                                     }
                                 } else if (o.a === 2) { // 刪除紀錄
@@ -882,8 +1029,13 @@ document.addEventListener('DOMContentLoaded', () => {
                                         const l = logs[logIdx];
                                         const s = students.find(x => x.id === l.sID);
                                         if (s) {
-                                            if (l.iSum === 1) s.iP = (s.iP || 0) - l.pt;
-                                            else s.cP = (s.cP || 0) - l.pt;
+                                            if (l.trId && l.trQty) {
+                                                if (s.tr) s.tr[l.trId] = (s.tr[l.trId] || 0) - l.trQty;
+                                                if (s.tr && s.tr[l.trId] < 0) s.tr[l.trId] = 0;
+                                            } else {
+                                                if (l.iSum === 1) s.iP = (s.iP || 0) - l.pt;
+                                                else s.cP = (s.cP || 0) - l.pt;
+                                            }
                                         }
                                         logs.splice(logIdx, 1);
                                         modified = true;
@@ -981,6 +1133,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.renderReports = () => {
+        if (currentReportView === 'treasure') return renderTreasureReports();
         const list = document.getElementById('reportsList'); if(!list) return; list.innerHTML = '';
         const range = getReportsTimeRange();
         let data = students.map(s => {
@@ -1020,10 +1173,70 @@ document.addEventListener('DOMContentLoaded', () => {
             f.slice(0,50).forEach(log => {
                 const s = students.find(x => x.id === log.sID);
                 const d = (typeof log.TS === 'number') ? new Date(log.TS) : StampTool.decode(log.TS);
-                const li = document.createElement('li'); li.innerHTML = `<div class="history-item-left"><span class="history-date">${d.toLocaleString()} • ${s?s.id:'未知'}</span><span class="history-label">${log.lb}${log.iSum === 1 ? '<small>(不列排)</small>' : ''}</span></div><div class="history-item-right ${log.pt > 0 ? 'positive-val' : 'negative-val'}">${log.pt > 0 ? '+' : ''}${log.pt}<button class="delete-log-btn" onclick="window.deleteLog('${log.id}')">🗑️</button></div>`;
+                const isTreasure = !!log.trId;
+                const rightContent = isTreasure ? `<button class="delete-log-btn" onclick="window.deleteLog('${log.id}')">🗑️</button>` : `${log.pt > 0 ? '+' : ''}${log.pt}<button class="delete-log-btn" onclick="window.deleteLog('${log.id}')">🗑️</button>`;
+                const li = document.createElement('li'); li.innerHTML = `<div class="history-item-left"><span class="history-date">${d.toLocaleString()} • ${s?s.id:'未知'}</span><span class="history-label">${log.lb}${log.iSum === 1 && !isTreasure ? '<small>(不列排)</small>' : ''}</span></div><div class="history-item-right ${isTreasure ? '' : (log.pt > 0 ? 'positive-val' : 'negative-val')}">${rightContent}</div>`;
                 alist.appendChild(li);
             });
             renderPieChart(f);
+        }
+    };
+
+    // --- 寶物報表 ---
+    const renderTreasureReports = () => {
+        const list = document.getElementById('reportsList'); if(!list) return; list.innerHTML = '';
+        if (!treasureDefs.length) {
+            list.innerHTML = '<li style="text-align:center; color:var(--text-secondary); padding:2rem;">尚未定義寶物。</li>';
+            return;
+        }
+        let data = students.map(s => {
+            const totalTr = treasureDefs.reduce((sum, td) => sum + ((s.tr && s.tr[td.id]) || 0), 0);
+            return { ...s, totalTr };
+        });
+        if (currentSort === 'name') data.sort((a,b) => a.id.localeCompare(b.id, 'zh-TW')); else data.sort((a,b) => b.totalTr - a.totalTr);
+        data.forEach((s, idx) => {
+            const li = document.createElement('li'); li.className = 'report-item' + (currentProfileId === s.id ? ' active' : '');
+            li.onclick = () => { 
+                currentProfileId = s.id; 
+                document.getElementById('resetReportFilterBtn')?.classList.remove('hidden');
+                document.getElementById('reportActivityTitle').textContent = s.id + ' 的寶物'; 
+                window.renderReports(); 
+                window.scrollToReportLogs();
+            };
+            // 顯示每種寶物數量
+            let trDetail = treasureDefs.map(td => {
+                const qty = (s.tr && s.tr[td.id]) || 0;
+                return qty > 0 ? `${td.ic}${qty}` : '';
+            }).filter(Boolean).join(' ');
+            if (!trDetail) trDetail = '<span style="color:var(--text-secondary);font-size:0.85em;">無寶物</span>';
+            li.innerHTML = `<div class="report-item-left"><span class="report-rank">#${idx+1}</span><img src="${getAvatarUrl(s.aU||s.id, s.aS)}" class="report-avatar"><span class="report-name">${s.id}</span></div><div class="report-item-right" style="font-size:0.9em;">${trDetail}</div>`;
+            list.appendChild(li);
+        });
+        // 右側顯示寶物紀錄
+        const alist = document.getElementById('reportActivityList'); if(alist) {
+            alist.innerHTML = '';
+            const range = getReportsTimeRange();
+            let f = logs.filter(log => {
+                if (!log.trId) return false; // 只顯示寶物相關紀錄
+                const ts = (typeof log.TS === 'number') ? log.TS : StampTool.decode(log.TS).getTime();
+                if(range && (ts < range.start || ts > range.end)) return false;
+                if(currentProfileId && log.sID !== currentProfileId) return false;
+                return true;
+            }).sort((a,b) => {
+                const sa = String(a.TS), sb = String(b.TS);
+                if (sa.length === sb.length) return sb.localeCompare(sa);
+                return sb.length - sa.length;
+            });
+            f.slice(0,50).forEach(log => {
+                const s = students.find(x => x.id === log.sID);
+                const d = (typeof log.TS === 'number') ? new Date(log.TS) : StampTool.decode(log.TS);
+                // 這裡不用再手動串 qtyText 了，因為 log.lb 就已經包含了
+                const li = document.createElement('li'); li.innerHTML = `<div class="history-item-left"><span class="history-date">${d.toLocaleString()} • ${s?s.id:'未知'}</span><span class="history-label">${log.lb}</span></div><div class="history-item-right"><button class="delete-log-btn" onclick="window.deleteLog('${log.id}')">🗑️</button></div>`;
+                alist.appendChild(li);
+            });
+            // 寶物模式下不畫圓餅圖
+            const pie = document.getElementById('reportPieChart'); if(pie) pie.style.background = '#e2e8f0';
+            const legend = document.getElementById('reportPieLegend'); if(legend) legend.innerHTML = '';
         }
     };
     
@@ -1354,7 +1567,7 @@ document.addEventListener('DOMContentLoaded', () => {
             i.value.split('\n').forEach(n => { 
                 const name = n.trim(); if(name) {
                     if(students.some(s => s.id === name)) { console.warn('跳過重複姓名:', name); return; }
-                    const newStu = { id: name, cP: 0, iP: 0, aS: 'fe', aU: getRandomSeed() };
+                    const newStu = { id: name, cP: 0, iP: 0, aS: 'fe', aU: getRandomSeed(), tr: {} };
                     students.push(newStu);
                     pushOp(4, newStu); // Action 4: Add Student 
                 }
@@ -1389,7 +1602,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         wire('editGroupDetailBtn', () => { const g = groups.find(x => x.sIds.every(sid => awardContextIds.includes(sid)) && x.sIds.length === awardContextIds.length); if(g) openManageGroupModal(g.id); closeModal(document.getElementById('groupDetailModal')); });
 
-        wire('saveCustomAwardBtn', () => { const l = document.getElementById('customAwardLabel').value.trim() || '自訂項目'; const v = parseInt(document.getElementById('customAwardValue').value) || 0; const ign = document.getElementById('customAwardIgnore').checked; awardPoints('custom', l, v, ign); });
+        wire('saveCustomAwardBtn', () => { 
+            const sel = document.getElementById('customAwardLabel'); 
+            const tempInp = document.getElementById('customAwardTempName');
+            let l = sel ? sel.value : '自訂項目'; 
+            if (tempInp && tempInp.value.trim()) {
+                l = tempInp.value.trim();
+                if (!customItems.includes(l)) {
+                    customItems.push(l);
+                    saveData();
+                    if (typeof renderCustomDropdown === 'function') renderCustomDropdown();
+                }
+                tempInp.value = '';
+            }
+            const v = parseInt(document.getElementById('customAwardValue').value) || 0; 
+            const ign = document.getElementById('customAwardIgnore').checked; 
+            awardPoints('custom', l, v, ign); 
+        });
         
         document.querySelectorAll('.tab-btn').forEach(b => b.onclick = () => switchProfileTab(b.dataset.profileTab));
         document.querySelectorAll('.sub-tab-btn').forEach(b => b.onclick = () => switchAwardTab(b.dataset.awardTab));
@@ -1399,9 +1628,27 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.settings-tab-content').forEach(x => x.classList.remove('active')); 
             const target = 'settings' + b.dataset.settingsTab.charAt(0).toUpperCase() + b.dataset.settingsTab.slice(1) + 'Tab';
             const el = document.getElementById(target); if(el) el.classList.add('active');
+            if (b.dataset.settingsTab === 'custom') loadCustomTextarea();
         });
         document.querySelectorAll('.sort-btn').forEach(b => b.onclick = () => { currentSort = b.dataset.sort; document.querySelectorAll('.sort-btn').forEach(x => x.classList.remove('active')); b.classList.add('active'); window.renderReports(); });
+        document.querySelectorAll('.report-view-btn').forEach(b => b.onclick = () => { currentReportView = b.dataset.reportView; document.querySelectorAll('.report-view-btn').forEach(x => x.classList.remove('active')); b.classList.add('active'); window.renderReports(); });
         
+        // --- 自訂項目儲存 ---
+        wire('saveCustomItemsBtn', () => { 
+            const ta = document.getElementById('customItemsTextarea'); if(!ta) return;
+            customItems = ta.value.split('\n').map(s => s.trim()).filter(Boolean);
+            saveData(); renderPointItems(); alert('已儲存自訂項目');
+        });
+
+        // --- 寶物新增 ---
+        wire('addTreasureBtn', () => { 
+            const l = document.getElementById('newTreasureLabel'); const i = document.getElementById('newTreasureIconBtn'); if(!l.value.trim()) return; 
+            if (treasureDefs.some(x => x.lb === l.value.trim())) return alert('寶物名稱已存在');
+            const itemId = Math.random().toString(36).substring(2, 8);
+            treasureDefs.push({ id: itemId, lb: l.value.trim(), ic: i.textContent }); 
+            saveData(); renderPointItems(); l.value = ''; 
+        });
+
         wire('addPositiveBtn', () => { 
             const l = document.getElementById('newPositiveLabel'); const v = document.getElementById('newPositiveValue'); const i = document.getElementById('newPositiveIconBtn'); const ign = document.getElementById('newPositiveIgnore'); if(!l.value.trim()) return; 
             let val = isNaN(parseInt(v.value)) ? 1 : parseInt(v.value);
@@ -1430,13 +1677,27 @@ document.addEventListener('DOMContentLoaded', () => {
         wire('saveEditItemBtn', () => {
             if(!editingPointItemId || !editingPointItemCat) return;
             const l = document.getElementById('editItemLabel').value.trim();
-            const v = parseInt(document.getElementById('editItemValue').value) || 0;
-            const item = pointItems[editingPointItemCat].find(i => i.id === editingPointItemId);
-            if(item) {
-                item.lb = l; item.vl = v; item.ic = document.getElementById('editItemIconBtn').textContent;
-                if(document.getElementById('editItemIgnore').checked) item.iSum = 1; else delete item.iSum;
-                pushOp(3, { c: editingPointItemCat, i: item });
-                saveData(); renderPointItems(); closeModal(document.getElementById('editPointItemModal'));
+            const ic = document.getElementById('editItemIconBtn').textContent;
+            
+            if (editingPointItemCat === 'treasure') {
+                const item = treasureDefs.find(i => i.id === editingPointItemId);
+                if (item) {
+                    item.lb = l; item.ic = ic;
+                    saveData(); renderPointItems(); 
+                    if (!document.getElementById('studentDetailModal').classList.contains('hidden')) {
+                         if (typeof renderStudentTreasures === 'function') renderStudentTreasures();
+                    }
+                    closeModal(document.getElementById('editPointItemModal'));
+                }
+            } else {
+                const v = parseInt(document.getElementById('editItemValue').value) || 0;
+                const item = pointItems[editingPointItemCat].find(i => i.id === editingPointItemId);
+                if(item) {
+                    item.lb = l; item.vl = v; item.ic = ic;
+                    if(document.getElementById('editItemIgnore').checked) item.iSum = 1; else delete item.iSum;
+                    pushOp(3, { c: editingPointItemCat, i: item });
+                    saveData(); renderPointItems(); closeModal(document.getElementById('editPointItemModal'));
+                }
             }
         });
 
