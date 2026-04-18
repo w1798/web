@@ -742,6 +742,36 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch(e) { console.error('[CloudSync] 上傳錯誤:', e); setDirty(2); }
     };
+    
+    const performCloudDownload = async (manual = false) => {
+        if (!cloudBinId || !cloudApiKey) return;
+        isSyncing = true; setDirty(4); 
+        try {
+            const isUpstash = cloudBinId.includes('upstash.io'), h = isUpstash?{'Authorization':`Bearer ${cloudApiKey}`}:{'X-Access-Key':cloudApiKey};
+            const url = isUpstash ? (cloudBinId.startsWith('http') ? `${cloudBinId}/GET/classKudox_backup` : cloudBinId) : (cloudBinId.startsWith('http') ? cloudBinId : `https://api.jsonbin.io/v3/b/${cloudBinId}/latest?t=${Date.now()}`);
+            
+            const resp = await fetch(url, { headers: h });
+            if (resp.ok) {
+                const r = await resp.json();
+                const raw = isUpstash ? r.result : (r.record || r);
+                const cloudData = await parseCloudData(raw);
+                if (cloudData) {
+                    restoreFromBackup(cloudData, true); // true 代表會 reload 頁面
+                    if(manual) alert('從雲端下載並還原成功');
+                } else {
+                    throw new Error('解析雲端數據失敗');
+                }
+            } else {
+                throw new Error('雲端讀取失敗');
+            }
+        } catch(e) { 
+            console.error('[CloudSync] 下載錯誤:', e); 
+            setDirty(2); 
+            if(manual) alert('下載失敗: ' + e.message);
+        } finally {
+            isSyncing = false;
+        }
+    };
 
     const parseCloudData = async (raw) => {
         let data = null;
