@@ -1,3 +1,53 @@
+/**
+ * Charles Nextime Web Tools Portal - Core Logic
+ * Copyright (c) 2026 Charles Nextime
+ * Licensed under the GNU General Public License v3.0
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation.
+ */
+
+// 負責載入多個外部套件的函式
+function initLibraries() {
+    const libUrls = [
+        'https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js'
+    ];
+
+    libUrls.forEach(url => {
+        const script = document.createElement('script');
+        script.src = url;
+        script.async = false;
+
+        // 從 URL 提取完整檔名 (例如: exceljs.min.js)
+        const fileName = new URL(url).pathname.split('/').pop();
+
+        // 情況 A：外部載入成功
+        script.onload = function() {
+            console.log(`%c[成功] 外部庫已載入: ${fileName}`, 'color: #4CAF50; font-weight: bold;');
+        };
+
+        // 情況 B：外部載入失敗，啟動備援
+        script.onerror = function() {
+            const fallbackPath = `libs/${fileName}`;
+            console.warn(`[失敗] 外部庫載入失敗，嘗試本地載入: ${fallbackPath}`);
+            
+            const fallbackScript = document.createElement('script');
+            fallbackScript.src = fallbackPath;
+            
+            // 本地載入的成功/失敗監聽（選配）
+            fallbackScript.onload = () => console.log(`%c[備援成功] 已從本地載入: ${fileName}`, 'color: #FF9800; font-weight: bold;');
+            fallbackScript.onerror = () => console.error(`[重大錯誤] 本地備援檔案不存在: ${fallbackPath}`);
+
+            document.head.appendChild(fallbackScript);
+        };
+
+        document.head.appendChild(script);
+    });
+}
+
+// 執行載入
+initLibraries();
+
 document.addEventListener('DOMContentLoaded', () => {
 
     // 全域圖片捕獲，避免外部 Avatar API (例如 DiceBear) 回傳 504 Timeout 時畫面產生破圖
@@ -55,6 +105,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const compressJSON = async (obj, formatted = false) => {
         try {
             const str = formatted ? JSON.stringify(obj, null, 2) : JSON.stringify(obj);
+            if (typeof pako !== 'undefined') {
+                const compressed = pako.gzip(str);
+                let binaryStr = '';
+                const chunkSize = 32768; // 32KB chunks
+                for (let i = 0; i < compressed.length; i += chunkSize) {
+                    binaryStr += String.fromCharCode.apply(null, compressed.subarray(i, i + chunkSize));
+                }
+                return btoa(binaryStr);
+            }
+            // Fallback
             const stream = new Blob([str]).stream().pipeThrough(new CompressionStream('gzip'));
             const resp = new Response(stream);
             const buf = await resp.arrayBuffer();
@@ -67,6 +127,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const bin = atob(base64);
             const buf = new Uint8Array(bin.length);
             for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+            
+            if (typeof pako !== 'undefined') {
+                const jsonString = pako.ungzip(buf, { to: 'string' });
+                return JSON.parse(jsonString);
+            }
+            // Fallback
             const stream = new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'));
             const resp = new Response(stream);
             return await resp.json();
@@ -75,6 +141,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const decompressBinary = async (arrayBuffer) => {
         try {
+            if (typeof pako !== 'undefined') {
+                const buf = new Uint8Array(arrayBuffer);
+                const jsonString = pako.ungzip(buf, { to: 'string' });
+                return JSON.parse(jsonString);
+            }
+            // Fallback
             const stream = new Blob([arrayBuffer]).stream().pipeThrough(new DecompressionStream('gzip'));
             const resp = new Response(stream);
             return await resp.json();
