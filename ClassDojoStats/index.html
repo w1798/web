@@ -24,8 +24,9 @@
                 <label>載入 CSV：</label>
                 <input type="file" id="csvFile" accept=".csv" onchange="processData()">
             </div>
-            <button class="btn-success main-ctrl" onclick="copyScoresOnly()">複製純點數</button>
-            <button class="btn-orange main-ctrl" onclick="showSummary()">全班點數總覽</button>
+            <button class="btn-success main-ctrl" onclick="copyScoresOnly()">複製點數</button>
+            <button class="btn-primary main-ctrl" onclick="copyStudentNames()">複製姓名</button>
+            <button class="btn-orange main-ctrl" onclick="showSummary()">點數總覽</button>
              [<a href="學生姓名.xls" download style="color: #2196F3; text-decoration: none; font-size: 14px;">下載 ClassDojo 快速建置學生名單(學生姓名.xls)</a>]
         </section>
 
@@ -176,7 +177,7 @@
 
 
 
-    <script src="script.js?ver=1.00f"></script>
+    <script src="script.js?ver=1.00g"></script>
 </style>
 </body>
 </html>

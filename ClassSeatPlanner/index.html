@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>班級座位安排系統</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- 左側控制面板 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>Class Seat Planner</h1>
+                <p>班級座位安排系統</p>
+                <div style="display: flex; gap: 8px;">
+                    <button id="btn-open-config" class="btn primary" style="flex: 1; margin-top: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <span>⚙️設定</span>
+                    </button>
+                    <button id="btn-reset-all" class="btn danger" style="flex: 0 0 50px; margin-top: 16px; display: flex; align-items: center; justify-content: center;">
+                        <span>🔄</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h2>自動排位</h2>
+                <div class="btn-group">
+                    <button id="btn-random-sidebar" class="btn primary" style="font-size: 13px;">🎲 隨機排位</button>
+                    <button id="btn-sequential-sidebar" class="btn secondary" style="font-size: 13px;">🔢 依序排位</button>
+                    <button id="btn-clear-sidebar" class="btn danger" style="font-size: 13px;">🗑️ 清空座位</button>
+                </div>
+            </div>
+            
+            <div class="control-section" style="flex: 1; min-height: 0; display: flex; flex-direction: column;">
+                <h2>學生名單</h2>
+                <p class="hint">拖曳入座 / 點擊 [x] 刪除</p>
+                <div class="student-list" id="student-list">
+                    <!-- 學生名單 -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- 右側主要排位區 -->
+        <main class="main-content">
+            <div class="blackboard-area">
+                <div class="blackboard">
+                    <span>黑板 / 講台</span>
+                </div>
+            </div>
+            
+            <div class="seating-grid" id="seating-grid">
+                <!-- 6x5 網格將由 JS 動態生成 -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal for Batch Student Import (Original) -->
+    <div id="student-modal" class="modal-overlay" style="display:none;">
+        <!-- ... keeping it for separate batch edit if needed, or we can merge into central config ... -->
+        <div class="modal-content">
+            <h2>批次修改名單</h2>
+            <p style="margin-bottom: 12px; color: var(--text-secondary); font-size: 14px;">請輸入學生名單 (每一行一位學生)</p>
+            <textarea id="modal-student-textarea" rows="12" placeholder="01&#10;02&#10;03..."></textarea>
+            <div class="modal-actions" style="margin-top: 16px; display: flex; gap: 12px; justify-content: flex-end;">
+                <button id="btn-modal-cancel" class="btn secondary" style="width: auto; padding: 10px 24px;">取消</button>
+                <button id="btn-modal-save" class="btn primary" style="width: auto; padding: 10px 24px;">儲存並套用</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Config Modal (New) -->
+    <div id="config-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-content config-modal-content">
+            <div class="modal-header">
+                <h2>系統設定與排位操作</h2>
+                <span id="btn-close-config" class="close-btn">&times;</span>
+            </div>
+            
+            <div class="modal-body">
+                <div class="config-grid">
+                    <!-- Section 1: Group Constraints (Now at the top) -->
+                    <div class="config-sec full-width">
+                        <h3>群組衝突避讓</h3>
+                        <div class="group-flex">
+                            <div class="group-form">
+                                <div class="form-group">
+                                    <label>群組學生 (可將右側名單拖曳至此):</label>
+                                    <input type="text" id="group-members" placeholder="例: 01, 05, 12">
+                                </div>
+                                <div class="form-group">
+                                    <label>避讓模式:</label>
+                                    <select id="group-mode">
+                                        <option value="left_right">左右相鄰</option>
+                                        <option value="front_back">前後相鄰</option>
+                                        <option value="cross">小十字 (前後左右)</option>
+                                        <option value="grid">九宮格 (周圍8格)</option>
+                                    </select>
+                                </div>
+                                <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                                    <button id="btn-add-group" class="btn primary" style="flex: 1;">建立規則</button>
+                                    <button id="btn-clear-groups" class="btn danger" style="flex: 1;">清空規則</button>
+                                </div>
+
+                                <div style="border-top: 1px solid var(--border-color); padding-top: 16px;">
+                                    <label>已啟用規則:</label>
+                                    <div class="active-groups" id="active-groups">
+                                        <!-- 群組列表 -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="group-display">
+                                <label style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; display: block;">輔助名單 (可拖曳至左側建立規則):</label>
+                                <div id="student-list-modal" class="student-list" style="grid-template-columns: repeat(5, 1fr); gap: 6px;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Grid & Batch (Now below) -->
+                    <div class="config-sec full-width">
+                        <h3>網格與名單</h3>
+                        <div style="display: flex; gap: 24px; align-items: flex-start;">
+                            <div style="flex: 1;">
+                                <div class="form-group" style="display:flex; gap:12px;">
+                                    <div style="flex:1;">
+                                        <label>直列 (行):</label>
+                                        <input type="number" id="grid-cols" value="6" min="1" max="7">
+                                    </div>
+                                    <div style="flex:1;">
+                                        <label>橫排 (列):</label>
+                                        <input type="number" id="grid-rows" value="5" min="1" max="7">
+                                    </div>
+                                </div>
+                                <button id="btn-resize" class="btn secondary">更新網格尺寸</button>
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="display: block; margin-bottom: 8px;">名單快速編輯:</label>
+                                <button id="btn-open-student-modal-from-config" class="btn secondary" style="width: 100%;">批次修改名單內容</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

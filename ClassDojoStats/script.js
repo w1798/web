@@ -344,6 +344,12 @@ function copyScoresOnly() {
     navigator.clipboard.writeText(text).then(() => alert("已複製點數列表"));
 }
 
+function copyStudentNames() {
+    if (!appData.students.length) return alert("無資料可複製");
+    const text = appData.students.map(s => formatStudentName(s.name)).join('\n');
+    navigator.clipboard.writeText(text).then(() => alert("已複製學生姓名列表"));
+}
+
 // 在 script.js 最下方加入此監聽器
 const mainArea = document.querySelector('.app-main');
 const backToTopBtn = document.getElementById('backToTop');
