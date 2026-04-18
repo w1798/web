@@ -1,3 +1,13 @@
+/**
+ * Charles Nextime Web Tools Portal - Core Logic
+ * Copyright (c) 2026 Charles Nextime
+ * Licensed under the GNU General Public License v3.0
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation.
+ */
+
+
 let gridRows = 5;
 let gridCols = 6;
 let seatingData = []; // gridRows x gridCols
@@ -84,6 +94,31 @@ function renderListToContainer(container, isMini = false) {
         div.addEventListener('dragstart', handleDragStart);
         div.addEventListener('dragend', handleDragEnd);
 
+        // Tap-to-Place Logic
+        div.addEventListener('click', () => {
+            if (selectedStudentIdForPlace === id) {
+                selectedStudentIdForPlace = null;
+                div.classList.remove('selected-for-place');
+                document.querySelectorAll('.seat-cell').forEach(c => c.classList.remove('placement-mode'));
+            } else {
+                // Deselect previous
+                document.querySelectorAll('.student-item').forEach(i => i.classList.remove('selected-for-place'));
+                selectedStudentIdForPlace = id;
+                div.classList.add('selected-for-place');
+                
+                // Highlight valid seats
+                document.querySelectorAll('.seat-cell').forEach(cell => {
+                    const r = parseInt(cell.dataset.row);
+                    const c = parseInt(cell.dataset.col);
+                    if (seatingData[r][c] === null && isValidSeat(id, r, c, false)) {
+                        cell.classList.add('placement-mode');
+                    } else {
+                        cell.classList.remove('placement-mode');
+                    }
+                });
+            }
+        });
+
         container.appendChild(div);
     }
 }
@@ -147,7 +182,29 @@ function handleCellClick(e) {
     const col = parseInt(this.dataset.col);
     const currentState = seatingData[row][col];
     
+    // If we have a student selected for placement
+    if (selectedStudentIdForPlace) {
+        if (currentState === null && isValidSeat(selectedStudentIdForPlace, row, col, false)) {
+            seatingData[row][col] = selectedStudentIdForPlace;
+            selectedStudentIdForPlace = null;
+            saveToLocalStorage();
+            renderGrid();
+            renderStudentList();
+            return;
+        } else if (currentState === null) {
+            alert('此處不符合避讓規則！');
+            return;
+        }
+    }
+
     if (currentState && currentState !== 'disabled') {
+        // Option: click seated student to return to list?
+        if (confirm(`要將學生 ${currentState} 移回名單嗎？`)) {
+            seatingData[row][col] = null;
+            saveToLocalStorage();
+            renderGrid();
+            renderStudentList();
+        }
         return; 
     }
     
@@ -162,6 +219,8 @@ function handleCellClick(e) {
 let draggedStudentId = null;
 let draggedFromRow = null;
 let draggedFromCol = null;
+let selectedStudentIdForPlace = null; // New placement state
+
 
 function handleDragStart(e) {
     draggedStudentId = this.dataset.id;
@@ -298,7 +357,7 @@ function setupEventListeners() {
     // Main Config Modal Control
     const configModal = document.getElementById('config-modal');
     document.getElementById('btn-open-config').addEventListener('click', () => {
-        configModal.style.display = 'block'; // Changed to block for center scroll
+        configModal.style.display = 'block'; 
         document.body.classList.add('modal-open');
         renderStudentList(); 
     });
@@ -307,35 +366,50 @@ function setupEventListeners() {
         document.body.classList.remove('modal-open');
     });
 
+    // Student Picker Logic (New)
+    const pickerModal = document.getElementById('picker-modal');
     const groupMembersInput = document.getElementById('group-members');
-    groupMembersInput.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        groupMembersInput.classList.add('drag-over');
+    let selectedPickerIds = [];
+
+    groupMembersInput.addEventListener('click', () => {
+        const currentMems = groupMembersInput.value.split(/[,\s]+/).map(v => v.trim()).filter(v => v !== '');
+        selectedPickerIds = currentMems.filter(id => allStudents.includes(id));
+        renderPickerGrid();
+        pickerModal.style.display = 'block';
     });
-    groupMembersInput.addEventListener('dragleave', () => {
-        groupMembersInput.classList.remove('drag-over');
-    });
-    groupMembersInput.addEventListener('drop', (e) => {
-        e.preventDefault();
-        groupMembersInput.classList.remove('drag-over');
-        if (draggedStudentId) {
-            let currentVal = groupMembersInput.value.trim();
-            let newId = draggedStudentId;
-            // Pad if single digit
-            if (/^\d+$/.test(newId) && newId.length === 1) {
-                newId = newId.padStart(2, '0');
-            }
-            
-            if (currentVal) {
-                const existing = currentVal.split(/[,\s]+/).map(v => v.trim());
-                if (!existing.includes(newId)) {
-                    groupMembersInput.value = currentVal + ', ' + newId;
+
+    function renderPickerGrid() {
+        const grid = document.getElementById('picker-student-grid');
+        grid.innerHTML = '';
+        allStudents.forEach(id => {
+            const div = document.createElement('div');
+            div.className = 'picker-item';
+            if (selectedPickerIds.includes(id)) div.classList.add('selected');
+            div.textContent = id;
+            div.onclick = () => {
+                if (selectedPickerIds.includes(id)) {
+                    selectedPickerIds = selectedPickerIds.filter(x => x !== id);
+                    div.classList.remove('selected');
+                } else {
+                    selectedPickerIds.push(id);
+                    div.classList.add('selected');
                 }
-            } else {
-                groupMembersInput.value = newId;
-            }
-        }
+            };
+            grid.appendChild(div);
+        });
+    }
+
+    document.getElementById('btn-picker-cancel').addEventListener('click', () => {
+        pickerModal.style.display = 'none';
     });
+    document.getElementById('btn-picker-confirm').addEventListener('click', () => {
+        groupMembersInput.value = selectedPickerIds.join(', ');
+        pickerModal.style.display = 'none';
+    });
+
+
+    // Removed old drag-drop logic for group input as requested to use picker
+
 
     // Modal Control
     const modal = document.getElementById('student-modal');
