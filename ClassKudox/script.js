@@ -83,14 +83,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /**
      * Ops Action Codes:
-     * 1: LOG_CREATE (加點日誌)
-     * 2: LOG_DELETE (刪除日誌)
-     * 3: ITEM_UPSERT (行為項目新增/修改)
-     * 5: ITEM_DELETE (行為項目刪除)
+     * 1: LOG_CREATE, 2: LOG_DELETE, 3: ITEM_UPSERT, 5: ITEM_DELETE
+     * 4: STU_UPSERT, 6: STU_DELETE, 7: GRP_UPSERT, 8: GRP_DELETE
+     * 10: CLS_RENAME, 11: CLS_ARCHIVE, 12: CLS_DELETE, 13: CLS_CREATE
      */
-    const pushOp = (action, data) => {
+    const pushOp = (action, data, isGlobal = false) => {
         if (!cloudBinId || !cloudApiKey || autoSyncInterval <= 0) return;
-        ops.push({ t: StampTool.encode(), a: action, d: data });
+        if (isGlobal) {
+            sysOps.push({ t: StampTool.encode(), a: action, d: data });
+            localStorage.setItem('CD_SysOps', JSON.stringify(sysOps));
+        } else {
+            ops.push({ t: StampTool.encode(), a: action, d: data });
+            if (currentClassId) localStorage.setItem(`CD_${currentClassId}_Ops`, JSON.stringify(ops));
+        }
     };
 
     // --- Avatar style mapping: short code <-> DiceBear style name ---
@@ -130,6 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let useGzip = 1; // 1: 壓縮上傳, 0: 直接格式化上傳 (測試用)
     let classes = safeLoad('CD_Cls', []);
+    let sysOps = JSON.parse(localStorage.getItem('CD_SysOps') || '[]');
     let currentClassId = localStorage.getItem('CD_cCId');
     let cloudBinId = localStorage.getItem('BId') || '';
     let cloudApiKey = localStorage.getItem('Key') || '';
@@ -226,6 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem(`CD_${currentClassId}_itm`, JSON.stringify(pointItems));
         localStorage.setItem(`CD_${currentClassId}_set`, JSON.stringify(settings));
         localStorage.setItem(`CD_${currentClassId}_Ops`, JSON.stringify(ops));
+        localStorage.setItem('CD_SysOps', JSON.stringify(sysOps));
         
         if (!skipDirty) { 
             const hasCloud = (cloudBinId && cloudApiKey && autoSyncInterval > 0);
@@ -601,10 +608,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         if(val) { localStorage.setItem(`CD_${n}_${suffix}`, val); localStorage.removeItem(`CD_${c.id}_${suffix}`); }
                     });
                     if (currentClassId === c.id) { currentClassId = n; localStorage.setItem('CD_cCId', n); }
-                    c.id = n; saveData(); renderClassSelector();
+                    const oldId = c.id;
+                    c.id = n; 
+                    pushOp(10, { old: oldId, new: n }, true); // Action 10: Rename Class
+                    saveData(); renderClassSelector();
                 }
             };
-            li.querySelector('.archive-btn').onclick = () => { c.arc = !c.arc; saveData(); renderClassSelector(); };
+            li.querySelector('.archive-btn').onclick = () => { 
+                c.arc = !c.arc; 
+                pushOp(11, { id: c.id, arc: c.arc }, true); // Action 11: Archive Class
+                saveData(); renderClassSelector(); 
+            };
             li.querySelector('.del-class-btn').onclick = () => { 
                 if(confirm('刪除？')) { 
                     ['Stus','Gs','Ls','itm','set','Ops'].forEach(suffix => {
@@ -616,6 +630,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         localStorage.setItem('CD_cCId', currentClassId); 
                         loadClassData();
                     }
+                    pushOp(12, { id: c.id }, true); // Action 12: Delete Class
                     saveData(); 
                     renderClassSelector(); 
                     renderStudents();
@@ -716,7 +731,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('sVer', localSyncVersion);
                 // 上傳成功 = 雲端已包含所有 Ops 效果，清空 Ops
                 ops = [];
+                sysOps = [];
                 localStorage.setItem(`CD_${currentClassId}_Ops`, '[]');
+                localStorage.setItem('CD_SysOps', '[]');
                 console.log(`[CloudSync] Ops 已清空 (同步完成狀態)`);
                 setDirty(3);
             } else {
@@ -784,18 +801,41 @@ document.addEventListener('DOMContentLoaded', () => {
                     // 把過濾過、需要重播的 ops 暫存起來，避免被 loadClassData 覆寫
                     let pendingOps = ops.filter(o => {
                         if (o.a === 1) return !cL.some(l => l.id === o.d.l); 
+                        if (o.a === 2) return cL.some(l => l.id === o.d); // 如果雲端還有這筆 log，則代表在地端刪除後雲端還沒同步，需要重播刪除
                         return o.t >= cloudVer; 
                     });
-                    if (pendingOps.length < oldLen) console.log(`[CloudSync] Step 4 清理重複或過期 Ops: ${oldLen} -> ${pendingOps.length}`);
+                    
+                    // 全域 ops 也要過濾
+                    let pendingSysOps = sysOps.filter(o => o.t >= cloudVer);
+
+                    if (pendingOps.length < ops.length) console.log(`[CloudSync] Step 4 清理重複或過期 Ops: ${ops.length} -> ${pendingOps.length}`);
 
                     restoreFromBackup(cloudData, false);
                     localSyncVersion = cloudVer; 
                     
                     if (currentClassId === oldClassId) {
                         ops = pendingOps; // 把剛剛過濾好的 ops 蓋回記憶體
-                        if (ops.length > 0) {
-                            console.log(`[CloudSync] Step 4 執行殘留 Ops 的點數與 Log 還原...`);
+                        if (pendingSysOps.length > 0 || ops.length > 0) {
+                            console.log(`[CloudSync] Step 4 執行殘留 Ops 還原 (Sys: ${pendingSysOps.length}, Class: ${ops.length})...`);
                             let modified = false;
+
+                            // 1. 先重播全域 Ops (班級結構)
+                            pendingSysOps.forEach(o => {
+                                if (o.a === 10) { // Rename Class
+                                    const c = classes.find(x => x.id === o.d.old);
+                                    if (c) c.id = o.d.new;
+                                } else if (o.a === 11) { // Archive Class
+                                    const c = classes.find(x => x.id === o.d.id);
+                                    if (c) c.arc = o.d.arc;
+                                } else if (o.a === 12) { // Delete Class
+                                    classes = classes.filter(x => x.id !== o.d.id);
+                                } else if (o.a === 13) { // Create Class
+                                    if (!classes.some(x => x.id === o.d.id)) classes.push(o.d);
+                                }
+                                modified = true;
+                            });
+
+                            // 2. 再重播班級 Ops
                             ops.forEach(o => {
                                 if (o.a === 1) { // 重新套用加扣點
                                     const sid = o.d.s;
@@ -803,19 +843,64 @@ document.addEventListener('DOMContentLoaded', () => {
                                     if (s) {
                                         if (o.d.is === 1) s.iP = (s.iP || 0) + o.d.p;
                                         else s.cP = (s.cP || 0) + o.d.p;
-                                        
-                                        // 把動作加回 logs 中
                                         logs.push({ id: o.d.l, sID: sid, lb: o.d.lb, pt: o.d.p, TS: o.t, iSum: o.d.is === 1 ? 1 : undefined });
                                         modified = true;
                                     }
+                                } else if (o.a === 2) { // 刪除紀錄
+                                    const logIdx = logs.findIndex(l => l.id === o.d);
+                                    if (logIdx > -1) {
+                                        const l = logs[logIdx];
+                                        const s = students.find(x => x.id === l.sID);
+                                        if (s) {
+                                            if (l.iSum === 1) s.iP = (s.iP || 0) - l.pt;
+                                            else s.cP = (s.cP || 0) - l.pt;
+                                        }
+                                        logs.splice(logIdx, 1);
+                                        modified = true;
+                                    }
+                                } else if (o.a === 3) { // 行為項目新增/修改
+                                    const cat = o.d.c;
+                                    const target = pointItems[cat];
+                                    if (target) {
+                                        const idx = target.findIndex(i => i.id === o.d.i.id);
+                                        if (idx > -1) target[idx] = o.d.i;
+                                        else target.push(o.d.i);
+                                        modified = true;
+                                    }
+                                } else if (o.a === 4) { // 學生新增/修改
+                                    const idx = students.findIndex(s => s.id === o.d.id);
+                                    if (idx > -1) students[idx] = o.d;
+                                    else students.push(o.d);
+                                    modified = true;
+                                } else if (o.a === 5) { // 行為項目刪除
+                                    const cat = o.d.c;
+                                    if (pointItems[cat]) {
+                                        pointItems[cat] = pointItems[cat].filter(i => i.id !== o.d.id);
+                                        modified = true;
+                                    }
+                                } else if (o.a === 6) { // 學生刪除
+                                    students = students.filter(s => s.id !== o.d);
+                                    logs = logs.filter(l => l.sID !== o.d);
+                                    modified = true;
+                                } else if (o.a === 7) { // 群組新增/修改
+                                    const idx = groups.findIndex(g => g.id === o.d.id);
+                                    if (idx > -1) groups[idx] = o.d;
+                                    else groups.push(o.d);
+                                    modified = true;
+                                } else if (o.a === 8) { // 群組刪除
+                                    groups = groups.filter(g => g.id !== o.d);
+                                    modified = true;
                                 }
                             });
                             
                             if (modified) {
-                                saveData(); // 將重新套用後的點數與 logs 寫入 localstorage
+                                sysOps = pendingSysOps;
+                                saveData(); 
                                 renderStudents();
                                 if(currentView === 'groups') renderGroups();
                             } else {
+                                sysOps = pendingSysOps;
+                                localStorage.setItem('CD_SysOps', JSON.stringify(sysOps));
                                 localStorage.setItem(`CD_${currentClassId}_Ops`, JSON.stringify(ops));
                             }
                         } else {
@@ -1226,24 +1311,47 @@ document.addEventListener('DOMContentLoaded', () => {
                     s.id = newName;
                 }
                 s.aS = newStyle; 
-                // s.aU 已經在隨機或挑選時更新為 seed，若沒點過則保持原樣（可能是舊的或 null）
+                pushOp(4, s); // Action 4: Update Student
                 saveData(); renderStudents(); closeModal(document.getElementById('editStudentModal')); 
             } else if(!nameInp.value.trim()) alert('請輸入姓名');
         });
-        wire('deleteStudentBtn', () => { if(confirm('刪除？')) { students = students.filter(x => x.id !== currentProfileId); logs = logs.filter(x => x.sID !== currentProfileId); saveData(); renderStudents(); closeModal(document.getElementById('editStudentModal')); } });
+        wire('deleteStudentBtn', () => { if(confirm('刪除？')) { 
+            pushOp(6, currentProfileId); // Action 6: Delete Student
+            students = students.filter(x => x.id !== currentProfileId); logs = logs.filter(x => x.sID !== currentProfileId); saveData(); renderStudents(); closeModal(document.getElementById('editStudentModal')); 
+        } });
         wire('saveStudentBtn', () => { 
             const i = document.getElementById('newStudentName'); if(!i.value.trim()) return; 
             i.value.split('\n').forEach(n => { 
                 const name = n.trim(); if(name) {
                     if(students.some(s => s.id === name)) { console.warn('跳過重複姓名:', name); return; }
-                    students.push({ id: name, cP: 0, iP: 0, aS: 'fe', aU: getRandomSeed() }); 
+                    const newStu = { id: name, cP: 0, iP: 0, aS: 'fe', aU: getRandomSeed() };
+                    students.push(newStu);
+                    pushOp(4, newStu); // Action 4: Add Student 
                 }
             }); 
             saveData(); renderStudents(); i.value = ''; closeModal(document.getElementById('addStudentModal')); 
         });
         
-        wire('saveGroupBtn', () => { const i = document.getElementById('groupNameInput'); const name = i.value.trim(); if(!name) return alert('請輸入名稱'); const sids = Array.from(document.querySelectorAll('#groupStudentSelectionGrid input:checked')).map(cb => cb.value); if(!sids.length) return alert('請選擇成員'); if(editingGroupId) { if(editingGroupId !== name && groups.some(x=>x.id===name)) return alert('群組名稱已存在'); const g = groups.find(x=>x.id===editingGroupId); g.id = name; g.sIds = sids; } else { if(groups.some(x=>x.id===name)) return alert('群組名稱已存在'); groups.push({ id: name, sIds: sids }); } saveData(); renderGroups(); closeModal(document.getElementById('manageGroupModal')); });
-        wire('deleteGroupBtn', () => { if(confirm('刪除群組？')) { groups = groups.filter(x => x.id !== editingGroupId); saveData(); renderGroups(); closeModal(document.getElementById('manageGroupModal')); } });
+        wire('saveGroupBtn', () => { 
+            const i = document.getElementById('groupNameInput'); const name = i.value.trim(); if(!name) return alert('請輸入名稱'); 
+            const sids = Array.from(document.querySelectorAll('#groupStudentSelectionGrid input:checked')).map(cb => cb.value); 
+            if(!sids.length) return alert('請選擇成員'); 
+            let g;
+            if(editingGroupId) { 
+                if(editingGroupId !== name && groups.some(x=>x.id===name)) return alert('群組名稱已存在'); 
+                g = groups.find(x=>x.id===editingGroupId); g.id = name; g.sIds = sids; 
+            } else { 
+                if(groups.some(x=>x.id===name)) return alert('群組名稱已存在'); 
+                g = { id: name, sIds: sids };
+                groups.push(g); 
+            } 
+            pushOp(7, g); // Action 7: Add/Update Group
+            saveData(); renderGroups(); closeModal(document.getElementById('manageGroupModal')); 
+        });
+        wire('deleteGroupBtn', () => { if(confirm('刪除群組？')) { 
+            pushOp(8, editingGroupId); // Action 8: Delete Group
+            groups = groups.filter(x => x.id !== editingGroupId); saveData(); renderGroups(); closeModal(document.getElementById('manageGroupModal')); 
+        } });
         wire('groupAwardPointsBtn', () => { 
             if(!awardContextIds.length) return; 
             openAwardModal(awardContextIds, document.getElementById('groupDetailTitle').textContent, currentGroupIdForAward); 
@@ -1343,7 +1451,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
 
 
-            classes.push({ id: n }); 
+            const newClass = { id: n };
+            classes.push(newClass); 
+            pushOp(13, newClass, true); // Action 13: Create Class
             
             students = s;
             pointItems = items;
@@ -1401,6 +1511,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const text = data.map(d => `${d.pts}`).join('\n');
             navigator.clipboard.writeText(text).then(() => alert('已按目前排序複製點數'));
+        });
+
+        wire('copyNamesBtn', () => {
+            const range = getReportsTimeRange();
+            let data = students.map(s => {
+                let pts = logs.filter(l => l.sID === s.id).reduce((sum, l) => {
+                    const ts = (typeof l.TS === 'number') ? l.TS : StampTool.decode(l.TS).getTime();
+                    if (range && (ts < range.start || ts > range.end)) return sum;
+                    return sum + (l.iSum === 1 ? 0 : l.pt);
+                }, 0);
+                return { name: s.id, pts };
+            });
+            if (currentSort === 'name') data.sort((a,b) => a.name.localeCompare(b.name, 'zh-TW')); 
+            else data.sort((a,b) => b.pts - a.pts);
+
+            const text = data.map(d => `${d.name}`).join('\n');
+            navigator.clipboard.writeText(text).then(() => alert('已按目前排序複製姓名'));
         });
 
         wire('exportCsvBtn', () => {

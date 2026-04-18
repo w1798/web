@@ -40,7 +40,7 @@ body {
 body[data-font-size="small"] { font-size: 14px; }
 body[data-font-size="large"] { font-size: 18px; }
 
-.app-container { max-width: 1400px; margin: 0 auto; padding-bottom: 80px; }
+.app-container { max-width: 1400px; margin: 0 auto; padding-bottom: 0px; }
 
 .hidden { display: none !important; }
 
@@ -616,10 +616,10 @@ input:focus, textarea:focus { outline: none; border-color: var(--primary-color);
 /* Footer Styles */
 footer {
     text-align: center;
-    padding: 2rem;
+    padding: 1.5rem;
     font-size: 0.85rem;
     color: var(--text-secondary);
-    margin-top: 2rem;
+    margin-top: 1.5rem;
     border-top: 1px solid var(--border-color);
 }
 footer a {
