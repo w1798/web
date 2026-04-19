@@ -582,16 +582,16 @@
                         <h3>☁️ 雲端同步設定 (<a href="https://w1798.github.io/web/JsonCloudGuide/" target="_blank" class="settings-help-link" style="text-decoration: underline;">申請說明</a>)</h3>
                         <p class="small-text" style="margin-bottom:1rem; color:var(--text-secondary);">支援 Jsonbin.io 與 Upstash Redis。上傳時會自動排除您的金鑰資訊以保護隱私。</p>
                         
-                        <div class="input-group">
-                            <label>Bin ID / URL (Upstash 請填完整 URL)</label>
+                        <div class="input-group" style="display:grid; grid-template-columns: 110px 1fr; align-items:center; gap:0.8rem;">
+                            <label style="white-space:nowrap; margin-bottom:0;">Bin ID / URL</label>
                             <div class="input-with-btn">
                                 <input type="text" id="cloudBinId" placeholder="例如：65f... 或 https://...">
                                 <button class="btn icon-btn" id="resetCloudBinId" title="重置">🧹</button>
                             </div>
                         </div>
                         
-                        <div class="input-group" style="margin-top:1rem;">
-                            <label>Token / X-Access-Key</label>
+                        <div class="input-group" style="margin-top:1rem; display:grid; grid-template-columns: 110px 1fr; align-items:center; gap:0.8rem;">
+                            <label style="white-space:nowrap; margin-bottom:0;">Token / Key</label>
                             <div class="input-with-btn">
                                 <input type="password" id="cloudApiKey" placeholder="您的存取金鑰">
                                 <button class="btn icon-btn" id="resetCloudApiKey" title="重置">🧹</button>
@@ -599,15 +599,16 @@
                         </div>
 
                         <div class="input-group" style="margin-top:1rem;">
-                            <label for="autoSyncInterval">☁️ 自動同步頻率 (資料有異動才會同步，最小 15 秒)</label>
-                            <select id="autoSyncInterval" class="filter-select" style="width:100%;">
-                                <option value="0">無 (手動同步)</option>
-                                <option value="15">15 秒一次</option>
-                                <option value="30">30 秒一次</option>
-                                <option value="60">1 分鐘一次</option>
-                                <option value="120">2 分鐘一次</option>
-                            </select>
-                            <div class="small-text" style="margin-top:0.3rem; color:var(--text-secondary);">若有其他裝置異動，系統將自動背景合併而不重整。</div>
+                            <div style="display:grid; grid-template-columns: 110px 1fr; align-items:center; gap:0.8rem;">
+                                <label for="autoSyncInterval" style="white-space:nowrap; margin-bottom:0;">異動同步頻率</label>
+                                <select id="autoSyncInterval" class="filter-select">
+                                    <option value="0">無 (手動同步)</option>
+                                    <option value="15">15 秒一次</option>
+                                    <option value="30">30 秒一次</option>
+                                    <option value="60">1 分鐘一次</option>
+                                </select>
+                            </div>
+                            <div class="small-text" style="margin-top:0.4rem; color:#ef4444; font-weight: 500;">請確定其他裝置都是「同步完成」的情況下才能做給點、修改等任何動作！(沒動作時，最久3分鐘同步一次)</div>
                         </div>
 
                         <div class="data-actions">

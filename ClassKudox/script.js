@@ -258,7 +258,15 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('CD_cCId', currentClassId);
     }
 
-    let students = [], groups = [], logs = [], pointItems = null, settings = null, ops = [], mSyn = 300;
+    let students = [], groups = [], logs = [], pointItems = null, settings = null, ops = [], mSyn = 30; // 初始同步值 30
+    let idleSeconds = 0; // 閒置時間 (秒)
+    const getSmartSyncInterval = () => {
+        const m = idleSeconds / 60;
+        if (m < 15) return 30;
+        if (m < 30) return 60;
+        if (m < 60) return 120;
+        return 180;
+    };
     let customItems = []; // 預設自訂項目名稱 (字串陣列, e.g. ['兌換點數', '分領獎品'])
     let treasureDefs = []; // 寶物定義 [{id, lb, ic}]
     const DEFAULT_SETTINGS = { ftS: 'M', col: 10, gCol: 5, iCol: 5, eS: 0, sCH: 0, gCH: 0, lRet: 0, avS: 0, sAv: 1 };
@@ -302,7 +310,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const old = isDirty;
         isDirty = v;
         localStorage.setItem('drty', String(v));
-        mSyn = 300; // 只要 isDirty 有變動，mSyn 恢復到 300
+        if (v === 1) idleSeconds = 0; // 只有真的有動作發生 (v=1)，才重設閒置時間
+        if (v === 1 || v === 3) mSyn = getSmartSyncInterval(); // 動作發生或同步完成，才重設計時器
         updateSyncStatus();
         
         // 當 isDirty 從 0 變成 1 時，1秒後執行同步作業
@@ -971,6 +980,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const performCloudUpload = async () => {
         if (!cloudBinId || !cloudApiKey) return;
         updateSyncStatus(); 
+        const opsToClear = ops.length;
+        const sysOpsToClear = sysOps.length;
         try {
             const newVer = StampTool.encode();
             const oldVer = localSyncVersion;
@@ -981,18 +992,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const isUpstash = cloudBinId.includes('upstash.io');
             const putUrl = isUpstash ? (cloudBinId.startsWith('http') ? `${cloudBinId}/SET/classKudox_backup` : cloudBinId) : (cloudBinId.startsWith('http') ? cloudBinId : `https://api.jsonbin.io/v3/b/${cloudBinId}`);
             const h = isUpstash ? {'Authorization':`Bearer ${cloudApiKey}`, 'Content-Type':'application/json'} : {'X-Access-Key':cloudApiKey, 'Content-Type':'application/json'};
-            // 直接上傳壓縮字串，不再包者 {v, d}
+            // 直接上傳壓縮字串，不再包著 {v, d}
             const resp = await fetch(putUrl, { method:'PUT', headers:h, body:JSON.stringify({ d: compressed }) });
             if (resp.ok) { 
                 console.log(`[CloudSync] 同步成功 (版本: ${newVer}, 時間: ${new Date().toLocaleString()})`);
                 localStorage.setItem('sVer', localSyncVersion);
-                // 上傳成功 = 雲端已包含所有 Ops 效果，清空 Ops
-                ops = [];
-                sysOps = [];
-                localStorage.setItem(`CD_${currentClassId}_Ops`, '[]');
-                localStorage.setItem('CD_SysOps', '[]');
-                console.log(`[CloudSync] Ops 已清空 (同步完成狀態)`);
-                setDirty(3);
+                // 上傳成功 = 精準清除剛才已包含在上傳包中的 Ops
+                ops.splice(0, opsToClear);
+                sysOps.splice(0, sysOpsToClear);
+                localStorage.setItem(`CD_${currentClassId}_Ops`, JSON.stringify(ops));
+                localStorage.setItem('CD_SysOps', JSON.stringify(sysOps));
+                console.log(`[CloudSync] 已清理成功上傳之 Ops (剩餘: ${ops.length})`);
+                if (isDirty === 4) setDirty(3); // 只有沒人來亂動才標記同步完成
             } else {
                 localSyncVersion = oldVer; // 上傳失敗恢復舊版本
                 throw new Error('雲端寫入失敗');
@@ -1056,6 +1067,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const checkCloudSyncState = async () => {
         if (isSyncing || !cloudBinId || !cloudApiKey) return;
+        const hadChanges = (isDirty === 1);
         isSyncing = true; setDirty(4); 
 
         console.log(`[CloudSync連線] Step 1 開始預檢及下載雲端版本...`);
@@ -1080,6 +1092,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log(`[CloudSync] Step 2 本地版本: ${fmtVer(localSyncVersion)} (${label}), 雲端版本: ${fmtVer(cloudVer)}`);
 
                 if (vComp < 0) {
+                    let modified = false;
                     console.log(`[CloudSync] Step 4 執行還原、清理重複 Ops 並重播...`);
                     const cL = cloudData[`CD_${currentClassId}_Ls`] || [];
                     const oldLen = ops.length;
@@ -1104,7 +1117,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         ops = pendingOps; // 把剛剛過濾好的 ops 蓋回記憶體
                         if (pendingSysOps.length > 0 || ops.length > 0) {
                             console.log(`[CloudSync] Step 4 執行殘留 Ops 還原 (Sys: ${pendingSysOps.length}, Class: ${ops.length})...`);
-                            let modified = false;
 
                             // 1. 先重播全域 Ops (班級結構)
                             pendingSysOps.forEach(o => {
@@ -1215,12 +1227,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         localStorage.setItem(`CD_${oldClassId}_Ops`, JSON.stringify(pendingOps));
                     }
 
-                    await performCloudUpload();
-                } else if (isDirty === 1 || isDirty === 4 || vComp > 0) {
+                    if (modified) {
+                        await performCloudUpload();
+                    } else {
+                        // 僅標記同步完成，不需重新上傳 (restoreFromBackup 已對齊版本)
+                        if (isDirty === 4) setDirty(3); 
+                        console.log(`[CloudSync] 本地無異動，跳過上傳 (已同步至雲端版本 ${localSyncVersion})`);
+                    }
+                } else if (hadChanges || vComp > 0) {
                     console.log(`[CloudSync] Step 3 執行覆蓋同步上傳...`);
                     await performCloudUpload();
                 } else {
-                    setDirty(3); // 無變動且版本一致
+                    console.log(`[CloudSync] 本地無異動 (版本一致)，跳過上傳`);
+                    if (isDirty === 4) setDirty(3); // 只有當中間沒有人來亂動，才標記同步完成
                 }
             } else throw new Error('預檢連線失敗');
         } catch (e) { 
@@ -1637,14 +1656,14 @@ document.addEventListener('DOMContentLoaded', () => {
         wire('selectAllBtn', () => { if(selectedStudentIds.size === students.length) selectedStudentIds.clear(); else students.forEach(s => selectedStudentIds.add(s.id)); document.getElementById('multiSelectCount').textContent = `已選擇 ${selectedStudentIds.size} 位學生`; renderStudents(); });
         wire('multiAwardBtn', () => { if(!selectedStudentIds.size) return alert('請選擇學生'); openAwardModal(selectedStudentIds.toArray(), `已選 ${selectedStudentIds.size} 位`, null); });
         
-        const wireSlider = (id, labelId, sk) => { const el = document.getElementById(id); if(el) el.oninput = (e) => { settings[sk] = parseInt(e.target.value); document.getElementById(labelId).textContent = e.target.value; applySettings(); saveData(); }; };
+        const wireSlider = (id, labelId, sk) => { const el = document.getElementById(id); if(el) el.oninput = (e) => { settings[sk] = parseInt(e.target.value); document.getElementById(labelId).textContent = e.target.value; applySettings(); saveData(true); }; };
         wireSlider('gridColsRange', 'gridColsLabel', 'col'); wireSlider('cardHeightRange', 'cardHeightLabel', 'sCH'); wireSlider('groupHeightRange', 'groupHeightLabel', 'gCH'); wireSlider('groupColsRange', 'groupColsLabel', 'gCol'); wireSlider('itemColsRange', 'itemColsLabel', 'iCol');
         wireSlider('avatarSizeRange', 'avatarSizeLabel', 'avS');
         
-        const fsSel = document.getElementById('fontSizeSelect'); if(fsSel) fsSel.onchange = (e) => { settings.ftS = e.target.value; applySettings(); saveData(); };
-        const sSel = document.getElementById('enableSoundSetting'); if(sSel) sSel.onchange = (e) => { settings.eS = e.target.checked ? 1 : 0; saveData(); };
-        const saSel = document.getElementById('showAvatarSetting'); if(saSel) saSel.onchange = (e) => { settings.sAv = e.target.checked ? 1 : 0; applySettings(); saveData(); };
-        const retSel = document.getElementById('logRetentionSetting'); if(retSel) retSel.onchange = (e) => { settings.lRet = parseInt(e.target.value); applySettings(); saveData(); performLogRetention(); };
+        const fsSel = document.getElementById('fontSizeSelect'); if(fsSel) fsSel.onchange = (e) => { settings.ftS = e.target.value; applySettings(); saveData(true); };
+        const sSel = document.getElementById('enableSoundSetting'); if(sSel) sSel.onchange = (e) => { settings.eS = e.target.checked ? 1 : 0; saveData(true); };
+        const saSel = document.getElementById('showAvatarSetting'); if(saSel) saSel.onchange = (e) => { settings.sAv = e.target.checked ? 1 : 0; applySettings(); saveData(true); };
+        const retSel = document.getElementById('logRetentionSetting'); if(retSel) retSel.onchange = (e) => { settings.lRet = parseInt(e.target.value); applySettings(); saveData(true); performLogRetention(); };
 
         // Save Custom Award state whenever it changes
         const saveCustState = () => {
@@ -2129,12 +2148,14 @@ document.addEventListener('DOMContentLoaded', () => {
             
             window.checkTimer = setInterval(() => {
                 if (isSyncing) return;
+                idleSeconds++; // 累計閒置時間
                 if (isDirty === 3) {
                     mSyn--;
                     if (mSyn <= 0) {
-                        mSyn = 300;
-                        console.log('[CloudSync] 閒置滿 300 秒，執行強制同步預檢...');
+                        const mStr = (idleSeconds / 60).toFixed(1);
+                        console.log(`[CloudSync] 未動作 ${mStr} 分鐘，自動同步中... (${new Date().toLocaleTimeString()})`);
                         checkCloudSyncState();
+                        mSyn = getSmartSyncInterval();
                     }
                 }
             }, 1000);
