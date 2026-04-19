@@ -689,6 +689,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(!confirm('刪除此寶物？學生已持有的該種寶物也會清除。')) return;
         treasureDefs = treasureDefs.filter(i => i.id !== id);
         students.forEach(s => { if(s.tr) delete s.tr[id]; });
+        pushOp(15, id); // Action 15: Delete Treasure Definition
         saveData(); renderPointItems();
     };
 
@@ -1138,7 +1139,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                         if (s) {
                                             if (l.trId && l.trQty) {
                                                 if (s.tr) s.tr[l.trId] = (s.tr[l.trId] || 0) - l.trQty;
-                                                if (s.tr && s.tr[l.trId] < 0) s.tr[l.trId] = 0;
                                             } else {
                                                 if (l.iSum === 1) s.iP = (s.iP || 0) - l.pt;
                                                 else s.cP = (s.cP || 0) - l.pt;
@@ -1178,6 +1178,15 @@ document.addEventListener('DOMContentLoaded', () => {
                                     modified = true;
                                 } else if (o.a === 8) { // 群組刪除
                                     groups = groups.filter(g => g.id !== o.d);
+                                    modified = true;
+                                } else if (o.a === 14) { // 寶物項目新增/修改
+                                    const idx = treasureDefs.findIndex(i => i.id === o.d.id);
+                                    if (idx > -1) treasureDefs[idx] = o.d;
+                                    else treasureDefs.push(o.d);
+                                    modified = true;
+                                } else if (o.a === 15) { // 寶物項目刪除
+                                    treasureDefs = treasureDefs.filter(i => i.id !== o.d);
+                                    students.forEach(s => { if(s.tr) delete s.tr[o.d]; });
                                     modified = true;
                                 }
                             });
@@ -1313,7 +1322,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // 顯示每種寶物數量
             let trDetail = treasureDefs.map(td => {
                 const qty = (s.tr && s.tr[td.id]) || 0;
-                return qty > 0 ? `${td.ic}${qty}` : '';
+                return qty !== 0 ? `${td.ic}${qty}` : '';
             }).filter(Boolean).join(' ');
             if (!trDetail) trDetail = '<span style="color:var(--text-secondary);font-size:0.85em;">無寶物</span>';
             li.innerHTML = `<div class="report-item-left"><span class="report-rank">#${idx+1}</span><img src="${getAvatarUrl(s.aU||s.id, s.aS)}" class="report-avatar"><span class="report-name">${s.id}</span></div><div class="report-item-right" style="font-size:0.9em;">${trDetail}</div>`;
@@ -1778,9 +1787,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- 寶物新增 ---
         wire('addTreasureBtn', () => { 
             const l = document.getElementById('newTreasureLabel'); const i = document.getElementById('newTreasureIconBtn'); if(!l.value.trim()) return; 
-            if (treasureDefs.some(x => x.lb === l.value.trim())) return alert('寶物名稱已存在');
             const itemId = Math.random().toString(36).substring(2, 8);
-            treasureDefs.push({ id: itemId, lb: l.value.trim(), ic: i.textContent }); 
+            const item = { id: itemId, lb: l.value.trim(), ic: i.textContent };
+            treasureDefs.push(item); 
+            pushOp(14, item); // Action 14: Add/Update Treasure Definition
             saveData(); renderPointItems(); l.value = ''; 
         });
 
@@ -1818,6 +1828,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const item = treasureDefs.find(i => i.id === editingPointItemId);
                 if (item) {
                     item.lb = l; item.ic = ic;
+                    pushOp(14, item); // Action 14: Add/Update Treasure Definition
                     saveData(); renderPointItems(); 
                     if (!document.getElementById('studentDetailModal').classList.contains('hidden')) {
                          if (typeof renderStudentTreasures === 'function') renderStudentTreasures();
