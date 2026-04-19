@@ -279,10 +279,18 @@ document.addEventListener('DOMContentLoaded', () => {
         settings = safeLoad(`CD_${currentClassId}_set`, DEFAULT_SETTINGS);
     };
 
-    let currentView = 'students', isMultiSelectMode = false, selectedStudentIds = new Set();
+    let currentView = 'students', isMultiSelectMode = false;
+    let selectedStudentIds = [];
+    Object.defineProperty(selectedStudentIds, 'size', { get() { return this.length; } });
+    selectedStudentIds.has = function(id) { return this.includes(id); };
+    selectedStudentIds.add = function(id) { this.push(id); };
+    selectedStudentIds.delete = function(id) { const i = this.indexOf(id); if (i > -1) { this.splice(i, 1); return true; } return false; };
+    selectedStudentIds.clear = function() { this.length = 0; };
+    selectedStudentIds.toArray = function() { return this.slice(); };
     let isDirty = Number(localStorage.getItem('drty')) || ((cloudBinId && cloudApiKey) ? 3 : 0), isSyncing = false, autoSyncTimer = null; 
     let awardContextIds = [], currentProfileId = null, editingGroupId = null, currentGroupIdForAward = null, editingPointItemId = null, editingPointItemCat = null, lastActionLogIds = [], undoTimeout = null, currentSort = 'score';
     let currentReportView = 'points'; // 'points' | 'treasure'
+    let pendingTreasures = {};
 
     const setDirty = (v) => {
         const old = isDirty;
@@ -397,6 +405,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const openAwardModal = (ids, title, groupId = null) => {
         awardContextIds = ids;
+        currentGroupIdForAward = groupId;
+        pendingTreasures = {};
         if(ids.length === 1) currentProfileId = ids[0]; 
         const header = document.getElementById('currentProfileName'); if(header) header.textContent = title;
         
@@ -410,13 +420,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const profileModal = document.querySelector('.profile-modal');
         if(profileModal) profileModal.classList.toggle('modal-large', !!groupId);
-        const mainTabs = document.querySelector('.profile-modal .main-tabs');
-        if(mainTabs) mainTabs.classList.toggle('hidden', !!groupId);
         const editBtn = document.getElementById('editProfileBtn');
         if(editBtn) editBtn.classList.toggle('hidden', !!groupId);
         
         const histTabBtn = document.getElementById('profileHistoryTabBtn');
-        if(histTabBtn) histTabBtn.classList.toggle('hidden', ids.length > 1);
+        if(histTabBtn) histTabBtn.classList.toggle('hidden', ids.length > 1 || !!groupId);
         
         const peek = document.getElementById('groupAwardMembersPeek');
         if(groupId && peek) {
@@ -447,13 +455,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const awardPoints = (iID, lb, pt, forcedIgnore = null) => {
         if(!awardContextIds.length) return;
-        const uniqueIds = [...new Set(awardContextIds)];
-        const count = uniqueIds.length;
+        const count = awardContextIds.length;
         const now = Date.now(); 
         const tsHex = StampTool.encode(now);
         let newIds = [];
         const isIgnore = !!forcedIgnore;
-        uniqueIds.forEach(sid => { 
+        awardContextIds.forEach(sid => { 
             const logId = Math.random().toString(36).substring(2, 8); 
             const logEntry = { id: logId, sID: sid, lb, pt: Number(pt), TS: tsHex };
             if(isIgnore) logEntry.iSum = 1;
@@ -599,32 +606,6 @@ document.addEventListener('DOMContentLoaded', () => {
             card.innerHTML = `${isMultiSelectMode ? `<div class="selection-check">${selectedStudentIds.has(s.id) ? '\u2713' : ''}</div>` : ''}<div class="student-avatar-wrapper"><img src="${getAvatarUrl(s.aU||s.id, s.aS)}" class="student-avatar"><div class="${ptClass}">${total}</div></div><div class="student-name">${s.id}</div>`;
             grid.appendChild(card);
         });
-        // Feature 4: On mobile, also render group cards inline
-        if (window.innerWidth <= 600) {
-            groups.forEach(g => {
-                const card = document.createElement('div'); card.className = 'student-card group-card';
-                let total = g.sIds.reduce((sum, sid) => { const s = students.find(x=>x.id===sid); return sum + (s ? ((s.cP||0) + (s.iP||0)) : 0); }, 0);
-                const ptClass = 'student-points' + (total > 0 ? ' positive-total' : (total < 0 ? ' negative-total' : ''));
-                const allSel = isMultiSelectMode && g.sIds.length > 0 && g.sIds.every(id => selectedStudentIds.has(id));
-                if (allSel) card.classList.add('selected');
-                card.innerHTML = `<div class="group-icon">\ud83d\udc65</div><div class="student-name">${g.id}</div><div class="group-member-count">${g.sIds.length} \u4f4d</div><div class="${ptClass}">${total > 0 ? '+' : ''}${total}</div>`;
-                card.onclick = () => {
-                    if (isMultiSelectMode) {
-                        const allSelected = g.sIds.length > 0 && g.sIds.every(id => selectedStudentIds.has(id));
-                        g.sIds.forEach(id => allSelected ? selectedStudentIds.delete(id) : selectedStudentIds.add(id));
-                        const countEl = document.getElementById('multiSelectCount'); 
-                        if (countEl) countEl.textContent = `\u5df2\u9078\u64c7 ${selectedStudentIds.size} \u4f4d\u5b78\u751f`;
-                        renderStudents();
-                    } else {
-                        g.sIds.length ? openAwardModal(g.sIds, g.id, g.id) : alert('\u7fa4\u7d44\u5167\u6c92\u6709\u5b78\u751f');
-                    }
-                };
-                grid.appendChild(card);
-            });
-            const create = document.createElement('div'); create.className = 'student-card create-group-card'; create.onclick = () => openManageGroupModal();
-            create.innerHTML = `<div class="student-avatar" style="background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:2rem;color:#94a3b8">+</div><div class="student-name">\u65b0\u589e\u7fa4\u7d44</div>`;
-            grid.appendChild(create);
-        }
     };
 
     const renderGroups = () => {
@@ -711,7 +692,6 @@ document.addEventListener('DOMContentLoaded', () => {
         saveData(); renderPointItems();
     };
 
-    // --- 學生寶物 UI (在學生彈窗中的「寶物」分頁) ---
     const renderStudentTreasures = () => {
         const el = document.getElementById('studentTreasureList'); if(!el) return;
         el.innerHTML = '';
@@ -720,15 +700,16 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         const ids = awardContextIds;
-        const isMulti = ids.length > 1;
+        const isMulti = ids.length > 1 || currentGroupIdForAward !== null;
         treasureDefs.slice().sort((a,b)=>a.lb.localeCompare(b.lb,'zh-TW')).forEach(td => {
             const card = document.createElement('div');
             card.className = 'treasure-card';
-            // 如果是多人，顯示 "---" 而不是具體數字
-            let qtyText = '---';
+            let qtyText = '0';
             if (!isMulti) {
                 const s = students.find(x => x.id === ids[0]);
                 qtyText = (s && s.tr && s.tr[td.id]) ? s.tr[td.id] : 0;
+            } else {
+                qtyText = pendingTreasures[td.id] || 0;
             }
             card.innerHTML = `
                 <div class="treasure-info">
@@ -737,17 +718,52 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="treasure-controls">
                     <button class="btn treasure-minus" data-tid="${td.id}">−</button>
-                    <span class="treasure-qty">${qtyText}</span>
+                    <span class="treasure-qty ${isMulti && qtyText!==0 ? (qtyText>0?'positive-val':'negative-val') : ''}">${isMulti && qtyText>0?'+':''}${qtyText}</span>
                     <button class="btn treasure-plus" data-tid="${td.id}">+</button>
                 </div>
             `;
-            card.querySelector('.treasure-minus').onclick = () => awardTreasure(td.id, -1);
-            card.querySelector('.treasure-plus').onclick = () => awardTreasure(td.id, 1);
+            card.querySelector('.treasure-minus').onclick = () => {
+                if(isMulti) { pendingTreasures[td.id] = (pendingTreasures[td.id]||0) - 1; renderStudentTreasures(); }
+                else awardTreasure(td.id, -1);
+            };
+            card.querySelector('.treasure-plus').onclick = () => {
+                if(isMulti) { pendingTreasures[td.id] = (pendingTreasures[td.id]||0) + 1; renderStudentTreasures(); }
+                else awardTreasure(td.id, 1);
+            };
             el.appendChild(card);
         });
+
+        if (isMulti) {
+            const totalPending = Object.values(pendingTreasures).reduce((a,b) => a+Math.abs(b), 0);
+            const confBtn = document.createElement('button');
+            confBtn.className = 'btn primary-btn';
+            confBtn.style = 'width:100%; margin-top: 1rem; padding: 1rem; font-size: 1.1em; border-radius: 16px; background: linear-gradient(135deg, #10b981, #059669);';
+            confBtn.innerHTML = `🎁 確定給予寶物 (${totalPending > 0 ? '已調整項目' : '尚未調整'})`;
+            confBtn.disabled = totalPending === 0;
+            if (totalPending === 0) { confBtn.style.opacity = '0.5'; confBtn.style.cursor = 'not-allowed'; }
+            
+            confBtn.onclick = () => {
+                let count = 0;
+                Object.entries(pendingTreasures).forEach(([tId, qty]) => {
+                    if (qty !== 0) { awardTreasure(tId, qty, true); count++; }
+                });
+                if (count > 0) {
+                    renderStudents(); if(currentView==='groups') renderGroups();
+                    createPointAnimation(1, awardContextIds.length);
+                    showUndoToast(`已給予 ${awardContextIds.length} 位學生寶物異動`);
+                }
+                pendingTreasures = {};
+                if(isMultiSelectMode) toggleMultiSelectMode();
+                setTimeout(() => {
+                    closeModal(document.getElementById('studentProfileModal'));
+                    closeModal(document.getElementById('groupDetailModal'));
+                }, 400);
+            };
+            el.appendChild(confBtn);
+        }
     };
 
-    const awardTreasure = (treasureId, qty) => {
+    const awardTreasure = (treasureId, qty, silent = false) => {
         const td = treasureDefs.find(t => t.id === treasureId);
         if (!td) return;
         awardContextIds.forEach(sid => {
@@ -755,8 +771,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!s) return;
             if (!s.tr) s.tr = {};
             s.tr[treasureId] = (s.tr[treasureId] || 0) + qty;
-            if (s.tr[treasureId] < 0) s.tr[treasureId] = 0;
-            // 寶物變動也記錄到 logs (點數設為 0，純紀錄)
+            
             const logId = Math.random().toString(36).substring(2, 8);
             const tsHex = StampTool.encode();
             const qtyText = qty > 0 ? `+${qty}` : `${qty}`;
@@ -766,10 +781,12 @@ document.addEventListener('DOMContentLoaded', () => {
             pushOp(1, { s: sid, lb: logLabel, p: 0, l: logId, is: 1, ti: treasureId, tq: qty });
         });
         saveData();
-        renderStudentTreasures();
-        renderStudents();
-        createPointAnimation(qty, awardContextIds.length);
-        showUndoToast(`${qty > 0 ? '+' : ''}${qty} ${td.lb} 給予 ${awardContextIds.length} 位學生`);
+        if (!silent) {
+            renderStudentTreasures();
+            renderStudents();
+            createPointAnimation(qty, awardContextIds.length);
+            showUndoToast(`${qty > 0 ? '+' : ''}${qty} ${td.lb} 給予 ${awardContextIds.length} 位學生`);
+        }
     };
 
     window.removePointItem = (cat, id) => { 
@@ -787,7 +804,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if(s) {
                 if (l.trId && l.trQty) {
                     if (s.tr) s.tr[l.trId] = (s.tr[l.trId] || 0) - l.trQty;
-                    if (s.tr && s.tr[l.trId] < 0) s.tr[l.trId] = 0;
                 } else {
                     if(l.iSum === 1) s.iP = (s.iP || 0) - l.pt;
                     else s.cP = (s.cP || 0) - l.pt;
@@ -804,8 +820,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const f = logs.filter(l => l.sID === currentProfileId).sort((a,b) => {
             if (typeof a.TS === 'number' && typeof b.TS === 'number') return b.TS - a.TS;
             const sa = String(a.TS), sb = String(b.TS);
-            if (sa.length === sb.length) return sb.localeCompare(sa);
-            return sb.length - sa.length;
+            if (sa.length !== sb.length) return sb.length - sa.length;
+            return sa > sb ? -1 : (sa < sb ? 1 : 0);
         }); 
         if(!f.length) return list.innerHTML = '<li class="empty-state">無紀錄</li>'; 
         f.forEach(l => { 
@@ -900,8 +916,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // 雲端同步時排除特定的 Key 與 Ops
-            const isCloudExclusion = (!includeOps && (k === 'BId' || k === 'Key' || k.endsWith('_Ops')));
+            // 雲端同步時排除特定的 Key 與 Ops，且根據使用者要求排除顯示設定 (_set) 確保跨裝置風格獨立
+            const isCloudExclusion = (!includeOps && (k === 'BId' || k === 'Key' || k.endsWith('_Ops') || k.endsWith('_set')));
             if (!isCloudExclusion) { 
                 try { b[k] = JSON.parse(localStorage.getItem(k)); } catch(e) { b[k] = localStorage.getItem(k); } 
             } 
@@ -914,7 +930,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 但保留本機未同步的 Ops 紀錄
         for (let i = localStorage.length - 1; i >= 0; i--) {
             const k = localStorage.key(i);
-            if (k.startsWith('CD_') && !k.endsWith('_Ops')) {
+            if (k.startsWith('CD_') && !k.endsWith('_Ops') && !k.endsWith('_set')) {
                 localStorage.removeItem(k);
             }
         }
@@ -1111,7 +1127,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                         if (o.d.ti && o.d.tq) {
                                             if (!s.tr) s.tr = {};
                                             s.tr[o.d.ti] = (s.tr[o.d.ti] || 0) + o.d.tq;
-                                            if (s.tr[o.d.ti] < 0) s.tr[o.d.ti] = 0;
                                         }
                                         modified = true;
                                     }
@@ -1316,8 +1331,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 return true;
             }).sort((a,b) => {
                 const sa = String(a.TS), sb = String(b.TS);
-                if (sa.length === sb.length) return sb.localeCompare(sa);
-                return sb.length - sa.length;
+                if (sa.length !== sb.length) return sb.length - sa.length;
+                return sa > sb ? -1 : (sa < sb ? 1 : 0);
             });
             f.slice(0,50).forEach(log => {
                 const s = students.find(x => x.id === log.sID);
@@ -1605,7 +1620,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         wire('cancelMultiBtn', toggleMultiSelectMode);
         wire('selectAllBtn', () => { if(selectedStudentIds.size === students.length) selectedStudentIds.clear(); else students.forEach(s => selectedStudentIds.add(s.id)); document.getElementById('multiSelectCount').textContent = `已選擇 ${selectedStudentIds.size} 位學生`; renderStudents(); });
-        wire('multiAwardBtn', () => { if(!selectedStudentIds.size) return alert('請選擇學生'); openAwardModal(Array.from(selectedStudentIds), `已選 ${selectedStudentIds.size} 位`, null); });
+        wire('multiAwardBtn', () => { if(!selectedStudentIds.size) return alert('請選擇學生'); openAwardModal(selectedStudentIds.toArray(), `已選 ${selectedStudentIds.size} 位`, null); });
         
         const wireSlider = (id, labelId, sk) => { const el = document.getElementById(id); if(el) el.oninput = (e) => { settings[sk] = parseInt(e.target.value); document.getElementById(labelId).textContent = e.target.value; applySettings(); saveData(); }; };
         wireSlider('gridColsRange', 'gridColsLabel', 'col'); wireSlider('cardHeightRange', 'cardHeightLabel', 'sCH'); wireSlider('groupHeightRange', 'groupHeightLabel', 'gCH'); wireSlider('groupColsRange', 'groupColsLabel', 'gCol'); wireSlider('itemColsRange', 'itemColsLabel', 'iCol');
@@ -1648,6 +1663,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         wire('editProfileBtn', () => { const s = students.find(x => x.id === currentProfileId); if(!s) return; document.getElementById('editStudentName').value = s.id; document.getElementById('editStudentAvatarStyle').value = s.aS || 'fe'; document.getElementById('editStudentAvatarPreview').src = getAvatarUrl(s.aU || s.id, s.aS); closeModal(document.getElementById('studentProfileModal')); openModal(document.getElementById('editStudentModal')); });
+        
+        wire('applyClassAvatarBtn', () => { 
+            const style = document.getElementById('classAvatarStyle').value;
+            if(confirm('確定要將全班學生的頭像風格都換成這個嗎？')) {
+                students.forEach(s => {
+                    s.aS = style;
+                    pushOp(4, s); // Sync each updated student 
+                });
+                saveData(); renderStudents(); alert('全班頭像已更新！');
+            }
+        });
+
         wire('saveEditStudentBtn', () => { 
             const nameInp = document.getElementById('editStudentName'); const s = students.find(x => x.id === currentProfileId);
             if(s && nameInp.value.trim()) { 

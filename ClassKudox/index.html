@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?ver=1.02a">
+    <link rel="stylesheet" href="style.css?ver=1.02b">
 </head>
 <body data-font-size="medium">
 
@@ -107,7 +107,7 @@
                 <div class="input-group">
                     <label for="editStudentAvatarStyle">頭像風格</label>
                     <select id="editStudentAvatarStyle" class="filter-select" style="width: 100%">
-                        <option value="fe">可愛表情 (預設)</option>
+                        <option value="fe">可愛表情</option>
                         <option value="bot">機器人</option>
                         <option value="ava">人物角色</option>
                         <option value="adv">探險家</option>
@@ -450,19 +450,34 @@
                         </div>
                         
                         <div class="settings-row" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 500; flex:1;">
-                                <input type="checkbox" id="enableSoundSetting" style="width: 1.2rem; height: 1.2rem;">
-                                🔊 開啟加扣點音效
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 500; flex:1;">
-                                <input type="checkbox" id="showAvatarSetting" style="width: 1.2rem; height: 1.2rem;">
-                                🧑 顯示學生頭像
-                            </label>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; flex:1;">
+                                <input type="checkbox" id="enableSoundSetting" style="width: 1.2rem; height: 1.2rem; cursor: pointer;">
+                                <label for="enableSoundSetting" style="cursor: pointer; font-weight: 500; margin:0;">🔊 開啟加扣點音效</label>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; flex:1;">
+                                <input type="checkbox" id="showAvatarSetting" style="width: 1.2rem; height: 1.2rem; cursor: pointer;">
+                                <label for="showAvatarSetting" style="cursor: pointer; font-weight: 500; margin:0;">🧑 顯示學生頭像</label>
+                            </div>
                         </div>
                         <div class="settings-row" style="margin-top: 1rem;">
                             <div class="input-group" style="flex:1;">
                                 <label for="avatarSizeRange">頭像縮放大小 <span id="avatarSizeLabel" class="highlight-badge">0</span></label>
                                 <input type="range" id="avatarSizeRange" min="-60" max="30" value="0" style="width:100%">
+                            </div>
+                        </div>
+                        <div class="settings-row" style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                            <div class="input-group" style="flex:1;">
+                                <label for="classAvatarStyle">🎨 套用全班頭像風格</label>
+                                <div style="display:flex; gap:0.5rem; align-items:stretch;">
+                                    <select id="classAvatarStyle" class="filter-select" style="flex:1;">
+                                        <option value="fe">可愛表情 (Fun Emoji)</option>
+                                        <option value="bot">機器人 (Bottts)</option>
+                                        <option value="ava">寫實頭像 (Avataaars)</option>
+                                        <option value="adv">像素冒險者 (Adventurer)</option>
+                                        <option value="lor">插畫風 (Lorelei)</option>
+                                    </select>
+                                    <button class="btn secondary-btn" id="applyClassAvatarBtn" style="white-space: nowrap;">全班套用</button>
+                                </div>
                             </div>
                         </div>
                         <div class="settings-footer-spacer"></div>
@@ -529,9 +544,9 @@
                     <div class="settings-section">
                         <h3>🔧 預設自訂項目</h3>
                         <p class="small-text" style="margin-bottom:1rem; color:var(--text-secondary);">在此定義常用的「臨時自訂」項目名稱，每行一個。這些名稱會出現在給予點數 → 臨時自訂分頁的下拉選單中。</p>
-                        <div class="input-group">
+                        <div class="input-group" style="text-align: center;">
                             <label>自訂項目名稱 (每行一個)</label>
-                            <div style="display:flex; gap:0.5rem; align-items: stretch;">
+                            <div style="display:flex; justify-content:center; gap:0.5rem; align-items: stretch;">
                                 <textarea id="customItemsTextarea" rows="8" placeholder="兌換點數&#10;分領獎品&#10;清除事項" style="width: 100%; max-width: 250px; resize:vertical;"></textarea>
                                 <button class="btn primary-btn" id="saveCustomItemsBtn" style="white-space: nowrap; width: auto; padding: 0 1rem; align-self: flex-start; min-height: 40px;">儲存自訂<br>項目</button>
                             </div>
@@ -810,6 +825,6 @@
 </script>
 
 
-    <script src="script.js?ver=1.02a"></script>
+    <script src="script.js?ver=1.02b"></script>
 </body>
 </html>

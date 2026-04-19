@@ -120,12 +120,12 @@ body[data-font-size="large"] { font-size: 18px; }
 /* Main Grids */
 .student-grid {
     display: grid;
-    grid-template-columns: repeat(var(--grid-cols, 5), 1fr);
+    grid-template-columns: repeat(var(--grid-cols, 5), minmax(0, 1fr));
     gap: 1.5rem;
 }
 .group-grid {
     display: grid;
-    grid-template-columns: repeat(var(--group-grid-cols, 2), 1fr);
+    grid-template-columns: repeat(var(--group-grid-cols, 2), minmax(0, 1fr));
     gap: 1.5rem;
 }
 
@@ -154,7 +154,7 @@ body[data-font-size="large"] { font-size: 18px; }
     box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
     display: var(--avatar-display, block);
 }
-.student-name { font-weight: 600; font-size: 0.95em; margin-top: 0.25rem; text-align: center; color: var(--text-primary); }
+.student-name { font-weight: 600; font-size: 0.95em; margin-top: 0.25rem; text-align: center; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .student-points {
     position: absolute; right: -10px; top: -8px;
     background: #f1f5f9; padding: 0.15rem 0.45rem; border-radius: 10px;
@@ -721,15 +721,14 @@ footer a:hover {
     body { padding: 0.5rem; }
     .app-header { padding: 1rem; }
     .app-header h1 { font-size: 1.4rem; }
-    /* Mobile: show 4 student cards per row */
+    /* Mobile: flexible columns based on user minmax */
     .student-grid {
-        grid-template-columns: repeat(4, 1fr) !important;
         gap: 0.5rem;
     }
-    /* Mobile: hide groupGrid (groups shown inline in studentGrid) */
-    #groupGrid { display: none !important; }
-    /* Mobile: hide the header tab buttons (unified view, no tabs needed) */
-    .header-tab { display: none !important; }
+    
+    /* Mobile: tabs are now active like desktop */
+    .view-tabs { display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 1rem; }
+    .header-tab { display: inline-flex; }
 
     /* Compact cards for 4-col layout */
     .student-card { padding: 0.5rem 0.25rem; border-radius: 14px; }
