@@ -7,36 +7,44 @@
  * the Free Software Foundation.
  */
 
-// 負責載入多個外部套件的函式
 function initLibraries() {
-    const libUrls = [
-        'https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js'
+    const libraries = [
+        {
+            url: 'https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js',
+            // 只有這項需要特殊條件，其餘沒寫的都會是 undefined (後面會補預設值)
+            condition: typeof DecompressionStream === 'undefined'
+        }
     ];
 
-    libUrls.forEach(url => {
+    libraries.forEach(lib => {
+        // 1. 自動從 URL 提取檔名
+        const fileName = new URL(lib.url).pathname.split('/').pop();
+
+        // 2. 處理 shouldLoad 邏輯：
+        // 如果 lib.condition 有定義，就用它的結果；如果沒定義(undefined)，則預設為 true
+        const shouldLoad = (lib.condition !== undefined) ? lib.condition : true;
+
+        if (!shouldLoad) {
+            console.log(`%c[跳過] 環境支援原生功能，不載入: ${fileName}`, 'color: #9E9E9E;');
+            return;
+        }
+
         const script = document.createElement('script');
-        script.src = url;
+        script.src = lib.url;
         script.async = false;
 
-        // 從 URL 提取完整檔名 (例如: exceljs.min.js)
-        const fileName = new URL(url).pathname.split('/').pop();
-
-        // 情況 A：外部載入成功
         script.onload = function() {
             console.log(`%c[成功] 外部庫已載入: ${fileName}`, 'color: #4CAF50; font-weight: bold;');
         };
 
-        // 情況 B：外部載入失敗，啟動備援
         script.onerror = function() {
             const fallbackPath = `libs/${fileName}`;
-            console.warn(`[失敗] 外部庫載入失敗，嘗試本地載入: ${fallbackPath}`);
+            console.warn(`[失敗] 載入失敗，嘗試本地備援: ${fallbackPath}`);
             
             const fallbackScript = document.createElement('script');
             fallbackScript.src = fallbackPath;
-            
-            // 本地載入的成功/失敗監聽（選配）
             fallbackScript.onload = () => console.log(`%c[備援成功] 已從本地載入: ${fileName}`, 'color: #FF9800; font-weight: bold;');
-            fallbackScript.onerror = () => console.error(`[重大錯誤] 本地備援檔案不存在: ${fallbackPath}`);
+            fallbackScript.onerror = () => console.error(`[重大錯誤] 本地檔案不存在: ${fallbackPath}`);
 
             document.head.appendChild(fallbackScript);
         };
@@ -45,10 +53,8 @@ function initLibraries() {
     });
 }
 
-// 執行載入
-if (typeof DecompressionStream === 'undefined') {
-    initLibraries();
-}
+// 啟動
+initLibraries();
 
 document.addEventListener('DOMContentLoaded', () => {
 
