@@ -997,13 +997,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (resp.ok) { 
                 console.log(`[CloudSync] 同步成功 (版本: ${newVer}, 時間: ${new Date().toLocaleString()})`);
                 localStorage.setItem('sVer', localSyncVersion);
-                // 上傳成功 = 精準清除剛才已包含在上傳包中的 Ops
-                ops.splice(0, opsToClear);
-                sysOps.splice(0, sysOpsToClear);
-                localStorage.setItem(`CD_${currentClassId}_Ops`, JSON.stringify(ops));
-                localStorage.setItem('CD_SysOps', JSON.stringify(sysOps));
-                console.log(`[CloudSync] 已清理成功上傳之 Ops (剩餘: ${ops.length})`);
-                if (isDirty === 4) setDirty(3); // 只有沒人來亂動才標記同步完成
+                // 二階段驗證邏輯：上傳成功後先不刪除 Ops，等待下次下載雲端比對後再刪。
+                // 僅執行狀態保護，確保同步標記正確
+                if (isDirty === 4) setDirty(3); 
+                console.log(`[CloudSync] 上傳完成，保留本地 Ops 等待下次下載確認... (${ops.length} 筆待確認)`);
             } else {
                 localSyncVersion = oldVer; // 上傳失敗恢復舊版本
                 throw new Error('雲端寫入失敗');
@@ -1084,147 +1081,109 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const cloudVer = cloudData.sVer || '000000';
                 console.log(`[CloudSync] Step 1 取得雲端版本: ${fmtVer(cloudVer)}`);
-                
+
+                // --- 二階段驗證清理流程 ---
+                console.log(`[CloudSync] Step 1.5 執行 Ops 二階段驗證...`);
+                // 1. 清理全域 Ops (sysOps)
+                const preSysLen = sysOps.length;
+                sysOps = sysOps.filter(o => {
+                    const keep = o.t >= cloudVer;
+                    if (!keep) console.log(`[CloudSync] ˇ 驗證通過：清理已同步全域 Ops (Action: ${o.a}, TS: ${o.t})`);
+                    return keep;
+                });
+                if (sysOps.length < preSysLen) {
+                    localStorage.setItem('CD_SysOps', JSON.stringify(sysOps));
+                    console.log(`[CloudSync] ˇ 本地全域 Ops 已清理: ${preSysLen} -> ${sysOps.length}`);
+                }
+
+                // 2. 清理當前班級 Ops
+                const cL = cloudData[`CD_${currentClassId}_Ls`] || [];
+                const preOpsLen = ops.length;
+                ops = ops.filter(o => {
+                    let keep = true;
+                    if (o.a === 1) keep = !cL.some(l => l.id === o.d.l);
+                    else if (o.a === 2) keep = cL.some(l => l.id === o.d);
+                    else keep = o.t >= cloudVer;
+                    
+                    if (!keep) console.log(`[CloudSync] ˇ 驗證通過：清理已同步班級 Ops (Action: ${o.a}, TS: ${o.t})`);
+                    return keep;
+                });
+                if (ops.length < preOpsLen) {
+                    localStorage.setItem(`CD_${currentClassId}_Ops`, JSON.stringify(ops));
+                    console.log(`[CloudSync] ˇ 本地班級 Ops 已清理: ${preOpsLen} -> ${ops.length}`);
+                }
+
                 const vComp = localSyncVersion.localeCompare(cloudVer);
-                let label = '一致';
+                let label = '一致', modified = false;
                 if (vComp < 0) label = '本地為舊';
                 else if (vComp > 0) label = '本地較新';
                 console.log(`[CloudSync] Step 2 本地版本: ${fmtVer(localSyncVersion)} (${label}), 雲端版本: ${fmtVer(cloudVer)}`);
 
                 if (vComp < 0) {
-                    let modified = false;
-                    console.log(`[CloudSync] Step 4 執行還原、清理重複 Ops 並重播...`);
-                    const cL = cloudData[`CD_${currentClassId}_Ls`] || [];
-                    const oldLen = ops.length;
+                    console.log(`[CloudSync] Step 4 執行還原並重播...`);
                     const oldClassId = currentClassId;
-
-                    // 把過濾過、需要重播的 ops 暫存起來，避免被 loadClassData 覆寫
-                    let pendingOps = ops.filter(o => {
-                        if (o.a === 1) return !cL.some(l => l.id === o.d.l); 
-                        if (o.a === 2) return cL.some(l => l.id === o.d); // 如果雲端還有這筆 log，則代表在地端刪除後雲端還沒同步，需要重播刪除
-                        return o.t >= cloudVer; 
-                    });
+                    const oldOps = [...ops]; // 備份當前班級 Ops
                     
-                    // 全域 ops 也要過濾
-                    let pendingSysOps = sysOps.filter(o => o.t >= cloudVer);
-
-                    if (pendingOps.length < ops.length) console.log(`[CloudSync] Step 4 清理重複或過期 Ops: ${ops.length} -> ${pendingOps.length}`);
-
                     restoreFromBackup(cloudData, false);
                     localSyncVersion = cloudVer; 
-                    
-                    if (currentClassId === oldClassId) {
-                        ops = pendingOps; // 把剛剛過濾好的 ops 蓋回記憶體
-                        if (pendingSysOps.length > 0 || ops.length > 0) {
-                            console.log(`[CloudSync] Step 4 執行殘留 Ops 還原 (Sys: ${pendingSysOps.length}, Class: ${ops.length})...`);
 
-                            // 1. 先重播全域 Ops (班級結構)
-                            pendingSysOps.forEach(o => {
-                                if (o.a === 10) { // Rename Class
-                                    const c = classes.find(x => x.id === o.d.old);
-                                    if (c) c.id = o.d.new;
-                                } else if (o.a === 11) { // Archive Class
-                                    const c = classes.find(x => x.id === o.d.id);
-                                    if (c) c.arc = o.d.arc;
-                                } else if (o.a === 12) { // Delete Class
-                                    classes = classes.filter(x => x.id !== o.d.id);
-                                } else if (o.a === 13) { // Create Class
-                                    if (!classes.some(x => x.id === o.d.id)) classes.push(o.d);
-                                }
+                    if (currentClassId === oldClassId) {
+                        ops = oldOps; // 恢復已過濾的 Ops
+                        if (sysOps.length > 0 || ops.length > 0) {
+                            console.log(`[CloudSync] Step 4.5 執行殘留 Ops 重播 (Sys: ${sysOps.length}, Class: ${ops.length})...`);
+                            // 重播全域 Ops
+                            sysOps.forEach(o => {
+                                console.log(`[CloudSync] -> 執行重播全域動作: Action ${o.a} (TS: ${o.t})`);
+                                if (o.a === 10) { const c = classes.find(x => x.id === o.d.old); if (c) c.id = o.d.new; }
+                                else if (o.a === 11) { const c = classes.find(x => x.id === o.d.id); if (c) c.arc = o.d.arc; }
+                                else if (o.a === 12) { classes = classes.filter(x => x.id !== o.d.id); }
+                                else if (o.a === 13) { if (!classes.some(x => x.id === o.d.id)) classes.push(o.d); }
                                 modified = true;
                             });
-
-                            // 2. 再重播班級 Ops
+                            // 重播班級 Ops
                             ops.forEach(o => {
-                                if (o.a === 1) { // 重新套用加扣點
-                                    const sid = o.d.s;
-                                    const s = students.find(x => x.id === sid);
+                                console.log(`[CloudSync] -> 執行重播班級動作: Action ${o.a} (TS: ${o.t})`);
+                                if (o.a === 1) { 
+                                    const sid = o.d.s, s = students.find(x => x.id === sid);
                                     if (s) {
                                         if (o.d.is === 1 && !o.d.ti) s.iP = (s.iP || 0) + o.d.p;
                                         else if (!o.d.ti) s.cP = (s.cP || 0) + o.d.p;
                                         logs.push({ id: o.d.l, sID: sid, lb: o.d.lb, pt: o.d.p, TS: o.t, iSum: o.d.is === 1 ? 1 : undefined, trId: o.d.ti, trQty: o.d.tq });
-                                        if (o.d.ti && o.d.tq) {
-                                            if (!s.tr) s.tr = {};
-                                            s.tr[o.d.ti] = (s.tr[o.d.ti] || 0) + o.d.tq;
-                                        }
+                                        if (o.d.ti && o.d.tq) { if (!s.tr) s.tr = {}; s.tr[o.d.ti] = (s.tr[o.d.ti] || 0) + o.d.tq; }
                                         modified = true;
                                     }
-                                } else if (o.a === 2) { // 刪除紀錄
+                                } else if (o.a === 2) { 
                                     const logIdx = logs.findIndex(l => l.id === o.d);
                                     if (logIdx > -1) {
-                                        const l = logs[logIdx];
-                                        const s = students.find(x => x.id === l.sID);
-                                        if (s) {
-                                            if (l.trId && l.trQty) {
-                                                if (s.tr) s.tr[l.trId] = (s.tr[l.trId] || 0) - l.trQty;
-                                            } else {
-                                                if (l.iSum === 1) s.iP = (s.iP || 0) - l.pt;
-                                                else s.cP = (s.cP || 0) - l.pt;
-                                            }
-                                        }
-                                        logs.splice(logIdx, 1);
-                                        modified = true;
+                                        const l = logs[logIdx], s = students.find(x => x.id === l.sID);
+                                        if (s) { if (l.trId && l.trQty) { if (s.tr) s.tr[l.trId] = (s.tr[l.trId] || 0) - l.trQty; } else { if (l.iSum === 1) s.iP = (s.iP || 0) - l.pt; else s.cP = (s.cP || 0) - l.pt; } }
+                                        logs.splice(logIdx, 1); modified = true;
                                     }
-                                } else if (o.a === 3) { // 行為項目新增/修改
-                                    const cat = o.d.c;
-                                    const target = pointItems[cat];
-                                    if (target) {
-                                        const idx = target.findIndex(i => i.id === o.d.i.id);
-                                        if (idx > -1) target[idx] = o.d.i;
-                                        else target.push(o.d.i);
-                                        modified = true;
-                                    }
-                                } else if (o.a === 4) { // 學生新增/修改
-                                    const idx = students.findIndex(s => s.id === o.d.id);
-                                    if (idx > -1) students[idx] = o.d;
-                                    else students.push(o.d);
-                                    modified = true;
-                                } else if (o.a === 5) { // 行為項目刪除
-                                    const cat = o.d.c;
-                                    if (pointItems[cat]) {
-                                        pointItems[cat] = pointItems[cat].filter(i => i.id !== o.d.id);
-                                        modified = true;
-                                    }
-                                } else if (o.a === 6) { // 學生刪除
-                                    students = students.filter(s => s.id !== o.d);
-                                    logs = logs.filter(l => l.sID !== o.d);
-                                    modified = true;
-                                } else if (o.a === 7) { // 群組新增/修改
-                                    const idx = groups.findIndex(g => g.id === o.d.id);
-                                    if (idx > -1) groups[idx] = o.d;
-                                    else groups.push(o.d);
-                                    modified = true;
-                                } else if (o.a === 8) { // 群組刪除
-                                    groups = groups.filter(g => g.id !== o.d);
-                                    modified = true;
-                                } else if (o.a === 14) { // 寶物項目新增/修改
-                                    const idx = treasureDefs.findIndex(i => i.id === o.d.id);
-                                    if (idx > -1) treasureDefs[idx] = o.d;
-                                    else treasureDefs.push(o.d);
-                                    modified = true;
-                                } else if (o.a === 15) { // 寶物項目刪除
-                                    treasureDefs = treasureDefs.filter(i => i.id !== o.d);
-                                    students.forEach(s => { if(s.tr) delete s.tr[o.d]; });
-                                    modified = true;
-                                }
+                                } else if (o.a === 3) {
+                                    const cat = o.d.c, target = pointItems[cat];
+                                    if (target) { const idx = target.findIndex(i => i.id === o.d.i.id); if (idx > -1) target[idx] = o.d.i; else target.push(o.d.i); modified = true; }
+                                } else if (o.a === 4) { const idx = students.findIndex(s => s.id === o.d.id); if (idx > -1) students[idx] = o.d; else students.push(o.d); modified = true; }
+                                else if (o.a === 5) { const cat = o.d.c; if (pointItems[cat]) { pointItems[cat] = pointItems[cat].filter(i => i.id !== o.d.id); modified = true; } }
+                                else if (o.a === 6) { students = students.filter(s => s.id !== o.d); logs = logs.filter(l => l.sID !== o.d); modified = true; }
+                                else if (o.a === 7) { const idx = groups.findIndex(g => g.id === o.d.id); if (idx > -1) groups[idx] = o.d; else groups.push(o.d); modified = true; }
+                                else if (o.a === 8) { groups = groups.filter(g => g.id !== o.d); modified = true; }
+                                else if (o.a === 14) { const idx = treasureDefs.findIndex(i => i.id === o.d.id); if (idx > -1) treasureDefs[idx] = o.d; else treasureDefs.push(o.d); modified = true; }
+                                else if (o.a === 15) { treasureDefs = treasureDefs.filter(i => i.id !== o.d); students.forEach(s => { if(s.tr) delete s.tr[o.d]; }); modified = true; }
                             });
                             
                             if (modified) {
-                                sysOps = pendingSysOps;
                                 saveData(); 
                                 renderStudents();
                                 if(currentView === 'groups') renderGroups();
                             } else {
-                                sysOps = pendingSysOps;
-                                localStorage.setItem('CD_SysOps', JSON.stringify(sysOps));
                                 localStorage.setItem(`CD_${currentClassId}_Ops`, JSON.stringify(ops));
                             }
                         } else {
                             localStorage.setItem(`CD_${currentClassId}_Ops`, '[]');
                         }
-                    } else if (pendingOps.length > 0) {
+                    } else if (oldOps.length > 0) {
                         // 如果同步後目前班級不一樣了，純粹將這包殘留 Ops 原樣保存至原先班級
-                        localStorage.setItem(`CD_${oldClassId}_Ops`, JSON.stringify(pendingOps));
+                        localStorage.setItem(`CD_${oldClassId}_Ops`, JSON.stringify(oldOps));
                     }
 
                     if (modified) {
@@ -1234,11 +1193,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (isDirty === 4) setDirty(3); 
                         console.log(`[CloudSync] 本地無異動，跳過上傳 (已同步至雲端版本 ${localSyncVersion})`);
                     }
-                } else if (hadChanges || vComp > 0) {
-                    console.log(`[CloudSync] Step 3 執行覆蓋同步上傳...`);
+                } else if (hadChanges || vComp > 0 || ops.length > 0 || sysOps.length > 0) {
+                    console.log(`[CloudSync] Step 3 執行本地變動上傳... (剩餘 Ops: ${ops.length})`);
                     await performCloudUpload();
                 } else {
-                    console.log(`[CloudSync] 本地無異動 (版本一致)，跳過上傳`);
+                    console.log(`[CloudSync] 本地無異動 (版本一致且無需確認 Ops)，跳過上傳`);
                     if (isDirty === 4) setDirty(3); // 只有當中間沒有人來亂動，才標記同步完成
                 }
             } else throw new Error('預檢連線失敗');
