@@ -168,14 +168,19 @@ document.addEventListener('DOMContentLoaded', () => {
      * 10: CLS_RENAME, 11: CLS_ARCHIVE, 12: CLS_DELETE, 13: CLS_CREATE
      */
     const pushOp = (action, data, isGlobal = false) => {
-        if (!cloudBinId || !cloudApiKey || autoSyncInterval <= 0) return;
+        const o = { t: StampTool.encode(), a: action, d: data };
         if (isGlobal) {
-            sysOps.push({ t: StampTool.encode(), a: action, d: data });
+            sysOps.push(o);
             localStorage.setItem('CD_SysOps', JSON.stringify(sysOps));
+            console.log(`[CloudSync] + 紀錄全域 Ops: Action ${action}`, data);
         } else {
-            ops.push({ t: StampTool.encode(), a: action, d: data });
-            if (currentClassId) localStorage.setItem(`CD_${currentClassId}_Ops`, JSON.stringify(ops));
+            ops.push(o);
+            if (currentClassId) {
+                localStorage.setItem(`CD_${currentClassId}_Ops`, JSON.stringify(ops));
+                console.log(`[CloudSync] + 紀錄班級 Ops (${currentClassId}): Action ${action}`, data);
+            }
         }
+        setDirty(1);
     };
 
     // --- Avatar style mapping: short code <-> DiceBear style name ---
@@ -1137,7 +1142,26 @@ document.addEventListener('DOMContentLoaded', () => {
                                 if (o.a === 10) { const c = classes.find(x => x.id === o.d.old); if (c) c.id = o.d.new; }
                                 else if (o.a === 11) { const c = classes.find(x => x.id === o.d.id); if (c) c.arc = o.d.arc; }
                                 else if (o.a === 12) { classes = classes.filter(x => x.id !== o.d.id); }
-                                else if (o.a === 13) { if (!classes.some(x => x.id === o.d.id)) classes.push(o.d); }
+                                else if (o.a === 13) { 
+                                    const cid = o.d.id;
+                                    if (!classes.some(x => x.id === cid)) {
+                                        classes.push({ id: cid });
+                                        localStorage.setItem(`CD_${cid}_Stus`, JSON.stringify(o.d.s || []));
+                                        localStorage.setItem(`CD_${cid}_Gs`, JSON.stringify(o.d.g || []));
+                                        localStorage.setItem(`CD_${cid}_itm`, JSON.stringify(o.d.itm || {}));
+                                        localStorage.setItem(`CD_${cid}_Ls`, '[]');
+                                    }
+                                }
+                                else if (o.a === 18) { 
+                                    classes.forEach(c => {
+                                        localStorage.setItem(`CD_${c.id}_Ls`, '[]');
+                                        const stus = JSON.parse(localStorage.getItem(`CD_${c.id}_Stus`) || '[]');
+                                        stus.forEach(s => { s.cP = 0; s.iP = 0; });
+                                        localStorage.setItem(`CD_${c.id}_Stus`, JSON.stringify(stus));
+                                    });
+                                    logs = []; students.forEach(s => { s.cP = 0; s.iP = 0; });
+                                }
+                                else if (o.a === 19) { customItems = o.d; }
                                 modified = true;
                             });
                             // 重播班級 Ops
@@ -1169,6 +1193,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                 else if (o.a === 8) { groups = groups.filter(g => g.id !== o.d); modified = true; }
                                 else if (o.a === 14) { const idx = treasureDefs.findIndex(i => i.id === o.d.id); if (idx > -1) treasureDefs[idx] = o.d; else treasureDefs.push(o.d); modified = true; }
                                 else if (o.a === 15) { treasureDefs = treasureDefs.filter(i => i.id !== o.d); students.forEach(s => { if(s.tr) delete s.tr[o.d]; }); modified = true; }
+                                else if (o.a === 16) { logs = []; students.forEach(s => { s.cP = 0; s.iP = 0; }); modified = true; }
+                                else if (o.a === 17) { pointItems = o.d; modified = true; }
+                                else if (o.a === 20) { students.forEach(s => s.aS = o.d); modified = true; }
                             });
                             
                             if (modified) {
@@ -1660,11 +1687,9 @@ document.addEventListener('DOMContentLoaded', () => {
         wire('applyClassAvatarBtn', () => { 
             const style = document.getElementById('classAvatarStyle').value;
             if(confirm('確定要將全班學生的頭像風格都換成這個嗎？')) {
-                students.forEach(s => {
-                    s.aS = style;
-                    pushOp(4, s); // Sync each updated student 
-                });
-                saveData(); renderStudents(); alert('全班頭像已更新！');
+                students.forEach(s => s.aS = style);
+                pushOp(20, style); // Action 20: Bulk Apply Avatar Style
+                saveData(); renderStudents(); alert('全班頭像已更新並記錄同步！');
             }
         });
 
@@ -1738,6 +1763,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 l = tempInp.value.trim();
                 if (!customItems.includes(l)) {
                     customItems.push(l);
+                    pushOp(19, customItems, true); // Action 19: Global Custom Items
                     saveData();
                     if (typeof renderCustomDropdown === 'function') renderCustomDropdown();
                 }
@@ -1765,7 +1791,8 @@ document.addEventListener('DOMContentLoaded', () => {
         wire('saveCustomItemsBtn', () => { 
             const ta = document.getElementById('customItemsTextarea'); if(!ta) return;
             customItems = ta.value.split('\n').map(s => s.trim()).filter(Boolean);
-            saveData(); renderPointItems(); alert('已儲存自訂項目');
+            pushOp(19, customItems, true); // Action 19: Global Custom Items
+            saveData(); renderPointItems(); alert('自訂項目已儲存並同步！');
         });
 
         // --- 寶物新增 ---
@@ -1814,7 +1841,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     item.lb = l; item.ic = ic;
                     pushOp(14, item); // Action 14: Add/Update Treasure Definition
                     saveData(); renderPointItems(); 
-                    if (!document.getElementById('studentDetailModal').classList.contains('hidden')) {
+                    if (!document.getElementById('studentProfileModal').classList.contains('hidden')) {
                          if (typeof renderStudentTreasures === 'function') renderStudentTreasures();
                     }
                     closeModal(document.getElementById('editPointItemModal'));
@@ -1872,9 +1899,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
 
 
-            const newClass = { id: n };
-            classes.push(newClass); 
-            pushOp(13, newClass, true); // Action 13: Create Class
+            const newClass = { id: n, s, itm: items, g };
+            classes.push({ id: n }); 
+            pushOp(13, newClass, true); // Action 13: Create Class (Full snapshot)
             
             students = s;
             pointItems = items;
@@ -1912,7 +1939,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(si) {
                     pointItems.pos = [...(si.pos||[])].sort((a,b)=>a.lb.localeCompare(b.lb, 'zh-TW')).map((x, i) => ({...x, id: 'p'+(i+1)}));
                     pointItems.neg = [...(si.neg||[])].sort((a,b)=>a.lb.localeCompare(b.lb, 'zh-TW')).map((x, i) => ({...x, id: 'n'+(i+1)}));
-                    saveData(); renderPointItems(); alert('行為項目已成功覆蓋綁定！');
+                    pushOp(17, pointItems); // Action 17: Sync Behavior Items (Bulk Copy)
+                    saveData(); renderPointItems(); alert('行為項目已成功覆蓋綁定並紀錄同步！');
                 }
             }
         });
@@ -2038,13 +2066,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     localStorage.setItem(`CD_${c.id}_Stus`, JSON.stringify(stus));
                 });
                 logs = []; students.forEach(s => { s.cP = 0; s.iP = 0; });
-                saveData(); renderStudents(); if(currentView === 'groups') renderGroups(); alert('已重置所有班級點數');
+                pushOp(18, null, true); // Action 18: Reset All Classes Points (Global)
+                saveData(); renderStudents(); if(currentView === 'groups') renderGroups(); alert('已重置所有班級點數並紀錄同步');
             } 
         });
         wire('resetCurrentClassPointsBtn', () => { 
             if(confirm(`重置目前班級「${currentClassId}」學生的點數與紀錄？`)) { 
                 logs = []; students.forEach(s => { s.cP = 0; s.iP = 0; });
-                saveData(); renderStudents(); if(currentView === 'groups') renderGroups(); alert('已重置目前班級點數');
+                pushOp(16, null); // Action 16: Reset Current Class Points
+                saveData(); renderStudents(); if(currentView === 'groups') renderGroups(); alert('已重置目前班級點數並紀錄同步');
             } 
         });
         wire('resetSystemBtn', () => { if(confirm('重置系統？資料將消失。')) { localStorage.clear(); location.reload(); } });
