@@ -148,8 +148,11 @@ body[data-font-size="large"] { font-size: 18px; }
 
 .student-avatar-wrapper { position: relative; display: inline-block; margin-bottom: 0.5rem; }
 .student-avatar {
-    width: 4em; height: 4em; border-radius: 50%; object-fit: contain; background-color: transparent;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: block;
+    width: calc(4em * var(--avatar-scale, 1)); 
+    height: calc(4em * var(--avatar-scale, 1)); 
+    border-radius: 50%; object-fit: contain; background-color: transparent;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+    display: var(--avatar-display, block);
 }
 .student-name { font-weight: 600; font-size: 0.95em; margin-top: 0.25rem; text-align: center; color: var(--text-primary); }
 .student-points {

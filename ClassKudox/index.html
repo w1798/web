@@ -450,10 +450,20 @@
                         </div>
                         
                         <div class="settings-row" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 500;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 500; flex:1;">
                                 <input type="checkbox" id="enableSoundSetting" style="width: 1.2rem; height: 1.2rem;">
                                 🔊 開啟加扣點音效
                             </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 500; flex:1;">
+                                <input type="checkbox" id="showAvatarSetting" style="width: 1.2rem; height: 1.2rem;">
+                                🧑 顯示學生頭像
+                            </label>
+                        </div>
+                        <div class="settings-row" style="margin-top: 1rem;">
+                            <div class="input-group" style="flex:1;">
+                                <label for="avatarSizeRange">頭像縮放大小 <span id="avatarSizeLabel" class="highlight-badge">0</span></label>
+                                <input type="range" id="avatarSizeRange" min="-60" max="30" value="0" style="width:100%">
+                            </div>
                         </div>
                         <div class="settings-footer-spacer"></div>
                     </div>
@@ -521,9 +531,11 @@
                         <p class="small-text" style="margin-bottom:1rem; color:var(--text-secondary);">在此定義常用的「臨時自訂」項目名稱，每行一個。這些名稱會出現在給予點數 → 臨時自訂分頁的下拉選單中。</p>
                         <div class="input-group">
                             <label>自訂項目名稱 (每行一個)</label>
-                            <textarea id="customItemsTextarea" rows="8" placeholder="兌換點數&#10;分領獎品&#10;誢刪事項"></textarea>
+                            <div style="display:flex; gap:0.5rem; align-items: stretch;">
+                                <textarea id="customItemsTextarea" rows="8" placeholder="兌換點數&#10;分領獎品&#10;清除事項" style="width: 100%; max-width: 250px; resize:vertical;"></textarea>
+                                <button class="btn primary-btn" id="saveCustomItemsBtn" style="white-space: nowrap; width: auto; padding: 0 1rem; align-self: flex-start; min-height: 40px;">儲存自訂<br>項目</button>
+                            </div>
                         </div>
-                        <button class="btn primary-btn" id="saveCustomItemsBtn" style="width: 100%">儲存自訂項目</button>
                         <div class="settings-footer-spacer"></div>
                     </div>
                 </div>

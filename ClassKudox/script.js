@@ -46,7 +46,9 @@ function initLibraries() {
 }
 
 // 執行載入
-initLibraries();
+if (typeof DecompressionStream === 'undefined') {
+    initLibraries();
+}
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -253,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let students = [], groups = [], logs = [], pointItems = null, settings = null, ops = [], mSyn = 300;
     let customItems = []; // 預設自訂項目名稱 (字串陣列, e.g. ['兌換點數', '分領獎品'])
     let treasureDefs = []; // 寶物定義 [{id, lb, ic}]
-    const DEFAULT_SETTINGS = { ftS: 'M', col: 10, gCol: 5, iCol: 5, eS: 0, sCH: 0, gCH: 0, lRet: 0 };
+    const DEFAULT_SETTINGS = { ftS: 'M', col: 10, gCol: 5, iCol: 5, eS: 0, sCH: 0, gCH: 0, lRet: 0, avS: 0, sAv: 1 };
 
     const loadClassData = () => {
         if(!currentClassId) return;
@@ -354,6 +356,13 @@ document.addEventListener('DOMContentLoaded', () => {
         setVal('itemColsRange', settings.iCol || 3); setTxt('itemColsLabel', settings.iCol || 3);
         const ss = document.getElementById('enableSoundSetting'); if(ss) ss.checked = !!settings.eS;
         const rr = document.getElementById('logRetentionSetting'); if(rr) rr.value = settings.lRet || 0;
+        
+        // Avatar settings
+        document.documentElement.style.setProperty('--avatar-scale', 1 + (settings.avS || 0) / 100);
+        document.documentElement.style.setProperty('--avatar-display', settings.sAv === 0 ? 'none' : 'block');
+        setVal('avatarSizeRange', settings.avS || 0); setTxt('avatarSizeLabel', settings.avS || 0);
+        const sa = document.getElementById('showAvatarSetting'); if(sa) sa.checked = settings.sAv !== 0;
+
         updateSyncStatus();
     };
 
@@ -390,6 +399,15 @@ document.addEventListener('DOMContentLoaded', () => {
         awardContextIds = ids;
         if(ids.length === 1) currentProfileId = ids[0]; 
         const header = document.getElementById('currentProfileName'); if(header) header.textContent = title;
+        
+        // Load custom tab state
+        const savedCustom = safeLoad('CD_CustomTemp', null);
+        if (savedCustom) {
+            const v = document.getElementById('customAwardValue'); if(v) v.value = savedCustom.v;
+            const ign = document.getElementById('customAwardIgnore'); if(ign) ign.checked = !!savedCustom.ign;
+            const sel = document.getElementById('customAwardLabel'); if(sel) sel.value = savedCustom.l || '兌換點數';
+            const temp = document.getElementById('customAwardTempName'); if(temp) temp.value = savedCustom.temp || '';
+        }
         const profileModal = document.querySelector('.profile-modal');
         if(profileModal) profileModal.classList.toggle('modal-large', !!groupId);
         const mainTabs = document.querySelector('.profile-modal .main-tabs');
@@ -429,11 +447,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const awardPoints = (iID, lb, pt, forcedIgnore = null) => {
         if(!awardContextIds.length) return;
+        const uniqueIds = [...new Set(awardContextIds)];
+        const count = uniqueIds.length;
         const now = Date.now(); 
         const tsHex = StampTool.encode(now);
         let newIds = [];
         const isIgnore = !!forcedIgnore;
-        awardContextIds.forEach(sid => { 
+        uniqueIds.forEach(sid => { 
             const logId = Math.random().toString(36).substring(2, 8); 
             const logEntry = { id: logId, sID: sid, lb, pt: Number(pt), TS: tsHex };
             if(isIgnore) logEntry.iSum = 1;
@@ -448,8 +468,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if(isIgnore) opData.is = 1;
             pushOp(1, opData);
         });
-        saveData(); createPointAnimation(pt, awardContextIds.length); renderStudents(); if(currentView === 'groups') renderGroups();
-        lastActionLogIds = newIds; showUndoToast(`${pt > 0 ? '+' : ''}${pt} 給予 ${awardContextIds.length} 位學生`);
+        saveData(); createPointAnimation(pt, count); renderStudents(); if(currentView === 'groups') renderGroups();
+        lastActionLogIds = newIds; showUndoToast(`${pt > 0 ? '+' : ''}${pt} 給予 ${count} 位學生`);
         if(isMultiSelectMode) toggleMultiSelectMode();
         // 確保關閉所有可能的學生彈窗或是群組彈窗後的背景
         setTimeout(() => {
@@ -1589,10 +1609,26 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const wireSlider = (id, labelId, sk) => { const el = document.getElementById(id); if(el) el.oninput = (e) => { settings[sk] = parseInt(e.target.value); document.getElementById(labelId).textContent = e.target.value; applySettings(); saveData(); }; };
         wireSlider('gridColsRange', 'gridColsLabel', 'col'); wireSlider('cardHeightRange', 'cardHeightLabel', 'sCH'); wireSlider('groupHeightRange', 'groupHeightLabel', 'gCH'); wireSlider('groupColsRange', 'groupColsLabel', 'gCol'); wireSlider('itemColsRange', 'itemColsLabel', 'iCol');
+        wireSlider('avatarSizeRange', 'avatarSizeLabel', 'avS');
         
         const fsSel = document.getElementById('fontSizeSelect'); if(fsSel) fsSel.onchange = (e) => { settings.ftS = e.target.value; applySettings(); saveData(); };
         const sSel = document.getElementById('enableSoundSetting'); if(sSel) sSel.onchange = (e) => { settings.eS = e.target.checked ? 1 : 0; saveData(); };
+        const saSel = document.getElementById('showAvatarSetting'); if(saSel) saSel.onchange = (e) => { settings.sAv = e.target.checked ? 1 : 0; applySettings(); saveData(); };
         const retSel = document.getElementById('logRetentionSetting'); if(retSel) retSel.onchange = (e) => { settings.lRet = parseInt(e.target.value); applySettings(); saveData(); performLogRetention(); };
+
+        // Save Custom Award state whenever it changes
+        const saveCustState = () => {
+            const v = document.getElementById('customAwardValue');
+            const ign = document.getElementById('customAwardIgnore');
+            const sel = document.getElementById('customAwardLabel');
+            const temp = document.getElementById('customAwardTempName');
+            localStorage.setItem('CD_CustomTemp', JSON.stringify({ v: v?v.value:-10, ign: ign?ign.checked:true, l: sel?sel.value:'兌換點數', temp: temp?temp.value:'' }));
+        };
+        ['customAwardValue','customAwardIgnore','customAwardLabel','customAwardTempName'].forEach(id => {
+            const el = document.getElementById(id); 
+            if (el) el.addEventListener('change', saveCustState);
+            if (el && (el.tagName === 'INPUT')) el.addEventListener('input', saveCustState);
+        });
 
         // --- 第二階段：資料載入與渲染 ---
         try {
