@@ -274,7 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     let customItems = []; // 預設自訂項目名稱 (字串陣列, e.g. ['兌換點數', '分領獎品'])
     let treasureDefs = []; // 寶物定義 [{id, lb, ic}]
-    const DEFAULT_SETTINGS = { ftS: 'M', col: 10, gCol: 5, iCol: 5, eS: 0, sCH: 0, gCH: 0, lRet: 0, avS: 0, sAv: 1 };
+    const DEFAULT_SETTINGS = { ftS: 16, col: 10, gCol: 5, iCol: 5, itmS: 0, eS: 0, sCH: 0, gCH: 0, lRet: 0, avS: 0, sAv: 1, sTR: 1 };
 
     const loadClassData = () => {
         if(!currentClassId) return;
@@ -368,28 +368,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const applySettings = () => {
         if(!settings) return;
-        const ftMap = { M:'medium', S:'small', L:'large' };
-        document.body.dataset.fontSize = ftMap[settings.ftS] || settings.ftS || 'medium';
+        document.documentElement.style.setProperty('--body-font-size', (settings.ftS || 16) + 'px');
         document.documentElement.style.setProperty('--grid-cols', settings.col);
         document.documentElement.style.setProperty('--group-grid-cols', settings.gCol || 2);
-        document.documentElement.style.setProperty('--item-grid-cols', settings.iCol || 3);
+        document.documentElement.style.setProperty('--item-grid-cols', settings.iCol || 5);
         document.documentElement.style.setProperty('--student-card-height', (settings.sCH || 0) + 'px');
         document.documentElement.style.setProperty('--group-card-height', (settings.gCH || 0) + 'px');
-        const setVal = (id, val) => { const el = document.getElementById(id); if(el) el.value = val; };
-        const setTxt = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
-        setVal('fontSizeSelect', settings.ftS); setVal('gridColsRange', settings.col); setTxt('gridColsLabel', settings.col);
-        setVal('cardHeightRange', settings.sCH); setTxt('cardHeightLabel', settings.sCH);
-        setVal('groupHeightRange', settings.gCH); setTxt('groupHeightLabel', settings.gCH);
-        setVal('groupColsRange', settings.gCol || 2); setTxt('groupColsLabel', settings.gCol || 2);
-        setVal('itemColsRange', settings.iCol || 3); setTxt('itemColsLabel', settings.iCol || 3);
-        const ss = document.getElementById('enableSoundSetting'); if(ss) ss.checked = !!settings.eS;
-        const rr = document.getElementById('logRetentionSetting'); if(rr) rr.value = settings.lRet || 0;
-        
-        // Avatar settings
+        document.documentElement.style.setProperty('--item-scale', (settings.itmS || 0) + 'px');
         document.documentElement.style.setProperty('--avatar-scale', 1 + (settings.avS || 0) / 100);
         document.documentElement.style.setProperty('--avatar-display', settings.sAv === 0 ? 'none' : 'block');
-        setVal('avatarSizeRange', settings.avS || 0); setTxt('avatarSizeLabel', settings.avS || 0);
+
+        const setVal = (id, val) => { const el = document.getElementById(id); if(el) el.value = val; };
+        setVal('fontSizeSelect', settings.ftS || 16);
+        setVal('gridColsSelect', settings.col);
+        setVal('cardHeightSelect', settings.sCH || 0);
+        setVal('groupHeightSelect', settings.gCH || 0);
+        setVal('groupColsSelect', settings.gCol || 5);
+        setVal('itemColsSelect', settings.iCol || 5);
+        setVal('itemScaleSelect', settings.itmS || 0);
+        setVal('avatarSizeSelect', settings.avS || 0);
+        
+        const ss = document.getElementById('enableSoundSetting'); if(ss) ss.checked = !!settings.eS;
         const sa = document.getElementById('showAvatarSetting'); if(sa) sa.checked = settings.sAv !== 0;
+        const st = document.getElementById('showTreasureSetting'); if(st) st.checked = settings.sTR !== 0;
+        const rr = document.getElementById('logRetentionSetting'); if(rr) rr.value = settings.lRet || 0;
 
         updateSyncStatus();
     };
@@ -623,7 +625,30 @@ document.addEventListener('DOMContentLoaded', () => {
             card.onclick = () => isMultiSelectMode ? toggleStudentSelection(s.id) : openAwardModal([s.id], s.id, null);
             let total = (s.cP || 0) + (s.iP || 0);
             const ptClass = 'student-points' + (total > 0 ? ' positive-total' : (total < 0 ? ' negative-total' : ''));
-            card.innerHTML = `${isMultiSelectMode ? `<div class="selection-check">${selectedStudentIds.has(s.id) ? '\u2713' : ''}</div>` : ''}<div class="student-avatar-wrapper"><img src="${getAvatarUrl(s.aU||s.id, s.aS)}" class="student-avatar"><div class="${ptClass}">${total}</div></div><div class="student-name">${s.id}</div>`;
+            
+            // Render treasures summary
+            let trHtml = '';
+            if (s.tr && (settings.sTR !== 0)) {
+                const activeTr = Object.entries(s.tr).filter(([_, qty]) => qty > 0);
+                if (activeTr.length > 0) {
+                    trHtml = `<div class="student-treasures">`;
+                    if (activeTr.length <= 2) {
+                        activeTr.forEach(([id, qty]) => {
+                            const def = treasureDefs.find(t => t.id === id);
+                            if (def) trHtml += `<span class="stu-treasure-icon" title="${def.lb}">${def.ic}${qty}</span>`;
+                        });
+                    } else {
+                        activeTr.slice(0, 3).forEach(([id, qty]) => {
+                            const def = treasureDefs.find(t => t.id === id);
+                            if (def) trHtml += `<span class="stu-treasure-icon" title="${def.lb} x${qty}">${def.ic}</span>`;
+                        });
+                        if (activeTr.length > 3) trHtml += `<span class="stu-treasure-more">+${activeTr.length - 3}</span>`;
+                    }
+                    trHtml += `</div>`;
+                }
+            }
+
+            card.innerHTML = `${isMultiSelectMode ? `<div class="selection-check">${selectedStudentIds.has(s.id) ? '\u2713' : ''}</div>` : ''}<div class="student-avatar-wrapper"><img src="${getAvatarUrl(s.aU||s.id, s.aS)}" class="student-avatar"><div class="${ptClass}">${total}</div></div><div class="student-name">${s.id}</div>${trHtml}`;
             grid.appendChild(card);
         });
     };
@@ -1196,6 +1221,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 else if (o.a === 16) { logs = []; students.forEach(s => { s.cP = 0; s.iP = 0; }); modified = true; }
                                 else if (o.a === 17) { pointItems = o.d; modified = true; }
                                 else if (o.a === 20) { students.forEach(s => s.aS = o.d); modified = true; }
+                                else if (o.a === 21) { settings = o.d; applySettings(); modified = true; }
                             });
                             
                             if (modified) {
@@ -1455,7 +1481,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const threshold = Date.now() - retMonths * 30 * 24 * 60 * 60 * 1000;
         let dirty = false;
         classes.forEach(c => {
-            const lKey = `CD_${c.id}_Ls`, sKey = `CD_${c.id}_Stus`;
+            const lKey = `CD_${c.id}_Ls`, sKey = `CD_${c.id}_Stus`, oKey = `CD_${c.id}_Ops`;
             let cLogs = JSON.parse(localStorage.getItem(lKey) || '[]');
             if (cLogs.length === 0) return;
             let cStudents = JSON.parse(localStorage.getItem(sKey) || '[]');
@@ -1463,10 +1489,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const ts = (typeof l.TS === 'number') ? l.TS : StampTool.decode(l.TS).getTime();
                 return ts >= threshold;
             });
-            // 刪除大於 7 天的 Ops
+            // 刪除大於 7 天的 Ops (防僵屍)
             let cOps = JSON.parse(localStorage.getItem(oKey) || '[]');
-            const sevenDaysHex = StampTool.encode(Date.now() - 7 * 24 * 60 * 60 * 1000);
-            cOps = cOps.filter(o => o.t >= sevenDaysHex);
+            const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+            cOps = cOps.filter(o => {
+                const t = (typeof o.t === 'number') ? o.t : StampTool.decode(o.t).getTime();
+                return t >= sevenDaysAgo;
+            });
             localStorage.setItem(oKey, JSON.stringify(cOps));
 
             if (cLogs.length !== oLen) {
@@ -1479,11 +1508,27 @@ document.addEventListener('DOMContentLoaded', () => {
             if (cloudBinId && cloudApiKey) { isDirty = 1; localStorage.setItem('drty', '1'); updateSyncStatus(); performCloudUpload(); }
             console.log('[System] 完成過期紀錄清理與瘦身');
         }
-        // 清理超過 7 天的防僵屍 Ops
-        const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+
+        // 2. Ops Retention
+        const now = Date.now();
+        const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+        const oneDayAgo = now - 24 * 60 * 60 * 1000;
+        const isCloudMode = !!(cloudBinId && cloudApiKey);
+
+        // 清理防僵屍 Ops (原本的 7 天邏輯)
         const oLen = ops.length;
-        ops = ops.filter(o => o.t > sevenDaysAgo);
-        if (ops.length !== oLen) { saveData(true); console.log(`[System] 已清理 ${oLen - ops.length} 筆過期 Ops`); }
+        // 如果是雲端模式，保留 7 天；非雲端模式，為了瘦身僅保留 1 天
+        const cutoff = isCloudMode ? sevenDaysAgo : oneDayAgo;
+        
+        ops = ops.filter(o => {
+            const t = (typeof o.t === 'number') ? o.t : StampTool.decode(o.t).getTime();
+            return t > cutoff;
+        });
+
+        if (ops.length !== oLen) {
+            saveData(true);
+            console.log(`[System] ${isCloudMode ? '雲端模式' : '非雲端模式'}：已清理 ${oLen - ops.length} 筆過期 Ops (保留 ${isCloudMode ? '7 天' : '1 天'})`);
+        }
     };
 
     const sanitizeAndCleanDatabase = () => {
@@ -1772,6 +1817,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const v = parseInt(document.getElementById('customAwardValue').value) || 0; 
             const ign = document.getElementById('customAwardIgnore').checked; 
             awardPoints('custom', l, v, ign); 
+            if (tempInp) tempInp.value = '';
         });
         
         document.querySelectorAll('.tab-btn').forEach(b => b.onclick = () => switchProfileTab(b.dataset.profileTab));
@@ -1792,7 +1838,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const ta = document.getElementById('customItemsTextarea'); if(!ta) return;
             customItems = ta.value.split('\n').map(s => s.trim()).filter(Boolean);
             pushOp(19, customItems, true); // Action 19: Global Custom Items
-            saveData(); renderPointItems(); alert('自訂項目已儲存並同步！');
+            saveData(); renderPointItems();
         });
 
         // --- 寶物新增 ---
@@ -1926,6 +1972,40 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const binInp = document.getElementById('cloudBinId'); if(binInp) { binInp.value = cloudBinId; binInp.onchange = (e) => { cloudBinId = e.target.value; saveData(); startSyncTimer(); }; }
         const keyInp = document.getElementById('cloudApiKey'); if(keyInp) { keyInp.value = cloudApiKey; keyInp.onchange = (e) => { cloudApiKey = e.target.value; saveData(); startSyncTimer(); }; }
+
+        const st = document.getElementById('showTreasureSetting'); if(st) st.onchange = (e) => { settings.sTR = e.target.checked ? 1 : 0; saveData(); pushOp(21, settings, true); renderStudents(); };
+        const sa = document.getElementById('showAvatarSetting'); if(sa) sa.onchange = (e) => { settings.sAv = e.target.checked ? 1 : 0; applySettings(); saveData(); pushOp(21, settings, true); renderStudents(); };
+        const ss = document.getElementById('enableSoundSetting'); if(ss) ss.onchange = (e) => { settings.eS = e.target.checked ? 1 : 0; saveData(); pushOp(21, settings, true); };
+        
+        // Settings selects wiring
+        const bindSelect = (id, key, isStyleVar = true, styleVarName = null, isPercent = false, isUnitless = false) => {
+            const el = document.getElementById(id); if(!el) return;
+            el.onchange = (e) => {
+                const val = Number(e.target.value);
+                settings[key] = val;
+                if(isStyleVar) {
+                    const unit = isUnitless ? '' : (isPercent ? '%' : 'px');
+                    document.documentElement.style.setProperty(styleVarName || `--${key}`, val + unit);
+                }
+                if(key === 'ftS') document.documentElement.style.setProperty('--body-font-size', val + 'px');
+                if(key === 'itmS') document.documentElement.style.setProperty('--item-scale', val + 'px');
+                if(key === 'avS') document.documentElement.style.setProperty('--avatar-scale', 1 + val / 100);
+                saveData();
+                pushOp(21, settings, true); 
+                if(['ftS','col','sTR'].includes(key)) renderStudents(); 
+                if(['gCol'].includes(key)) renderGroups();
+            };
+        };
+        
+        bindSelect('fontSizeSelect', 'ftS', false);
+        bindSelect('gridColsSelect', 'col', true, '--grid-cols', false, true);
+        bindSelect('cardHeightSelect', 'sCH', true, '--student-card-height');
+        bindSelect('groupHeightSelect', 'gCH', true, '--group-card-height');
+        bindSelect('groupColsSelect', 'gCol', true, '--group-grid-cols', false, true);
+        bindSelect('itemColsSelect', 'iCol', true, '--item-grid-cols', false, true);
+        bindSelect('itemScaleSelect', 'itmS', false); 
+        bindSelect('avatarSizeSelect', 'avS', false);
+
         const ivInp = document.getElementById('autoSyncInterval'); if(ivInp) { ivInp.value = autoSyncInterval; ivInp.onchange = (e) => { autoSyncInterval = parseInt(e.target.value); saveData(); startSyncTimer(); }; }
 
         wire('resetCloudBinId', () => { if(confirm('重置 URL 或 ID？')) { document.getElementById('cloudBinId').value = ''; cloudBinId = ''; saveData(); } });

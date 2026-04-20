@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?ver=1.02d">
+    <link rel="stylesheet" href="style.css?ver=1.02e">
 </head>
 <body data-font-size="medium">
 
@@ -414,55 +414,76 @@
                 <div class="settings-tab-content active" id="settingsDisplayTab">
                     <div class="settings-section">
                         <!-- Sound moved to bottom -->
-                        <div class="settings-row">
-                            <div class="input-group" style="flex:1;">
+                        <div class="settings-grid-6">
+                            <div class="input-group">
                                 <label for="fontSizeSelect">字體大小</label>
                                 <select id="fontSizeSelect" class="filter-select">
-                                    <option value="S">小</option>
-                                    <option value="M" selected>中</option>
-                                    <option value="L">大</option>
+                                    <option value="14">14px</option>
+                                    <option value="16">16px</option>
+                                    <option value="18">18px</option>
+                                    <option value="20">20px</option>
+                                    <option value="22">22px</option>
+                                    <option value="24">24px</option>
                                 </select>
                             </div>
-                            <div class="input-group" style="flex:1;">
-                                <label for="gridColsRange">每列顯示人數 <span id="gridColsLabel" class="highlight-badge">10</span></label>
-                                <input type="range" id="gridColsRange" min="2" max="15" value="10" style="width:100%">
+                            <div class="input-group">
+                                <label for="avatarSizeSelect">頭像縮放</label>
+                                <select id="avatarSizeSelect" class="filter-select">
+                                    <script>for(let i=-60; i<=30; i+=10) document.write(`<option value="${i}">${i > 0 ? '+' : ''}${i}%</option>`);</script>
+                                </select>
                             </div>
-                        </div>
-                        <div class="settings-row" style="margin-top: 1rem;">
-                            <div class="input-group" style="flex:1;">
-                                <label for="cardHeightRange">學生卡片高度調整 <span id="cardHeightLabel" class="highlight-badge">0</span></label>
-                                <input type="range" id="cardHeightRange" min="-40" max="100" value="0" style="width:100%">
+                            <div class="input-group">
+                                <label for="gridColsSelect">學生卡每列</label>
+                                <select id="gridColsSelect" class="filter-select">
+                                    <script>for(let i=2; i<=15; i++) document.write(`<option value="${i}">${i} 人</option>`);</script>
+                                </select>
                             </div>
-                            <div class="input-group" style="flex:1;">
-                                <label for="groupHeightRange">群組卡片高度調整 <span id="groupHeightLabel" class="highlight-badge">0</span></label>
-                                <input type="range" id="groupHeightRange" min="-40" max="100" value="0" style="width:100%">
+                            <div class="input-group">
+                                <label for="cardHeightSelect">學生卡高度</label>
+                                <select id="cardHeightSelect" class="filter-select">
+                                    <script>for(let i=-40; i<=100; i+=10) document.write(`<option value="${i}">${i > 0 ? '+' : ''}${i}px</option>`);</script>
+                                </select>
                             </div>
-                        </div>
-                        <div class="settings-row" style="margin-top: 1rem;">
-                            <div class="input-group" style="flex:1;">
-                                <label for="groupColsRange">群組每列顯示數量 <span id="groupColsLabel" class="highlight-badge">5</span></label>
-                                <input type="range" id="groupColsRange" min="1" max="10" value="5" style="width:100%">
+                            <div class="input-group">
+                                <label for="groupColsSelect">群組卡每列</label>
+                                <select id="groupColsSelect" class="filter-select">
+                                    <script>for(let i=1; i<=10; i++) document.write(`<option value="${i}">${i} 個</option>`);</script>
+                                </select>
                             </div>
-                            <div class="input-group" style="flex:1;">
-                                <label for="itemColsRange">行為項目每列個數 (連動點選學生卡片) <span id="itemColsLabel" class="highlight-badge">5</span></label>
-                                <input type="range" id="itemColsRange" min="1" max="10" value="5" style="width:100%">
+                            <div class="input-group">
+                                <label for="groupHeightSelect">群組卡高度</label>
+                                <select id="groupHeightSelect" class="filter-select">
+                                    <script>for(let i=-40; i<=100; i+=10) document.write(`<option value="${i}">${i > 0 ? '+' : ''}${i}px</option>`);</script>
+                                </select>
                             </div>
+                            <div class="input-group">
+                                <label for="itemColsSelect">行為卡每列</label>
+                                <select id="itemColsSelect" class="filter-select">
+                                    <script>for(let i=1; i<=10; i++) document.write(`<option value="${i}">${i} 個</option>`);</script>
+                                </select>
+                            </div>
+
+                            <div class="input-group">
+                                <label for="itemScaleSelect">行為卡高度</label>
+                                <select id="itemScaleSelect" class="filter-select">
+                                    <script>for(let i=-40; i<=60; i+=10) document.write(`<option value="${i}">${i > 0 ? '+' : ''}${i}px</option>`);</script>
+                                </select>
+                            </div>
+
                         </div>
                         
-                        <div class="settings-row" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                        <div class="settings-row" style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
                             <div style="display: flex; align-items: center; gap: 0.5rem; flex:1;">
                                 <input type="checkbox" id="enableSoundSetting" style="width: 1.2rem; height: 1.2rem; cursor: pointer;">
-                                <label for="enableSoundSetting" style="cursor: pointer; font-weight: 500; margin:0;">🔊 開啟加扣點音效</label>
+                                <label for="enableSoundSetting" style="cursor: pointer; font-weight: 500; margin:0;">🔊 加扣點音效</label>
                             </div>
                             <div style="display: flex; align-items: center; gap: 0.5rem; flex:1;">
                                 <input type="checkbox" id="showAvatarSetting" style="width: 1.2rem; height: 1.2rem; cursor: pointer;">
-                                <label for="showAvatarSetting" style="cursor: pointer; font-weight: 500; margin:0;">🧑 顯示學生頭像</label>
+                                <label for="showAvatarSetting" style="cursor: pointer; font-weight: 500; margin:0;">🧑 顯示頭像</label>
                             </div>
-                        </div>
-                        <div class="settings-row" style="margin-top: 1rem;">
-                            <div class="input-group" style="flex:1;">
-                                <label for="avatarSizeRange">頭像縮放大小 <span id="avatarSizeLabel" class="highlight-badge">0</span></label>
-                                <input type="range" id="avatarSizeRange" min="-60" max="30" value="0" style="width:100%">
+                             <div style="display: flex; align-items: center; gap: 0.5rem; flex:1;">
+                                <input type="checkbox" id="showTreasureSetting" style="width: 1.2rem; height: 1.2rem; cursor: pointer;">
+                                <label for="showTreasureSetting" style="cursor: pointer; font-weight: 500; margin:0;">🎁 顯示寶物</label>
                             </div>
                         </div>
                         <div class="settings-row" style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
@@ -826,6 +847,6 @@
 </script>
 
 
-    <script src="script.js?ver=1.02d"></script>
+    <script src="script.js?ver=1.02e"></script>
 </body>
 </html>
