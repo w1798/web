@@ -302,7 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedStudentIds = [];
     Object.defineProperty(selectedStudentIds, 'size', { get() { return this.length; } });
     selectedStudentIds.has = function(id) { return this.includes(id); };
-    selectedStudentIds.add = function(id) { this.push(id); };
+    selectedStudentIds.add = function(id) { if(!this.includes(id)) this.push(id); };
     selectedStudentIds.delete = function(id) { const i = this.indexOf(id); if (i > -1) { this.splice(i, 1); return true; } return false; };
     selectedStudentIds.clear = function() { this.length = 0; };
     selectedStudentIds.toArray = function() { return this.slice(); };
@@ -648,7 +648,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            card.innerHTML = `${isMultiSelectMode ? `<div class="selection-check">${selectedStudentIds.has(s.id) ? '\u2713' : ''}</div>` : ''}<div class="student-avatar-wrapper"><img src="${getAvatarUrl(s.aU||s.id, s.aS)}" class="student-avatar"><div class="${ptClass}">${total}</div></div><div class="student-name">${s.id}</div>${trHtml}`;
+            card.innerHTML = `${isMultiSelectMode ? `<div class="selection-check">${selectedStudentIds.has(s.id) ? '\u2713' : ''}</div>` : ''}<div class="${ptClass}">${total}</div><div class="student-avatar-wrapper"><img src="${getAvatarUrl(s.aU||s.id, s.aS)}" class="student-avatar"></div><div class="student-name">${s.id}</div>${trHtml}`;
             grid.appendChild(card);
         });
     };
@@ -1968,9 +1968,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const binInp = document.getElementById('cloudBinId'); if(binInp) { binInp.value = cloudBinId; binInp.onchange = (e) => { cloudBinId = e.target.value; saveData(); startSyncTimer(); }; }
         const keyInp = document.getElementById('cloudApiKey'); if(keyInp) { keyInp.value = cloudApiKey; keyInp.onchange = (e) => { cloudApiKey = e.target.value; saveData(); startSyncTimer(); }; }
 
-        const st = document.getElementById('showTreasureSetting'); if(st) st.onchange = (e) => { settings.sTR = e.target.checked ? 1 : 0; saveData(); renderStudents(); };
-        const sa = document.getElementById('showAvatarSetting'); if(sa) sa.onchange = (e) => { settings.sAv = e.target.checked ? 1 : 0; applySettings(); saveData(); renderStudents(); };
-        const ss = document.getElementById('enableSoundSetting'); if(ss) ss.onchange = (e) => { settings.eS = e.target.checked ? 1 : 0; saveData(); };
+        const st = document.getElementById('showTreasureSetting'); if(st) st.onchange = (e) => { settings.sTR = e.target.checked ? 1 : 0; saveData(true); renderStudents(); };
+        const sa = document.getElementById('showAvatarSetting'); if(sa) sa.onchange = (e) => { settings.sAv = e.target.checked ? 1 : 0; applySettings(); saveData(true); renderStudents(); };
+        const ss = document.getElementById('enableSoundSetting'); if(ss) ss.onchange = (e) => { settings.eS = e.target.checked ? 1 : 0; saveData(true); };
         
         // Settings selects wiring
         const bindSelect = (id, key, isStyleVar = true, styleVarName = null, isPercent = false, isUnitless = false) => {
@@ -1984,8 +1984,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 if(key === 'ftS') document.documentElement.style.setProperty('--body-font-size', val + 'px');
                 if(key === 'itmS') document.documentElement.style.setProperty('--item-scale', val + 'px');
-                if(key === 'avS') document.documentElement.style.setProperty('--avatar-scale', 1 + val / 100);
-                saveData();
+                saveData(true);
                 if(['ftS','col','sTR'].includes(key)) renderStudents(); 
                 if(['gCol'].includes(key)) renderGroups();
             };
