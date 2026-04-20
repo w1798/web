@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?ver=1.02e">
+    <link rel="stylesheet" href="style.css?ver=1.02f">
 </head>
 <body data-font-size="medium">
 
@@ -782,9 +782,9 @@
 
       <a href="https://w1798.github.io/web/" target="_blank">&copy; 2026<script>const y=new Date().getFullYear(); if(y>2026)document.write("-"+y);</script> Charles Nextime</a> · 
       <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">GPLv3</a>
-      <span id="busuanzi_container_page_pv">
-          本頁使用量 <span id="busuanzi_value_page_pv"></span> 次
-      </span>
+<span id="busuanzi_container_page_pv">
+    本頁使用量 <span id="busuanzi_value_page_pv"></span> 次
+</span>
     </footer>
     
 <style>
@@ -803,8 +803,26 @@
 </style>
 
 
+<style>
+#busuanzi_container_page_pv {
+    color: #888;
+    font-size: 0.9rem;
+    margin-left: 15px;
+    border-left: 1px solid rgba(128, 128, 128, 0.5); /* 計數器加一條細細的分隔線 */
+    padding-left: 15px;
+}
+
+#busuanzi_value_page_pv {
+    color: #00b894;
+    font-weight: bold;
+}
+</style>
+
+
 <script>
 (function() {
+    // return; // 取消此行可停止計數，直接在這裡回傳，後面的代碼完全不執行
+    
     // 計數器這樣無論是 /web/ 還是 /web 都會統一變成 /web 
     const path = window.location.pathname.replace(/\/$/, ""); 
     const TIME_KEY = `VERCOUNT_TIME_${path}`; // 每個分頁獨立計算冷卻時間
@@ -847,6 +865,6 @@
 </script>
 
 
-    <script src="script.js?ver=1.02e"></script>
+    <script src="script.js?ver=1.02f"></script>
 </body>
 </html>

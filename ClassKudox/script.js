@@ -629,7 +629,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Render treasures summary
             let trHtml = '';
             if (s.tr && (settings.sTR !== 0)) {
-                const activeTr = Object.entries(s.tr).filter(([_, qty]) => qty > 0);
+                const activeTr = Object.entries(s.tr).filter(([_, qty]) => qty !== 0);
                 if (activeTr.length > 0) {
                     trHtml = `<div class="student-treasures">`;
                     if (activeTr.length <= 2) {
@@ -745,18 +745,12 @@ document.addEventListener('DOMContentLoaded', () => {
             el.innerHTML = '<p style="text-align:center; color:var(--text-secondary); padding:2rem;">尚未定義寶物，請先在「系統設定 → 寶物設定」中新增寶物種類。</p>';
             return;
         }
-        const ids = awardContextIds;
-        const isMulti = ids.length > 1 || currentGroupIdForAward !== null;
+
         treasureDefs.slice().sort((a,b)=>a.lb.localeCompare(b.lb,'zh-TW')).forEach(td => {
             const card = document.createElement('div');
             card.className = 'treasure-card';
-            let qtyText = '0';
-            if (!isMulti) {
-                const s = students.find(x => x.id === ids[0]);
-                qtyText = (s && s.tr && s.tr[td.id]) ? s.tr[td.id] : 0;
-            } else {
-                qtyText = pendingTreasures[td.id] || 0;
-            }
+            const qtyText = pendingTreasures[td.id] || 0;
+            
             card.innerHTML = `
                 <div class="treasure-info">
                     <span class="treasure-icon">${td.ic}</span>
@@ -764,49 +758,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="treasure-controls">
                     <button class="btn treasure-minus" data-tid="${td.id}">−</button>
-                    <span class="treasure-qty ${isMulti && qtyText!==0 ? (qtyText>0?'positive-val':'negative-val') : ''}">${isMulti && qtyText>0?'+':''}${qtyText}</span>
+                    <span class="treasure-qty ${qtyText!==0 ? (qtyText>0?'positive-val':'negative-val') : ''}">${qtyText>0?'+':''}${qtyText}</span>
                     <button class="btn treasure-plus" data-tid="${td.id}">+</button>
                 </div>
             `;
             card.querySelector('.treasure-minus').onclick = () => {
-                if(isMulti) { pendingTreasures[td.id] = (pendingTreasures[td.id]||0) - 1; renderStudentTreasures(); }
-                else awardTreasure(td.id, -1);
+                pendingTreasures[td.id] = (pendingTreasures[td.id]||0) - 1;
+                renderStudentTreasures();
             };
             card.querySelector('.treasure-plus').onclick = () => {
-                if(isMulti) { pendingTreasures[td.id] = (pendingTreasures[td.id]||0) + 1; renderStudentTreasures(); }
-                else awardTreasure(td.id, 1);
+                pendingTreasures[td.id] = (pendingTreasures[td.id]||0) + 1;
+                renderStudentTreasures();
             };
             el.appendChild(card);
         });
 
-        if (isMulti) {
-            const totalPending = Object.values(pendingTreasures).reduce((a,b) => a+Math.abs(b), 0);
-            const confBtn = document.createElement('button');
-            confBtn.className = 'btn primary-btn';
-            confBtn.style = 'width:100%; margin-top: 1rem; padding: 1rem; font-size: 1.1em; border-radius: 16px; background: linear-gradient(135deg, #10b981, #059669);';
-            confBtn.innerHTML = `🎁 確定給予寶物 (${totalPending > 0 ? '已調整項目' : '尚未調整'})`;
-            confBtn.disabled = totalPending === 0;
-            if (totalPending === 0) { confBtn.style.opacity = '0.5'; confBtn.style.cursor = 'not-allowed'; }
-            
-            confBtn.onclick = () => {
-                let count = 0;
-                Object.entries(pendingTreasures).forEach(([tId, qty]) => {
-                    if (qty !== 0) { awardTreasure(tId, qty, true); count++; }
-                });
-                if (count > 0) {
-                    renderStudents(); if(currentView==='groups') renderGroups();
-                    createPointAnimation(1, awardContextIds.length);
-                    showUndoToast(`已給予 ${awardContextIds.length} 位學生寶物異動`);
-                }
-                pendingTreasures = {};
-                if(isMultiSelectMode) toggleMultiSelectMode();
-                setTimeout(() => {
-                    closeModal(document.getElementById('studentProfileModal'));
-                    closeModal(document.getElementById('groupDetailModal'));
-                }, 400);
-            };
-            el.appendChild(confBtn);
-        }
+        const totalPending = Object.values(pendingTreasures).reduce((a,b) => a+Math.abs(b), 0);
+        const confBtn = document.createElement('button');
+        confBtn.className = 'btn primary-btn';
+        confBtn.style = 'width:100%; margin-top: 1rem; padding: 1rem; font-size: 1.1em; border-radius: 16px; background: linear-gradient(135deg, #10b981, #059669);';
+        confBtn.innerHTML = `🎁 確定給予寶物 (${totalPending > 0 ? '已調整項目' : '尚未調整'})`;
+        confBtn.disabled = totalPending === 0;
+        if (totalPending === 0) { confBtn.style.opacity = '0.5'; confBtn.style.cursor = 'not-allowed'; }
+        
+        confBtn.onclick = () => {
+            let count = 0;
+            Object.entries(pendingTreasures).forEach(([tId, qty]) => {
+                if (qty !== 0) { awardTreasure(tId, qty, true); count++; }
+            });
+            if (count > 0) {
+                renderStudents(); if(currentView==='groups') renderGroups();
+                createPointAnimation(1, awardContextIds.length);
+                const titleText = awardContextIds.length > 1 ? `已給予 ${awardContextIds.length} 位學生寶物異動` : `已完成寶物發放`;
+                showUndoToast(titleText);
+            }
+            pendingTreasures = {};
+            if(isMultiSelectMode) toggleMultiSelectMode();
+            // 給完跳回主頁：直接關閉彈窗
+            setTimeout(() => {
+                closeModal(document.getElementById('studentProfileModal'));
+                closeModal(document.getElementById('groupDetailModal'));
+            }, 300);
+        };
+        el.appendChild(confBtn);
     };
 
     const awardTreasure = (treasureId, qty, silent = false) => {
@@ -1221,7 +1215,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                 else if (o.a === 16) { logs = []; students.forEach(s => { s.cP = 0; s.iP = 0; }); modified = true; }
                                 else if (o.a === 17) { pointItems = o.d; modified = true; }
                                 else if (o.a === 20) { students.forEach(s => s.aS = o.d); modified = true; }
-                                else if (o.a === 21) { settings = o.d; applySettings(); modified = true; }
+                                // Action 21 (UI Settings) disabled for cross-device sync independence
+                                // else if (o.a === 21) { settings = o.d; applySettings(); modified = true; }
                             });
                             
                             if (modified) {
@@ -1973,9 +1968,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const binInp = document.getElementById('cloudBinId'); if(binInp) { binInp.value = cloudBinId; binInp.onchange = (e) => { cloudBinId = e.target.value; saveData(); startSyncTimer(); }; }
         const keyInp = document.getElementById('cloudApiKey'); if(keyInp) { keyInp.value = cloudApiKey; keyInp.onchange = (e) => { cloudApiKey = e.target.value; saveData(); startSyncTimer(); }; }
 
-        const st = document.getElementById('showTreasureSetting'); if(st) st.onchange = (e) => { settings.sTR = e.target.checked ? 1 : 0; saveData(); pushOp(21, settings, true); renderStudents(); };
-        const sa = document.getElementById('showAvatarSetting'); if(sa) sa.onchange = (e) => { settings.sAv = e.target.checked ? 1 : 0; applySettings(); saveData(); pushOp(21, settings, true); renderStudents(); };
-        const ss = document.getElementById('enableSoundSetting'); if(ss) ss.onchange = (e) => { settings.eS = e.target.checked ? 1 : 0; saveData(); pushOp(21, settings, true); };
+        const st = document.getElementById('showTreasureSetting'); if(st) st.onchange = (e) => { settings.sTR = e.target.checked ? 1 : 0; saveData(); renderStudents(); };
+        const sa = document.getElementById('showAvatarSetting'); if(sa) sa.onchange = (e) => { settings.sAv = e.target.checked ? 1 : 0; applySettings(); saveData(); renderStudents(); };
+        const ss = document.getElementById('enableSoundSetting'); if(ss) ss.onchange = (e) => { settings.eS = e.target.checked ? 1 : 0; saveData(); };
         
         // Settings selects wiring
         const bindSelect = (id, key, isStyleVar = true, styleVarName = null, isPercent = false, isUnitless = false) => {
@@ -1991,7 +1986,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(key === 'itmS') document.documentElement.style.setProperty('--item-scale', val + 'px');
                 if(key === 'avS') document.documentElement.style.setProperty('--avatar-scale', 1 + val / 100);
                 saveData();
-                pushOp(21, settings, true); 
                 if(['ftS','col','sTR'].includes(key)) renderStudents(); 
                 if(['gCol'].includes(key)) renderGroups();
             };
