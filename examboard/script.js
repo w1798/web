@@ -469,9 +469,8 @@ function importData(input) {
 function resetAll() { 
     if(confirm("重置將恢復預設值，且無法復原，確定嗎？")) { 
         state = JSON.parse(JSON.stringify(DEFAULT_STATE)); 
-        applyTheme(state.theme);
         saveToLocal(); 
-        syncUI(); 
+        location.reload(); 
     } 
 }
 

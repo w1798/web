@@ -18,8 +18,7 @@
                 </div>
                 <div class="nav-tools">
                     <button class="btn-sm" onclick="exportData()">💾 匯出</button>
-                    <button class="btn-sm" onclick="document.getElementById('importFile').click()">📂 匯入</button>　
-                    <button class="btn-sm" onclick="resetAll()" style="color: var(--red);">🔄 重置</button>　
+                    <button class="btn-sm" onclick="document.getElementById('importFile').click()">📂 匯入</button>
                     <button class="btn-sm" onclick="toggleModal(true)">⚙️ 設定</button>
                     <input type="file" id="importFile" hidden accept=".json" onchange="importData(this)">
                 </div>
@@ -57,7 +56,10 @@
 <div id="settingsModal">
     <div class="modal-content">
         <div class="modal-header">
-            <h2 style="margin: 0;">數位考場看板 - 評量詳細設定</h2>
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <h2 style="margin: 0;">數位考場看板 - 評量詳細設定</h2>
+                <button onclick="resetAll()" style="color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.1); padding: 5px 12px; font-size: 0.9rem; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px;">🔄 重置</button>
+            </div>
             <div style="display: flex; gap: 10px;">
                 <button onclick="toggleModal(false)" class="btn-modal-cancel">取消</button>
                 <button onclick="saveSettingsFromModal()" class="btn-modal-save">確定</button>

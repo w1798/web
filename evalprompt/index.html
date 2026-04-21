@@ -16,7 +16,6 @@
             <button onclick="exportData()">匯出</button>
             <button onclick="document.getElementById('importFile').click()">匯入</button>
             <input type="file" id="importFile" style="display:none" onchange="importData(event)">
-            　<button onclick="resetSystem()">重置</button>　
             <button onclick="openSettings()">設定</button>
         </div>
     </header>
@@ -54,7 +53,10 @@
     <div id="settingsModal" class="overlay">
         <div class="modal">
             <div class="modal-header compact-header">
-                <h3>評語相關設定</h3>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <h3 style="margin: 0;">評語相關設定</h3>
+                    <button onclick="resetSystem()" style="color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.1); padding: 5px 12px; font-size: 0.9rem; border-radius: 6px; cursor: pointer;">系統重置</button>
+                </div>
                 <div class="header-btns">
                     <button onclick="closeSettings()">取消</button>
                     <button class="btn-main btn-sm" onclick="saveSettings()">確定並套用</button>
