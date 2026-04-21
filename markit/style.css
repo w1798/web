@@ -416,16 +416,17 @@ header { display: flex; justify-content: space-between; align-items: center; bac
 }
 
 
-.danger-zone {
+.btn-reset {
+    background-color: #fff1f0 !important;
+    border: 1px solid #ffa39e !important;
+    color: #dc3545 !important;
+    font-weight: bold;
+}
+
+.settings-title-row {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-left: 50px;  /* 電腦版左右留白 */
-    margin-right: 50px; 
-    background-color: #fff1f0; 
-    border: 1px solid #ffa39e; 
-    border-radius: 8px;
-    padding: 5px; /* 增加一點內邊距讓背景色好看點 */
+    gap: 15px;
 }
 
 
@@ -448,7 +449,7 @@ color: var(--text); }
 .report-link:hover { filter: brightness(0.8); color: #000; }
 .select-short { font-size: 1.5rem; padding: 5px 15px; border-radius: 8px; cursor: pointer; border: 2px solid var(--primary); }
 .author-info { margin-top: 30px; padding: 20px; text-align: center; }
-.author-link { text-decoration: none; color: #888; text-decoratimary); /* 若想讓顏色跟隨主題色，可加上這行 */}
+.author-link { text-decoration: none; color: #888; /* color: var(--primary); 若想讓顏色跟隨主題色，可加上這行 */}
 
 /* --- 手機版 RWD 最終修正 --- */
 @media (max-width: 768px) {
@@ -483,13 +484,7 @@ color: var(--text); }
         margin: 0 !important;
     }
 
-    /* 移除重置按鈕區塊的特殊間距與底色 */
-    .danger-zone {
-        margin: 5px !important; /* 手機版移除大間距 */
-        margin: 0 !important;
-        background: transparent !important;
-        border: none !important;
-    }
+    /* 重置按鈕手機版微調 */
 
     /* 縮小按鈕尺寸，確保設定也能擠上去 */
     .nav-btn {

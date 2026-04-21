@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>教學清點小幫手 by Charles Nextime</title>
-    <link rel="stylesheet" href="style.css?ver=1.10b">
+    <link rel="stylesheet" href="style.css?ver=1.10c">
     <style>
         .quick-select-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 15px; 
 
@@ -60,10 +60,6 @@ color: #888; font-size: 1.5rem; font-weight: bold; }
 </div>
 
 
-    <div class="nav-group danger-zone">
-        <button class="nav-btn" onclick="resetSystem()">重置</button>
-    </div>
-
     <div class="nav-group">
         <button class="nav-btn" onclick="openModal('settingsModal')">設定</button>
         <button class="nav-btn" onclick="openReportModal()">個人查詢</button>
@@ -87,7 +83,10 @@ color: #888; font-size: 1.5rem; font-weight: bold; }
             <button class="nav-btn" onclick="closeModal('settingsModal')">取消</button>
             <button class="btn-confirm" onclick="saveSettings()">確定儲存</button>
         </div>
-        <h2 class="settings-title">系統設定</h2>
+        <div class="settings-title-row">
+            <h2 class="settings-title">系統設定</h2>
+            <button class="nav-btn btn-reset" onclick="resetSystem()">重置</button>
+        </div>
         <div class="settings-grid-container scroll-box" style="grid-template-columns: 
 
 1.5fr 1.5fr 1fr 1fr;">
@@ -357,7 +356,7 @@ onchange="generateStudentReport()"></select>
 })();
 </script>
 
-<script src="script.js?ver=1.10d"></script>
+<script src="script.js?ver=1.10e"></script>
 
 </body>
 </html>
