@@ -1282,7 +1282,6 @@ function updateMainStartDate() {
 function resetApp() {
     if (confirm("確定要重置此專案的資料嗎？")) {
         localStorage.removeItem('homework_v1');
-        
         location.reload();
     }
 }

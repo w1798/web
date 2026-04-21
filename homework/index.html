@@ -31,7 +31,6 @@
                     <button onclick="cloudSync('UPLOAD')">上傳到雲端</button>
                 </div>
             </div>
-            <button class="small-btn" onclick="resetApp()">重置</button>
             <button class="small-btn" onclick="openSettings()">設定</button>
             <button class="small-btn" onclick="openEdit()">編修作業</button>
         </div>
@@ -56,8 +55,9 @@
     <div id="settingsModal" class="modal">
         <div class="modal-content size-80 no-padding-flex">
             <div class="modal-header-zone">
-                <span class="zone-title">相關設定</span>
-                <div class="btn-group-right">
+                <span class="zone-title">相關設定
+                <button class="confirm-btn danger" style="background-color: #dc3545; border-color: #dc3545;" onclick="resetApp()">重置系統</button></span>
+                <div class="btn-group-right">                    　　
                     <button onclick="closeModal('settingsModal')">取消</button>　　
                     <button class="confirm-btn" onclick="saveSettings()">確定</button>
                 </div>
