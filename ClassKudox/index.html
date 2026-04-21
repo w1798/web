@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?ver=1.02g">
+    <link rel="stylesheet" href="style.css?ver=1.02h">
 </head>
 <body data-font-size="medium">
 
@@ -470,6 +470,31 @@
                                 </select>
                             </div>
 
+                            <div class="input-group">
+                                <label for="cardGapVSelect">卡片上下距</label>
+                                <select id="cardGapVSelect" class="filter-select">
+                                    <script>for(let i=0; i<=60; i+=5) document.write(`<option value="${i}">${i}px</option>`);</script>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label for="cardGapHSelect">卡片左右距</label>
+                                <select id="cardGapHSelect" class="filter-select">
+                                    <script>for(let i=0; i<=60; i+=5) document.write(`<option value="${i}">${i}px</option>`);</script>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label for="itemGapVSelect">項目上下距</label>
+                                <select id="itemGapVSelect" class="filter-select">
+                                    <script>for(let i=0; i<=60; i+=5) document.write(`<option value="${i}">${i}px</option>`);</script>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label for="itemGapHSelect">項目左右距</label>
+                                <select id="itemGapHSelect" class="filter-select">
+                                    <script>for(let i=0; i<=60; i+=5) document.write(`<option value="${i}">${i}px</option>`);</script>
+                                </select>
+                            </div>
+
                         </div>
                         
                         <div class="settings-row" style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
@@ -865,6 +890,6 @@
 </script>
 
 
-    <script src="script.js?ver=1.02g"></script>
+    <script src="script.js?ver=1.02h"></script>
 </body>
 </html>

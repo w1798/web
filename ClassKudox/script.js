@@ -274,7 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     let customItems = []; // 預設自訂項目名稱 (字串陣列, e.g. ['兌換點數', '分領獎品'])
     let treasureDefs = []; // 寶物定義 [{id, lb, ic}]
-    const DEFAULT_SETTINGS = { ftS: 16, col: 10, gCol: 5, iCol: 5, itmS: 0, eS: 0, sCH: 0, gCH: 0, lRet: 0, avS: 0, sAv: 1, sTR: 1 };
+    const DEFAULT_SETTINGS = { ftS: 16, col: 10, gCol: 5, iCol: 5, itmS: 0, eS: 0, sCH: 0, gCH: 0, lRet: 0, avS: 0, sAv: 1, sTR: 1, cGV: 25, cGH: 25, iGV: 15, iGH: 15 };
 
     const loadClassData = () => {
         if(!currentClassId) return;
@@ -378,6 +378,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.documentElement.style.setProperty('--avatar-scale', 1 + (settings.avS || 0) / 100);
         document.documentElement.style.setProperty('--avatar-display', settings.sAv === 0 ? 'none' : 'block');
 
+        document.documentElement.style.setProperty('--card-gap-v', (settings.cGV ?? 25) + 'px');
+        document.documentElement.style.setProperty('--card-gap-h', (settings.cGH ?? 25) + 'px');
+        document.documentElement.style.setProperty('--item-gap-v', (settings.iGV ?? 15) + 'px');
+        document.documentElement.style.setProperty('--item-gap-h', (settings.iGH ?? 15) + 'px');
+
         const setVal = (id, val) => { const el = document.getElementById(id); if(el) el.value = val; };
         setVal('fontSizeSelect', settings.ftS || 16);
         setVal('gridColsSelect', settings.col);
@@ -387,6 +392,10 @@ document.addEventListener('DOMContentLoaded', () => {
         setVal('itemColsSelect', settings.iCol || 5);
         setVal('itemScaleSelect', settings.itmS || 0);
         setVal('avatarSizeSelect', settings.avS || 0);
+        setVal('cardGapVSelect', settings.cGV ?? 25);
+        setVal('cardGapHSelect', settings.cGH ?? 25);
+        setVal('itemGapVSelect', settings.iGV ?? 15);
+        setVal('itemGapHSelect', settings.iGH ?? 15);
         
         const ss = document.getElementById('enableSoundSetting'); if(ss) ss.checked = !!settings.eS;
         const sa = document.getElementById('showAvatarSetting'); if(sa) sa.checked = settings.sAv !== 0;
@@ -1998,6 +2007,10 @@ document.addEventListener('DOMContentLoaded', () => {
         bindSelect('itemColsSelect', 'iCol', true, '--item-grid-cols', false, true);
         bindSelect('itemScaleSelect', 'itmS', false); 
         bindSelect('avatarSizeSelect', 'avS', false);
+        bindSelect('cardGapVSelect', 'cGV', true, '--card-gap-v');
+        bindSelect('cardGapHSelect', 'cGH', true, '--card-gap-h');
+        bindSelect('itemGapVSelect', 'iGV', true, '--item-gap-v');
+        bindSelect('itemGapHSelect', 'iGH', true, '--item-gap-h');
 
         const ivInp = document.getElementById('autoSyncInterval'); if(ivInp) { ivInp.value = autoSyncInterval; ivInp.onchange = (e) => { autoSyncInterval = parseInt(e.target.value); saveData(); startSyncTimer(); }; }
 
