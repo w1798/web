@@ -26,7 +26,7 @@
                 <select id="classSelect" class="filter-select" style="max-width: 200px; font-weight: 600;"></select>
                 <button id="manageClassesBtn" class="btn icon-btn" title="班級管理">🏫</button>
                 <button id="toggleMultiSelectBtn" class="btn secondary-btn">☑️ 多選模式</button>
-                <button id="reportsBtn" class="btn reports-btn">📊 點數排名</button>
+                <button id="reportsBtn" class="btn reports-btn">📊 成長排名</button>
                 <button id="addStudentBtn" class="btn primary-btn">+ 新增學生</button>
                 <button id="settingsBtn" class="btn icon-btn" title="設定">⚙️</button>
             </div>
@@ -196,7 +196,11 @@
                             </div>
                             <div class="input-group" style="margin:0;">
                                 <label>點數 (正數加點，負數扣點)</label>
-                                <input type="number" id="customAwardValue" value="-10">
+                                <div style="display:flex; gap:0.4rem; align-items:center;">
+                                    <input type="number" inputmode="numeric" id="customAwardValue" value="-10" style="flex:1;">
+                                    <button type="button" id="customAwardClearBtn" class="btn secondary-btn" style="padding:0.3rem 0.5rem; font-size:0.85em; white-space:nowrap;">清空</button>
+                                    <button type="button" id="customAwardNegBtn" class="btn secondary-btn" style="padding:0.3rem 0.5rem; font-size:0.85em; white-space:nowrap;">加負號</button>
+                                </div>
                             </div>
                             <div class="checkbox-group" style="margin:0; align-self:center; padding-top:1.2rem;">
                                 <input type="checkbox" id="customAwardIgnore" checked>
@@ -225,7 +229,7 @@
     <div id="reportsModal" class="modal-overlay hidden">
         <div class="modal-content reports-modal-content" style="max-width: 1200px; width: 95%;">
             <div class="modal-header">
-                <h2>📊 點數排名與動態 <span class="report-title-note">(此報表會排除不列入點數項目後的總點數)</span></h2>
+                <h2>📊 成長排名與動態 <span class="report-title-note">(此報表會排除不列入點數項目後的總點數)</span></h2>
                 <button class="close-modal-btn reports-close">&times;</button>
             </div>
             <div class="reports-info-banner hidden">
@@ -890,6 +894,6 @@
 </script>
 
 
-    <script src="script.js?ver=1.02h"></script>
+    <script src="script.js?ver=1.02i"></script>
 </body>
 </html>

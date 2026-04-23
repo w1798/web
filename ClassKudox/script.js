@@ -1816,12 +1816,37 @@ document.addEventListener('DOMContentLoaded', () => {
                     saveData();
                     if (typeof renderCustomDropdown === 'function') renderCustomDropdown();
                 }
-                tempInp.value = '';
             }
             const v = parseInt(document.getElementById('customAwardValue').value) || 0; 
             const ign = document.getElementById('customAwardIgnore').checked; 
             awardPoints('custom', l, v, ign); 
             if (tempInp) tempInp.value = '';
+            // 同步清除 localStorage 中的臨時名稱，避免下次開 modal 時恢復
+            try {
+                const saved = JSON.parse(localStorage.getItem('CD_CustomTemp') || '{}');
+                saved.temp = '';
+                localStorage.setItem('CD_CustomTemp', JSON.stringify(saved));
+            } catch(e) {}
+        });
+
+        wire('customAwardClearBtn', () => {
+            const v = document.getElementById('customAwardValue'); if (v) { v.value = ''; v.focus(); }
+        });
+        wire('customAwardNegBtn', () => {
+            const v = document.getElementById('customAwardValue'); if (!v) return;
+            const cur = v.value.trim();
+            if (!cur || cur === '0') { v.value = '-'; v.focus(); return; }
+            if (cur.startsWith('-')) v.value = cur.substring(1);
+            else v.value = '-' + cur;
+            v.focus();
+        });
+        wire('customAwardUpBtn', () => {
+            const v = document.getElementById('customAwardValue'); if (!v) return;
+            v.value = (parseInt(v.value) || 0) + 1; v.focus();
+        });
+        wire('customAwardDownBtn', () => {
+            const v = document.getElementById('customAwardValue'); if (!v) return;
+            v.value = (parseInt(v.value) || 0) - 1; v.focus();
         });
         
         document.querySelectorAll('.tab-btn').forEach(b => b.onclick = () => switchProfileTab(b.dataset.profileTab));
@@ -1843,6 +1868,7 @@ document.addEventListener('DOMContentLoaded', () => {
             customItems = ta.value.split('\n').map(s => s.trim()).filter(Boolean);
             pushOp(19, customItems, true); // Action 19: Global Custom Items
             saveData(); renderPointItems();
+            alert('已儲存');
         });
 
         // --- 寶物新增 ---
