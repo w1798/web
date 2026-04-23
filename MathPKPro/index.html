@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>數學算術 PK 大賽</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <button id="btnHomeGlobal" class="btn-home" onclick="returnToHome()">🏠 回首頁</button>
+
+    <!-- 主選單 -->
+    <div id="mainMenu" class="screen active">
+        <div class="menu-container glassmorphism">
+            <h1>數學算術 PK 大賽</h1>
+            <div class="stats-board">
+                <div class="stat-item">P1 勝: <span id="p1Wins">0</span></div>
+                <div class="stat-item">P2 勝: <span id="p2Wins">0</span></div>
+            </div>
+            <div class="menu-buttons">
+                <button class="btn primary" onclick="goToCategory('parallel')">左右直向模式</button>
+                <button class="btn secondary" onclick="goToCategory('face-to-face')">左右對向模式 (平板用)</button>
+                <button class="btn settings" onclick="showScreen('settingsScreen')">⚙️ 遊戲設定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 題型選擇頁面 -->
+    <div id="categoryScreen" class="screen">
+        <div class="menu-container glassmorphism" style="max-width: 600px; padding: 2rem;">
+            <h2>選擇 PK 項目</h2>
+            <div class="options-grid" style="grid-template-columns: 1fr 1fr; margin-bottom:0;">
+                <button class="btn primary" style="font-size:1.1rem; padding: 1rem;" onclick="setupReadyPhase(0)">10以內的加法</button>
+                <button class="btn primary" style="font-size:1.1rem; padding: 1rem;" onclick="setupReadyPhase(3)">20以內的加法</button>
+                <button class="btn primary" style="font-size:1.1rem; padding: 1rem;" onclick="setupReadyPhase(1)">10以內的減法</button>
+                <button class="btn primary" style="font-size:1.1rem; padding: 1rem;" onclick="setupReadyPhase(4)">20以內的減法</button>
+                <button class="btn primary" style="font-size:1.1rem; padding: 1rem;" onclick="setupReadyPhase(2)">10以內的加減法</button>
+                <button class="btn primary" style="font-size:1.1rem; padding: 1rem;" onclick="setupReadyPhase(5)">20以內的加減法</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 設定頁面 -->
+    <div id="settingsScreen" class="screen">
+        <div class="settings-container glassmorphism">
+            <h2>⚙️ 遊戲設定</h2>
+            
+            <div class="setting-group-row">
+                <label>使用 HP 血條模式</label>
+                <input type="checkbox" id="setUseHp" checked>
+            </div>
+
+            <div class="setting-group-row">
+                <label>開啟搶答模式 (共用題)</label>
+                <input type="checkbox" id="setRushMode">
+            </div>
+
+            <div class="setting-group">
+                <label>容錯次數: <span id="valWrongTol">1</span>次</label>
+                <input type="range" id="setWrongTol" min="0" max="2" step="1" value="1">
+            </div>
+
+            <div class="setting-group">
+                <label>題目數量: <span id="valQCount">5</span>題</label>
+                <input type="range" id="setQCount" min="3" max="50" step="1" value="5">
+            </div>
+
+            <div class="setting-group">
+                <label>選項答案數: <span id="valAnsCount">6</span>個</label>
+                <input type="range" id="setAnsCount" min="2" max="8" step="1" value="6">
+            </div>
+
+            <div class="setting-group">
+                <label>字體大小倍率: <span id="valFontSize">1.0</span>x</label>
+                <input type="range" id="setFontSize" min="0.5" max="2.0" step="0.1" value="1.0">
+            </div>
+
+            <div class="setting-buttons">
+                <button class="btn danger" onclick="resetStats()">重置戰績</button>
+                <button class="btn primary" onclick="saveSettingsAndReturn()">保存並返回</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 戰鬥場景 -->
+    <div id="battleArena" class="screen">
+        <div class="arena-layout" id="arenaLayout">
+            <!-- Player 1 區塊 -->
+            <div id="p1Area" class="player-area">
+                <div id="p1ReadyOverlay" class="ready-overlay">
+                    <button id="p1GoBtn" class="btn-go" onclick="setReady('p1')">GO!</button>
+                </div>
+                <div class="hp-bar-container" id="p1HpContainer">
+                    <div id="p1HpBar" class="hp-bar"></div>
+                    <div id="p1HpText" class="hp-text">100 / 100</div>
+                </div>
+                <div class="progress-text" id="p1Progress">題數 0 / 5</div>
+                <div id="p1Combo" class="combo-text hidden">Combo x3!</div>
+                <div class="question-box glassmorphism" id="p1Question">Ready!</div>
+                <div class="options-grid" id="p1Options">
+                    <!-- Javascript 生成選項 -->
+                </div>
+            </div>
+
+            <!-- VS 分隔線 -->
+            <div class="vs-divider">VS</div>
+
+            <!-- Player 2 區塊 -->
+            <div id="p2Area" class="player-area">
+                <div id="p2ReadyOverlay" class="ready-overlay">
+                    <button id="p2GoBtn" class="btn-go" onclick="setReady('p2')">GO!</button>
+                </div>
+                <div class="hp-bar-container" id="p2HpContainer">
+                    <div id="p2HpBar" class="hp-bar"></div>
+                    <div id="p2HpText" class="hp-text">100 / 100</div>
+                </div>
+                <div class="progress-text" id="p2Progress">題數 0 / 5</div>
+                <div id="p2Combo" class="combo-text hidden">Combo x3!</div>
+                <div class="question-box glassmorphism" id="p2Question">Ready!</div>
+                <div class="options-grid" id="p2Options">
+                    <!-- Javascript 生成選項 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 結算畫面 -->
+    <div id="resultScreen" class="screen">
+        <div class="result-container glassmorphism" style="width: 90%; max-width: 800px; display:flex; flex-direction:column;">
+            <h1 id="winnerText" style="text-align:center; font-size: 3rem; margin-bottom: 1rem;">結算</h1>
+            
+            <div style="display:flex; justify-content: space-around; width:100%; margin-bottom: 2rem;">
+                <div class="res-card p1-res">
+                    <h2>P1 統計</h2>
+                    <p>答對: <span id="p1Corrects">0</span></p>
+                    <p>答錯: <span id="p1Wrongs">0</span></p>
+                    <div class="wrong-box" id="p1WrongList"></div>
+                </div>
+                <div class="res-card p2-res">
+                    <h2>P2 統計</h2>
+                    <p>答對: <span id="p2Corrects">0</span></p>
+                    <p>答錯: <span id="p2Wrongs">0</span></p>
+                    <div class="wrong-box" id="p2WrongList"></div>
+                </div>
+            </div>
+
+            <button class="btn primary" onclick="showScreen('mainMenu')">回主選單</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

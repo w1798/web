@@ -1,0 +1,415 @@
+:root {
+    --bg-color: #0f172a;
+    --primary: #3b82f6;
+    --secondary: #ec4899;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --text-main: #f8fafc;
+    --glass-bg: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.2);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Outfit', sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    overflow: hidden;
+    height: 100vh;
+    height: 100dvh; /* 避免手機瀏覽器網址列遮擋 */
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    touch-action: pan-y; /* 限制多餘的觸控行為 */
+}
+
+/* 玻璃擬態 */
+.glassmorphism {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* 畫面切換 */
+.screen {
+    display: none;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    justify-content: center;
+    align-items: center;
+}
+
+.screen.active {
+    display: flex;
+}
+
+/* 按鈕樣式 */
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s, opacity 0.2s;
+    width: 100%;
+    margin-bottom: 1rem;
+    color: white;
+}
+
+.btn:active {
+    transform: scale(0.95);
+}
+
+.btn.primary { background-color: var(--primary); }
+.btn.secondary { background-color: var(--secondary); }
+.btn.danger { background-color: var(--danger); }
+.btn.settings { background: rgba(255, 255, 255, 0.2); }
+
+/* 主選單 */
+.menu-container {
+    text-align: center;
+    width: 90%;
+    max-width: 600px;
+}
+
+.menu-container h1 {
+    font-size: 3rem;
+    margin-bottom: 1.5rem;
+    background: -webkit-linear-gradient(45deg, var(--primary), var(--secondary));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.stats-board {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 2rem;
+    font-size: 1.2rem;
+}
+
+/* 設定頁面 */
+.settings-container {
+    width: 90%;
+    max-width: 500px;
+}
+
+.setting-group {
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.setting-group label {
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.setting-group input[type="range"] {
+    width: 100%;
+}
+
+/* 戰鬥區域 (面對面旋轉) */
+.arena-layout {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    position: relative;
+    overflow: hidden;
+}
+
+.player-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    position: relative;
+    transition: transform 0.5s ease-in-out;
+}
+
+/* 面對面模式旋轉 */
+.arena-layout.face-to-face .player-left {
+    transform: rotate(90deg);
+}
+.arena-layout.face-to-face .player-right {
+    transform: rotate(-90deg);
+}
+
+.vs-divider {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 3rem;
+    font-weight: 900;
+    color: rgba(255, 255, 255, 0.2);
+    z-index: 10;
+}
+
+/* HP 條 */
+.hp-bar-container {
+    width: 80%;
+    height: 30px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 15px;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+    border: 2px solid white;
+}
+
+.hp-bar {
+    height: 100%;
+    width: 100%;
+    background-color: var(--success);
+    transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.hp-bar.low {
+    background-color: var(--danger);
+    animation: pulse 1s infinite;
+}
+
+.hp-text {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px black;
+}
+
+/* 題目與選項 */
+.question-box {
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    font-weight: bold;
+    margin-bottom: 2rem;
+    min-width: 250px;
+    text-align: center;
+    padding: clamp(0.5rem, 2vw, 1.5rem);
+}
+
+.options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(0.5rem, 1vw, 1rem);
+    width: 90%;
+}
+
+.option-btn {
+    padding: clamp(0.8rem, 2vw, 1.5rem);
+    font-size: clamp(1.5rem, 3vw, 2.5rem);
+    font-weight: bold;
+    border: none;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.option-btn:active {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.option-btn.wrong {
+    background: var(--danger);
+    color: transparent;
+    position: relative;
+}
+.option-btn.wrong::after {
+    content: "X";
+    color: white;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* 特效 */
+.combo-text {
+    font-size: 2rem;
+    color: #fbbf24;
+    font-weight: bold;
+    position: absolute;
+    top: 20%;
+    animation: popUp 0.5s ease-out;
+}
+
+.hidden { display: none !important; }
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.6; }
+    100% { opacity: 1; }
+}
+
+@keyframes popUp {
+    0% { transform: scale(0.5); opacity: 0; }
+    50% { transform: scale(1.5); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* 受擊晃動改用 top / left 以避免覆蓋旋轉的 transform */
+.shake {
+    animation: shakeEffect 0.5s;
+    background-color: rgba(239, 68, 68, 0.2) !important;
+}
+
+@keyframes shakeEffect {
+    0% { top: 1px; left: 1px; }
+    10% { top: -2px; left: -1px; }
+    20% { top: 0px; left: -3px; }
+    30% { top: 2px; left: 3px; }
+    40% { top: -1px; left: 1px; }
+    50% { top: 2px; left: -1px; }
+    60% { top: 1px; left: -3px; }
+    70% { top: 1px; left: 3px; }
+    80% { top: -1px; left: -1px; }
+    90% { top: 2px; left: 1px; }
+    100% { top: -2px; left: 1px; }
+}
+
+/* Checkbox 等同一列排版 */
+.setting-group-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
+.setting-group-row label {
+    margin-bottom: 0;
+    font-size: 1.1rem;
+}
+.setting-group-row input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+/* 狂搶答模式等平行視角 */
+.arena-layout.parallel .player-area {
+    transform: none;
+    border-right: 1px solid rgba(255,255,255,0.2);
+    justify-content: flex-end; /* 將內容往下推 */
+    padding-bottom: 4rem;
+}
+
+.arena-layout.parallel .ready-overlay {
+    align-items: flex-end;
+    padding-bottom: 6rem;
+}
+
+.arena-layout.parallel .options-grid {
+    grid-template-columns: repeat(4, 1fr);
+    width: 100%;
+}
+
+/* 額外 UI 擴充：回首頁與進度條 */
+.btn-home {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    z-index: 100;
+    padding: 10px 15px;
+    background: rgba(255,255,255,0.2);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+}
+
+.progress-text {
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+    color: #cbd5e1;
+}
+
+/* Ready 遮罩與按鈕 */
+.ready-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(5px);
+    z-index: 50;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.btn-go {
+    padding: clamp(1rem, 3vw, 2rem) clamp(2rem, 5vw, 4rem);
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    font-weight: 900;
+    border-radius: 20px;
+    background: var(--primary);
+    color: white;
+    border: 4px solid white;
+    cursor: pointer;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+    transition: all 0.2s;
+}
+
+.btn-go:active {
+    transform: scale(0.9);
+}
+
+.btn-go.is-ready {
+    background: var(--success);
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+}
+
+/* 結算頁面擴充 */
+.res-card {
+    background: rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 1rem;
+    flex: 1;
+    margin: 0 1rem;
+}
+.res-card h2 {
+    text-align: center;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    padding-bottom: 0.5rem;
+}
+.res-card p {
+    font-size: 1.2rem;
+    margin: 0.5rem 0;
+}
+.wrong-box {
+    margin-top: 1rem;
+    max-height: 200px;
+    overflow-y: auto;
+    font-size: 0.9rem;
+    color: #fca5a5;  /* 稍微偏紅 */
+}
+.wrong-item {
+    background: rgba(0,0,0,0.3);
+    padding: 0.5rem;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+}

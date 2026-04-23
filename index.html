@@ -101,14 +101,14 @@
 
         .card.cat-daily { border-left: 5px solid #ff7675; }
         .card.cat-milestone { border-left: 5px solid #74b9ff; }
-        .card.cat-edit { border-left: 5px solid #fab1a0; }
-        .card.cat-doc { border-left: 5px solid #a29bfe; }
+        .card.cat-doc { border-left: 5px solid #fab1a0; }
+        .card.cat-game { border-left: 5px solid #a29bfe; }
         .card.cat-tool { border-left: 5px solid #55efc4; }
         
         .card.cat-daily h2 { color: #d63031; }
         .card.cat-milestone h2 { color: #0984e3; }
-        .card.cat-edit h2 { color: #e17055; }
-        .card.cat-doc h2 { color: #6c5ce7; }
+        .card.cat-doc h2 { color: #e17055; }
+        .card.cat-game h2 { color: #6c5ce7; }
         .card.cat-tool h2 { color: #00b894; }
 
 
@@ -409,8 +409,8 @@
             <div id="nav-fav" class="nav-item" onmouseenter="filterLinks('fav', this)">我的最愛</div>
             <div id="nav-daily" class="nav-item" onmouseenter="filterLinks('daily', this)">教學日常</div>
             <div id="nav-milestone" class="nav-item" onmouseenter="filterLinks('milestone', this)">階段任務</div>
-            <div id="nav-edit" class="nav-item" onmouseenter="filterLinks('edit', this)">文件編輯</div>
-            <div id="nav-doc" class="nav-item" onmouseenter="filterLinks('doc', this)">說明文件</div>
+            <div id="nav-doc" class="nav-item" onmouseenter="filterLinks('doc', this)">文件相關</div>
+            <div id="nav-game" class="nav-item" onmouseenter="filterLinks('game', this)">教學遊戲</div>
             <div id="nav-tool" class="nav-item" onmouseenter="filterLinks('tool', this)">其他軟體</div>
         </div>
     </aside>
@@ -478,11 +478,11 @@
             { id: "NameFormatter", category: "milestone", title: "姓名中譯英格式轉換器", desc: "　本程式是一款專為「外文姓名中譯英」設計的格式自動化工具。使用者僅需輸入中文姓名，系統便能智慧識別姓氏與名字，並一鍵轉換為符合領務局規範的「姓,名1,名2;」格式。內建貼上、清除與複製功能，大幅提升行政處理效率與正確性。", url: "https://w1798.github.io/web/NameFormatter" },
 
 
-            { id: "textlab", category: "edit", title: "多功能文字處理器", desc: "　透過累加運算邏輯，整合串接、分割、取代與重複項偵測等強大功能。極簡暗色介面搭配直覺式操作，助您瞬間完成複雜的文本清理與格式重塑。", url: "https://w1798.github.io/web/TextLab" },
-            { id: "jsoneditor", category: "edit", title: "JSON編輯器", desc: "　能自動解析各種簡單的 JSON 結構檔並視覺化編修，可以資料模組化為直觀的卡片，支援動態拖拽排序與即時編輯，任何配置檔都能輕鬆修改。", url: "https://w1798.github.io/web/jsonEditor" },
-            
-
+            { id: "textlab", category: "doc", title: "多功能文字處理器", desc: "　透過累加運算邏輯，整合串接、分割、取代與重複項偵測等強大功能。極簡暗色介面搭配直覺式操作，助您瞬間完成複雜的文本清理與格式重塑。", url: "https://w1798.github.io/web/TextLab" },
+            { id: "jsoneditor", category: "doc", title: "JSON編輯器", desc: "　能自動解析各種簡單的 JSON 結構檔並視覺化編修，可以資料模組化為直觀的卡片，支援動態拖拽排序與即時編輯，任何配置檔都能輕鬆修改。", url: "https://w1798.github.io/web/jsonEditor" },            
             { id: "jsoncloudguide", category: "doc", title: "JSON雲端備份申請", desc: "　跨平台同步，數據如影隨形申請說明，透過 Upstash 與 JSONBin.io 雲端整合方案，您可以將本地 .json 設定檔瞬時備份至雲端，輕鬆實現多裝置間的偏好設定共用，打造無縫接軌的數位體驗。", url: "https://w1798.github.io/web/JsonCloudGuide/" },
+            
+            { id: "MathPKPro", category: "game", title: "數學算術 PK 大賽", desc: "　這是一款專為觸屏或平板設計的雙人數學PK網頁。支援直向或面對面視角，結合 RPG 戰鬥機制：答對可發動攻擊、連續答對（Combo）與速答能強化傷害，但每秒會自動扣血，增加競技緊張感。內建多元題型與完整自定義設定，讓數學練習變得像對戰遊戲一樣刺激！", url: "https://w1798.github.io/web/MathPKPro/" },
             
             { id: "Divvy", category: "tool", title: "股息回本解套記", desc: "　是一套個人化的股息追蹤工具，讓您輕鬆記錄各股票的購入明細與配息歷史。只需貼入公開的配息資料，系統便自動計算每次除息日的應得股息，並支援多股票管理、快速輸入、雲端備份與資料匯出，幫您精準掌握每一筆現金流，逐步邁向解套之路。", url: "https://w1798.github.io/web/Divvy" },            
             { id: "vercountdash", category: "tool", title: "Vercount數據儀表板", desc: "　是為 Vercount 打造的視覺化儀表板，配合 JSONbin 服務能將資料存入雲端。支援多網址 PV/UV 即時監控與 30 日趨勢圖表。具備雙向雲端同步、自動緩衝更新及對比數據顯示，助您精準掌握多個專案的流量動態。", url: "https://w1798.github.io/web/VercountDash" },
@@ -631,7 +631,7 @@
 
         function navigateCategory(direction) {
             if (window.innerWidth > 850) return; // 僅限手機版
-            const cats = ['all', 'fav', 'daily', 'milestone', 'edit', 'doc', 'tool'];
+            const cats = ['all', 'fav', 'daily', 'milestone', 'doc', 'game', 'tool'];
             let currentIdx = cats.indexOf(currentCategory);
             let nextIdx = currentIdx + direction;
             if (nextIdx >= 0 && nextIdx < cats.length) {
@@ -686,8 +686,8 @@
                 fav: { label: '我的最愛', count: validFavorites.length },
                 daily: { label: '教學日常', count: links.filter(l => l.category === 'daily').length },
                 milestone: { label: '階段任務', count: links.filter(l => l.category === 'milestone').length },
-                edit: { label: '文件編輯', count: links.filter(l => l.category === 'edit').length },
-                doc: { label: '說明文件', count: links.filter(l => l.category === 'doc').length },
+                doc: { label: '文件相關', count: links.filter(l => l.category === 'doc').length },
+                game: { label: '教學遊戲', count: links.filter(l => l.category === 'game').length },
                 tool: { label: '其他軟體', count: links.filter(l => l.category === 'tool').length }
             };
 
