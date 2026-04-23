@@ -105,11 +105,32 @@ body {
 /* 設定頁面 */
 .settings-container {
     width: 90%;
-    max-width: 500px;
+    max-width: 600px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem 2rem;
+    align-items: center;
+}
+
+.settings-container h2 {
+    grid-column: span 2;
+    text-align: center;
+    margin-bottom: 0.5rem;
+}
+
+.settings-container .setting-buttons {
+    grid-column: span 2;
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.settings-container .setting-buttons .btn {
+    margin-bottom: 0;
 }
 
 .setting-group {
-    margin-bottom: 1.5rem;
+    margin-bottom: 0;
     display: flex;
     flex-direction: column;
 }
@@ -140,15 +161,32 @@ body {
     align-items: center;
     padding: 2rem;
     position: relative;
+    --base-transform: translate(0, 0);
+    transform: var(--base-transform);
     transition: transform 0.5s ease-in-out;
 }
 
-/* 面對面模式旋轉 */
-.arena-layout.face-to-face .player-left {
-    transform: rotate(90deg);
+/* 無論直向橫向，面對面模式皆為實體絕對切割與平移旋轉 (數學完美貼合各尺寸螢幕一半) */
+.arena-layout.face-to-face {
+    display: block; /* 移除 flex 避免排版干擾 */
 }
+
+.arena-layout.face-to-face .player-area {
+    position: absolute;
+    width: 100dvh !important;
+    height: 50vw !important;
+    top: 50%;
+    margin: 0 !important; /* 蓋掉結算畫面的行內 margin */
+}
+
+.arena-layout.face-to-face .player-left {
+    left: 25vw;
+    --base-transform: translate(-50%, -50%) rotate(90deg);
+}
+
 .arena-layout.face-to-face .player-right {
-    transform: rotate(-90deg);
+    left: 75vw;
+    --base-transform: translate(-50%, -50%) rotate(-90deg);
 }
 
 .vs-divider {
@@ -270,24 +308,24 @@ body {
     100% { transform: scale(1); opacity: 1; }
 }
 
-/* 受擊晃動改用 top / left 以避免覆蓋旋轉的 transform */
+/* 受擊晃動重新使用 var(--base-transform) 結合 translate 防跑版 */
 .shake {
     animation: shakeEffect 0.5s;
     background-color: rgba(239, 68, 68, 0.2) !important;
 }
 
 @keyframes shakeEffect {
-    0% { top: 1px; left: 1px; }
-    10% { top: -2px; left: -1px; }
-    20% { top: 0px; left: -3px; }
-    30% { top: 2px; left: 3px; }
-    40% { top: -1px; left: 1px; }
-    50% { top: 2px; left: -1px; }
-    60% { top: 1px; left: -3px; }
-    70% { top: 1px; left: 3px; }
-    80% { top: -1px; left: -1px; }
-    90% { top: 2px; left: 1px; }
-    100% { top: -2px; left: 1px; }
+    0% { transform: var(--base-transform) translate(1px, 1px); }
+    10% { transform: var(--base-transform) translate(-1px, -2px); }
+    20% { transform: var(--base-transform) translate(-3px, 0px); }
+    30% { transform: var(--base-transform) translate(3px, 2px); }
+    40% { transform: var(--base-transform) translate(1px, -1px); }
+    50% { transform: var(--base-transform) translate(-1px, 2px); }
+    60% { transform: var(--base-transform) translate(-3px, 1px); }
+    70% { transform: var(--base-transform) translate(3px, 1px); }
+    80% { transform: var(--base-transform) translate(-1px, -1px); }
+    90% { transform: var(--base-transform) translate(1px, 2px); }
+    100% { transform: var(--base-transform) translate(1px, -2px); }
 }
 
 /* Checkbox 等同一列排版 */
@@ -296,7 +334,7 @@ body {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0;
 }
 .setting-group-row label {
     margin-bottom: 0;
@@ -412,4 +450,87 @@ body {
     padding: 0.5rem;
     border-radius: 4px;
     margin-bottom: 0.5rem;
+}
+
+/* Footer 版權資訊 */
+footer {
+    position: absolute;
+    bottom: 5px;
+    width: 100%;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.9rem;
+    z-index: 100;
+}
+
+footer a {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    transition: opacity 0.2s;
+}
+
+footer a:hover {
+    color: white;
+    text-decoration: underline;
+}
+
+/* 答題選項數限制一律 4 個 */
+.arena-layout.face-to-face .options-grid {
+    grid-template-columns: repeat(4, 1fr);
+    width: 100%;
+}
+
+/* PK 選擇項目選單去除上下間距 */
+#categoryScreen .options-grid {
+    row-gap: 5 !important;
+}
+#categoryScreen .btn {
+    margin-bottom: 0 !important;
+}
+
+/* 修正橫向或高度極小的裝置 (如手機倒下橫放時) 顯示版面 */
+@media screen and (max-height: 500px) {
+    #mainMenu .menu-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas: 
+            "title btn"
+            "stats btn";
+        align-items: center;
+        text-align: left;
+        padding: 1.5rem;
+    }
+    #mainMenu h1 { 
+        grid-area: title; 
+        margin-bottom: 0; 
+        font-size: clamp(2rem, 5vh, 4rem);
+    }
+    #mainMenu .stats-board { 
+        grid-area: stats; 
+        justify-content: flex-start; 
+        gap: 1rem; 
+        margin: 0.5rem 0 0 0;
+    }
+    #mainMenu .menu-buttons { 
+        grid-area: btn; 
+    }
+    #mainMenu .menu-buttons .btn {
+        margin-bottom: 0.5rem;
+    }
+    
+    #categoryScreen .menu-container {
+        padding: 1rem;
+    }
+    #categoryScreen .options-grid {
+        row-gap: 0 !important;
+        column-gap: 0.5rem !important;
+    }
+    #categoryScreen .options-grid button {
+        padding: 0.5rem !important;
+        font-size: 1.1rem !important;
+    }
+    #categoryScreen h2 {
+        margin-bottom: 0.5rem;
+        font-size: 1.5rem;
+    }
 }

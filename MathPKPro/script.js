@@ -565,28 +565,63 @@ function triggerShake(player) {
 // 結算
 function endGame() {
     playSound('victory');
-    let winner = "平手！";
+    let p1Win = false;
+    let p2Win = false;
+    let isDraw = false;
     let p1 = gameState.p1;
     let p2 = gameState.p2;
 
     // 基本勝負判定：先看 HP (如果有用且死掉)，不然看答對數
     if(appData.settings.useHp && (p1.hp <= 0 || p2.hp <= 0)) {
-        if(p1.hp <= 0 && p2.hp <= 0) winner = "平手！";
-        else if (p2.hp <= 0) { winner = "P1 勝利！"; appData.stats.p1Wins++; }
-        else { winner = "P2 勝利！"; appData.stats.p2Wins++; }
+        if(p1.hp <= 0 && p2.hp <= 0) isDraw = true;
+        else if (p2.hp <= 0) p1Win = true;
+        else p2Win = true;
     } else {
         // 比正確數
-        if (p1.correctCount > p2.correctCount) { winner = "P1 勝利！"; appData.stats.p1Wins++; }
-        else if (p2.correctCount > p1.correctCount) { winner = "P2 勝利！"; appData.stats.p2Wins++; }
+        if (p1.correctCount > p2.correctCount) p1Win = true;
+        else if (p2.correctCount > p1.correctCount) p2Win = true;
+        else isDraw = true;
     }
+
+    if(p1Win) { appData.stats.p1Wins++; }
+    if(p2Win) { appData.stats.p2Wins++; }
 
     saveData();
     updateMainMenuStats();
 
-    document.getElementById('winnerText').innerText = winner;
+    // 設定 Result Layout 的佈局視角
+    const resultLayout = document.getElementById('resultLayout');
+    const p1ResArea = document.getElementById('p1ResultArea');
+    const p2ResArea = document.getElementById('p2ResultArea');
 
+    if (gameState.layout === 'face-to-face') {
+        resultLayout.classList.add('face-to-face');
+        resultLayout.classList.remove('parallel');
+        p1ResArea.classList.add('player-left');
+        p2ResArea.classList.add('player-right');
+    } else {
+        resultLayout.classList.remove('face-to-face');
+        resultLayout.classList.add('parallel');
+        p1ResArea.classList.remove('player-left');
+        p2ResArea.classList.remove('player-right');
+    }
+
+    // 填寫勝利標籤
+    document.getElementById('p1WinLabel').innerText = isDraw ? "平手！" : (p1Win ? "🎊 勝利！" : "❌ 失敗");
+    document.getElementById('p2WinLabel').innerText = isDraw ? "平手！" : (p2Win ? "🎊 勝利！" : "❌ 失敗");
+
+    // 填寫剩餘 HP
+    if(appData.settings.useHp) {
+        document.getElementById('p1HpResult').innerText = `剩餘血量: ${Math.max(0, p1.hp)}`;
+        document.getElementById('p2HpResult').innerText = `剩餘血量: ${Math.max(0, p2.hp)}`;
+    } else {
+        document.getElementById('p1HpResult').innerText = "";
+        document.getElementById('p2HpResult').innerText = "";
+    }
+
+    // 基本統計
     document.getElementById('p1Corrects').innerText = p1.correctCount;
-    document.getElementById('p1Wrongs').innerText = p1.wrongList.length; // 或 wrongCount
+    document.getElementById('p1Wrongs').innerText = p1.wrongList.length; 
     renderWrongList('p1WrongList', p1.wrongList);
 
     document.getElementById('p2Corrects').innerText = p2.correctCount;
