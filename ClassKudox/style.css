@@ -528,6 +528,7 @@ input:focus, textarea:focus { outline: none; border-color: var(--primary-color);
 .tab-btn, .sub-tab-btn {
     flex: 1; border: none; background: transparent; padding: 0.75rem; border-radius: 10px;
     font-family: var(--font-main); font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: var(--transition);
+    font-size: inherit;
 }
 .tab-btn.active, .sub-tab-btn.active { background: white; color: var(--text-primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
 
@@ -612,7 +613,7 @@ input:focus, textarea:focus { outline: none; border-color: var(--primary-color);
 .settings-tab-btn {
     flex: 1; border: none; background: transparent; padding: 0.75rem; border-radius: 10px;
     font-family: var(--font-main); font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: var(--transition);
-    white-space: nowrap;
+    white-space: nowrap; font-size: inherit;
 }
 .settings-tab-btn.active { background: white; color: var(--primary-color); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
 .settings-tab-content { display: none; padding: 2rem; overflow-y: auto; flex: 1; min-height: 400px; }
