@@ -5,6 +5,8 @@ let appData = {
         useHp: true,
         rushMode: false,
         wrongTolerance: 1,
+        timePerQuestion: 0, // 0=無, 1~10
+        maxHp: 100,         // 100~500
         questionCount: 5,
         answerCount: 6,
         fontSize: 1.0,
@@ -25,9 +27,18 @@ let gameState = {
     gameInterval: null,
     gameGlobalQuestionIndex: 0,
     ended: false,
-    p1: {},
-    p2: {}
+    p1: { timer: null },
+    p2: { timer: null }
 };
+
+// 輔助洗牌函數 (Fisher-Yates)
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
 
 const sounds = {
     correct: new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg'),
@@ -53,10 +64,22 @@ function init() {
 }
 
 function loadData() {
+    // 優先從 URL 參數讀取分享設定
+    const urlParams = new URLSearchParams(window.location.search);
+    const sharedData = urlParams.get('s');
+    if (sharedData) {
+        try {
+            const decoded = JSON.parse(atob(sharedData));
+            appData.settings = {...appData.settings, ...decoded};
+            console.log("已套用分享設定:", appData.settings);
+        } catch(e) {
+            console.error("分享連結解析失敗:", e);
+        }
+    }
+
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
+    if (saved && !sharedData) { // 若有分享連結，則不讀取舊設定覆蓋
         let loaded = JSON.parse(saved);
-        // 保留預設值相容
         appData.settings = {...appData.settings, ...loaded.settings};
         appData.stats = {...appData.stats, ...loaded.stats};
     }
@@ -86,6 +109,12 @@ function setupSettingsUI() {
     
     document.getElementById('setWrongTol').value = appData.settings.wrongTolerance;
     document.getElementById('valWrongTol').innerText = appData.settings.wrongTolerance;
+
+    document.getElementById('setTimeLimit').value = appData.settings.timePerQuestion;
+    document.getElementById('valTimeLimit').innerText = appData.settings.timePerQuestion === 0 ? "無" : appData.settings.timePerQuestion + "秒";
+
+    document.getElementById('setMaxHp').value = appData.settings.maxHp;
+    document.getElementById('valMaxHp').innerText = appData.settings.maxHp;
     
     document.getElementById('setQCount').value = appData.settings.questionCount;
     document.getElementById('valQCount').innerText = appData.settings.questionCount;
@@ -96,8 +125,15 @@ function setupSettingsUI() {
     document.getElementById('setFontSize').value = appData.settings.fontSize;
     document.getElementById('valFontSize').innerText = appData.settings.fontSize;
 
+    // 事件監聽
     document.getElementById('setWrongTol').addEventListener('input', (e) => {
         document.getElementById('valWrongTol').innerText = e.target.value;
+    });
+    document.getElementById('setTimeLimit').addEventListener('input', (e) => {
+        document.getElementById('valTimeLimit').innerText = e.target.value === "0" ? "無" : e.target.value + "秒";
+    });
+    document.getElementById('setMaxHp').addEventListener('input', (e) => {
+        document.getElementById('valMaxHp').innerText = e.target.value;
     });
     document.getElementById('setQCount').addEventListener('input', (e) => {
         document.getElementById('valQCount').innerText = e.target.value;
@@ -110,10 +146,51 @@ function setupSettingsUI() {
     });
 }
 
+function generateQR() {
+    const dataToShare = {
+        useHp: appData.settings.useHp,
+        rushMode: appData.settings.rushMode,
+        wrongTolerance: appData.settings.wrongTolerance,
+        timePerQuestion: parseInt(document.getElementById('setTimeLimit').value),
+        maxHp: parseInt(document.getElementById('setMaxHp').value),
+        questionCount: parseInt(document.getElementById('setQCount').value),
+        answerCount: parseInt(document.getElementById('setAnsCount').value),
+        fontSize: parseFloat(document.getElementById('setFontSize').value)
+    };
+
+    const b64 = btoa(JSON.stringify(dataToShare));
+    const url = window.location.origin + window.location.pathname + "?s=" + b64;
+    
+    // 顯示 Modal
+    const qrModal = document.getElementById('qrModal');
+    qrModal.style.display = 'flex';
+    
+    document.getElementById('qrcode').innerHTML = "";
+    // 使用 setTimeout 確保 DOM 渲染後再產生 QR Code (解決隱藏時產生的空白問題)
+    setTimeout(() => {
+        new QRCode(document.getElementById("qrcode"), {
+            text: url,
+            width: 200,
+            height: 200,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.L
+        });
+    }, 100);
+
+    document.getElementById('shareUrlText').innerText = url;
+}
+
+function closeQRModal() {
+    document.getElementById('qrModal').style.display = 'none';
+}
+
 function saveSettingsAndReturn() {
     appData.settings.useHp = document.getElementById('setUseHp').checked;
     appData.settings.rushMode = document.getElementById('setRushMode').checked;
     appData.settings.wrongTolerance = parseInt(document.getElementById('setWrongTol').value);
+    appData.settings.timePerQuestion = parseInt(document.getElementById('setTimeLimit').value);
+    appData.settings.maxHp = parseInt(document.getElementById('setMaxHp').value);
     appData.settings.questionCount = parseInt(document.getElementById('setQCount').value);
     appData.settings.answerCount = parseInt(document.getElementById('setAnsCount').value);
     appData.settings.fontSize = parseFloat(document.getElementById('setFontSize').value);
@@ -136,7 +213,17 @@ function returnToHome() {
         clearInterval(gameState.gameInterval);
         gameState.gameInterval = null;
     }
+    clearAllTimers();
     showScreen('mainMenu');
+}
+
+function clearAllTimers() {
+    if(gameState.p1.timer) clearInterval(gameState.p1.timer);
+    if(gameState.p2.timer) clearInterval(gameState.p2.timer);
+    gameState.p1.timer = null;
+    gameState.p2.timer = null;
+    document.getElementById('p1TimerBar').style.width = '0%';
+    document.getElementById('p2TimerBar').style.width = '0%';
 }
 
 function goToCategory(layout) {
@@ -187,7 +274,7 @@ function setupReadyPhase(categoryIndex) {
 function createPlayerState() {
     return {
         ready: false,
-        hp: 100,
+        hp: appData.settings.maxHp,
         combo: 0,
         correctCount: 0,
         wrongCount: 0,
@@ -195,7 +282,8 @@ function createPlayerState() {
         currentQuestion: null,
         wrongList: [], // { q: text, expected: ans, provided: userAns }
         currentWrongAttempts: 0,
-        finished: false
+        finished: false,
+        timer: null
     };
 }
 
@@ -325,6 +413,12 @@ function generateQuestion() {
             answer = a - b;
             text = `${a} - ${b} = ?`;
             break;
+        case 6: // 十十乘法表 (1x1 ~ 10x10)
+            a = Math.floor(Math.random() * 10) + 1;
+            b = Math.floor(Math.random() * 10) + 1;
+            answer = a * b;
+            text = `${a} x ${b} = ?`;
+            break;
     }
     return { text, answer, catType: cat };
 }
@@ -334,9 +428,9 @@ function generateSharedQuestion() {
     if(gameState.gameGlobalQuestionIndex >= appData.settings.questionCount) {
         gameState.p1.finished = true;
         gameState.p2.finished = true;
-        document.getElementById(`p1Question`).innerText = "完成！等待結算...";
+        document.getElementById(`p1QuestionText`).innerText = "完成！等待結算...";
         document.getElementById(`p1Options`).innerHTML = '';
-        document.getElementById(`p2Question`).innerText = "完成！等待結算...";
+        document.getElementById(`p2QuestionText`).innerText = "完成！等待結算...";
         document.getElementById(`p2Options`).innerHTML = '';
         checkGlobalGameOver();
         return;
@@ -353,6 +447,7 @@ function generateSharedQuestion() {
     if (qBase.catType === 0 || qBase.catType === 1) { maxLimit = 10; minLimit = 0; }
     else if (qBase.catType === 3) { maxLimit = 18; minLimit = 11; }
     else if (qBase.catType === 4) { maxLimit = 9; minLimit = 2; }
+    else if (qBase.catType === 6) { maxLimit = 100; minLimit = 1; }
 
     while(options.length < appData.settings.answerCount) {
         let wrg = Math.floor(Math.random() * (maxLimit - minLimit + 1)) + minLimit;
@@ -360,16 +455,17 @@ function generateSharedQuestion() {
         if(options.length >= (maxLimit - minLimit + 1)) break; 
     }
     while(options.length < appData.settings.answerCount) {
-        let randExt = Math.floor(Math.random() * 20); 
+        let randExt = Math.floor(Math.random() * 100); 
         if(!options.includes(randExt)) options.push(randExt);
     }
-    options.sort(() => Math.random() - 0.5);
+    shuffleArray(options);
     
     gameState.p1.currentQuestion = { text: qBase.text, answer: qBase.answer };
     gameState.p2.currentQuestion = { text: qBase.text, answer: qBase.answer };
     
     ['p1', 'p2'].forEach(player => {
-        document.getElementById(`${player}Question`).innerText = qBase.text;
+        startQuestionTimer(player);
+        document.getElementById(`${player}QuestionText`).innerText = qBase.text;
         let optsContainer = document.getElementById(`${player}Options`);
         optsContainer.innerHTML = '';
         options.forEach(opt => {
@@ -382,13 +478,48 @@ function generateSharedQuestion() {
     });
 }
 
+function startQuestionTimer(player) {
+    if(gameState.p1.timer && player==='p1') clearInterval(gameState.p1.timer); // 清除舊的
+    if(gameState.p2.timer && player==='p2') clearInterval(gameState.p2.timer);
+
+    const limit = appData.settings.timePerQuestion;
+    const bar = document.getElementById(`${player}TimerBar`);
+    if(limit === 0) {
+        bar.style.width = '0%';
+        return;
+    }
+
+    let startTime = Date.now();
+    let duration = limit * 1000;
+    
+    gameState[player].timer = setInterval(() => {
+        let elapsed = Date.now() - startTime;
+        let per = (elapsed / duration) * 100;
+        if(per >= 100) {
+            per = 100;
+            clearInterval(gameState[player].timer);
+            // 時間到
+            handleTimeout(player);
+        }
+        bar.style.width = `${per}%`;
+    }, 100);
+}
+
+function handleTimeout(player) {
+    if(gameState.ended || gameState[player].finished) return;
+    playSound('wrong');
+    // 把超時視為強制打錯
+    gameState[player].currentWrongAttempts = 999; // 強制觸換題
+    handleAnswer(player, -1, null);
+}
+
 function generateNextQuestion(player) {
     if(gameState.ended) return;
     let state = gameState[player];
     
     if(state.questionsDone >= appData.settings.questionCount) {
         state.finished = true;
-        document.getElementById(`${player}Question`).innerText = "完成！等待結算...";
+        document.getElementById(`${player}QuestionText`).innerText = "完成！等待結算...";
         document.getElementById(`${player}Options`).innerHTML = '';
         checkGlobalGameOver();
         return;
@@ -410,6 +541,9 @@ function generateNextQuestion(player) {
     } else if (qBase.catType === 4) {
         maxLimit = 9;
         minLimit = 2;
+    } else if (qBase.catType === 6) {
+        maxLimit = 100;
+        minLimit = 1;
     }
 
     while(options.length < appData.settings.answerCount) {
@@ -422,14 +556,15 @@ function generateNextQuestion(player) {
         }
     }
     while(options.length < appData.settings.answerCount) {
-        let randExt = Math.floor(Math.random() * 20); 
+        let randExt = Math.floor(Math.random() * 100); 
         if(!options.includes(randExt)) options.push(randExt);
     }
 
-    options.sort(() => Math.random() - 0.5);
+    shuffleArray(options);
     
     state.currentQuestion = { text: qBase.text, answer: qBase.answer };
-    document.getElementById(`${player}Question`).innerText = qBase.text;
+    document.getElementById(`${player}QuestionText`).innerText = qBase.text;
+    startQuestionTimer(player);
     
     let optsContainer = document.getElementById(`${player}Options`);
     optsContainer.innerHTML = '';
@@ -450,6 +585,7 @@ function handleAnswer(player, selectedOpt, btnElement) {
     if(state.finished || !state.currentQuestion) return;
 
     if (selectedOpt === state.currentQuestion.answer) {
+        if(state.timer) clearInterval(state.timer);
         // Correct
         playSound('correct');
         state.correctCount++;
@@ -500,10 +636,11 @@ function handleAnswer(player, selectedOpt, btnElement) {
             state.wrongList.push({
                 q: state.currentQuestion.text,
                 expected: state.currentQuestion.answer,
-                provided: selectedOpt
+                provided: selectedOpt === -1 ? "超時" : selectedOpt
             });
         } else {
             // Reached tolerance limit -> move to next
+            if(state.timer) clearInterval(state.timer);
             state.wrongCount++;
             
             if (appData.settings.rushMode) {
@@ -537,11 +674,12 @@ function updateHpUI(player) {
     const bar = document.getElementById(`${player}HpBar`);
     const txt = document.getElementById(`${player}HpText`);
     
-    let percentage = (hp / 100) * 100;
+    const max = appData.settings.maxHp;
+    let percentage = (hp / max) * 100;
     if (percentage < 0) percentage = 0;
     
     bar.style.width = `${percentage}%`;
-    txt.innerText = `${Math.max(0, Math.floor(hp))} / 100`;
+    txt.innerText = `${Math.max(0, Math.floor(hp))} / ${max}`;
     
     if(percentage < 20) {
         bar.classList.add('low');
