@@ -2188,7 +2188,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 saveData(); renderStudents(); if(currentView === 'groups') renderGroups(); alert('已重置目前班級點數並紀錄同步');
             } 
         });
-        wire('resetSystemBtn', () => { if(confirm('重置系統？資料將消失。')) { localStorage.clear(); location.reload(); } });
+        wire('resetSystemBtn', () => { 
+            if(confirm('重置系統？資料將消失。')) { 
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && (key.startsWith('CD_') || ['BId', 'Key', 'aSyn', 'sVer'].includes(key))) {
+                        keysToRemove.push(key);
+                    }
+                }
+                keysToRemove.forEach(k => localStorage.removeItem(k));
+                location.reload(); 
+            } 
+        });
 
         const icons = [
           '⭐', '🤝', '🎯', '🙋', '💪', '📚', '🎨', '⚽', '🧹', '♻️', '📢', '⌛', '📵', '🗣️', '🤷', '😡', '😴', '🎮', '🍕', '🍎',
@@ -2242,7 +2254,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const startSyncTimer = () => {
             if (window.checkTimer) clearInterval(window.checkTimer);
             if (autoSyncTimer) clearInterval(autoSyncTimer);
-            if (!cloudBinId || !cloudApiKey) return;
+            if (!cloudBinId || !cloudApiKey || autoSyncInterval <= 0) return;
             
             console.log(`[CloudSync] 定時器啟動，頻率: ${autoSyncInterval}秒`);
             
