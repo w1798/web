@@ -630,15 +630,15 @@ function handleAnswer(player, selectedOpt, btnElement) {
             updateHpUI(player);
         }
 
+        // 只要答錯就紀錄 (不管有沒有換題)
+        state.wrongList.push({
+            q: state.currentQuestion.text,
+            expected: state.currentQuestion.answer,
+            provided: selectedOpt === -1 ? "超時" : selectedOpt
+        });
+
         let maxTol = appData.settings.wrongTolerance;
-        if(state.currentWrongAttempts <= maxTol) {
-            // First/nth wrong -> record it, let them choose again
-            state.wrongList.push({
-                q: state.currentQuestion.text,
-                expected: state.currentQuestion.answer,
-                provided: selectedOpt === -1 ? "超時" : selectedOpt
-            });
-        } else {
+        if(state.currentWrongAttempts > maxTol) {
             // Reached tolerance limit -> move to next
             if(state.timer) clearInterval(state.timer);
             state.wrongCount++;
