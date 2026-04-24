@@ -1996,8 +1996,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         wire('syncStatus', () => performCloudUpload(true));
-        
-        wire('cloudUploadBtn', () => performCloudUpload(true));
+        wire('cloudUploadBtn', () => { if(confirm('會以上傳的本地資料覆蓋雲端，確定？')) performCloudUpload(true); });
         wire('cloudDownloadBtn', () => { if(confirm('會覆蓋本地資料，確定？')) performCloudDownload(true); });
         
         const binInp = document.getElementById('cloudBinId'); if(binInp) { binInp.value = cloudBinId; binInp.onchange = (e) => { cloudBinId = e.target.value; saveData(); startSyncTimer(); }; }
