@@ -2,119 +2,74 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>ClassKudox 專用備份工具</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClassKudox 全資料打包救援工具</title>
     <style>
-        :root {
-            --primary: #4a90e2;
-            --bg: #f8f9fa;
-        }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
-        h2 { color: #333; margin-bottom: 0.5rem; }
-        p { color: #666; font-size: 0.9rem; margin-bottom: 1.5rem; }
-        .status-tag { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; margin-bottom: 1rem; }
-        .status-ok { background: #e3f9e5; color: #1f7a26; }
-        .status-err { background: #ffe9e9; color: #d32f2f; }
-        button { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 1rem; cursor: pointer; width: 100%; transition: opacity 0.2s; }
-        button:disabled { background: #ccc; cursor: not-allowed; }
-        .info { margin-top: 1rem; font-size: 0.75rem; color: #999; }
+        body { font-family: sans-serif; padding: 2rem; background: #f0f4f8; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { color: #1e293b; margin-top: 0; }
+        button { background: #4f46e5; color: white; border: none; padding: 1rem 2rem; font-size: 1.1rem; border-radius: 8px; cursor: pointer; transition: background 0.3s; width: 100%; box-sizing: border-box; }
+        button:hover { background: #4338ca; }
+        p { color: #64748b; line-height: 1.5; }
+        .alert { background: #fffbeb; color: #d97706; padding: 1rem; border-radius: 8px; font-size: 0.9rem; margin-bottom: 1.5rem; border-left: 4px solid #fbbf24; }
     </style>
 </head>
 <body>
+    <div class="container">
+        <h1>📦 ClassKudox 資料救援</h1>
+        <div class="alert">
+            請務必在與原本 ClassKudox 「相同的網址或網域」下開啟此網頁（例如：如果您原本是用 localhost 開啟，那這個檔案也要放在同一個資料夾下用 localhost 打開），才能順利讀取到瀏覽器本機的 localStorage！
+        </div>
+        <p>此工具將會掃描您瀏覽器目前的 localStorage，並將所有的 ClassKudox 資料打包匯出為 JSON 檔。</p>
+        <p>匯出後，您可以將這份 JSON 檔傳送到另一台裝置，並使用主程式系統設定裡的<strong>「📥 匯入 JSON 檔」</strong>功能來復原您的資料。</p>
+        
+        <button id="exportBtn">立即打包匯出資料</button>
+        <div id="status" style="margin-top: 1rem; font-weight: bold; text-align: center;"></div>
+    </div>
 
-<div class="card">
-    <h2>數據備份系統</h2>
-    <p>針對 classKudox_backup 量身優化</p>
-    
-    <div id="statusTag" class="status-tag">檢查中...</div>
-    
-    <button id="btnDownload" disabled>建立 Gzip 備份檔</button>
-    
-    <div class="info" id="dataInfo">待命</div>
-</div>
-
-<script>
-    const STORAGE_KEY = 'classKudox_backup';
-    const btn = document.getElementById('btnDownload');
-    const statusTag = document.getElementById('statusTag');
-    const dataInfo = document.getElementById('dataInfo');
-
-    // 1. 偵測 localStorage
-    function checkData() {
-        const rawData = localStorage.getItem(STORAGE_KEY);
-        if (rawData) {
-            statusTag.textContent = "✅ 已偵測到核心數據";
-            statusTag.className = "status-tag status-ok";
-            btn.disabled = false;
+    <script>
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            const backup = {};
+            let count = 0;
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && (key.startsWith('CD_') || ['BId', 'Key', 'aSyn', 'sVer'].includes(key))) {
+                    try {
+                        const val = localStorage.getItem(key);
+                        try {
+                            backup[key] = JSON.parse(val);
+                        } catch(e) {
+                            backup[key] = val;
+                        }
+                        count++;
+                    } catch(err) {
+                        console.error('讀取發生錯誤:', key);
+                    }
+                }
+            }
             
-            // 計算原始大小
-            const sizeKB = (new Blob([rawData]).size / 1024).toFixed(2);
-            dataInfo.textContent = `原始數據大小: ${sizeKB} KB`;
-            return rawData;
-        } else {
-            statusTag.textContent = "❌ 找不到 classKudox 資料";
-            statusTag.className = "status-tag status-err";
-            dataInfo.textContent = "請確保您在正確的網域下開啟此檔案";
-            return null;
-        }
-    }
+            const statusEl = document.getElementById('status');
+            if (count === 0) {
+                statusEl.textContent = "未找到任何資料！請確認您的網址是否與當初使用系統的網址相同。";
+                statusEl.style.color = "#ef4444";
+                return;
+            }
 
-    // 2. 執行壓縮與下載
-    async function performBackup() {
-        const rawData = localStorage.getItem(STORAGE_KEY);
-        if (!rawData) return;
-
-        try {
-            btn.textContent = "正在壓縮...";
-            btn.disabled = true;
-
-            // 準備備份包 (封裝 metadata)
-            const backupPackage = {
-                timestamp: new Date().toISOString(),
-                source: "ClassKudox_Manual_Backup",
-                payload: rawData // 直接保留原始字串（可能是 script.js 產生的壓縮碼）
-            };
-
-            const jsonString = JSON.stringify(backupPackage);
-            const uint8Array = new TextEncoder().encode(jsonString);
-
-            // 使用瀏覽器原生 Gzip 串流
-            const cs = new CompressionStream('gzip');
-            const writer = cs.writable.getWriter();
-            writer.write(uint8Array);
-            writer.close();
-
-            const compressedBlob = await new Response(cs.readable).blob();
+            const dataStr = JSON.stringify(backup);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
             
-            // 下載檔案
-            const url = URL.createObjectURL(compressedBlob);
             const a = document.createElement('a');
-            const dateStr = new Date().toISOString().slice(0, 10);
-            
             a.href = url;
-            a.download = `Kudox_Backup_${dateStr}.json.gz`;
+            a.download = `ClassKudox_Rescue_${new Date().toISOString().slice(0,10)}.json`;
             document.body.appendChild(a);
             a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
             
-            // 清理
-            setTimeout(() => {
-                URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-                btn.textContent = "建立 Gzip 備份檔";
-                btn.disabled = false;
-                alert("備份成功！檔案已導出為 .json.gz");
-            }, 1000);
-
-        } catch (err) {
-            console.error(err);
-            alert("壓縮失敗: " + err.message);
-            btn.disabled = false;
-        }
-    }
-
-    btn.addEventListener('click', performBackup);
-    window.addEventListener('load', checkData);
-</script>
-
+            statusEl.textContent = `✅ 成功打包匯出 ${count} 筆資料！請將下載的 JSON 檔拿去匯入即可。`;
+            statusEl.style.color = "#10b981";
+        });
+    </script>
 </body>
 </html>
