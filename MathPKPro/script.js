@@ -453,7 +453,6 @@ function handleAnswer(player, selectedOpt, btnElement) {
         // Correct
         playSound('correct');
         state.correctCount++;
-        state.questionsDone++;
         
         // HP Mode: Damage
         if(appData.settings.useHp) {
@@ -465,20 +464,19 @@ function handleAnswer(player, selectedOpt, btnElement) {
             triggerShake(opponent);
         }
 
-        updateProgressUI(player);
-        state.currentQuestion = null;
-        
         if (appData.settings.rushMode) {
-            gameState.p1.questionsDone++; // 同步進度
-            if(player === 'p2') gameState.p1.questionsDone--; // 校正
-            gameState.p2.questionsDone = gameState.p1.questionsDone;
             gameState.gameGlobalQuestionIndex++;
+            gameState.p1.questionsDone = gameState.gameGlobalQuestionIndex;
+            gameState.p2.questionsDone = gameState.gameGlobalQuestionIndex;
             updateProgressUI('p1');
             updateProgressUI('p2');
             gameState.p1.currentQuestion = null;
             gameState.p2.currentQuestion = null;
             setTimeout(() => generateSharedQuestion(), 150);
         } else {
+            state.questionsDone++;
+            updateProgressUI(player);
+            state.currentQuestion = null;
             setTimeout(() => generateNextQuestion(player), 150);
         }
 
@@ -507,21 +505,20 @@ function handleAnswer(player, selectedOpt, btnElement) {
         } else {
             // Reached tolerance limit -> move to next
             state.wrongCount++;
-            state.questionsDone++;
-            updateProgressUI(player);
-            state.currentQuestion = null;
             
             if (appData.settings.rushMode) {
-                 gameState.p1.questionsDone++; // 同步進度
-                 if(player === 'p2') gameState.p1.questionsDone--; // 校正
-                 gameState.p2.questionsDone = gameState.p1.questionsDone;
                  gameState.gameGlobalQuestionIndex++;
+                 gameState.p1.questionsDone = gameState.gameGlobalQuestionIndex;
+                 gameState.p2.questionsDone = gameState.gameGlobalQuestionIndex;
                  updateProgressUI('p1');
                  updateProgressUI('p2');
                  gameState.p1.currentQuestion = null;
                  gameState.p2.currentQuestion = null;
                  setTimeout(() => generateSharedQuestion(), 400);
             } else {
+                 state.questionsDone++;
+                 updateProgressUI(player);
+                 state.currentQuestion = null;
                  setTimeout(() => generateNextQuestion(player), 400);
             }
         }
@@ -571,10 +568,10 @@ function endGame() {
     let p1 = gameState.p1;
     let p2 = gameState.p2;
 
-    // 基本勝負判定：先看 HP (如果有用且死掉)，不然看答對數
-    if(appData.settings.useHp && (p1.hp <= 0 || p2.hp <= 0)) {
-        if(p1.hp <= 0 && p2.hp <= 0) isDraw = true;
-        else if (p2.hp <= 0) p1Win = true;
+    // 基本勝負判定：血量模式無條件比較 HP，否則看答對數
+    if(appData.settings.useHp) {
+        if(p1.hp === p2.hp) isDraw = true;
+        else if (p1.hp > p2.hp) p1Win = true;
         else p2Win = true;
     } else {
         // 比正確數
