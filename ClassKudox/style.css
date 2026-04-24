@@ -524,7 +524,7 @@ input:focus, textarea:focus { outline: none; border-color: var(--primary-color);
 .modal-footer { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem; }
 
 /* Tabs */
-.tabs { display: flex; margin-bottom: 1.5rem; background: #f1f5f9; border-radius: 12px; padding: 0.25rem; }
+.tabs { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-bottom: 1.5rem; background: #f1f5f9; border-radius: 12px; padding: 0.25rem; }
 .tab-btn, .sub-tab-btn {
     flex: 1; border: none; background: transparent; padding: 0.75rem; border-radius: 10px;
     font-family: var(--font-main); font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: var(--transition);
@@ -609,7 +609,7 @@ input:focus, textarea:focus { outline: none; border-color: var(--primary-color);
 /* Settings Modal Customizations */
 .settings-modal-content { max-width: 95%; width: 95%; padding: 0; display: flex; flex-direction: column; }
 .settings-modal-content .modal-header { padding: 2rem 2rem 1rem 2rem; margin: 0; }
-.settings-tabs { background: #f1f5f9; border-radius: 0; margin-bottom: 0; padding: 0.5rem 1rem; border-bottom: 1px solid var(--border-color); display: flex;}
+.settings-tabs { background: #f1f5f9; border-radius: 0; margin-bottom: 0; padding: 0.5rem 1rem; border-bottom: 1px solid var(--border-color); display: flex; flex-wrap: wrap; gap: 0.25rem; }
 .settings-tab-btn {
     flex: 1; border: none; background: transparent; padding: 0.75rem; border-radius: 10px;
     font-family: var(--font-main); font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: var(--transition);
