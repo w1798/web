@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?ver=1.03b">
+    <link rel="stylesheet" href="style.css?ver=1.03c">
 </head>
 <body data-font-size="medium">
 
@@ -107,11 +107,33 @@
                 <div class="input-group">
                     <label for="editStudentAvatarStyle">頭像風格</label>
                     <select id="editStudentAvatarStyle" class="filter-select" style="width: 100%">
-                        <option value="fe">可愛表情</option>
-                        <option value="bot">機器人</option>
-                        <option value="ava">人物角色</option>
-                        <option value="adv">探險家</option>
-                        <option value="lor">小精靈</option>
+                        <optgroup label="寫實人物">
+                            <option value="ava">寫實頭像 (Avataaars)</option>
+                            <option value="adv">冒險者 (Adventurer)</option>
+                            <option value="op">手繪風格 (Open Peeps)</option>
+                            <option value="per">極簡人像 (Personas)</option>
+                            <option value="min">迷你人像 (Miniavs)</option>
+                            <option value="mic">抽象線條 (Micah)</option>
+                        </optgroup>
+                        <optgroup label="趣味插畫">
+                            <option value="fe" selected>可愛表情 (Fun Emoji)</option>
+                            <option value="bs">燦爛笑容 (Big Smile)</option>
+                            <option value="cro">塗鴉人物 (Croodles)</option>
+                            <option value="lor">插畫風格 (Lorelei)</option>
+                            <option value="not">米白風格 (Notionists)</option>
+                        </optgroup>
+                        <optgroup label="科技/機器人">
+                            <option value="bot">機器人 (Bottts)</option>
+                            <option value="pix">像素風格 (Pixel Art)</option>
+                            <option value="ide">幾何圖案 (Identicon)</option>
+                            <option value="rin">抽象圓環 (Rings)</option>
+                            <option value="shi">各類形狀 (Shapes)</option>
+                        </optgroup>
+                        <optgroup label="其他風格">
+                            <option value="be">大耳人物 (Big Ears)</option>
+                            <option value="ico">簡約圖示 (Icons)</option>
+                            <option value="thu">讚美手勢 (Thumbs)</option>
+                        </optgroup>
                     </select>
                 </div>
             </div>
@@ -520,11 +542,33 @@
                                 <label for="classAvatarStyle">🎨 套用全班頭像風格</label>
                                 <div style="display:flex; gap:0.5rem; align-items:stretch;">
                                     <select id="classAvatarStyle" class="filter-select" style="flex:1;">
-                                        <option value="fe">可愛表情 (Fun Emoji)</option>
-                                        <option value="bot">機器人 (Bottts)</option>
-                                        <option value="ava">寫實頭像 (Avataaars)</option>
-                                        <option value="adv">像素冒險者 (Adventurer)</option>
-                                        <option value="lor">插畫風 (Lorelei)</option>
+                                        <optgroup label="寫實人物">
+                                            <option value="ava">寫實頭像 (Avataaars)</option>
+                                            <option value="adv">冒險者 (Adventurer)</option>
+                                            <option value="op">手繪風格 (Open Peeps)</option>
+                                            <option value="per">極簡人像 (Personas)</option>
+                                            <option value="min">迷你人像 (Miniavs)</option>
+                                            <option value="mic">抽象線條 (Micah)</option>
+                                        </optgroup>
+                                        <optgroup label="趣味插畫">
+                                            <option value="fe">可愛表情 (Fun Emoji)</option>
+                                            <option value="bs">燦爛笑容 (Big Smile)</option>
+                                            <option value="cro">塗鴉人物 (Croodles)</option>
+                                            <option value="lor">插畫風格 (Lorelei)</option>
+                                            <option value="not">米白風格 (Notionists)</option>
+                                        </optgroup>
+                                        <optgroup label="科技/機器人">
+                                            <option value="bot">機器人 (Bottts)</option>
+                                            <option value="pix">像素風格 (Pixel Art)</option>
+                                            <option value="ide">幾何圖案 (Identicon)</option>
+                                            <option value="rin">抽象圓環 (Rings)</option>
+                                            <option value="shi">各類形狀 (Shapes)</option>
+                                        </optgroup>
+                                        <optgroup label="其他風格">
+                                            <option value="be">大耳人物 (Big Ears)</option>
+                                            <option value="ico">簡約圖示 (Icons)</option>
+                                            <option value="thu">讚美手勢 (Thumbs)</option>
+                                        </optgroup>
                                     </select>
                                     <button class="btn secondary-btn" id="applyClassAvatarBtn" style="white-space: nowrap;">全班套用</button>
                                 </div>
@@ -894,6 +938,6 @@
 </script>
 
 
-    <script src="script.js?ver=1.03b"></script>
+    <script src="script.js?ver=1.03c"></script>
 </body>
 </html>

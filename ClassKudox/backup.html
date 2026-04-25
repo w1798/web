@@ -17,9 +17,7 @@
 <body>
     <div class="container">
         <h1>📦 ClassKudox 資料救援</h1>
-        <div class="alert">
-            請務必在與原本 ClassKudox 「相同的網址或網域」下開啟此網頁（例如：如果您原本是用 localhost 開啟，那這個檔案也要放在同一個資料夾下用 localhost 打開），才能順利讀取到瀏覽器本機的 localStorage！
-        </div>
+
         <p>此工具將會掃描您瀏覽器目前的 localStorage，並將所有的 ClassKudox 資料打包匯出為 JSON 檔。</p>
         <p>匯出後，您可以將這份 JSON 檔傳送到另一台裝置，並使用主程式系統設定裡的<strong>「📥 匯入 JSON 檔」</strong>功能來復原您的資料。</p>
         
@@ -28,7 +26,18 @@
     </div>
 
     <script>
-        document.getElementById('exportBtn').addEventListener('click', () => {
+        const downloadFile = (blob, filename) => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        };
+
+        document.getElementById('exportBtn').addEventListener('click', async () => {
             const backup = {};
             let count = 0;
             for (let i = 0; i < localStorage.length; i++) {
@@ -55,20 +64,28 @@
                 return;
             }
 
-            const dataStr = JSON.stringify(backup);
-            const blob = new Blob([dataStr], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
+            const dataStr = JSON.stringify(backup, null, 2);
+            const dateStr = new Date().toISOString().slice(0,10).replace(/-/g, '');
             
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `ClassKudox_Rescue_${new Date().toISOString().slice(0,10)}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            
-            statusEl.textContent = `✅ 成功打包匯出 ${count} 筆資料！請將下載的 JSON 檔拿去匯入即可。`;
-            statusEl.style.color = "#10b981";
+            try {
+                if ('CompressionStream' in window) {
+                    statusEl.textContent = "正在壓縮中...";
+                    const stream = new Blob([dataStr], { type: "application/json" }).stream();
+                    const compressedStream = stream.pipeThrough(new CompressionStream("gzip"));
+                    const blob = await new Response(compressedStream).blob();
+                    downloadFile(blob, `ClassKudox_Rescue_${dateStr}.json.gz`);
+                    statusEl.textContent = `✅ 成功打包並以 Gzip 壓縮匯出 ${count} 筆資料 (.json.gz)！`;
+                } else {
+                    const blob = new Blob([dataStr], { type: "application/json" });
+                    downloadFile(blob, `ClassKudox_Rescue_${dateStr}.json`);
+                    statusEl.textContent = `✅ 成功打包匯出 ${count} 筆資料！(此瀏覽器不支援 Gzip，已匯出原始 JSON)`;
+                }
+                statusEl.style.color = "#10b981";
+            } catch (err) {
+                console.error('匯出失敗:', err);
+                statusEl.textContent = "匯出失敗，請查看控制台錯誤訊息。";
+                statusEl.style.color = "#ef4444";
+            }
         });
     </script>
 </body>

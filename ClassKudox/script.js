@@ -110,6 +110,8 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     })();
 
+    const getTS = (ts) => (typeof ts === 'number') ? ts : StampTool.decode(ts).getTime();
+
     const compressJSON = async (obj, formatted = false) => {
         try {
             const str = formatted ? JSON.stringify(obj, null, 2) : JSON.stringify(obj);
@@ -184,7 +186,16 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- Avatar style mapping: short code <-> DiceBear style name ---
-    const AS_MAP = { fe:'fun-emoji', bot:'bottts', ava:'avataaars', adv:'adventurer', lor:'lorelei' };
+    const AS_MAP = { 
+        // 寫實人物
+        ava: 'avataaars', adv: 'adventurer', op: 'open-peeps', per: 'personas', min: 'miniavs', mic: 'micah',
+        // 趣味插畫
+        fe: 'fun-emoji', bs: 'big-smile', cro: 'croodles', lor: 'lorelei', not: 'notionists',
+        // 科技/機器人
+        bot: 'bottts', pix: 'pixel-art', ide: 'identicon', rin: 'rings', shi: 'shapes',
+        // 其他
+        be: 'big-ears', ico: 'icons', thu: 'thumbs'
+    };
     const AS_REV = Object.fromEntries(Object.entries(AS_MAP).map(([k,v])=>[v,k]));
     const getAvatarUrl = (seed, aS) => {
         const style = AS_MAP[aS] || aS || 'fun-emoji';
@@ -606,8 +617,12 @@ document.addEventListener('DOMContentLoaded', () => {
         logs.filter(l => set.has(l.id)).forEach(l => {
             const s = students.find(x => x.id === l.sID);
             if(s) {
-                if(l.iSum === 1) s.iP = (s.iP || 0) - l.pt;
-                else s.cP = (s.cP || 0) - l.pt;
+                if (l.trId && l.trQty) {
+                    if (s.tr) s.tr[l.trId] = (s.tr[l.trId] || 0) - l.trQty;
+                } else {
+                    if(l.iSum === 1) s.iP = (s.iP || 0) - l.pt;
+                    else s.cP = (s.cP || 0) - l.pt;
+                }
             }
         });
         logs = logs.filter(l => !set.has(l.id));
@@ -641,18 +656,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const activeTr = Object.entries(s.tr).filter(([_, qty]) => qty !== 0);
                 if (activeTr.length > 0) {
                     trHtml = `<div class="student-treasures">`;
-                    if (activeTr.length <= 2) {
-                        activeTr.forEach(([id, qty]) => {
-                            const def = treasureDefs.find(t => t.id === id);
-                            if (def) trHtml += `<span class="stu-treasure-icon" title="${def.lb}">${def.ic}${qty}</span>`;
-                        });
-                    } else {
-                        activeTr.slice(0, 3).forEach(([id, qty]) => {
-                            const def = treasureDefs.find(t => t.id === id);
-                            if (def) trHtml += `<span class="stu-treasure-icon" title="${def.lb} x${qty}">${def.ic}</span>`;
-                        });
-                        if (activeTr.length > 3) trHtml += `<span class="stu-treasure-more">+${activeTr.length - 3}</span>`;
-                    }
+                    activeTr.forEach(([id, qty]) => {
+                        const def = treasureDefs.find(t => t.id === id);
+                        if (def) trHtml += `<span class="stu-treasure-icon" title="${def.lb}">${def.ic}${qty}</span>`;
+                    });
                     trHtml += `</div>`;
                 }
             }
@@ -792,13 +799,19 @@ document.addEventListener('DOMContentLoaded', () => {
         
         confBtn.onclick = () => {
             let count = 0;
+            let allLogIds = [];
             Object.entries(pendingTreasures).forEach(([tId, qty]) => {
-                if (qty !== 0) { awardTreasure(tId, qty, true); count++; }
+                if (qty !== 0) {
+                    const ids = awardTreasure(tId, qty, true);
+                    allLogIds = allLogIds.concat(ids);
+                    count++;
+                }
             });
             if (count > 0) {
                 renderStudents(); if(currentView==='groups') renderGroups();
                 createPointAnimation(1, awardContextIds.length);
                 const titleText = awardContextIds.length > 1 ? `已給予 ${awardContextIds.length} 位學生寶物異動` : `已完成寶物發放`;
+                lastActionLogIds = allLogIds;
                 showUndoToast(titleText);
             }
             pendingTreasures = {};
@@ -814,7 +827,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const awardTreasure = (treasureId, qty, silent = false) => {
         const td = treasureDefs.find(t => t.id === treasureId);
-        if (!td) return;
+        if (!td) return [];
+        let newIds = [];
         awardContextIds.forEach(sid => {
             const s = students.find(x => x.id === sid);
             if (!s) return;
@@ -827,6 +841,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const logLabel = `${td.ic}${td.lb} ${qtyText}`;
             const logEntry = { id: logId, sID: sid, lb: logLabel, pt: 0, TS: tsHex, iSum: 1, trId: treasureId, trQty: qty };
             logs.push(logEntry);
+            newIds.push(logId);
             pushOp(1, { s: sid, lb: logLabel, p: 0, l: logId, is: 1, ti: treasureId, tq: qty });
         });
         saveData();
@@ -834,8 +849,10 @@ document.addEventListener('DOMContentLoaded', () => {
             renderStudentTreasures();
             renderStudents();
             createPointAnimation(qty, awardContextIds.length);
+            lastActionLogIds = newIds;
             showUndoToast(`${qty > 0 ? '+' : ''}${qty} ${td.lb} 給予 ${awardContextIds.length} 位學生`);
         }
+        return newIds;
     };
 
     window.removePointItem = (cat, id) => { 
@@ -866,12 +883,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const renderHistory = () => { 
         const list = document.getElementById('studentHistoryList'); if(!list) return; list.innerHTML = ''; 
-        const f = logs.filter(l => l.sID === currentProfileId).sort((a,b) => {
-            if (typeof a.TS === 'number' && typeof b.TS === 'number') return b.TS - a.TS;
-            const sa = String(a.TS), sb = String(b.TS);
-            if (sa.length !== sb.length) return sb.length - sa.length;
-            return sa > sb ? -1 : (sa < sb ? 1 : 0);
-        }); 
+        const f = logs.filter(l => l.sID === currentProfileId).sort((a,b) => getTS(b.TS) - getTS(a.TS)); 
         if(!f.length) return list.innerHTML = '<li class="empty-state">無紀錄</li>'; 
         f.forEach(l => { 
             const li = document.createElement('li'); 
@@ -1321,12 +1333,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(range && (ts < range.start || ts > range.end)) return false; 
                 if(currentProfileId && log.sID !== currentProfileId) return false; 
                 return true; 
-            }).sort((a,b) => {
-                if (typeof a.TS === 'number' && typeof b.TS === 'number') return b.TS - a.TS;
-                const sa = String(a.TS), sb = String(b.TS);
-                if (sa.length === sb.length) return sb.localeCompare(sa);
-                return sb.length - sa.length;
-            });
+            }).sort((a,b) => getTS(b.TS) - getTS(a.TS));
             f.slice(0,50).forEach(log => {
                 const s = students.find(x => x.id === log.sID);
                 const d = (typeof log.TS === 'number') ? new Date(log.TS) : StampTool.decode(log.TS);
@@ -1379,11 +1386,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(range && (ts < range.start || ts > range.end)) return false;
                 if(currentProfileId && log.sID !== currentProfileId) return false;
                 return true;
-            }).sort((a,b) => {
-                const sa = String(a.TS), sb = String(b.TS);
-                if (sa.length !== sb.length) return sb.length - sa.length;
-                return sa > sb ? -1 : (sa < sb ? 1 : 0);
-            });
+            }).sort((a,b) => getTS(b.TS) - getTS(a.TS));
             f.slice(0,50).forEach(log => {
                 const s = students.find(x => x.id === log.sID);
                 const d = (typeof log.TS === 'number') ? new Date(log.TS) : StampTool.decode(log.TS);
@@ -1442,34 +1445,34 @@ document.addEventListener('DOMContentLoaded', () => {
         const range = getReportsTimeRange();
         const studentLogs = logs.filter(l => {
             if (l.sID !== id) return false;
-            if (l.iSum === 1) return false;
-            const ts = typeof l.TS === 'number' ? l.TS : StampTool.decode(l.TS).getTime();
+            const ts = getTS(l.TS);
             if (range && (ts < range.start || ts > range.end)) return false;
             return true;
-        });
-        const agg = {};
-        studentLogs.forEach(l => { agg[l.lb] = (agg[l.lb] || 0) + l.pt; });
+        }).sort((a,b) => getTS(b.TS) - getTS(a.TS));
         
         const grid = document.getElementById('summaryDetailGrid');
         const titleEl = document.getElementById('summaryDetailStudentName');
         const totalEl = document.getElementById('summaryDetailTotal');
         if (!grid || !titleEl || !totalEl) return;
         
-        titleEl.textContent = id + ' \u7684\u9ede\u6578\u6458\u8981';
+        titleEl.textContent = id + ' 的紀錄明細';
         
-        const total = Object.values(agg).reduce((s, v) => s + v, 0);
-        totalEl.textContent = total > 0 ? `\u7e3d\u8a08\uff1a+${total}` : `\u7e3d\u8a08\uff1a${total}`;
+        // 僅計算加減分（iSum: 0 且非寶物）
+        const total = studentLogs.filter(l => l.iSum !== 1 && !l.trId).reduce((s, v) => s + v.pt, 0);
+        totalEl.textContent = total > 0 ? `目前積分：+${total}` : `目前積分：${total}`;
         totalEl.style.color = total > 0 ? 'var(--positive-color)' : (total < 0 ? 'var(--negative-color)' : 'var(--text-secondary)');
         
         grid.innerHTML = '';
-        const entries = Object.entries(agg).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
-        if (!entries.length) {
-            grid.innerHTML = `<p style="grid-column:1/-1; text-align:center; color:var(--text-secondary); padding:1rem;">\u6b64\u6642\u9593\u7bc4\u570d\u5167\u7121\u9ede\u6578\u8a18\u9304</p>`;
+        if (!studentLogs.length) {
+            grid.innerHTML = `<p style="grid-column:1/-1; text-align:center; color:var(--text-secondary); padding:1rem;">此時間範圍內無紀錄</p>`;
         } else {
-            entries.forEach(([lb, pts]) => {
+            studentLogs.forEach(l => {
+                const isTreasure = !!l.trId;
+                const d = new Date(getTS(l.TS));
                 const card = document.createElement('div');
-                card.className = `summary-detail-card ${pts > 0 ? 'positive' : 'negative'}`;
-                card.innerHTML = `<div class="detail-label">${lb}</div><div class="detail-pts">${pts > 0 ? '+' : ''}${pts}</div>`;
+                card.className = `summary-detail-card ${isTreasure ? '' : (l.pt > 0 ? 'positive' : 'negative')}`;
+                const ptsText = isTreasure ? '' : `<div class="detail-pts">${l.pt > 0 ? '+' : ''}${l.pt}</div>`;
+                card.innerHTML = `<div class="detail-label"><small style="display:block;color:var(--text-secondary);font-size:0.75em;">${d.toLocaleString()}</small>${l.lb}${l.iSum === 1 && !isTreasure ? ' <small>(不列排)</small>' : ''}</div>${ptsText}`;
                 grid.appendChild(card);
             });
         }
