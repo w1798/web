@@ -1,3 +1,62 @@
+/**
+ * Charles Nextime Web Tools Portal - Core Logic
+ * Copyright (c) 2026 Charles Nextime
+ * Licensed under the GNU General Public License v3.0
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation.
+ */
+ 
+
+// 負責載入多個外部套件的函式
+function initLibraries() {
+    const libraries = [
+        {
+            url: 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'
+        }
+    ];
+
+    libraries.forEach(lib => {
+        // 1. 自動從 URL 提取檔名
+        const fileName = new URL(lib.url).pathname.split('/').pop();
+
+        // 2. 處理 shouldLoad 邏輯：
+        // 如果 lib.condition 有定義，就用它的結果；如果沒定義(undefined)，則預設為 true
+        const shouldLoad = (lib.condition !== undefined) ? lib.condition : true;
+
+        if (!shouldLoad) {
+            console.log(`%c[跳過] 環境支援原生功能，不載入: ${fileName}`, 'color: #9E9E9E;');
+            return;
+        }
+
+        const script = document.createElement('script');
+        script.src = lib.url;
+        script.async = false;
+
+        script.onload = function() {
+            console.log(`%c[成功] 外部庫已載入: ${fileName}`, 'color: #4CAF50; font-weight: bold;');
+        };
+
+        script.onerror = function() {
+            const fallbackPath = `libs/${fileName}`;
+            console.warn(`[失敗] 載入失敗，嘗試本地備援: ${fallbackPath}`);
+            
+            const fallbackScript = document.createElement('script');
+            fallbackScript.src = fallbackPath;
+            fallbackScript.onload = () => console.log(`%c[備援成功] 已從本地載入: ${fileName}`, 'color: #FF9800; font-weight: bold;');
+            fallbackScript.onerror = () => console.error(`[重大錯誤] 本地檔案不存在: ${fallbackPath}`);
+
+            document.head.appendChild(fallbackScript);
+        };
+
+        document.head.appendChild(script);
+    });
+}
+
+// 啟動
+initLibraries();
+
+
 const STORAGE_KEY = 'math_pk_pro_v2';
 
 let appData = {
@@ -6,12 +65,13 @@ let appData = {
         rushMode: false,
         wrongTolerance: 1,
         timePerQuestion: 0, // 0=無, 1~10
-        maxHp: 100,         // 100~500
-        questionCount: 5,
+        maxHp: 200,         // 100~500
+        questionCount: 10,
         answerCount: 6,
         fontSize: 1.0,
         volume: 0.5,
-        enableShake: true
+        enableShake: true,
+        enableSound: true
     },
     stats: {
         p1Wins: 0,
@@ -48,6 +108,7 @@ const sounds = {
 };
 
 function playSound(type) {
+    if(!appData.settings.enableSound) return;
     let s = sounds[type];
     if(s) {
         s.volume = appData.settings.volume;
@@ -69,7 +130,18 @@ function loadData() {
     const sharedData = urlParams.get('s');
     if (sharedData) {
         try {
-            const decoded = JSON.parse(atob(sharedData));
+            const raw = JSON.parse(atob(sharedData));
+            // 支援縮寫 key (h, r, w, t, m, q, a, f) 與舊版完整 key
+            const decoded = {
+                useHp: raw.h !== undefined ? raw.h : raw.useHp,
+                rushMode: raw.r !== undefined ? raw.r : raw.rushMode,
+                wrongTolerance: raw.w !== undefined ? raw.w : raw.wrongTolerance,
+                timePerQuestion: raw.t !== undefined ? raw.t : raw.timePerQuestion,
+                maxHp: raw.m !== undefined ? raw.m : raw.maxHp,
+                questionCount: raw.q !== undefined ? raw.q : raw.questionCount,
+                answerCount: raw.a !== undefined ? raw.a : raw.answerCount,
+                fontSize: raw.f !== undefined ? raw.f : raw.fontSize
+            };
             appData.settings = {...appData.settings, ...decoded};
             console.log("已套用分享設定:", appData.settings);
         } catch(e) {
@@ -78,11 +150,23 @@ function loadData() {
     }
 
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved && !sharedData) { // 若有分享連結，則不讀取舊設定覆蓋
-        let loaded = JSON.parse(saved);
-        appData.settings = {...appData.settings, ...loaded.settings};
-        appData.stats = {...appData.stats, ...loaded.stats};
+    if (saved && !sharedData) { 
+        try {
+            let loaded = JSON.parse(saved);
+            if (loaded && loaded.settings) {
+                appData.settings = {...appData.settings, ...loaded.settings};
+            }
+            if (loaded && loaded.stats) {
+                appData.stats = {...appData.stats, ...loaded.stats};
+            }
+        } catch(e) { console.error("JSON 解析失敗", e); }
     }
+    
+    // 強制校正數值型態與合法性，確保與 select value ("1.0") 格式一致
+    let fs = parseFloat(appData.settings.fontSize) || 1.0;
+    appData.settings.fontSize = fs.toFixed(1);
+    appData.settings.maxHp = parseInt(appData.settings.maxHp) || 100;
+    appData.settings.questionCount = parseInt(appData.settings.questionCount) || 10;
 }
 
 function saveData() {
@@ -90,12 +174,17 @@ function saveData() {
 }
 
 function applyFontSize() {
-    document.documentElement.style.fontSize = `${16 * appData.settings.fontSize}px`;
+    let size = parseFloat(appData.settings.fontSize);
+    if (isNaN(size) || size <= 0) size = 1.0;
+    // 僅更新局部變數，不影響全域 root 字體
+    document.documentElement.style.setProperty('--answer-multiplier', size);
 }
 
 function showScreen(screenId) {
     screens.forEach(s => s.classList.remove('active'));
     document.getElementById(screenId).classList.add('active');
+    // 設定 body class 以便 CSS 依據不同畫面調整全域按鈕位置
+    document.body.className = `screen-${screenId}`;
 }
 
 function updateMainMenuStats() {
@@ -122,40 +211,53 @@ function setupSettingsUI() {
     document.getElementById('setAnsCount').value = appData.settings.answerCount;
     document.getElementById('valAnsCount').innerText = appData.settings.answerCount;
 
-    document.getElementById('setFontSize').value = appData.settings.fontSize;
-    document.getElementById('valFontSize').innerText = appData.settings.fontSize;
+    document.getElementById('setUseHp').checked = appData.settings.useHp;
+    document.getElementById('setRushMode').checked = appData.settings.rushMode;
+    document.getElementById('setEnableShake').checked = appData.settings.enableShake;
+    document.getElementById('setEnableSound').checked = appData.settings.enableSound;
 
-    // 事件監聽
-    document.getElementById('setWrongTol').addEventListener('input', (e) => {
+    document.getElementById('setFontSize').value = appData.settings.fontSize;
+    updateFontSizeLabel(parseFloat(appData.settings.fontSize));
+
+    // 事件監聽：改為 change 事件
+    document.getElementById('setWrongTol').addEventListener('change', (e) => {
         document.getElementById('valWrongTol').innerText = e.target.value;
     });
-    document.getElementById('setTimeLimit').addEventListener('input', (e) => {
-        document.getElementById('valTimeLimit').innerText = e.target.value === "0" ? "無" : e.target.value + "秒";
+    document.getElementById('setTimeLimit').addEventListener('change', (e) => {
+        const val = e.target.value;
+        document.getElementById('valTimeLimit').innerText = val === "0" ? "無" : val + "秒";
     });
-    document.getElementById('setMaxHp').addEventListener('input', (e) => {
+    document.getElementById('setMaxHp').addEventListener('change', (e) => {
         document.getElementById('valMaxHp').innerText = e.target.value;
     });
-    document.getElementById('setQCount').addEventListener('input', (e) => {
+    document.getElementById('setQCount').addEventListener('change', (e) => {
         document.getElementById('valQCount').innerText = e.target.value;
     });
-    document.getElementById('setAnsCount').addEventListener('input', (e) => {
+    document.getElementById('setAnsCount').addEventListener('change', (e) => {
         document.getElementById('valAnsCount').innerText = e.target.value;
     });
-    document.getElementById('setFontSize').addEventListener('input', (e) => {
-        document.getElementById('valFontSize').innerText = parseFloat(e.target.value).toFixed(1);
+    document.getElementById('setFontSize').addEventListener('change', (e) => {
+        updateFontSizeLabel(parseFloat(e.target.value));
     });
+}
+
+function updateFontSizeLabel(val) {
+    let label = "中";
+    if(val <= 0.8) label = "小";
+    else if(val >= 1.5) label = "大";
+    document.getElementById('valFontSizeLabel').innerText = label;
 }
 
 function generateQR() {
     const dataToShare = {
-        useHp: appData.settings.useHp,
-        rushMode: appData.settings.rushMode,
-        wrongTolerance: appData.settings.wrongTolerance,
-        timePerQuestion: parseInt(document.getElementById('setTimeLimit').value),
-        maxHp: parseInt(document.getElementById('setMaxHp').value),
-        questionCount: parseInt(document.getElementById('setQCount').value),
-        answerCount: parseInt(document.getElementById('setAnsCount').value),
-        fontSize: parseFloat(document.getElementById('setFontSize').value)
+        h: appData.settings.useHp,
+        r: appData.settings.rushMode,
+        w: appData.settings.wrongTolerance,
+        t: parseInt(document.getElementById('setTimeLimit').value),
+        m: parseInt(document.getElementById('setMaxHp').value),
+        q: parseInt(document.getElementById('setQCount').value),
+        a: parseInt(document.getElementById('setAnsCount').value),
+        f: parseFloat(document.getElementById('setFontSize').value)
     };
 
     const b64 = btoa(JSON.stringify(dataToShare));
@@ -170,11 +272,11 @@ function generateQR() {
     setTimeout(() => {
         new QRCode(document.getElementById("qrcode"), {
             text: url,
-            width: 200,
-            height: 200,
+            width: 300,
+            height: 300,
             colorDark : "#000000",
             colorLight : "#ffffff",
-            correctLevel : QRCode.CorrectLevel.L
+            correctLevel : QRCode.CorrectLevel.H // 提升至最高容錯率
         });
     }, 100);
 
@@ -188,6 +290,9 @@ function closeQRModal() {
 function saveSettingsAndReturn() {
     appData.settings.useHp = document.getElementById('setUseHp').checked;
     appData.settings.rushMode = document.getElementById('setRushMode').checked;
+    appData.settings.enableShake = document.getElementById('setEnableShake').checked;
+    appData.settings.enableSound = document.getElementById('setEnableSound').checked;
+
     appData.settings.wrongTolerance = parseInt(document.getElementById('setWrongTol').value);
     appData.settings.timePerQuestion = parseInt(document.getElementById('setTimeLimit').value);
     appData.settings.maxHp = parseInt(document.getElementById('setMaxHp').value);
@@ -203,7 +308,7 @@ function saveSettingsAndReturn() {
 function resetStats() {
     if(confirm("確定要重置所有戰績與設定嗎？")) {
         localStorage.removeItem(STORAGE_KEY);
-        location.reload();
+        location.reload(); // 重新載入會觸發 init 使用硬編碼的 default
     }
 }
 
@@ -283,7 +388,8 @@ function createPlayerState() {
         wrongList: [], // { q: text, expected: ans, provided: userAns }
         currentWrongAttempts: 0,
         finished: false,
-        timer: null
+        timer: null,
+        isOvertime: false // 逾時懲罰旗標
     };
 }
 
@@ -324,8 +430,15 @@ function startGame() {
     if(appData.settings.useHp) {
         gameState.gameInterval = setInterval(() => {
             if(!gameState.ended) {
-                if(!gameState.p1.finished) gameState.p1.hp -= 1;
-                if(!gameState.p2.finished) gameState.p2.hp -= 1;
+                // 每秒扣血速率：正常1點，逾時3點
+                if(!gameState.p1.finished) {
+                    let drain1 = gameState.p1.isOvertime ? 3 : 1;
+                    gameState.p1.hp -= drain1;
+                }
+                if(!gameState.p2.finished) {
+                    let drain2 = gameState.p2.isOvertime ? 3 : 1;
+                    gameState.p2.hp -= drain2;
+                }
                 
                 updateHpUI('p1');
                 updateHpUI('p2');
@@ -348,6 +461,13 @@ function checkGlobalGameOver() {
 
     if(gameState.p1.finished && gameState.p2.finished) {
         finishEnd = true;
+    }
+    
+    // 如果是血量模式，只要有人完成(不管是扣光還是答完)且另一方也完成了，或是有人血量歸零
+    // 其實 hpEnd 已經在 updateHpUI 觸發 finished 了，所以這裡只要判斷 finishEnd 即可
+    // 但為了保險，只要任一方 hp 歸零就直接判斷 hpEnd
+    if (appData.settings.useHp) {
+        if(gameState.p1.hp <= 0 || gameState.p2.hp <= 0) hpEnd = true;
     }
 
     if (hpEnd || finishEnd) {
@@ -419,6 +539,33 @@ function generateQuestion() {
             answer = a * b;
             text = `${a} x ${b} = ?`;
             break;
+        case 7: // 三數加減挑戰 (A ± B ± C = D, A,B,C,D in 0-20)
+            a = Math.floor(Math.random() * 21);
+            let op1 = Math.random() > 0.5 ? '+' : '-';
+            let possB = [];
+            for(let i=0; i<=20; i++) {
+                let r = (op1 === '+') ? (a + i) : (a - i);
+                if(r >= 0 && r <= 20) possB.push(i);
+            }
+            b = possB[Math.floor(Math.random() * possB.length)];
+            let r1 = (op1 === '+') ? (a + b) : (a - b);
+
+            let op2 = Math.random() > 0.5 ? '+' : '-';
+            let possC = [];
+            for(let i=0; i<=20; i++) {
+                let r = (op2 === '+') ? (r1 + i) : (r1 - i);
+                if(r >= 0 && r <= 20) possC.push(i);
+            }
+            let c = possC[Math.floor(Math.random() * possC.length)];
+            answer = (op2 === '+') ? (r1 + c) : (r1 - c);
+            text = `${a} ${op1} ${b} ${op2} ${c} = ?`;
+            break;
+        case 8: // 百位除法練習 (A ÷ B = C, C,B in 1-10)
+            b = Math.floor(Math.random() * 10) + 1; // 除數 1~10
+            answer = Math.floor(Math.random() * 10) + 1; // 商 1~10
+            a = b * answer;
+            text = `${a} ÷ ${b} = ?`;
+            break;
     }
     return { text, answer, catType: cat };
 }
@@ -472,7 +619,11 @@ function generateSharedQuestion() {
             let btn = document.createElement('button');
             btn.className = 'option-btn';
             btn.innerText = opt;
-            btn.onclick = (e) => handleAnswer(player, opt, e.target);
+            // 使用 pointerdown 確保多點觸控同時觸發且反應即時
+            btn.onpointerdown = (e) => {
+                e.preventDefault();
+                handleAnswer(player, opt, e.target);
+            };
             optsContainer.appendChild(btn);
         });
     });
@@ -508,9 +659,20 @@ function startQuestionTimer(player) {
 function handleTimeout(player) {
     if(gameState.ended || gameState[player].finished) return;
     playSound('wrong');
-    // 把超時視為強制打錯
-    gameState[player].currentWrongAttempts = 999; // 強制觸換題
-    handleAnswer(player, -1, null);
+    triggerShake(player); // 超時加入抖動
+    if(appData.settings.useHp) {
+        showDamage(player, -5); // 顯示扣血特效
+        gameState[player].hp -= 5; // 超時扣 5 點
+        if(gameState[player].hp < 0) gameState[player].hp = 0;
+        updateHpUI(player);
+        
+        // 進入逾時懲罰狀態：加劇每秒扣血，但不換題
+        gameState[player].isOvertime = true;
+    } else {
+        // 若非血量模式，逾時則維持原樣自動換題 (或者也可依此規則，但目前僅 HP 模式有 drain 需求)
+        gameState[player].currentWrongAttempts = 999;
+        handleAnswer(player, -1, null);
+    }
 }
 
 function generateNextQuestion(player) {
@@ -544,6 +706,12 @@ function generateNextQuestion(player) {
     } else if (qBase.catType === 6) {
         maxLimit = 100;
         minLimit = 1;
+    } else if (qBase.catType === 7) {
+        maxLimit = 20;
+        minLimit = 0;
+    } else if (qBase.catType === 8) {
+        maxLimit = 10;
+        minLimit = 1;
     }
 
     while(options.length < appData.settings.answerCount) {
@@ -572,7 +740,10 @@ function generateNextQuestion(player) {
         let btn = document.createElement('button');
         btn.className = 'option-btn';
         btn.innerText = opt;
-        btn.onclick = (e) => handleAnswer(player, opt, e.target);
+        btn.onpointerdown = (e) => {
+            e.preventDefault();
+            handleAnswer(player, opt, e.target);
+        };
         optsContainer.appendChild(btn);
     });
 }
@@ -583,6 +754,9 @@ function handleAnswer(player, selectedOpt, btnElement) {
     let opponent = player === 'p1' ? 'p2' : 'p1';
     
     if(state.finished || !state.currentQuestion) return;
+
+    // 只要有作答動作就解除逾時加劇扣血
+    state.isOvertime = false;
 
     if (selectedOpt === state.currentQuestion.answer) {
         if(state.timer) clearInterval(state.timer);
@@ -595,7 +769,9 @@ function handleAnswer(player, selectedOpt, btnElement) {
             state.combo++;
             let dmg = 10;
             if(state.combo >= 3) dmg += (state.combo - 2);
+            showDamage(opponent, -dmg); // 對手顯示受傷數值
             gameState[opponent].hp -= dmg;
+            if(gameState[opponent].hp < 0) gameState[opponent].hp = 0;
             updateHpUI(opponent);
             triggerShake(opponent);
         }
@@ -626,8 +802,10 @@ function handleAnswer(player, selectedOpt, btnElement) {
         state.currentWrongAttempts++;
         
         if(appData.settings.useHp) {
+            showDamage(player, -5); // 自己顯示扣血數值
             state.hp -= 5;
             updateHpUI(player);
+            triggerShake(player); // 答錯也要抖動
         }
 
         // 只要答錯就紀錄 (不管有沒有換題)
@@ -686,14 +864,40 @@ function updateHpUI(player) {
     } else {
         bar.classList.remove('low');
     }
+
+    // 血量變 0 時，該方結束，等待結算
+    if(hp <= 0 && !gameState[player].finished) {
+        gameState[player].finished = true;
+        document.getElementById(`${player}QuestionText`).innerText = "HP 歸零！等待結算...";
+        document.getElementById(`${player}Options`).innerHTML = '';
+        checkGlobalGameOver();
+    }
+}
+
+function showDamage(player, amount) {
+    const container = document.getElementById(`${player}HpContainer`);
+    if(!container) return;
+    
+    const pop = document.createElement('div');
+    pop.className = 'damage-pop';
+    pop.innerText = amount;
+    
+    container.appendChild(pop);
+    
+    // 動畫結束後移除
+    setTimeout(() => {
+        if(pop.parentNode) pop.parentNode.removeChild(pop);
+    }, 800);
 }
 
 function triggerShake(player) {
     if(!appData.settings.enableShake) return;
     let targetArea = document.getElementById(`${player}Area`);
     targetArea.classList.add('shake');
+    targetArea.classList.add('hit'); // 紅光效果
     setTimeout(() => {
         targetArea.classList.remove('shake');
+        targetArea.classList.remove('hit');
     }, 500);
 }
 
@@ -742,8 +946,8 @@ function endGame() {
     }
 
     // 填寫勝利標籤
-    document.getElementById('p1WinLabel').innerText = isDraw ? "平手！" : (p1Win ? "🎊 勝利！" : "❌ 失敗");
-    document.getElementById('p2WinLabel').innerText = isDraw ? "平手！" : (p2Win ? "🎊 勝利！" : "❌ 失敗");
+    document.getElementById('p1WinLabel').innerText = isDraw ? "平手！" : (p1Win ? "🎊 勝利！" : "再努力");
+    document.getElementById('p2WinLabel').innerText = isDraw ? "平手！" : (p2Win ? "🎊 勝利！" : "再努力");
 
     // 填寫剩餘 HP
     if(appData.settings.useHp) {

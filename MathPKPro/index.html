@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>數學算術 PK 大賽</title>
-    <link rel="stylesheet" href="style.css?ver=1.00b">
+    <link rel="stylesheet" href="style.css?ver=1.00c">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
     <button id="btnHomeGlobal" class="btn-home" onclick="returnToHome()">🏠 回首頁</button>
@@ -31,14 +30,27 @@
     <div id="categoryScreen" class="screen">
         <div class="menu-container glassmorphism" style="max-width: 600px; padding: 2rem;">
             <h2>選擇 PK 項目</h2>
-            <div class="options-grid" style="grid-template-columns: 1fr 1fr; margin-bottom:0;">
-                <button class="btn primary" style="font-size:1.1rem; padding: 1rem;" onclick="setupReadyPhase(0)">10以內的加法</button>
-                <button class="btn primary" style="font-size:1.1rem; padding: 1rem;" onclick="setupReadyPhase(3)">20以內的加法</button>
-                <button class="btn primary" style="font-size:1.1rem; padding: 1rem;" onclick="setupReadyPhase(1)">10以內的減法</button>
-                <button class="btn primary" style="font-size:1.1rem; padding: 1rem;" onclick="setupReadyPhase(4)">20以內的減法</button>
-                <button class="btn primary" style="font-size:1.1rem; padding: 1rem;" onclick="setupReadyPhase(2)">10以內的加減法</button>
-                <button class="btn primary" style="font-size:1.1rem; padding: 1rem;" onclick="setupReadyPhase(5)">20以內的加減法</button>
-                <button class="btn primary" style="font-size:1.1rem; padding: 1rem; grid-column: span 2;" onclick="setupReadyPhase(6)">十十乘法表 (1x1~10x10)</button>
+            <div class="category-grid">
+                <div class="category-section">
+                    <h3 class="category-title">🟢 基礎加減</h3>
+                    <div class="options-grid">
+                        <button class="btn primary" onclick="setupReadyPhase(0)">10以內的加法</button>
+                        <button class="btn primary" onclick="setupReadyPhase(3)">20以內的加法</button>
+                        <button class="btn primary" onclick="setupReadyPhase(1)">10以內的減法</button>
+                        <button class="btn primary" onclick="setupReadyPhase(4)">20以內的減法</button>
+                        <button class="btn primary" onclick="setupReadyPhase(2)">10以內的加減法</button>
+                        <button class="btn primary" onclick="setupReadyPhase(5)">20以內的加減法</button>
+                    </div>
+                </div>
+
+                <div class="category-section">
+                    <h3 class="category-title">🔵 乘除與挑戰</h3>
+                    <div class="options-grid">
+                        <button class="btn primary" onclick="setupReadyPhase(6)">十十乘法表 (1~10)</button>
+                        <button class="btn primary" onclick="setupReadyPhase(8)">百位除法練習 (1~10)</button>
+                        <button class="btn danger" style="grid-column: span 2;" onclick="setupReadyPhase(7)">三數加減挑戰 (0~20混合)</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -54,38 +66,96 @@
             </div>
 
             <div class="setting-group-row">
-                <label>開啟搶答模式 (共用題)</label>
+                <label>搶答模式 (共用題)</label>
                 <input type="checkbox" id="setRushMode">
             </div>
 
+            <div class="setting-group-row">
+                <label>震動特效</label>
+                <input type="checkbox" id="setEnableShake" checked>
+            </div>
+
+            <div class="setting-group-row">
+                <label>答題音效</label>
+                <input type="checkbox" id="setEnableSound" checked>
+            </div>
+
             <div class="setting-group">
-                <label>容錯次數: <span id="valWrongTol">1</span>次</label>
-                <input type="range" id="setWrongTol" min="0" max="2" step="1" value="1">
+                <label>錯誤容忍: <span id="valWrongTol">1</span>次</label>
+                <select id="setWrongTol">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                </select>
             </div>
 
             <div class="setting-group">
                 <label>每題限時: <span id="valTimeLimit">無</span></label>
-                <input type="range" id="setTimeLimit" min="0" max="10" step="1" value="0">
+                <select id="setTimeLimit">
+                    <option value="0">無</option>
+                    <option value="1">1秒</option>
+                    <option value="2">2秒</option>
+                    <option value="3">3秒</option>
+                    <option value="4">4秒</option>
+                    <option value="5">5秒</option>
+                    <option value="6">6秒</option>
+                    <option value="7">7秒</option>
+                    <option value="8">8秒</option>
+                    <option value="9">9秒</option>
+                    <option value="10">10秒</option>
+                </select>
             </div>
 
             <div class="setting-group">
                 <label>初始 HP: <span id="valMaxHp">100</span></label>
-                <input type="range" id="setMaxHp" min="100" max="500" step="100" value="100">
+                <select id="setMaxHp">
+                    <option value="100">100</option>
+                    <option value="200">200</option>
+                    <option value="300">300</option>
+                    <option value="400">400</option>
+                    <option value="500">500</option>
+                    <option value="600">600</option>
+                    <option value="700">700</option>
+                    <option value="800">800</option>
+                    <option value="900">900</option>
+                </select>
             </div>
 
             <div class="setting-group">
-                <label>題目數量: <span id="valQCount">5</span>題</label>
-                <input type="range" id="setQCount" min="3" max="50" step="1" value="5">
+                <label>總題數: <span id="valQCount">10</span>題</label>
+                <select id="setQCount">
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="15">15</option>
+                    <option value="20">20</option>
+                    <option value="25">25</option>
+                    <option value="30">30</option>
+                    <option value="35">35</option>
+                    <option value="40">40</option>
+                    <option value="45">45</option>
+                    <option value="50">50</option>
+                </select>
             </div>
 
             <div class="setting-group">
-                <label>選項答案數: <span id="valAnsCount">6</span>個</label>
-                <input type="range" id="setAnsCount" min="2" max="8" step="1" value="6">
+                <label>答案選項: <span id="valAnsCount">6</span>個</label>
+                <select id="setAnsCount">
+                    <option value="2">2</option>
+                    <option value="4">4</option>
+                    <option value="6">6</option>
+                    <option value="8">8</option>
+                </select>
             </div>
 
             <div class="setting-group">
-                <label>字體倍率: <span id="valFontSize">1.0</span>x</label>
-                <input type="range" id="setFontSize" min="0.5" max="2.0" step="0.1" value="1.0">
+                <label>數字大小: <span id="valFontSizeLabel">中</span></label>
+                <select id="setFontSize">
+                    <option value="0.8">小</option>
+                    <option value="1.0" selected>中</option>
+                    <option value="1.5">大</option>
+                </select>
             </div>
 
             <div class="setting-buttons">
@@ -115,7 +185,7 @@
             <!-- Player 1 區塊 -->
             <div id="p1Area" class="player-area">
                 <div id="p1ReadyOverlay" class="ready-overlay">
-                    <button id="p1GoBtn" class="btn-go" onclick="setReady('p1')">GO!</button>
+                    <button id="p1GoBtn" class="btn-go" onpointerdown="setReady('p1')">GO!</button>
                 </div>
                 <div class="hp-bar-container" id="p1HpContainer">
                     <div id="p1HpBar" class="hp-bar"></div>
@@ -138,7 +208,7 @@
             <!-- Player 2 區塊 -->
             <div id="p2Area" class="player-area">
                 <div id="p2ReadyOverlay" class="ready-overlay">
-                    <button id="p2GoBtn" class="btn-go" onclick="setReady('p2')">GO!</button>
+                    <button id="p2GoBtn" class="btn-go" onpointerdown="setReady('p2')">GO!</button>
                 </div>
                 <div class="hp-bar-container" id="p2HpContainer">
                     <div id="p2HpBar" class="hp-bar"></div>
@@ -260,6 +330,6 @@
 })();
 </script>    
 
-    <script src="script.js?ver=1.00b"></script>
+    <script src="script.js?ver=1.0cb"></script>
 </body>
 </html>

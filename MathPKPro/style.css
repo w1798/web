@@ -44,12 +44,29 @@ body {
 .screen {
     display: none;
     width: 100%;
-    height: 100%;
-    position: absolute;
+    height: 100dvh;
+    position: fixed;
     top: 0;
     left: 0;
-    justify-content: center;
+    flex-direction: column;
+    justify-content: center; /* 恢復置中，但配合內部滾動 */
     align-items: center;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 2rem 1rem;
+}
+
+/* 確保長內容在 flex center 下不會切掉頂部 */
+.screen > .battle-arena {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+}
+
+.screen > .menu-container,
+.screen > .settings-container,
+.screen > .result-layout {
+    margin: auto 0;
 }
 
 .screen.active {
@@ -140,6 +157,29 @@ body {
     font-size: 1.1rem;
 }
 
+.setting-group select {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.setting-group select:focus {
+    border-color: var(--primary);
+    background: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+}
+
+.setting-group select option {
+    background: var(--bg-color);
+    color: white;
+}
+
 .setting-group input[type="range"] {
     width: 100%;
 }
@@ -150,7 +190,7 @@ body {
     height: 100%;
     display: flex;
     position: relative;
-    overflow: hidden;
+    overflow: visible; /* 允許傷害數字特效溢出 */
 }
 
 .player-area {
@@ -163,12 +203,30 @@ body {
     position: relative;
     --base-transform: translate(0, 0);
     transform: var(--base-transform);
-    transition: transform 0.5s ease-in-out;
+    transition: all 0.3s ease;
+}
+
+/* 震動與紅光特效 */
+.player-area.shake {
+    animation: shakeEffect 0.5s ease-in-out;
+}
+
+.player-area.hit {
+    box-shadow: inset 0 0 100px rgba(255, 0, 0, 0.6);
+}
+
+.player-area h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    opacity: 0.8;
 }
 
 /* 無論直向橫向，面對面模式皆為實體絕對切割與平移旋轉 (數學完美貼合各尺寸螢幕一半) */
 .arena-layout.face-to-face {
-    display: block; /* 移除 flex 避免排版干擾 */
+    display: block; 
+    width: 100%;
+    height: 100%;
+    overflow: hidden; /* 對向模式下限制背景溢出 */
 }
 
 .arena-layout.face-to-face .player-area {
@@ -176,16 +234,17 @@ body {
     width: 100dvh !important;
     height: 50vw !important;
     top: 50%;
-    margin: 0 !important; /* 蓋掉結算畫面的行內 margin */
+    margin: 0 !important; 
+    padding: 0.5rem; /* 縮小內距以極大化利用邊緣 */
 }
 
 .arena-layout.face-to-face .player-left {
-    left: 25vw;
+    left: 12vw; /* 從 25vw 往外推 */
     --base-transform: translate(-50%, -50%) rotate(90deg);
 }
 
 .arena-layout.face-to-face .player-right {
-    left: 75vw;
+    left: 88vw; /* 從 75vw 往外推 */
     --base-transform: translate(-50%, -50%) rotate(-90deg);
 }
 
@@ -208,7 +267,7 @@ body {
     border-radius: 15px;
     margin-bottom: 2rem;
     position: relative;
-    overflow: hidden;
+    overflow: visible; /* 允許傷害數字向上漂浮溢出 */
     border: 2px solid white;
 }
 
@@ -217,6 +276,7 @@ body {
     width: 100%;
     background-color: var(--success);
     transition: width 0.3s ease, background-color 0.3s ease;
+    border-radius: 13px; /* 內部也加上圓角，配合 overflow:visible */
 }
 
 .hp-bar.low {
@@ -258,16 +318,36 @@ body {
     transition: width 0.1s linear;
 }
 
+.category-section {
+    margin-bottom: 1.5rem;
+    width: 100%;
+}
+
+.category-title {
+    font-size: 1.2rem;
+    margin-bottom: 0.8rem;
+    padding-left: 0.8rem;
+    border-left: 4px solid var(--primary);
+    text-align: left;
+    color: rgba(255,255,255,0.9);
+    font-weight: bold;
+}
+
 .options-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: clamp(0.5rem, 1vw, 1rem);
-    width: 90%;
+    gap: 0.8rem;
+    width: 100%;
 }
 
 .option-btn {
-    padding: clamp(0.8rem, 2vw, 1.5rem);
-    font-size: clamp(1.5rem, 3vw, 2.5rem);
+    width: 100%;
+    aspect-ratio: 2 / 1.1; /* 固定寬高比，確保卡片不因字大而變長 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.5rem;
+    font-size: calc(clamp(1.5rem, 3vw, 2.5rem) * var(--answer-multiplier, 1));
     font-weight: bold;
     border: none;
     border-radius: 12px;
@@ -275,6 +355,9 @@ body {
     color: white;
     cursor: pointer;
     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    touch-action: none;   /* 重要：完全接管觸控，不執行縮放或捲動 */
+    user-select: none;    /* 防止長按選取文字 */
+    -webkit-user-select: none;
 }
 
 .option-btn:active {
@@ -311,6 +394,27 @@ body {
     0% { opacity: 1; }
     50% { opacity: 0.6; }
     100% { opacity: 1; }
+}
+
+/* 傷害數字特效 */
+.damage-pop {
+    position: absolute;
+    top: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: #ff4d4d;
+    text-shadow: 0 0 10px rgba(255, 0, 0, 0.8), 2px 2px 2px black;
+    pointer-events: none;
+    z-index: 100;
+    animation: damageFloat 0.8s ease-out forwards;
+}
+
+@keyframes damageFloat {
+    0% { transform: translate(-50%, 0) scale(0.5); opacity: 0; }
+    20% { transform: translate(-50%, -20px) scale(1.2); opacity: 1; }
+    100% { transform: translate(-50%, -60px) scale(1); opacity: 0; }
 }
 
 @keyframes popUp {
@@ -357,11 +461,16 @@ body {
     cursor: pointer;
 }
 
+/* 對向模式：內容往兩側靠邊 (P1靠左, P2靠右) */
+.arena-layout.face-to-face .player-area {
+    justify-content: flex-start;
+}
+
 /* 狂搶答模式等平行視角 */
 .arena-layout.parallel .player-area {
     transform: none;
     border-right: 1px solid rgba(255,255,255,0.2);
-    justify-content: flex-end; /* 將內容往下推 */
+    justify-content: flex-end; /* 將內容往下推，向上長 */
     padding-bottom: 4rem;
 }
 
@@ -380,7 +489,7 @@ body {
     position: absolute;
     top: 1rem;
     left: 1rem;
-    z-index: 100;
+    z-index: 200; /* 高於 Ready Overlay */
     padding: 10px 15px;
     background: rgba(255,255,255,0.2);
     border: none;
@@ -389,6 +498,29 @@ body {
     font-weight: bold;
     cursor: pointer;
     backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
+}
+
+/* 遊戲場景中：無論何種模式，回首頁皆移至螢幕正中間 VS 上方 */
+.screen-battleArena .btn-home {
+    top: 40%;   /* 再調高一點 (原本 43%) */
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--primary);
+    box-shadow: 0 0 15px rgba(59,130,246,0.5);
+    padding: 10px 20px;
+}
+
+/* 結算畫面 - 回首頁移至正中央底部且再高一點點 */
+.screen-resultScreen .btn-home {
+    top: auto;
+    bottom: 12dvh;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--success);
+    padding: 15px 40px;
+    font-size: 1.5rem;
+    width: auto;
 }
 
 .progress-text {
@@ -420,6 +552,9 @@ body {
     cursor: pointer;
     box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
     transition: all 0.2s;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .btn-go:active {
@@ -456,8 +591,8 @@ body {
 }
 
 .modal-content {
-    max-width: 400px;
-    width: 90%;
+    max-width: 500px;
+    width: 95%;
     text-align: center;
     display: flex;
     flex-direction: column;
@@ -473,8 +608,8 @@ body {
 }
 
 #qrcode {
-    width: 200px;
-    height: 200px;
+    width: 300px;
+    height: 300px;
 }
 
 .modal-content h3 {
