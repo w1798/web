@@ -71,7 +71,8 @@ let appData = {
         fontSize: 1.0,
         volume: 0.5,
         enableShake: true,
-        enableSound: true
+        enableSound: true,
+        moleInterval: 0
     },
     stats: {
         p1Wins: 0,
@@ -90,6 +91,105 @@ let gameState = {
     p1: { timer: null },
     p2: { timer: null }
 };
+
+let moleState = {
+    p1: { timer: null, hideTimer: null, cycleCount: 0 },
+    p2: { timer: null, hideTimer: null, cycleCount: 0 }
+};
+
+function startMoleCycle(player) {
+    stopMoleCycle(player);
+    if (!appData.settings.moleInterval) return;
+
+    let showMap = { 1: 500, 2: 750, 3: 1000, 4: 1500 };
+    let showTime = showMap[appData.settings.moleInterval] || 500;
+    let intv = showTime + 1000; // 蓋牌時間永遠為 1000ms
+    moleState[player].cycleCount = 0; // 重置計數
+
+    const cycle = () => {
+        let btns = Array.from(document.querySelectorAll(`#${player}Options .option-btn`));
+        if (btns.length === 0) return;
+
+        moleState[player].cycleCount++;
+        let isOddCycle = (moleState[player].cycleCount % 2 !== 0);
+
+        // 全部蓋牌
+        btns.forEach(b => {
+            b.classList.add('mole-hidden');
+            b.innerText = '?';
+        });
+
+        let nToShow;
+        if (isOddCycle) {
+            nToShow = Math.floor(Math.random() * 2) + 3; // 3 或 4
+        } else {
+            nToShow = Math.floor(Math.random() * 4) + 1; // 1 到 4
+        }
+        if (nToShow > btns.length) nToShow = btns.length;
+
+        let toShow = [];
+        
+        // 只要出 3 張或 4 張時，一定會有正確答案
+        if (nToShow >= 3 && gameState[player].currentQuestion) {
+            let correctAnswer = gameState[player].currentQuestion.answer;
+            let correctBtnIdx = btns.findIndex(b => String(b.innerTextOrigin) === String(correctAnswer));
+            
+            if (correctBtnIdx !== -1) {
+                toShow.push(btns[correctBtnIdx]);
+                let remaining = btns.filter((_, i) => i !== correctBtnIdx);
+                let shuffled = remaining.map(a => ({sort: Math.random(), value: a}))
+                                        .sort((a, b) => a.sort - b.sort)
+                                        .map(a => a.value);
+                toShow = toShow.concat(shuffled.slice(0, nToShow - 1));
+            } else {
+                let shuffled = btns.map(a => ({sort: Math.random(), value: a}))
+                                   .sort((a, b) => a.sort - b.sort)
+                                   .map(a => a.value);
+                toShow = shuffled.slice(0, nToShow);
+            }
+        } else {
+            let shuffled = btns.map(a => ({sort: Math.random(), value: a}))
+                               .sort((a, b) => a.sort - b.sort)
+                               .map(a => a.value);
+            toShow = shuffled.slice(0, nToShow);
+        }
+
+        // 翻開
+        toShow.forEach(b => {
+            b.classList.remove('mole-hidden');
+            b.innerText = b.innerTextOrigin;
+        });
+
+        moleState[player].hideTimer = setTimeout(() => {
+            btns.forEach(b => {
+                b.classList.add('mole-hidden');
+                b.innerText = '?';
+            });
+            
+            // 每次蓋牌後，將按鈕實體 DOM 元素洗牌
+            let optsContainer = document.getElementById(`${player}Options`);
+            if (optsContainer) {
+                let shuffledBtns = btns.map(a => ({sort: Math.random(), value: a}))
+                                       .sort((a, b) => a.sort - b.sort)
+                                       .map(a => a.value);
+                shuffledBtns.forEach(b => optsContainer.appendChild(b));
+            }
+        }, showTime);
+    };
+
+    // 立即執行一次，然後排程
+    cycle();
+    moleState[player].timer = setInterval(cycle, intv);
+}
+
+function stopMoleCycle(player) {
+    if (moleState[player]) {
+        if (moleState[player].timer) clearInterval(moleState[player].timer);
+        if (moleState[player].hideTimer) clearTimeout(moleState[player].hideTimer);
+        moleState[player].timer = null;
+        moleState[player].hideTimer = null;
+    }
+}
 
 // 輔助洗牌函數 (Fisher-Yates)
 function shuffleArray(array) {
@@ -122,6 +222,15 @@ function init() {
     updateMainMenuStats();
     setupSettingsUI();
     applyFontSize();
+
+    // 檢查是否為鎖定練習模式
+    if (appData.isLocked) {
+        document.documentElement.classList.add('is-locked-mode');
+        document.body.classList.add('is-locked-mode');
+        console.log("%c[限定模式] 循環練習啟動，回首頁功能已鎖定", 'color: #f44336; font-weight: bold;');
+        // 自動進入準備畫面
+        setupReadyPhase(gameState.category);
+    }
 }
 
 function loadData() {
@@ -129,23 +238,18 @@ function loadData() {
     const urlParams = new URLSearchParams(window.location.search);
     const sharedData = urlParams.get('s');
     if (sharedData) {
-        try {
-            const raw = JSON.parse(atob(sharedData));
-            // 支援縮寫 key (h, r, w, t, m, q, a, f) 與舊版完整 key
-            const decoded = {
-                useHp: raw.h !== undefined ? raw.h : raw.useHp,
-                rushMode: raw.r !== undefined ? raw.r : raw.rushMode,
-                wrongTolerance: raw.w !== undefined ? raw.w : raw.wrongTolerance,
-                timePerQuestion: raw.t !== undefined ? raw.t : raw.timePerQuestion,
-                maxHp: raw.m !== undefined ? raw.m : raw.maxHp,
-                questionCount: raw.q !== undefined ? raw.q : raw.questionCount,
-                answerCount: raw.a !== undefined ? raw.a : raw.answerCount,
-                fontSize: raw.f !== undefined ? raw.f : raw.fontSize
-            };
+        const decoded = decodeSettings(sharedData);
+        if (decoded) {
             appData.settings = {...appData.settings, ...decoded};
-            console.log("已套用分享設定:", appData.settings);
-        } catch(e) {
-            console.error("分享連結解析失敗:", e);
+            // 重要：同步類別與佈局至當前遊戲狀態，確保掃碼後立即生效
+            if (decoded.layout) gameState.layout = decoded.layout;
+            if (decoded.category !== undefined) gameState.category = decoded.category;
+
+            // 檢查 URL 參數是否有鎖定標記
+            if (urlParams.get('lock') === '1' || urlParams.get('l') === '1') {
+                appData.isLocked = true;
+            }
+            console.log("已套用分享設定:", appData.settings, "鎖定狀態:", appData.isLocked, "預期佈局:", gameState.layout);
         }
     }
 
@@ -160,6 +264,16 @@ function loadData() {
                 appData.stats = {...appData.stats, ...loaded.stats};
             }
         } catch(e) { console.error("JSON 解析失敗", e); }
+    }
+
+    // 檢查是否有直接的限定標記 (非分享碼情況或覆蓋)
+    if (urlParams.get('l') === '1') {
+        appData.isLocked = true;
+    }
+    
+    // 如果分享碼裡有指定類別 (c)，則設定之
+    if (appData.settings.c !== undefined) {
+        gameState.category = appData.settings.c;
     }
     
     // 強制校正數值型態與合法性，確保與 select value ("1.0") 格式一致
@@ -219,6 +333,10 @@ function setupSettingsUI() {
     document.getElementById('setFontSize').value = appData.settings.fontSize;
     updateFontSizeLabel(parseFloat(appData.settings.fontSize));
 
+    if (document.getElementById('setMole')) {
+        document.getElementById('setMole').value = appData.settings.moleInterval || 0;
+    }
+
     // 事件監聽：改為 change 事件
     document.getElementById('setWrongTol').addEventListener('change', (e) => {
         document.getElementById('valWrongTol').innerText = e.target.value;
@@ -248,19 +366,79 @@ function updateFontSizeLabel(val) {
     document.getElementById('valFontSizeLabel').innerText = label;
 }
 
+// 透過位元操作將設定資料壓縮至極短字串
+function encodeSettings(s, cat) {
+    let bits = "";
+    const p = (v, len) => { bits += (v||0).toString(2).padStart(len, '0'); };
+    
+    p(s.useHp ? 1 : 0, 1);
+    p(s.rushMode ? 1 : 0, 1);
+    p(s.enableShake ? 1 : 0, 1);
+    p(s.enableSound ? 1 : 0, 1);
+    p(s.wrongTolerance, 4);
+    p(s.timePerQuestion, 6);
+    p(s.maxHp, 10);
+    p(s.questionCount, 7);
+    p(s.answerCount, 4);
+    p(Math.round((s.fontSize||1.5) * 10), 5);
+    p(s.layout === 'face-to-face' ? 0 : 1, 1);
+    p(cat || 0, 4);
+    p(s.moleInterval || 0, 3);
+    
+    let bytes = [];
+    for(let i=0; i<bits.length; i+=8) {
+        bytes.push(parseInt(bits.substring(i, i+8).padEnd(8, '0'), 2));
+    }
+    return btoa(String.fromCharCode(...bytes));
+}
+
+function decodeSettings(b64) {
+    try {
+        let dec = atob(b64);
+        if (dec.startsWith('{')) {
+            let j = JSON.parse(dec);
+            return {
+                useHp: j.h!==undefined?j.h:j.useHp, rushMode: j.r!==undefined?j.r:j.rushMode,
+                wrongTolerance: j.w!==undefined?j.w:j.wrongTolerance, timePerQuestion: j.t!==undefined?j.t:j.timePerQuestion,
+                maxHp: j.m!==undefined?j.m:j.maxHp, questionCount: j.q!==undefined?j.q:j.questionCount,
+                answerCount: j.a!==undefined?j.a:j.answerCount, fontSize: j.f!==undefined?j.f:j.fontSize,
+                layout: j.layout!==undefined?j.layout:(j.l===0?'face-to-face':'parallel'), category: j.c, moleInterval: 0
+            };
+        }
+        
+        let bits = "";
+        for(let i=0; i<dec.length; i++) bits += dec.charCodeAt(i).toString(2).padStart(8, '0');
+        
+        let off = 0;
+        const r = (len) => { let v = parseInt(bits.substring(off, off+len), 2); off+=len; return v; };
+        
+        return {
+            useHp: r(1)===1, rushMode: r(1)===1, enableShake: r(1)===1, enableSound: r(1)===1,
+            wrongTolerance: r(4), timePerQuestion: r(6), maxHp: r(10), questionCount: r(7), answerCount: r(4), fontSize: r(5)/10,
+            layout: r(1)===0?'face-to-face':'parallel', category: r(4), moleInterval: r(3)
+        };
+    } catch(e) {
+        console.error("Decode failed:", e); return null;
+    }
+}
+
 function generateQR() {
     const dataToShare = {
-        h: appData.settings.useHp,
-        r: appData.settings.rushMode,
-        w: appData.settings.wrongTolerance,
-        t: parseInt(document.getElementById('setTimeLimit').value),
-        m: parseInt(document.getElementById('setMaxHp').value),
-        q: parseInt(document.getElementById('setQCount').value),
-        a: parseInt(document.getElementById('setAnsCount').value),
-        f: parseFloat(document.getElementById('setFontSize').value)
+        useHp: appData.settings.useHp,
+        rushMode: appData.settings.rushMode,
+        wrongTolerance: appData.settings.wrongTolerance,
+        timePerQuestion: parseInt(document.getElementById('setTimeLimit').value),
+        maxHp: parseInt(document.getElementById('setMaxHp').value),
+        questionCount: parseInt(document.getElementById('setQCount').value),
+        answerCount: parseInt(document.getElementById('setAnsCount').value),
+        fontSize: parseFloat(document.getElementById('setFontSize').value),
+        enableShake: appData.settings.enableShake,
+        enableSound: appData.settings.enableSound,
+        layout: appData.settings.layout,
+        moleInterval: document.getElementById('setMole') ? parseInt(document.getElementById('setMole').value) : 0
     };
 
-    const b64 = btoa(JSON.stringify(dataToShare));
+    const b64 = encodeSettings(dataToShare);
     const url = window.location.origin + window.location.pathname + "?s=" + b64;
     
     // 顯示 Modal
@@ -283,6 +461,49 @@ function generateQR() {
     document.getElementById('shareUrlText').innerText = url;
 }
 
+// 產生限定模式 QR Code (包含鎖定旗標)
+function generateLockedQR() {
+    // 取得當前設定與題型
+    const dataToShare = {
+        useHp: appData.settings.useHp,
+        rushMode: appData.settings.rushMode,
+        wrongTolerance: appData.settings.wrongTolerance,
+        timePerQuestion: appData.settings.timePerQuestion,
+        maxHp: appData.settings.maxHp,
+        questionCount: appData.settings.questionCount,
+        answerCount: appData.settings.answerCount,
+        fontSize: appData.settings.fontSize,
+        enableShake: appData.settings.enableShake,
+        enableSound: appData.settings.enableSound,
+        layout: appData.settings.layout,
+        moleInterval: appData.settings.moleInterval
+    };
+
+    const b64 = encodeSettings(dataToShare, gameState.category);
+    // 附加 &l=1 參數
+    const url = window.location.origin + window.location.pathname + "?s=" + b64 + "&l=1";
+    
+    // 顯示 Modal (復用舊有 QR 視窗)
+    const qrModal = document.getElementById('qrModal');
+    qrModal.querySelector('h3').innerText = "產生限定練習碼";
+    qrModal.querySelector('p').innerText = "學生掃描後將鎖定在此題型循環練習：";
+    qrModal.style.display = 'flex';
+    
+    document.getElementById('qrcode').innerHTML = "";
+    setTimeout(() => {
+        new QRCode(document.getElementById("qrcode"), {
+            text: url,
+            width: 300,
+            height: 300,
+            colorDark : "#e91e63", // 使用粉紅色區分限定碼
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H
+        });
+    }, 100);
+
+    document.getElementById('shareUrlText').innerText = url;
+}
+
 function closeQRModal() {
     document.getElementById('qrModal').style.display = 'none';
 }
@@ -299,6 +520,14 @@ function saveSettingsAndReturn() {
     appData.settings.questionCount = parseInt(document.getElementById('setQCount').value);
     appData.settings.answerCount = parseInt(document.getElementById('setAnsCount').value);
     appData.settings.fontSize = parseFloat(document.getElementById('setFontSize').value);
+    if (document.getElementById('setMole')) {
+        appData.settings.moleInterval = parseInt(document.getElementById('setMole').value);
+    }
+    
+    // 若為打字鼠模式，強迫限時變為無
+    if (appData.settings.moleInterval > 0) {
+        appData.settings.timePerQuestion = 0;
+    }
     
     saveData();
     applyFontSize();
@@ -314,12 +543,28 @@ function resetStats() {
 
 // 流程控制
 function returnToHome() {
+    if (appData.isLocked) {
+        alert("目前處於限定練習模式，無法返回首頁。");
+        return;
+    }
     if(gameState.gameInterval) {
         clearInterval(gameState.gameInterval);
         gameState.gameInterval = null;
     }
     clearAllTimers();
+    document.getElementById('battleArena').classList.remove('in-ready-phase');
     showScreen('mainMenu');
+}
+
+function rePlay() {
+    if(gameState.gameInterval) {
+        clearInterval(gameState.gameInterval);
+        gameState.gameInterval = null;
+    }
+    stopMoleCycle('p1');
+    stopMoleCycle('p2');
+    clearAllTimers();
+    setupReadyPhase(gameState.category);
 }
 
 function clearAllTimers() {
@@ -333,11 +578,16 @@ function clearAllTimers() {
 
 function goToCategory(layout) {
     gameState.layout = layout;
+    appData.settings.layout = layout; // 同步至設定，確保 QR 碼產出正確
+    saveData();
     showScreen('categoryScreen');
 }
 
 function setupReadyPhase(categoryIndex) {
     gameState.category = categoryIndex;
+    
+    // 進入準備階段，顯示教師工具
+    document.getElementById('battleArena').classList.add('in-ready-phase');
     
     // 初始化玩家狀態
     gameState.p1 = createPlayerState();
@@ -368,6 +618,13 @@ function setupReadyPhase(categoryIndex) {
     // 清空題目與進度
     updateProgressUI('p1');
     updateProgressUI('p2');
+    
+    // 強制重置題目與選項區，解決「HP歸零」或殘留文字在準備階段疊加的問題
+    document.getElementById('p1QuestionText').innerText = "請準備";
+    document.getElementById('p2QuestionText').innerText = "請準備";
+    document.getElementById('p1Options').innerHTML = '';
+    document.getElementById('p2Options').innerHTML = '';
+
     if(appData.settings.useHp) {
         updateHpUI('p1');
         updateHpUI('p2');
@@ -413,6 +670,9 @@ function setReady(player) {
 }
 
 function startGame() {
+    // 開始遊戲，隱藏教師工具
+    document.getElementById('battleArena').classList.remove('in-ready-phase');
+    
     gameState.ended = false;
     gameState.gameGlobalQuestionIndex = 0;
     document.getElementById('p1ReadyOverlay').style.display = 'none';
@@ -476,6 +736,8 @@ function checkGlobalGameOver() {
             clearInterval(gameState.gameInterval);
             gameState.gameInterval = null;
         }
+        stopMoleCycle('p1');
+        stopMoleCycle('p2');
         endGame();
     }
 }
@@ -739,13 +1001,23 @@ function generateNextQuestion(player) {
     options.forEach(opt => {
         let btn = document.createElement('button');
         btn.className = 'option-btn';
-        btn.innerText = opt;
+        btn.innerTextOrigin = opt;
+        if (appData.settings.moleInterval > 0) {
+            btn.classList.add('mole-hidden');
+        } else {
+            btn.innerText = opt;
+        }
         btn.onpointerdown = (e) => {
             e.preventDefault();
+            if (btn.classList.contains('mole-hidden')) return;
             handleAnswer(player, opt, e.target);
         };
         optsContainer.appendChild(btn);
     });
+
+    if (appData.settings.moleInterval > 0) {
+        startMoleCycle(player);
+    }
 }
 
 function handleAnswer(player, selectedOpt, btnElement) {
@@ -760,6 +1032,7 @@ function handleAnswer(player, selectedOpt, btnElement) {
 
     if (selectedOpt === state.currentQuestion.answer) {
         if(state.timer) clearInterval(state.timer);
+        stopMoleCycle(player);
         // Correct
         playSound('correct');
         state.correctCount++;
@@ -795,8 +1068,10 @@ function handleAnswer(player, selectedOpt, btnElement) {
     } else {
         // Wrong
         playSound('wrong');
-        btnElement.classList.add('wrong');
-        btnElement.onclick = null;
+        if (appData.settings.moleInterval === 0) {
+            btnElement.classList.add('wrong');
+            btnElement.onclick = null;
+        }
         
         state.combo = 0;
         state.currentWrongAttempts++;
@@ -951,8 +1226,8 @@ function endGame() {
 
     // 填寫剩餘 HP
     if(appData.settings.useHp) {
-        document.getElementById('p1HpResult').innerText = `剩餘血量: ${Math.max(0, p1.hp)}`;
-        document.getElementById('p2HpResult').innerText = `剩餘血量: ${Math.max(0, p2.hp)}`;
+        document.getElementById('p1HpResult').innerText = `HP: ${Math.max(0, p1.hp)}`;
+        document.getElementById('p2HpResult').innerText = `HP: ${Math.max(0, p2.hp)}`;
     } else {
         document.getElementById('p1HpResult').innerText = "";
         document.getElementById('p2HpResult').innerText = "";

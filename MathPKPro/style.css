@@ -29,6 +29,24 @@ body {
     touch-action: pan-y; /* 限制多餘的觸控行為 */
 }
 
+/* 限制練習模式 (Locked Mode) 強制標籤，使用 html 與 body 雙重鎖定 */
+html.is-locked-mode .btn-home,
+body.is-locked-mode .btn-home,
+html.is-locked-mode .teacher-tools,
+body.is-locked-mode .teacher-tools,
+html.is-locked-mode footer,
+body.is-locked-mode footer,
+html.is-locked-mode .btn.settings,
+html.is-locked-mode .setting-buttons {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+body.is-locked-mode .vs-divider {
+    color: rgba(255,255,255,0.05);
+}
+
 /* 玻璃擬態 */
 .glassmorphism {
     background: var(--glass-bg);
@@ -89,12 +107,23 @@ body {
 
 .btn:active {
     transform: scale(0.95);
+    opacity: 0.8;
 }
 
-.btn.primary { background-color: var(--primary); }
-.btn.secondary { background-color: var(--secondary); }
-.btn.danger { background-color: var(--danger); }
-.btn.settings { background: rgba(255, 255, 255, 0.2); }
+.btn.success {
+    background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+    color: white !important;
+    box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
+}
+
+.btn.success:active {
+    background: #15803d !important;
+}
+
+.btn.primary { background-color: var(--primary); color: white; }
+.btn.secondary { background-color: var(--secondary); color: white; }
+.btn.danger { background-color: var(--danger); color: white; }
+.btn.settings { background: rgba(255, 255, 255, 0.2); color: white; }
 
 /* 主選單 */
 .menu-container {
@@ -152,6 +181,26 @@ body {
     flex-direction: column;
 }
 
+#resultScreen {
+    flex-direction: column;
+}
+
+.result-nav {
+    position: absolute;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    z-index: 200;
+}
+
+.resultLayout {
+    margin-bottom: 0;
+}
+
 .setting-group label {
     margin-bottom: 0.5rem;
     font-size: 1.1rem;
@@ -195,6 +244,7 @@ body {
 
 .player-area {
     flex: 1;
+    min-width: 0; /* 重要：防止內容推擠導致寬度溢出分配額度 */
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -231,21 +281,64 @@ body {
 
 .arena-layout.face-to-face .player-area {
     position: absolute;
-    width: 100dvh !important;
-    height: 50vw !important;
+    width: 90vh !important; 
+    height: 48vw !important;
     top: 50%;
     margin: 0 !important; 
-    padding: 0.5rem; /* 縮小內距以極大化利用邊緣 */
+    padding: 0.5rem !important;
+    overflow: visible; /* 透過 scale 縮放而非裁切 */
+}
+
+/* 手機版對向模式：向中心靠攏，選項 4 欄微型按鈕 */
+@media screen and (max-width: 600px) {
+    .arena-layout.face-to-face .player-area {
+        width: 90dvh !important;
+        height: 50vw !important;  /* 旋轉後=可視寬度，給滿半屏 */
+        transform-origin: center center;
+        padding: 0.3rem !important;
+    }
+    .arena-layout.face-to-face .player-left {
+        left: 35% !important; /* 大幅向中心靠攏，改用 % 修正偏移 */
+        --base-transform: translate(-50%, -50%) rotate(90deg) scale(0.75);
+    }
+    .arena-layout.face-to-face .player-right {
+        left: 65% !important; /* 大幅向中心靠攏，改用 % 修正偏移 */
+        --base-transform: translate(-50%, -50%) rotate(-90deg) scale(0.75);
+    }
+    /* 4 欄微型按鈕，充分利用寬度 */
+    .arena-layout.face-to-face .options-grid {
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 0.15rem !important;
+    }
+    .arena-layout.face-to-face .option-btn {
+        aspect-ratio: auto !important;
+        height: 2rem !important;
+        font-size: 0.9rem !important;
+        padding: 0.1rem !important;
+        border-radius: 6px;
+    }
+    .arena-layout.face-to-face .question-box {
+        font-size: 1.3rem !important;
+        margin-bottom: 0.3rem !important;
+    }
+    .arena-layout.face-to-face .hp-bar-container {
+        margin-bottom: 0.5rem !important;
+        height: 20px !important;
+    }
+    .arena-layout.face-to-face .player-area h2 {
+        font-size: 1rem !important;
+        margin-bottom: 0.3rem !important;
+    }
 }
 
 .arena-layout.face-to-face .player-left {
-    left: 12vw; /* 從 25vw 往外推 */
-    --base-transform: translate(-50%, -50%) rotate(90deg);
+    left: 20%; /* 向中心靠攏，改用 % 修正偏移 */
+    --base-transform: translate(-50%, -50%) rotate(90deg) scale(0.85); /* 縮放保護平板溢出 */
 }
 
 .arena-layout.face-to-face .player-right {
-    left: 88vw; /* 從 75vw 往外推 */
-    --base-transform: translate(-50%, -50%) rotate(-90deg);
+    left: 80%; /* 向中心靠攏，改用 % 修正偏移 */
+    --base-transform: translate(-50%, -50%) rotate(-90deg) scale(0.85);
 }
 
 .vs-divider {
@@ -257,6 +350,45 @@ body {
     font-weight: 900;
     color: rgba(255, 255, 255, 0.2);
     z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.teacher-tools {
+    position: absolute;
+    top: 20dvh; /* 移至螢幕上方 (比 40% 的回首頁更高) */
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2000; /* 極高層級，覆蓋所有 ready-overlay */
+    display: none; 
+}
+
+/* 僅在準備階段顯示小旗標 */
+.in-ready-phase .teacher-tools {
+    display: block;
+}
+
+body.is-locked-mode .teacher-tools {
+    display: none !important;
+}
+
+.btn-lock-gen {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+    transition: all 0.3s;
+}
+
+.btn-lock-gen:hover {
+    background: var(--danger);
+    transform: scale(1.1);
 }
 
 /* HP 條 */
@@ -299,13 +431,14 @@ body {
 
 /* 題目與選項 */
 .question-box {
-    font-size: clamp(2.5rem, 5vw, 4rem);
+    font-size: clamp(2rem, 4vw, 3.5rem);
     font-weight: bold;
-    margin-bottom: 2rem;
-    min-width: 250px;
+    margin-bottom: 1.5rem;
+    min-width: 120px; /* 從 250px 降下，避免推擠 */
+    width: 95%; /* 確保自適應容器 */
     text-align: center;
-    padding: clamp(0.5rem, 2vw, 1.5rem);
-    position: relative; /* 為了計時條定位 */
+    padding: clamp(0.3rem, 1.5vw, 1rem);
+    position: relative; 
 }
 
 .q-timer-bar {
@@ -470,8 +603,8 @@ body {
 .arena-layout.parallel .player-area {
     transform: none;
     border-right: 1px solid rgba(255,255,255,0.2);
-    justify-content: flex-end; /* 將內容往下推，向上長 */
-    padding-bottom: 4rem;
+    justify-content: flex-end; /* 強制內容向下對齊，向上長 */
+    padding-bottom: 2rem;
 }
 
 .arena-layout.parallel .ready-overlay {
@@ -482,6 +615,22 @@ body {
 .arena-layout.parallel .options-grid {
     grid-template-columns: repeat(4, 1fr);
     width: 100%;
+    gap: 0.5rem;
+}
+
+@media screen and (max-width: 600px) {
+    .arena-layout.parallel .options-grid {
+        grid-template-columns: repeat(2, 1fr) !important; 
+        gap: 0.2rem !important; /* 縮減至極細微間距 */
+        width: 100% !important;
+    }
+    .player-area {
+        padding: 0.2rem !important; /* 縮減至極細微內距 */
+    }
+    .option-btn {
+        font-size: 1.2rem !important; /* 確保選項字體在窄屏下不會太擁擠 */
+        padding: 0.2rem !important;
+    }
 }
 
 /* 額外 UI 擴充：回首頁與進度條 */
@@ -616,28 +765,52 @@ body {
     margin-bottom: 0.5rem;
     color: var(--primary);
 }
-.res-card h2 {
-    text-align: center;
+.res-stats-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid rgba(255,255,255,0.2);
+    padding-bottom: 0.8rem;
     margin-bottom: 1rem;
-    border-bottom: 1px solid rgba(255,255,255,0.2);
-    padding-bottom: 0.5rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
 }
-.res-card p {
-    font-size: 1.2rem;
-    margin: 0.5rem 0;
+
+.win-label {
+    font-size: 1.8rem;
+    margin: 0;
+    color: var(--primary);
+    text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
 }
+
+.hp-res-text {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #ffd700;
+}
+
+.stat-items {
+    display: flex;
+    gap: 1.5rem;
+    font-size: 1.3rem;
+}
+
 .wrong-box {
-    margin-top: 1rem;
-    max-height: 200px;
+    margin-top: 0.5rem;
+    max-height: 400px; /* 大幅增加顯示高度 */
     overflow-y: auto;
-    font-size: 0.9rem;
-    color: #fca5a5;  /* 稍微偏紅 */
+    width: 100%;
 }
+
 .wrong-item {
-    background: rgba(0,0,0,0.3);
-    padding: 0.5rem;
-    border-radius: 4px;
-    margin-bottom: 0.5rem;
+    background: rgba(255,255,255,0.1);
+    padding: 1rem; /* 增加內距，配合大字體 */
+    border-radius: 8px;
+    margin-bottom: 0.8rem;
+    font-size: 1.8rem; /* 字體放大至跟勝利字樣接近 */
+    text-align: center;
+    border-left: 5px solid #ef4444;
+    color: white;
 }
 
 /* Footer 版權資訊 */
@@ -663,9 +836,119 @@ footer a:hover {
 }
 
 /* 答題選項數限制一律 4 個 */
+/* 結算畫面適配 */
+.arena-layout.face-to-face .res-card {
+    width: 90% !important; /* 增加寬度以利於顯示錯題 */
+}
+
+/* 對向模式網格預設：4 欄 */
 .arena-layout.face-to-face .options-grid {
     grid-template-columns: repeat(4, 1fr);
+    gap: 0.2rem;
     width: 100%;
+}
+.arena-layout.face-to-face .option-btn {
+    height: clamp(2.5rem, 5vw, 4rem) !important;
+    aspect-ratio: auto !important;
+    padding: 0.5rem 0 !important;
+    font-size: min(1.5rem, 3vw) !important;
+    border-radius: 8px;
+}
+
+/* 打字鼠模式蓋牌狀態 */
+.mole-hidden {
+    background: rgba(0,0,0,0.5) !important;
+    color: transparent !important;
+    border: 2px dashed rgba(255,255,255,0.2) !important;
+    position: relative;
+    box-shadow: none !important;
+    transform: none !important;
+}
+.mole-hidden::after {
+    content: "?";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: rgba(255,255,255,0.4);
+    font-size: 1.5rem;
+}
+
+/* 針對平板對向橫拿時，放大選項高度，呈現 1.5 比例 */
+@media screen and (orientation: landscape) and (min-height: 501px) {
+    .arena-layout.face-to-face .option-btn {
+        aspect-ratio: 1.5 / 1 !important;
+        height: auto !important;
+    }
+}
+
+/* 手機橫放時對向模式適配 (max-height 捕捉橫向手機) */
+@media screen and (max-height: 500px) and (orientation: landscape) {
+    .arena-layout.face-to-face .player-area {
+        width: 95vh !important; /* CSS寬度(旋轉後為垂直)對應螢幕高度 */
+        height: 48vw !important; /* CSS高度(旋轉後為水平)對應一半的螢幕寬度 */
+        padding: 0.3rem !important;
+    }
+    .arena-layout.face-to-face .player-left {
+        left: 25% !important;
+        --base-transform: translate(-50%, -50%) rotate(90deg) scale(0.9);
+    }
+    .arena-layout.face-to-face .player-right {
+        left: 75% !important;
+        --base-transform: translate(-50%, -50%) rotate(-90deg) scale(0.9);
+    }
+    .arena-layout.face-to-face .options-grid {
+        grid-template-columns: repeat(4, 1fr) !important; /* 橫放時完美依比例壓縮為 4 欄 */
+        gap: 0.15rem !important;
+    }
+    .arena-layout.face-to-face .option-btn {
+        height: auto !important;
+        aspect-ratio: auto !important;
+        padding: 0.2rem 0 !important;
+        font-size: 0.85rem !important;
+        border-radius: 4px;
+    }
+    .arena-layout.face-to-face .question-box {
+        font-size: 1.1rem !important;
+        margin-bottom: 0.2rem !important;
+    }
+    .arena-layout.face-to-face .hp-bar-container {
+        margin-bottom: 0.3rem !important;
+        height: 16px !important;
+    }
+    .arena-layout.face-to-face .player-area h2 {
+        font-size: 0.9rem !important;
+        margin-bottom: 0.2rem !important;
+    }
+    /* 確保橫放手機結算卡片不會跑到上方，而是完整利用高度並支援滾動 */
+    .resultLayout .res-card {
+        width: 100% !important;
+        padding: 0.5rem !important;
+        max-height: 90vh !important;
+        overflow-y: auto;
+    }
+}
+
+/* 全域橫向設備：結算導覽列置中，並強制轉 90 度面向右方玩家 */
+@media screen and (orientation: landscape) {
+    .result-nav {
+        position: absolute !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) rotate(90deg) !important; /* 旋轉 90 度，頂部朝右 */
+        width: auto !important;
+        flex-direction: row !important;
+        z-index: 2000;
+        gap: 2rem;
+    }
+    .result-nav .btn {
+        padding: 1rem 2rem !important;
+        font-size: 1.5rem !important;
+        letter-spacing: 0.2rem;
+        height: auto !important;
+        /* 移除先前的 vertical-rl 直書，改用實體旋轉 */
+        writing-mode: horizontal-tb; 
+    }
 }
 
 /* PK 選擇項目選單去除上下間距 */

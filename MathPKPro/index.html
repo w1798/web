@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>數學算術 PK 大賽</title>
-    <link rel="stylesheet" href="style.css?ver=1.00c">
+    <link rel="stylesheet" href="style.css?ver=1.00d">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -83,11 +83,9 @@
             <div class="setting-group">
                 <label>錯誤容忍: <span id="valWrongTol">1</span>次</label>
                 <select id="setWrongTol">
+                    <option value="0">0</option>
                     <option value="1">1</option>
                     <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
                 </select>
             </div>
 
@@ -158,6 +156,17 @@
                 </select>
             </div>
 
+            <div class="setting-group">
+                <label>打字鼠模式 (蓋牌): </label>
+                <select id="setMole">
+                    <option value="0">無</option>
+                    <option value="1">揭示 0.5s (蓋 1s)</option>
+                    <option value="2">揭示 0.75s (蓋 1s)</option>
+                    <option value="3">揭示 1s (蓋 1s)</option>
+                    <option value="4">揭示 1.5s (蓋 1s)</option>
+                </select>
+            </div>
+
             <div class="setting-buttons">
                 <button class="btn danger" style="padding:8px;" onclick="resetStats()">重置</button>
                 <button class="btn secondary" style="padding:8px;" onclick="generateQR()">產生分享碼</button>
@@ -181,6 +190,9 @@
 
     <!-- 戰鬥場景 -->
     <div id="battleArena" class="screen">
+        <div id="teacherTools" class="teacher-tools">
+            <button class="btn-lock-gen" onclick="generateLockedQR()" title="產生限定此題型的練習碼">🚩QR Code</button>
+        </div>
         <div class="arena-layout" id="arenaLayout">
             <!-- Player 1 區塊 -->
             <div id="p1Area" class="player-area">
@@ -203,7 +215,9 @@
             </div>
 
             <!-- VS 分隔線 -->
-            <div class="vs-divider">VS</div>
+            <div class="vs-divider">
+                VS
+            </div>
 
             <!-- Player 2 區塊 -->
             <div id="p2Area" class="player-area">
@@ -229,16 +243,23 @@
 
     <!-- 結算畫面 -->
     <div id="resultScreen" class="screen">
-        <button id="btnHomeGlobalFromRes" class="btn-home" style="z-index: 200;" onclick="returnToHome()">🏠 回首頁</button>
+        <div class="result-nav">
+            <button id="btnHomeGlobalFromRes" class="btn-home" onclick="returnToHome()">🏠 回首頁</button>
+            <button class="btn success" onclick="rePlay()">🔄 重來一次</button>
+        </div>
         <div class="arena-layout" id="resultLayout" style="width: 100%; height: 100%;">
             
             <!-- P1 結算 -->
             <div id="p1ResultArea" class="player-area" style="background: rgba(255,255,255,0.05); border-radius:12px; margin: 1rem;">
-                <div class="res-card glassmorphism" style="width:80%;">
-                    <h1 class="win-label" id="p1WinLabel">P1 統計</h1>
-                    <p class="hp-res-text" id="p1HpResult"></p>
-                    <p>答對: <span id="p1Corrects">0</span></p>
-                    <p>答錯: <span id="p1Wrongs">0</span></p>
+                <div class="res-card glassmorphism" style="width:90%;">
+                    <div class="res-stats-header">
+                        <h1 class="win-label" id="p1WinLabel">P1</h1>
+                        <span class="hp-res-text" id="p1HpResult"></span>
+                        <div class="stat-items">
+                            <span>✅: <span id="p1Corrects">0</span></span>
+                            <span>❌: <span id="p1Wrongs">0</span></span>
+                        </div>
+                    </div>
                     <div class="wrong-box" id="p1WrongList"></div>
                 </div>
             </div>
@@ -248,11 +269,15 @@
 
             <!-- P2 結算 -->
             <div id="p2ResultArea" class="player-area" style="background: rgba(255,255,255,0.05); border-radius:12px; margin: 1rem;">
-                <div class="res-card glassmorphism" style="width:80%;">
-                    <h1 class="win-label" id="p2WinLabel">P2 統計</h1>
-                    <p class="hp-res-text" id="p2HpResult"></p>
-                    <p>答對: <span id="p2Corrects">0</span></p>
-                    <p>答錯: <span id="p2Wrongs">0</span></p>
+                <div class="res-card glassmorphism" style="width:90%;">
+                    <div class="res-stats-header">
+                        <h1 class="win-label" id="p2WinLabel">P2</h1>
+                        <span class="hp-res-text" id="p2HpResult"></span>
+                        <div class="stat-items">
+                            <span>✅: <span id="p2Corrects">0</span></span>
+                            <span>❌: <span id="p2Wrongs">0</span></span>
+                        </div>
+                    </div>
                     <div class="wrong-box" id="p2WrongList"></div>
                 </div>
             </div>
@@ -330,6 +355,6 @@
 })();
 </script>    
 
-    <script src="script.js?ver=1.0cb"></script>
+    <script src="script.js?ver=1.00d"></script>
 </body>
 </html>
