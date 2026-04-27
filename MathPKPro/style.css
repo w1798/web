@@ -7,6 +7,11 @@
     --text-main: #f8fafc;
     --glass-bg: rgba(255, 255, 255, 0.1);
     --glass-border: rgba(255, 255, 255, 0.2);
+    
+    /* 使用者建議命名 */
+    --p1-color: var(--primary);
+    --p2-color: var(--secondary);
+    --hp-green: var(--success);
 }
 
 * {
@@ -27,6 +32,15 @@ body {
     justify-content: center;
     align-items: center;
     touch-action: pan-y; /* 限制多餘的觸控行為 */
+}
+
+/* 全域按鈕優化：防止多點觸發與誤觸縮放 */
+button, .btn, .option-btn {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
 
 /* 限制練習模式 (Locked Mode) 強制標籤，使用 html 與 body 雙重鎖定 */
@@ -488,13 +502,27 @@ body.is-locked-mode .teacher-tools {
     color: white;
     cursor: pointer;
     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    touch-action: none;   /* 重要：完全接管觸控，不執行縮放或捲動 */
-    user-select: none;    /* 防止長按選取文字 */
+    touch-action: manipulation;
+    user-select: none;
     -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.1s;
 }
 
 .option-btn:active {
     background: rgba(255, 255, 255, 0.3);
+    transform: scale(0.95);
+}
+
+.option-btn.correct {
+    animation: flashGreen 0.3s ease-out;
+}
+
+@keyframes flashGreen {
+    0%   { background-color: rgba(255, 255, 255, 0.1); }
+    50%  { background-color: var(--success); box-shadow: 0 0 15px var(--success); transform: scale(1.05); }
+    100% { background-color: rgba(255, 255, 255, 0.1); transform: scale(1); }
 }
 
 .option-btn.wrong {
