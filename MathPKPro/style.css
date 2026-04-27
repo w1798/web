@@ -211,6 +211,16 @@ body.is-locked-mode .vs-divider {
     z-index: 200;
 }
 
+.result-nav .btn-home {
+    position: static !important;
+    transform: none !important;
+    margin: 0 !important;
+    width: auto !important;
+    font-size: 1.2rem !important;
+    padding: 12px 24px !important;
+}
+
+
 .resultLayout {
     margin-bottom: 0;
 }
@@ -686,6 +696,11 @@ body.is-locked-mode .teacher-tools {
     background: var(--primary);
     box-shadow: 0 0 15px rgba(59,130,246,0.5);
     padding: 10px 20px;
+}
+
+/* 結算畫面：隱藏全域首頁按鈕，使用導覽列內的按鈕 */
+.screen-resultScreen #btnHomeGlobal {
+    display: none !important;
 }
 
 /* 結算畫面 - 回首頁移至正中央底部且再高一點點 */

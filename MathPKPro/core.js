@@ -329,7 +329,11 @@ function createPlayerState() {
 
 function init() {
     loadData(); updateMainMenuStats(); setupSettingsUI(); applyFontSize();
-    if (appData.isLocked) setupReadyPhase(gameState.category);
+    if (appData.isLocked) {
+        document.documentElement.classList.add('is-locked-mode');
+        document.body.classList.add('is-locked-mode');
+        setupReadyPhase(gameState.category);
+    }
 }
 
 window.onload = init;

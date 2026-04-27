@@ -24,7 +24,12 @@ function playSound(type) {
 function showScreen(screenId) {
     screens.forEach(s => s.classList.remove('active'));
     document.getElementById(screenId).classList.add('active');
-    document.body.className = `screen-${screenId}`;
+    
+    // 移除舊的 screen-xxx 類別，保留其他如 is-locked-mode 等類別
+    Array.from(document.body.classList).forEach(cls => {
+        if (cls.startsWith('screen-')) document.body.classList.remove(cls);
+    });
+    document.body.classList.add(`screen-${screenId}`);
 }
 
 function applyFontSize() {
