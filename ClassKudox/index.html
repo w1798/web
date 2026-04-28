@@ -205,7 +205,7 @@
                     <div class="award-content active" id="positiveItems"></div>
                     <div class="award-content" id="needsWorkItems"></div>
                     <div class="award-content" id="customAwardArea">
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.6rem 1rem; align-items:end;">
+                        <div class="custom-award-grid">
                             <div class="input-group" style="margin:0;">
                                 <label>自訂項目名稱</label>
                                 <select id="customAwardLabel" class="filter-select" style="width:100%;">
@@ -219,7 +219,7 @@
                             <div class="input-group" style="margin:0;">
                                 <label>點數 (正數加點，負數扣點)</label>
                                 <div style="display:flex; gap:0.4rem; align-items:center;">
-                                    <input type="number" inputmode="numeric" id="customAwardValue" value="-10" style="flex:1;">
+                                    <input type="text" inputmode="numeric" id="customAwardValue" value="-10" style="flex:1;">
                                     <button type="button" id="customAwardClearBtn" class="btn secondary-btn" style="padding:0.3rem 0.5rem; font-size:0.85em; white-space:nowrap;">清空</button>
                                     <button type="button" id="customAwardNegBtn" class="btn secondary-btn" style="padding:0.3rem 0.5rem; font-size:0.85em; white-space:nowrap;">加負號</button>
                                 </div>
@@ -324,9 +324,9 @@
                                 <!-- History injected here -->
                             </ul>
                             <div class="report-pagination">
-                                <button id="reportPrevPageBtn" class="small-btn cancel-btn" disabled>上一頁</button>
+                                <button id="reportPrevPageBtn" class="small-btn reports-page-btn" disabled>上一頁</button>
                                 <span id="reportPageInfo" style="font-size: 0.85em; color: var(--text-secondary);">頁數 1 / 1</span>
-                                <button id="reportNextPageBtn" class="small-btn cancel-btn" disabled>下一頁</button>
+                                <button id="reportNextPageBtn" class="small-btn reports-page-btn" disabled>下一頁</button>
                             </div>
                         </div>
                         <div class="reports-right-viz">
@@ -687,7 +687,7 @@
                         <div class="input-group" style="margin-top:1rem; display:grid; grid-template-columns: 110px 1fr; align-items:center; gap:0.8rem;">
                             <label style="white-space:nowrap; margin-bottom:0;">Token / Key</label>
                             <div class="input-with-btn">
-                                <input type="password" id="cloudApiKey" placeholder="您的存取金鑰">
+                                <input type="text" id="cloudApiKey" placeholder="您的存取金鑰">
                                 <button class="btn icon-btn" id="resetCloudApiKey" title="重置">🧹</button>
                             </div>
                         </div>
@@ -938,6 +938,13 @@
 </script>
 
 
-    <script src="script.js?ver=1.03c"></script>
+    <!-- Core Modules -->
+    <script src="utils.js"></script>
+    <script src="state.js"></script>
+    <script src="sync.js"></script>
+    <script src="ui.js"></script>
+    <script src="actions.js"></script>
+    <!-- Entry Point -->
+    <script src="script.js?ver=1.04"></script>
 </body>
 </html>
