@@ -252,15 +252,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         wire('customAwardClearBtn', () => {
-            const v = document.getElementById('customAwardValue'); if (v) { v.value = ''; v.focus(); }
+            const v = document.getElementById('customAwardValue'); if (v) { v.value = ''; v.focus(); v.dispatchEvent(new Event('input')); }
         });
         wire('customAwardNegBtn', () => {
             const v = document.getElementById('customAwardValue'); if (!v) return;
             const cur = v.value.trim();
-            if (!cur || cur === '0') { v.value = '-'; v.focus(); return; }
-            if (cur.startsWith('-')) v.value = cur.substring(1);
-            else v.value = '-' + cur;
+            if (!cur || cur === '0') { v.value = '-'; }
+            else if (cur.startsWith('-')) { v.value = cur.substring(1); }
+            else { v.value = '-' + cur; }
             v.focus();
+            v.dispatchEvent(new Event('input'));
         });
         
         document.querySelectorAll('.tab-btn').forEach(b => b.onclick = () => switchProfileTab(b.dataset.profileTab));

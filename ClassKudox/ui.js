@@ -297,6 +297,16 @@ const renderClassSelector = () => {
             }
         };
         li.querySelector('.archive-btn').onclick = () => { 
+            if (!c.arc) {
+                if (!confirm(`確定要封存 [${c.id}] 嗎？\n\n封存將會清除該班級的所有學生歷史紀錄\n(但會保留目前的點數、寶物和優缺點項目)。`)) {
+                    return;
+                }
+                // 清除歷史紀錄，保留點數/寶物
+                localStorage.setItem(`CD_${c.id}_Ls`, '[]');
+                if (currentClassId === c.id) {
+                    logs = [];
+                }
+            }
             c.arc = !c.arc; 
             pushOp(11, { id: c.id, arc: c.arc }, true);
             saveData(); renderClassSelector(); 

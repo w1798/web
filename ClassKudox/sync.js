@@ -204,8 +204,8 @@ const checkCloudSyncState = async () => {
             const vComp = localSyncVersion.localeCompare(cloudVer);
             let modified = false;
 
-            if (vComp < 0) {
-                L(`[CloudSync] Step 4 執行還原並重播 (本地: ${localSyncVersion}, 雲端: ${cloudVer})...`);
+            if (vComp !== 0 && cloudVer !== '000000000000') {
+                L(`[CloudSync] Step 4 版本不同，以雲端為基底覆蓋並重播 Ops (本地: ${localSyncVersion}, 雲端: ${cloudVer})...`);
                 const oldClassId = currentClassId;
                 const oldOps = [...ops]; 
                 
