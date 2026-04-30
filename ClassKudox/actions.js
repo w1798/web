@@ -108,7 +108,12 @@ const openAwardModal = (ids, title, groupId = null) => {
     const profileModal = document.querySelector('.profile-modal');
     if(profileModal) profileModal.classList.toggle('modal-large', !!groupId);
     const editBtn = document.getElementById('editProfileBtn');
+    const editGroupBtn = document.getElementById('editGroupProfileBtn');
     if(editBtn) editBtn.classList.toggle('hidden', !!groupId);
+    if(editGroupBtn) {
+        editGroupBtn.classList.toggle('hidden', !groupId);
+        editGroupBtn.onclick = () => { closeModal(document.getElementById('studentProfileModal')); openManageGroupModal(groupId); };
+    }
     
     const histTabBtn = document.getElementById('profileHistoryTabBtn');
     if(histTabBtn) histTabBtn.classList.toggle('hidden', ids.length > 1 || !!groupId);

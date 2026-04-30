@@ -339,13 +339,13 @@ const renderClassSelector = () => {
 const getReportsTimeRange = () => {
     const v = document.getElementById('timeRangeFilter')?.value || 'all'; if(v === 'all') return null;
     let s = new Date(), e = new Date(); s.setHours(0,0,0,0); e.setHours(23,59,59,999);
-    if(v === 'today') return { start:StampTool.encode(s), end:StampTool.encode(e) };
-    if(v === 'week') { s.setDate(s.getDate() - (s.getDay()||7) + 1); e.setDate(s.getDate() + 6); return { start:StampTool.encode(s), end:StampTool.encode(e) }; }
-    if(v === 'month') { s.setDate(1); let skip = new Date(s); skip.setMonth(skip.getMonth()+1); skip.setDate(0); skip.setHours(23,59,59,999); return { start:StampTool.encode(s), end:StampTool.encode(skip) }; }
+    if(v === 'today') return { start: s.getTime(), end: e.getTime() };
+    if(v === 'week') { s.setDate(s.getDate() - (s.getDay()||7) + 1); e.setDate(s.getDate() + 6); return { start: s.getTime(), end: e.getTime() }; }
+    if(v === 'month') { s.setDate(1); let skip = new Date(s); skip.setMonth(skip.getMonth()+1); skip.setDate(0); skip.setHours(23,59,59,999); return { start: s.getTime(), end: skip.getTime() }; }
     if(v === 'custom') { const sval = document.getElementById('startDateFilter')?.value, evalStr = document.getElementById('endDateFilter')?.value; if(sval && evalStr) {
         let sd = new Date(sval); sd.setHours(0,0,0,0);
         let ed = new Date(evalStr); ed.setHours(23,59,59,999);
-        return { start:StampTool.encode(sd), end:StampTool.encode(ed) };
+        return { start: sd.getTime(), end: ed.getTime() };
     } }
     return null;
 };
@@ -365,7 +365,8 @@ const renderReports = () => {
     
     // 預先過濾符合時間範圍與學生選取的紀錄，供排名計算與動態顯示使用
     const filteredLogs = logs.filter(l => {
-        if (range && (l.TS < range.start || l.TS > range.end)) return false;
+        const ts = getTS(l.TS);
+        if (range && (ts < range.start || ts > range.end)) return false;
         return true;
     });
 
@@ -395,7 +396,7 @@ const renderReports = () => {
         let f = filteredLogs.filter(log => { 
             if(currentProfileId && log.sID !== currentProfileId) return false; 
             return true; 
-        }).sort((a,b) => b.TS.localeCompare(a.TS));
+        }).sort((a,b) => getTS(b.TS) - getTS(a.TS));
 
         // 分頁處理
         const pageSize = 50;
@@ -458,10 +459,11 @@ const renderTreasureReports = () => {
         alist.innerHTML = '';
         const range = getReportsTimeRange();
         let f = logs.filter(log => {
-            if(range && (log.TS < range.start || log.TS > range.end)) return false;
+            const ts = getTS(log.TS);
+            if(range && (ts < range.start || ts > range.end)) return false;
             if(currentProfileId && log.sID !== currentProfileId) return false;
             return true;
-        }).sort((a,b) => b.TS.localeCompare(a.TS));
+        }).sort((a,b) => getTS(b.TS) - getTS(a.TS));
 
         const pageSize = 50;
         const totalPages = Math.ceil(f.length / pageSize) || 1;

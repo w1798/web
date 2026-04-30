@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?ver=1.03e">
+    <link rel="stylesheet" href="style.css?ver=1.03f">
 </head>
 <body data-font-size="medium">
 
@@ -70,7 +70,7 @@
 
     <!-- ADD STUDENT MODAL -->
     <div id="addStudentModal" class="modal-overlay hidden">
-        <div class="modal-content">
+        <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header">
                 <h2>新增學生</h2>
                 <button class="close-modal-btn add-close">×</button>
@@ -189,6 +189,7 @@
                 <h2 style="display:flex; align-items:center; gap: 0.5rem;">
                     <span id="currentProfileName"></span>
                     <button id="editProfileBtn" class="icon-btn edit-profile-btn" title="編輯資料">✏️</button>
+                    <button id="editGroupProfileBtn" class="icon-btn edit-profile-btn hidden" title="編輯群組" style="font-size: 1.1em; transform: translateY(1px);">⚙️</button>
                 </h2>
                 <button class="close-modal-btn profile-close">×</button>
             </div>
@@ -945,12 +946,12 @@
 
 
     <!-- Core Modules -->
-    <script src="utils.js?ver=1.03e"></script>
-    <script src="state.js?ver=1.03e"></script>
-    <script src="sync.js?ver=1.03e"></script>
-    <script src="ui.js?ver=1.03e"></script>
-    <script src="actions.js?ver=1.03e"></script>
+    <script src="utils.js?ver=1.03f"></script>
+    <script src="state.js?ver=1.03f"></script>
+    <script src="sync.js?ver=1.03f"></script>
+    <script src="ui.js?ver=1.03f"></script>
+    <script src="actions.js?ver=1.03f"></script>
     <!-- Entry Point -->
-    <script src="script.js?ver=1.03e"></script>
+    <script src="script.js?ver=1.03f"></script>
 </body>
 </html>

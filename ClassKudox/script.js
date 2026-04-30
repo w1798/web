@@ -497,6 +497,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const rRange = document.getElementById('timeRangeFilter'); if(rRange) {
             rRange.onchange = () => {
                 const cu = document.getElementById('customDateContainer'); if(cu) cu.classList.toggle('hidden', rRange.value !== 'custom');
+                if (rRange.value === 'custom') {
+                    const eD = document.getElementById('endDateFilter');
+                    if (eD && !eD.value) eD.value = new Date().toISOString().slice(0, 10);
+                }
                 currentReportPage = 1;
                 renderReports();
             };

@@ -253,6 +253,22 @@ body {
     background: #f8fafc; border-radius: 0 0 24px 24px;
 }
 
+/* Group Inline specific button style */
+.edit-group-inline-btn {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1.15em;
+    padding: 0;
+    z-index: 2;
+    opacity: 0.5;
+    transition: all 0.2s;
+}
+.edit-group-inline-btn:hover { opacity: 1; transform: scale(1.1) rotate(15deg); }
+
 /* Group detail modal member cards */
 .group-member-cards {
     display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.75rem;
@@ -1018,7 +1034,7 @@ footer a:hover {
     justify-content: center;
     text-align: center;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.05s ease-out, box-shadow 0.05s ease-out, border-color 0.05s ease-out, background 0.05s ease-out;
     position: relative;
     min-height: 85px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.2);
