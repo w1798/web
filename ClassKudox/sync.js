@@ -205,6 +205,20 @@ const checkCloudSyncState = async () => {
             let modified = false;
 
             if (vComp !== 0 && cloudVer !== '000000000000') {
+                // 資料版本不同時，先偵測程式碼是否也有更新
+                try {
+                    const vRes = await fetch('version.json?t=' + Date.now());
+                    if (vRes.ok) {
+                        const vData = await vRes.json();
+                        if (vData.ver && vData.ver !== APP_VER) {
+                            L(`[CloudSync] 偵測到程式更新 (${APP_VER} → ${vData.ver})，強制重載頁面...`);
+                            localStorage.setItem('APP_VER', vData.ver);
+                            location.reload(true);
+                            return;
+                        }
+                    }
+                } catch(e) { /* 離線或讀取失敗時忽略，繼續正常同步 */ }
+
                 L(`[CloudSync] Step 4 版本不同，以雲端為基底覆蓋並重播 Ops (本地: ${localSyncVersion}, 雲端: ${cloudVer})...`);
                 const oldClassId = currentClassId;
                 const oldOps = [...ops]; 

@@ -11,7 +11,45 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?ver=1.03f">
+    <script>
+    // === 版本管理：從 version.json 讀取唯一版本號 ===
+    var APP_VER = '0';
+    try {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', 'version.json?t=' + Date.now(), false);
+        xhr.send();
+        if (xhr.status === 200) APP_VER = JSON.parse(xhr.responseText).ver;
+    } catch(e) { console.warn('[Version] 無法讀取 version.json, 使用預設值'); }
+    console.log('[Version] 目前程式版本: v' + APP_VER);
+
+    (function() {
+        var stored = localStorage.getItem('APP_VER');
+        if (stored && stored !== APP_VER) {
+            console.log('[Version] 偵測到版本變更 (' + stored + ' → ' + APP_VER + ')，強制重載...');
+            localStorage.setItem('APP_VER', APP_VER);
+            location.reload(true);
+            return;
+        }
+        localStorage.setItem('APP_VER', APP_VER);
+        // 動態載入 CSS 帶版本號
+        var link = document.createElement('link');
+        link.rel = 'stylesheet'; link.href = 'style.css?v=' + APP_VER;
+        document.head.appendChild(link);
+    })();
+
+    // === 背景輪詢：偵測版本更新 ===
+    setInterval(function() {
+        fetch('version.json?t=' + Date.now()).then(function(r) { return r.json(); }).then(function(d) {
+            console.log('[Version] 背景檢查: 伺服器版本 v' + d.ver + ', 本地版本 v' + APP_VER);
+            if (d.ver && d.ver !== APP_VER) {
+                console.log('[Version] 🔄 偵測到新版本! (' + APP_VER + ' → ' + d.ver + ')，準備重載...');
+                localStorage.setItem('APP_VER', d.ver);
+                alert('系統已更新至 v' + d.ver + '，將自動重新載入頁面');
+                location.reload(true);
+            }
+        }).catch(function() { console.warn('[Version] 背景檢查失敗 (可能離線)'); });
+    }, 1 * 60 * 1000);
+    </script>
 </head>
 <body data-font-size="medium">
 
@@ -945,13 +983,14 @@
 </script>
 
 
-    <!-- Core Modules -->
-    <script src="utils.js?ver=1.03f"></script>
-    <script src="state.js?ver=1.03f"></script>
-    <script src="sync.js?ver=1.03f"></script>
-    <script src="ui.js?ver=1.03f"></script>
-    <script src="actions.js?ver=1.03f"></script>
-    <!-- Entry Point -->
-    <script src="script.js?ver=1.03f"></script>
+    <!-- Core Modules (版本號由 APP_VER 自動帶入) -->
+    <script>
+    (function() {
+        var mods = ['utils.js','state.js','sync.js','ui.js','actions.js','script.js'];
+        mods.forEach(function(m) {
+            document.write('<script src="' + m + '?v=' + APP_VER + '"><\/script>');
+        });
+    })();
+    </script>
 </body>
 </html>
