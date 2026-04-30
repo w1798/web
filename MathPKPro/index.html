@@ -4,7 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>數學算術 PK 大賽</title>
-    <link rel="stylesheet" href="style.css?ver=1.00f">
+    <script>
+        // --- 版本控制設定 ---
+        const APP_VER = "1.00f"; 
+        
+        // 動態載入資源函式
+        function loadRes(path, type) {
+            const finalPath = path + "?ver=" + APP_VER;
+            if (type === 'css') {
+                document.write('<link rel="stylesheet" href="' + finalPath + '">');
+            } else {
+                document.write('<script src="' + finalPath + '"></scr' + 'ipt>');
+            }
+        }
+        
+        // 載入 CSS
+        loadRes("style.css", "css");
+    </script>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧮</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
@@ -356,9 +372,12 @@
 })();
 </script>    
 
-    <script src="service.js?ver=1.00f"></script>
-    <script src="generator.js?ver=1.00f"></script>
-    <script src="ui.js?ver=1.00f"></script>
-    <script src="core.js?ver=1.00f"></script>
+    <script>
+        // 按序載入 JS 模組 (同步載入以保證依賴順序)
+        loadRes("service.js", "js");
+        loadRes("generator.js", "js");
+        loadRes("ui.js", "js");
+        loadRes("core.js", "js");
+    </script>
 </body>
 </html>
