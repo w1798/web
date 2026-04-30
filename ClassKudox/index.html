@@ -13,10 +13,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
     // === 版本管理：從 version.json 讀取唯一版本號 ===
-    var APP_VER = '0';
+    var APP_VER = '1.00a'; // 預設值，若讀取失敗則使用此值
     try {
         var xhr = new XMLHttpRequest();
-        xhr.open('GET', 'version.json?t=' + Date.now(), false);
+        xhr.open('GET', 'version.json?t=' + Date.now(), false); // 同步讀取以確保版本正確
         xhr.send();
         if (xhr.status === 200) APP_VER = JSON.parse(xhr.responseText).ver;
     } catch(e) { console.warn('[Version] 無法讀取 version.json, 使用預設值'); }
@@ -31,6 +31,7 @@
             return;
         }
         localStorage.setItem('APP_VER', APP_VER);
+        
         // 動態載入 CSS 帶版本號
         var link = document.createElement('link');
         link.rel = 'stylesheet'; link.href = 'style.css?v=' + APP_VER;
@@ -40,7 +41,6 @@
     // === 背景輪詢：偵測版本更新 ===
     setInterval(function() {
         fetch('version.json?t=' + Date.now()).then(function(r) { return r.json(); }).then(function(d) {
-            console.log('[Version] 背景檢查: 伺服器版本 v' + d.ver + ', 本地版本 v' + APP_VER);
             if (d.ver && d.ver !== APP_VER) {
                 console.log('[Version] 🔄 偵測到新版本! (' + APP_VER + ' → ' + d.ver + ')，準備重載...');
                 localStorage.setItem('APP_VER', d.ver);
@@ -987,8 +987,14 @@
     <script>
     (function() {
         var mods = ['utils.js','state.js','sync.js','ui.js','actions.js','script.js'];
+        console.log('[Loader] 開始載入核心模組 (v' + APP_VER + ')...');
         mods.forEach(function(m) {
-            document.write('<script src="' + m + '?v=' + APP_VER + '"><\/script>');
+            var s = document.createElement('script');
+            s.src = m + '?v=' + APP_VER;
+            s.async = false;
+            s.onload = function() { console.log('[Loader] 模組載入成功: ' + m); };
+            s.onerror = function() { console.error('[Loader] 模組載入失敗: ' + m); };
+            document.head.appendChild(s);
         });
     })();
     </script>

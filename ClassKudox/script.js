@@ -38,7 +38,9 @@ function initLibraries() {
 
 initLibraries();
 
-document.addEventListener('DOMContentLoaded', () => {
+const startApp = () => {
+    if (window.isAppStarted) return;
+    window.isAppStarted = true;
 
     const fallbackSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23e2e8f0"/><circle cx="50" cy="45" r="20" fill="%2394a3b8"/><path d="M20 100 C 20 60, 80 60, 80 100" fill="%2394a3b8"/></svg>`;
     window.addEventListener('error', function(e) {
@@ -663,4 +665,10 @@ const icons = [
     };
 
     bootSequence();
-});
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startApp);
+} else {
+    startApp();
+}
