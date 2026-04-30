@@ -1213,3 +1213,19 @@ footer a:hover {
     grid-template-columns: repeat(var(--item-grid-cols, 3), 1fr);
     gap: 0.6rem;
 }
+
+
+/* 頁面使用量計數器樣式 */
+#busuanzi_container_page_pv {
+    color: #888;
+    font-size: 0.9rem;
+    margin-left: 15px;
+    border-left: 1px solid rgba(128, 128, 128, 0.5);
+    padding-left: 15px;
+    display: none; /* 預設隱藏，等 JS 確認要顯示時再打開，避免畫面閃爍 */
+}
+
+#busuanzi_value_page_pv {
+    color: #00b894;
+    font-weight: bold;
+}

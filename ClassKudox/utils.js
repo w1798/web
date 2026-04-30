@@ -2,6 +2,51 @@
  * ClassKudox - Utilities
  */
 
+const initVercount = () => {
+    const path = window.location.pathname.replace(/\/$/, "");
+    const TIME_KEY = `VERCOUNT_TIME_${path}`;
+    const VAL_KEY = `VERCOUNT_VAL_${path}`;
+    const COOL_DOWN = 30 * 60 * 1000;
+    const now = Date.now();
+    
+    const pvSpan = document.getElementById('busuanzi_value_page_pv');
+    const pvContainer = document.getElementById('busuanzi_container_page_pv');
+    if (!pvSpan) return;
+
+    const lastVisit = localStorage.getItem(TIME_KEY);
+    const lastVal = localStorage.getItem(VAL_KEY);
+
+    if (lastVisit && (now - lastVisit < COOL_DOWN)) {
+        // 冷卻中：直接顯示舊值
+        pvSpan.innerText = lastVal || "--";
+        pvContainer.style.display = "inline";
+        console.log(`[Vercount] 冷卻中，顯示舊值: ${lastVal}`);
+    } else {
+        // 需要更新：載入腳本
+        const script = document.createElement('script');
+        script.src = "https://events.vercount.one/js";
+        script.defer = true;
+        
+        // 使用監聽器取代 setTimeout，更準確
+        const observer = new MutationObserver((mutations) => {
+            const newVal = pvSpan.innerText;
+            if (newVal && newVal !== "--" && newVal !== "") {
+                localStorage.setItem(VAL_KEY, newVal);
+                localStorage.setItem(TIME_KEY, Date.now());
+                pvContainer.style.display = "inline";
+                observer.disconnect(); // 抓到就停止監聽
+            }
+        });
+        
+        observer.observe(pvSpan, { childList: true, characterData: true, subtree: true });
+        document.head.appendChild(script);
+    }
+};
+
+// 在你的主程式啟動時呼叫
+initVercount();
+
+
 const StampTool = (() => {
     const CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     const EPOCH = 1735689600000;
