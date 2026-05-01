@@ -16,7 +16,7 @@
             color: #888 !important; /* 預設文字顏色 */
             display: block !important;
             clear: both !important;
-        }}
+        }
 
         /* 作者資訊與連結顏色 */
         .auto-footer a { 
@@ -59,7 +59,7 @@
         }
 
         // 強制套用樣式類名
-        footer.className = 'auto-footer';
+        footer.classList.add('auto-footer');
         
         // 計算年份邏輯
         const startYear = 2026;
