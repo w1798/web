@@ -32,9 +32,23 @@
         }
         localStorage.setItem('APP_VER', APP_VER);
         
-        // 動態載入 CSS 帶版本號
+        // 1. 先將頁面隱藏，防止 FOUC (樣式閃爍)
+        document.documentElement.style.visibility = 'hidden';
+
+        // 2. 動態建立 CSS 連結
         var link = document.createElement('link');
-        link.rel = 'stylesheet'; link.href = 'style.css?v=' + APP_VER;
+        link.rel = 'stylesheet'; 
+        link.href = 'style.css?v=' + APP_VER;
+
+        // 3. 顯示畫面的函數 (包含安全保險)
+        var reveal = function() {
+            document.documentElement.style.visibility = 'visible';
+        };
+
+        link.onload = reveal;
+        link.onerror = reveal; 
+        setTimeout(reveal, 3000); // 如果 3 秒沒載完也強迫顯示
+
         document.head.appendChild(link);
     })();
 
