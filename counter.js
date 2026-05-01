@@ -8,34 +8,42 @@
     const style = document.createElement('style');
     style.textContent = `
         .auto-footer {
-            text-align: center;
-            padding: 20px;
-            font-size: 0.9rem;
-            border-top: 1px solid rgba(128, 128, 128, 0.2);
-            margin-top: 40px;
-            color: #888; /* 預設文字顏色 */
-        }
+            text-align: center !important;
+            padding: 20px !important;
+            font-size: 0.9rem !important;
+            border-top: 1px solid rgba(128, 128, 128, 0.2) !important;
+            margin-top: 40px !important;
+            color: #888 !important; /* 預設文字顏色 */
+            display: block !important;
+            clear: both !important;
+        }}
 
         /* 作者資訊與連結顏色 */
         .auto-footer a { 
-            color: #00b894; 
-            text-decoration: none; 
-            transition: opacity 0.2s;
+            color: #00b894 !important; 
+            text-decoration: none !important; 
+            background: none !important; /* 防止有些 CSS 會加背景色 */
+            border: none !important;     /* 防止有些 CSS 會加底線邊框 */
         }
-        .auto-footer a:hover { opacity: 0.8; text-decoration: underline; }
 
-        /* 計數器容器樣式 */
+        .auto-footer a:hover { 
+            opacity: 0.8 !important; 
+            text-decoration: underline !important; 
+            color: #00b894 !important; 
+        }
+
+        /* 計數器容器 */
         #busuanzi_container_page_pv {
-            margin-left: 10px;
-            border-left: 1px solid rgba(128, 128, 128, 0.4);
-            padding-left: 10px;
-            display: none; /* 抓到數據才顯示 */
+            margin-left: 10px !important;
+            border-left: 1px solid rgba(128, 128, 128, 0.4) !important;
+            padding-left: 10px !important;
+            display: none; /* 這裡不能加 !important，因為 JS 會動態控制顯示 */
         }
 
         /* 訪客人數數字顏色 */
         #busuanzi_value_page_pv { 
-            color: #00b894; 
-            font-weight: bold; 
+            color: #00b894 !important; 
+            font-weight: bold !important; 
         }
     `;
     document.head.appendChild(style);
