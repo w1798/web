@@ -7,51 +7,71 @@
     <link rel="icon" type="image/png" href="nextime.png">
     <link rel="apple-touch-icon" href="nextime.png">
     
-    <script>
-        const APP_VER = "1.00f";
+<script>
+    // 1. 版本控制：修改此處可強制使用者瀏覽器更新快取
+    const APP_VER = "1.00f";
 
-        function loadApp() {
-            console.log(`%c[Loader] 開始載入資源 (版本: ${APP_VER})`, "color: #3498db; font-weight: bold;");
+    // 2. 資源清單：要增減檔案改這裡即可，不需要請註解即可
+    const resources = {
+        styles: [
+            "style.css"
+        ], 
+        scripts: [
+            "counter.js",
+            "script.js"
+        ]
+    };
 
-            // 1. 定義要載入的資源清單
-            const scripts = [
-                "script.js",
-                "counter.js"
-            ];
-            const styles = [
-                "style.css"
-            ];
-
-            // 載入 CSS
-            styles.forEach(href => {
-                const l = document.createElement('link');
-                l.rel = 'stylesheet';
-                l.href = `${href}?ver=${APP_VER}`;
-                document.head.appendChild(l);
-            });
-
-            // 載入 JS
-            scripts.forEach(src => {
-                const s = document.createElement('script');
-                s.src = `${src}?ver=${APP_VER}`;
-                s.async = false; 
-
-                // 成功載入訊息
-                s.onload = () => {
-                    console.log(`%c[JS] 載入成功: ${src}`, "color: #00b894;");
-                };
-
-                // 失敗報錯訊息
-                s.onerror = () => {
-                    console.error(`[JS] 載入失敗!!! 請檢查路徑: ${src}`);
-                };
-
-                document.head.appendChild(s);
-            });
+    /**
+     * 核心邏輯：將資源標籤注入到 <head>
+     */
+    function injectResource(type, url) {
+        const isCSS = type === 'css';
+        const el = document.createElement(isCSS ? 'link' : 'script');
+        const attr = isCSS ? 'href' : 'src';
+        
+        if (isCSS) {
+            el.rel = 'stylesheet';
+        } else {
+            // 關鍵：確保 script 按照注入順序執行
+            el.async = false;
         }
 
-        loadApp();
-    </script>
+        // 加上版本號以解決 Cache 問題
+        el[attr] = `${url}?ver=${APP_VER}`;
+        
+        // 成功與失敗的追蹤
+        el.onload = () => console.log(`%c[已載入] ${type.toUpperCase()}: ${url}`, "color: #00b894");
+        el.onerror = () => console.error(`[載入失敗] ${url}`);
+
+        document.head.appendChild(el);
+    }
+
+    /**
+     * 主程序：解析配置並執行載入
+     */
+    function loadApp() {
+        console.log(`%c[Loader] 開始初始化資源 (版本: ${APP_VER})`, "color: #3498db; font-weight: bold;");
+
+        const configs = [
+            { data: resources.styles, type: 'css', label: 'CSS' },
+            { data: resources.scripts, type: 'js', label: 'JS' }
+        ];
+
+        configs.forEach(config => {
+            if (config.data && config.data.length > 0) {
+                config.data.forEach(url => injectResource(config.type, url));
+            } else {
+                // 當陣列為空時，優雅地顯示提示
+                console.log(`%c[Notice] 無外部 ${config.label} 資源需要載入`, "color: #e67e22");
+            }
+        });
+    }
+
+    // 啟動！
+    loadApp();
+</script>
+
 </head>
 <body>
 
