@@ -2,41 +2,6 @@
  * ClassKudox - Main Entry Point
  */
 
-function initLibraries() {
-    const libraries = [
-        {
-            url: 'https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js',
-            condition: typeof DecompressionStream === 'undefined'
-        }
-    ];
-
-    libraries.forEach(lib => {
-        const fileName = new URL(lib.url).pathname.split('/').pop();
-        const shouldLoad = (lib.condition !== undefined) ? lib.condition : true;
-
-        if (!shouldLoad) {
-            console.log(`%c[跳過] 環境支援原生功能，不載入: ${fileName}`, 'color: #9E9E9E;');
-            return;
-        }
-
-        const script = document.createElement('script');
-        script.src = lib.url;
-        script.async = false;
-        script.onload = () => console.log(`%c[成功] 外部庫已載入: ${fileName}`, 'color: #4CAF50; font-weight: bold;');
-        script.onerror = () => {
-            const fallbackPath = `libs/${fileName}`;
-            console.warn(`[失敗] 載入失敗，嘗試本地備援: ${fallbackPath}`);
-            const fallbackScript = document.createElement('script');
-            fallbackScript.src = fallbackPath;
-            fallbackScript.onload = () => console.log(`%c[備援成功] 已從本地載入: ${fileName}`, 'color: #FF9800; font-weight: bold;');
-            fallbackScript.onerror = () => console.error(`[重大錯誤] 本地檔案不存在: ${fallbackPath}`);
-            document.head.appendChild(fallbackScript);
-        };
-        document.head.appendChild(script);
-    });
-}
-
-initLibraries();
 
 const startApp = () => {
     if (window.isAppStarted) return;
