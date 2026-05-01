@@ -16,9 +16,11 @@ let groupIdCounter = 1;
 let allStudents = Array.from({length: 30}, (_, i) => (i + 1).toString().padStart(2, '0'));
 let boyCount = 15; 
 
-document.addEventListener('DOMContentLoaded', () => {
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
     initApp();
-});
+}
 
 function initApp() {
     loadFromLocalStorage();

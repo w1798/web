@@ -8,62 +8,28 @@
  */
 
 
-
-// 負責載入多個外部套件的函式
-function initLibraries() {
-    const libUrls = [
-        'https://unpkg.com/docx@8.2.2/build/index.umd.js',
-        'https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js',
-        'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'
-    ];
-
-    libUrls.forEach(url => {
-        const script = document.createElement('script');
-        script.src = url;
-        script.async = false;
-
-        // 從 URL 提取完整檔名 (例如: exceljs.min.js)
-        const fileName = new URL(url).pathname.split('/').pop();
-
-        // 情況 A：外部載入成功
-        script.onload = function() {
-            console.log(`%c[成功] 外部庫已載入: ${fileName}`, 'color: #4CAF50; font-weight: bold;');
-        };
-
-        // 情況 B：外部載入失敗，啟動備援
-        script.onerror = function() {
-            const fallbackPath = `libs/${fileName}`;
-            console.warn(`[失敗] 外部庫載入失敗，嘗試本地載入: ${fallbackPath}`);
-            
-            const fallbackScript = document.createElement('script');
-            fallbackScript.src = fallbackPath;
-            
-            // 本地載入的成功/失敗監聽（選配）
-            fallbackScript.onload = () => console.log(`%c[備援成功] 已從本地載入: ${fileName}`, 'color: #FF9800; font-weight: bold;');
-            fallbackScript.onerror = () => console.error(`[重大錯誤] 本地備援檔案不存在: ${fallbackPath}`);
-
-            document.head.appendChild(fallbackScript);
-        };
-
-        document.head.appendChild(script);
-    });
-}
-
-// 執行載入
-initLibraries();
-
-
 const STORAGE_KEY = 'QR_LABELS_CONFIG_V3';
 
-document.addEventListener('DOMContentLoaded', () => {
+
+/**
+ * 修改後的初始化邏輯
+ */
+function initApp() {
     const hSel = document.getElementById('h_cut');
     const vSel = document.getElementById('v_cut');
+    
+    // 確保選單存在才執行
+    if (!hSel || !vSel) return;
+
+    // 清空並重新建立 1~15 選項
+    hSel.innerHTML = '';
+    vSel.innerHTML = '';
     for(let i=1; i<=15; i++){
         hSel.add(new Option(i, i));
         vSel.add(new Option(i, i));
     }
 
-    // 1. 定義「當前版本」的所有預設值
+    // 1. 定義預設值 (其餘代碼保持不變...)
     const DEFAULT_CONFIG = {
         h_cut: "5",
         v_cut: "6",
@@ -82,32 +48,33 @@ document.addEventListener('DOMContentLoaded', () => {
         subject: "支援圖文上下或左右並排\n自定尺寸、字體大小\n適配各種規格的標籤紙"
     };
 
-    // 2. 讀取舊資料並與預設值合併
+    // 2. 讀取與合併設定 (其餘代碼保持不變...)
     const savedRaw = localStorage.getItem(STORAGE_KEY);
     let finalConfig = DEFAULT_CONFIG;
-
     if (savedRaw) {
         try {
             const savedConfig = JSON.parse(savedRaw);
-            // 使用 Spread Operator 合併：預設值墊底，舊資料覆蓋
-            // 如果 savedConfig 缺少某個新欄位，它會保留 DEFAULT_CONFIG 的值
             finalConfig = { ...DEFAULT_CONFIG, ...savedConfig };
-        } catch (e) {
-            console.error("解析存檔失敗，使用預設值");
-        }
+        } catch (e) { console.error("解析存檔失敗"); }
     }
 
-    // 3. 將最終設定套用到 UI 元件上
+    // 3. 套用到 UI
     Object.keys(finalConfig).forEach(id => {
         const el = document.getElementById(id);
-        if (el) {
-            el.value = finalConfig[id];
-        }
+        if (el) el.value = finalConfig[id];
     });
-    
-    // 4. (選用) 立即回存一次，幫舊用戶補齊缺少的欄位
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(finalConfig));
-});
+}
+
+// --- 核心修正：判斷載入時機 ---
+if (document.readyState === 'loading') {
+    // 如果還在載入中，監聽事件
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
+    // 如果 loadapp.js 載入完畢時 DOM 已經好了，直接執行
+    initApp();
+}
+
+
 
 // 自動存檔
 document.addEventListener('input', () => {

@@ -4,99 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>📊 股息回本解套記</title>
+
 <script>
-    // 1. 版本控制
+    document.documentElement.style.visibility = 'hidden';
+
     const APP_VER = "1.00f";
 
-    // 2. 資源清單：要增減檔案改這裡即可，不需要請刪除或註解即可
-    const resources = {
+    var resources = {
         styles: [
             "style.css"
         ], 
+        
         scripts: [
             "../counter.js",
-            "script.js"
+             "script.js"
         ]
     };
 
-    // --- 立即隱藏頁面 ---
-    document.documentElement.style.visibility = 'hidden';
-
-    /**
-     * 核心邏輯：將資源標籤注入到 <head>
-     */
-    function injectResource(type, url, onCssLoaded) {
-        const isCSS = type === 'css';
-        const el = document.createElement(isCSS ? 'link' : 'script');
-        const attr = isCSS ? 'href' : 'src';
-        
-        if (isCSS) {
-            el.rel = 'stylesheet';
-        } else {
-            el.async = false;
-        }
-
-        el[attr] = `${url}?ver=${APP_VER}`;
-        
-        el.onload = () => {
-            console.log(`%c[已載入] ${type.toUpperCase()}: ${url}`, "color: #00b894");
-            // 若為 CSS，載入成功後執行進度檢查
-            if (isCSS && onCssLoaded) onCssLoaded();
-        };
-
-        el.onerror = () => {
-            console.error(`[載入失敗] ${url}`);
-            // 若為 CSS，即便失敗也要解鎖，避免畫面永久白屏
-            if (isCSS && onCssLoaded) onCssLoaded();
-        };
-
-        document.head.appendChild(el);
-    }
-
-    /**
-     * 主程序：解析配置並執行載入
-     */
-    function loadApp() {
-        console.log(`%c[Loader] 開始初始化資源 (版本: ${APP_VER})`, "color: #3498db; font-weight: bold;");
-
-        const cssList = resources.styles || [];
-        let cssLoadedCount = 0;
-
-        // 【新增】檢查 CSS 載入進度
-        const checkCssProgress = () => {
-            cssLoadedCount++;
-            if (cssLoadedCount >= cssList.length) {
-                document.documentElement.style.visibility = 'visible';
-                console.log("%c[Display] 樣式套用完成，解除頁面鎖定", "color: #9b59b6; font-weight: bold;");
-            }
-        };
-
-        // 如果完全沒有 CSS，直接顯示
-        if (cssList.length === 0) {
-            document.documentElement.style.visibility = 'visible';
-        }
-
-        // 執行載入
-        const configs = [
-            { data: cssList, type: 'css', label: 'CSS' },
-            { data: resources.scripts, type: 'js', label: 'JS' }
-        ];
-
-        configs.forEach(config => {
-            if (config.data && config.data.length > 0) {
-                config.data.forEach(url => {
-                    // 只有 CSS 傳入回調函式
-                    injectResource(config.type, url, config.type === 'css' ? checkCssProgress : null);
-                });
-            } else {
-                console.log(`%c[Notice] 無外部 ${config.label} 資源需要載入`, "color: #e67e22");
-            }
-        });
-    }
-
-    // 啟動！
-    loadApp();
+    const loader = document.createElement('script');
+    loader.src = `../loadapp.js?ver=${APP_VER}`;
+    document.head.appendChild(loader);
 </script>
+
 </head>
 <body>
 <div class="container">
@@ -192,7 +121,6 @@
     <div class="modal-content fullscreen">
         <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
             <h2 id="modalTitle" style="margin: 0;">📌 新增股票並貼入配息</h2>
-            <button class="btn btn-success" id="parseAndSaveBtn" style="padding:12px 30px; font-size:1.1em;">💾 解析並儲存此股票</button>
             <span class="close" id="closeModal" style="font-size: 2em; cursor: pointer;">&times;</span>
         </div>
         
@@ -221,10 +149,11 @@
 
         <!-- 貼入配息區塊 -->
         <div class="parse-section">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <label style="font-weight:600;">📋 貼入配息記錄</label>
-                <button class="btn btn-outline" id="pasteBtn" style="padding: 8px 16px;">📋 貼上</button>
-                <button class="btn btn-outline" id="clearPasteBtn" style="padding: 8px 16px;">🧹 清除</button>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                <label style="font-weight:600;">📋 4. 貼入配息記錄</label>
+                <button class="btn btn-outline" id="pasteBtn" style="padding: 8px 16px;">📋 4. 貼上</button>
+                <button class="btn btn-success" id="parseAndSaveBtn" style="padding: 8px 16px;">💾 4. 解析並儲存此股票</button>
+                <button class="btn btn-outline" id="clearPasteBtn" style="padding: 8px 16px; margin-left: auto;">🧹 清除</button>
             </div>
             <p style="color:#666; font-size:0.9em; margin-bottom:10px;">
                 會自動從「填權天數」的下一行開始抓資料，抓取第1個為「股利」，第2個為「發放日」（自動跳過年度），直到「現金股利」結束。                

@@ -13,7 +13,7 @@ let appData = {
         maxHp: 200,         
         questionCount: 10,
         answerCount: 6,
-        fontSize: 1.0,
+        fontSize: 1,
         volume: 0.5,
         enableShake: true,
         enableSound: true,
@@ -25,30 +25,6 @@ let appData = {
     }
 };
 
-function initLibraries() {
-    const libraries = [
-        { url: 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js' }
-    ];
-
-    libraries.forEach(lib => {
-        const fileName = new URL(lib.url).pathname.split('/').pop();
-        const shouldLoad = true;
-        if (!shouldLoad) return;
-
-        const script = document.createElement('script');
-        script.src = lib.url;
-        script.async = false;
-        script.onload = () => console.log(`[成功] 外部庫已載入: ${fileName}`);
-        script.onerror = () => {
-            const fallbackPath = `libs/${fileName}`;
-            const fallbackScript = document.createElement('script');
-            fallbackScript.src = fallbackPath;
-            document.head.appendChild(fallbackScript);
-        };
-        document.head.appendChild(script);
-    });
-}
-initLibraries();
 
 function loadData() {
     const urlParams = new URLSearchParams(window.location.search);

@@ -85,7 +85,7 @@ body.is-locked-mode .vs-divider {
     align-items: center;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 2rem 1rem;
+    padding: 2rem 1rem 5rem 1rem;
 }
 
 /* 確保長內容在 flex center 下不會切掉頂部 */
