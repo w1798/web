@@ -4,22 +4,99 @@
     <meta charset="UTF-8">
     <title>JSON編輯器 by Charles Nextime</title>
 
-    <script>
-        const APP_VER = "1.00f";
-        function loadApp() {
-            console.log(`%c[Loader] 開始載入資源 (版本: ${APP_VER})`, "color: #3498db; font-weight: bold;");
-            const scripts = ["../counter.js", "script.js"];
-            scripts.forEach(src => {
-                const s = document.createElement('script');
-                s.src = `${src}?ver=${APP_VER}`;
-                s.async = false; 
-                s.onload = () => console.log(`%c[JS] 載入成功: ${src}`, "color: #00b894;");
-                s.onerror = () => console.error(`[JS] 載入失敗!!!: ${src}`);
-                document.head.appendChild(s);
-            });
+<script>
+    // 1. 版本控制
+    const APP_VER = "1.00f";
+
+    // 2. 資源清單：要增減檔案改這裡即可，不需要請刪除或註解即可
+    const resources = {
+        styles: [
+//            "style.css"
+        ], 
+        scripts: [
+            "../counter.js",
+            "script.js"
+        ]
+    };
+
+    // --- 立即隱藏頁面 ---
+    document.documentElement.style.visibility = 'hidden';
+
+    /**
+     * 核心邏輯：將資源標籤注入到 <head>
+     */
+    function injectResource(type, url, onCssLoaded) {
+        const isCSS = type === 'css';
+        const el = document.createElement(isCSS ? 'link' : 'script');
+        const attr = isCSS ? 'href' : 'src';
+        
+        if (isCSS) {
+            el.rel = 'stylesheet';
+        } else {
+            el.async = false;
         }
-        loadApp();
-    </script>
+
+        el[attr] = `${url}?ver=${APP_VER}`;
+        
+        el.onload = () => {
+            console.log(`%c[已載入] ${type.toUpperCase()}: ${url}`, "color: #00b894");
+            // 若為 CSS，載入成功後執行進度檢查
+            if (isCSS && onCssLoaded) onCssLoaded();
+        };
+
+        el.onerror = () => {
+            console.error(`[載入失敗] ${url}`);
+            // 若為 CSS，即便失敗也要解鎖，避免畫面永久白屏
+            if (isCSS && onCssLoaded) onCssLoaded();
+        };
+
+        document.head.appendChild(el);
+    }
+
+    /**
+     * 主程序：解析配置並執行載入
+     */
+    function loadApp() {
+        console.log(`%c[Loader] 開始初始化資源 (版本: ${APP_VER})`, "color: #3498db; font-weight: bold;");
+
+        const cssList = resources.styles || [];
+        let cssLoadedCount = 0;
+
+        // 【新增】檢查 CSS 載入進度
+        const checkCssProgress = () => {
+            cssLoadedCount++;
+            if (cssLoadedCount >= cssList.length) {
+                document.documentElement.style.visibility = 'visible';
+                console.log("%c[Display] 樣式套用完成，解除頁面鎖定", "color: #9b59b6; font-weight: bold;");
+            }
+        };
+
+        // 如果完全沒有 CSS，直接顯示
+        if (cssList.length === 0) {
+            document.documentElement.style.visibility = 'visible';
+        }
+
+        // 執行載入
+        const configs = [
+            { data: cssList, type: 'css', label: 'CSS' },
+            { data: resources.scripts, type: 'js', label: 'JS' }
+        ];
+
+        configs.forEach(config => {
+            if (config.data && config.data.length > 0) {
+                config.data.forEach(url => {
+                    // 只有 CSS 傳入回調函式
+                    injectResource(config.type, url, config.type === 'css' ? checkCssProgress : null);
+                });
+            } else {
+                console.log(`%c[Notice] 無外部 ${config.label} 資源需要載入`, "color: #e67e22");
+            }
+        });
+    }
+
+    // 啟動！
+    loadApp();
+</script>
 
     <style>
         /* --- 基礎設定 --- */
