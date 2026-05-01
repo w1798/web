@@ -7,6 +7,38 @@
     <link rel="icon" type="image/png" href="nextime.png">
     <link rel="apple-touch-icon" href="nextime.png">
     
+    <script>
+        const APP_VER = "1.00f";
+
+        function loadApp() {
+            console.log(`%c[Loader] 開始載入資源 (版本: ${APP_VER})`, "color: #3498db; font-weight: bold;");
+
+            // 2. 定義要載入的 JS 清單
+            const scripts = [
+                "counter.js"
+            ];
+
+            scripts.forEach(src => {
+                const s = document.createElement('script');
+                s.src = `${src}?ver=${APP_VER}`;
+                s.async = false; 
+
+                // 成功載入訊息
+                s.onload = () => {
+                    console.log(`%c[JS] 載入成功: ${src}`, "color: #00b894;");
+                };
+
+                // 失敗報錯訊息
+                s.onerror = () => {
+                    console.error(`[JS] 載入失敗!!! 請檢查路徑: ${src}`);
+                };
+
+                document.head.appendChild(s);
+            });
+        }
+
+        loadApp();
+    </script>
 <style>
         :root {
             --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -370,13 +402,6 @@
         }
         @media (max-width: 850px) { .footer-mini { left: 0; } }
 
-        #busuanzi_container_page_pv {
-            color: #888;
-            font-size: 0.8rem;
-            margin-left: 15px;
-            border-left: 1px solid rgba(128, 128, 128, 0.5);
-            padding-left: 15px;
-        }
         #busuanzi_value_page_pv { color: var(--count-color); font-weight: bold; }
 
         /* 回到頂端按鈕 */
@@ -450,15 +475,7 @@
     
     </main>
 
-    <footer class="footer-mini">
-        <a href="https://nextime5.blogspot.com" target="_blank" style="color: inherit; text-decoration: none;">&copy; 2026<script>
-  const y = new Date().getFullYear();
-  if (y > 2026) document.write("-" + y);
-</script> Charles Nextime</a>·<a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" style="color: inherit; text-decoration: none;">GPLv3</a>
-        <span id="busuanzi_container_page_pv">
-            訪問 <span id="busuanzi_value_page_pv"></span> 次
-        </span>
-    </footer>
+    <footer class="footer-mini"></footer>
 
 
 
@@ -784,48 +801,6 @@
 </button>
     
     
-<script>
-(function() {
-    // 這樣無論是 /web/ 還是 /web 都會統一變成 /web 
-    const path = window.location.pathname.replace(/\/$/, ""); 
-    const TIME_KEY = `VERCOUNT_TIME_${path}`; // 每個分頁獨立計算冷卻時間
-    const VAL_KEY = `VERCOUNT_VAL_${path}`;   // 每個分頁獨立存儲 PV 數
-    
-    const COOL_DOWN = 30 * 60 * 1000; 
-    const now = Date.now();
-    const lastVisit = localStorage.getItem(TIME_KEY);
-    
-    // 計算剩餘秒數
-    const timeLeft = lastVisit ? Math.ceil((parseInt(lastVisit) + COOL_DOWN - now) / 1000) : 0;
-
-    if (timeLeft <= 0) {
-        console.log(`%c[Vercount]%c 路徑 ${path} 冷卻結束，更新數據...`, "color:#00b894;font-weight:bold", "color:inherit");
-        
-        const script = document.createElement('script');
-        script.src = "https://events.vercount.one/js";
-        script.defer = true;
-        
-        script.onload = () => {
-            setTimeout(() => {
-                const pvVal = document.getElementById('busuanzi_value_page_pv')?.innerText;
-                if (pvVal) {
-                    localStorage.setItem(VAL_KEY, pvVal);
-                    localStorage.setItem(TIME_KEY, now); // 成功抓到才更新時間
-                }
-            }, 1500);
-        };
-        document.head.appendChild(script);
-    } else {
-        const lastVal = localStorage.getItem(VAL_KEY) || "--";
-        console.log(`%c[Vercount]%c ${path} 冷卻中（剩 ${timeLeft} 秒）。顯示舊值：${lastVal}`, "color:#f1c40f;font-weight:bold", "color:inherit");
-
-        window.addEventListener('load', () => {
-            const pvSpan = document.getElementById('busuanzi_value_page_pv');
-            if (pvSpan) pvSpan.innerText = lastVal;
-        });
-    }
-})();
-</script>
 
 
 </body>
