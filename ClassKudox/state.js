@@ -301,10 +301,18 @@ const sanitizeAndCleanDatabase = () => {
                     col: Number(data.col !== undefined ? data.col : (data.columns || 10)),
                     gCol: Number(data.gCol !== undefined ? data.gCol : (data.groupColumns || 5)),
                     iCol: Number(data.iCol !== undefined ? data.iCol : (data.itemColumns || 5)),
+                    itmS: Number(data.itmS !== undefined ? data.itmS : 0),
                     eS: (data.eS !== undefined ? (data.eS ? 1 : 0) : (data.enableSound ? 1 : 0)),
                     sCH: Number(data.sCH !== undefined ? data.sCH : (data.studentCardHeight || 0)),
                     gCH: Number(data.gCH !== undefined ? data.gCH : (data.groupCardHeight || 0)),
-                    lRet: Number(data.lRet !== undefined ? data.lRet : (data.logRetention || 0))
+                    lRet: Number(data.lRet !== undefined ? data.lRet : (data.logRetention || 0)),
+                    avS: Number(data.avS !== undefined ? data.avS : 0),
+                    sAv: Number(data.sAv !== undefined ? data.sAv : 1),
+                    sTR: Number(data.sTR !== undefined ? data.sTR : 1),
+                    cGV: Number(data.cGV !== undefined ? data.cGV : 25),
+                    cGH: Number(data.cGH !== undefined ? data.cGH : 25),
+                    iGV: Number(data.iGV !== undefined ? data.iGV : 15),
+                    iGH: Number(data.iGH !== undefined ? data.iGH : 15)
                 };
                 changed = true;
             }

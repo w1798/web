@@ -384,6 +384,8 @@ const startApp = () => {
         bindSelect('itemColsSelect', 'iCol', true, '--item-grid-cols', false, true);
         bindSelect('itemScaleSelect', 'itmS', false); 
         bindSelect('avatarSizeSelect', 'avS', false);
+        const avSel = document.getElementById('avatarSizeSelect');
+        if(avSel) avSel.addEventListener('change', () => applySettings());
         bindSelect('cardGapVSelect', 'cGV', true, '--card-gap-v');
         bindSelect('cardGapHSelect', 'cGH', true, '--card-gap-h');
         bindSelect('itemGapVSelect', 'iGV', true, '--item-gap-v');

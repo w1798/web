@@ -6,10 +6,10 @@
 
 <script>
     document.documentElement.style.visibility = 'hidden';
-    const APP_VER = "1.00a";
+    const APP_VER = "1.00b";
 </script>
-<script src="config.js?ver=1.00a"></script>
-<script src="../loader_engine.js?ver=1.00a"></script>
+
+<script src="../loader_engine.js?ver=1.00b"></script>
 
     <style>
         /* --- 基礎設定 --- */
@@ -32,7 +32,7 @@
             color: var(--text-main);
         }
 
-        main { flex: 1; padding: 2rem; max-width: 1200px; margin: 0 auto; w-full; }
+        main { flex: 1; padding: 2rem; max-width: 1200px; margin: 0 auto; width: 100%; }
 
         /* --- 導覽列 --- */
         nav {
@@ -178,10 +178,7 @@
 
     <footer>
         <div class="author-info">
-            <a href="https://w1798.github.io/web/" target="_blank">&copy; 2026<script>
-                const y = new Date().getFullYear();
-                if (y > 2026) document.write("-" + y);
-            </script> Charles Nextime</a> · <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">GPLv3</a>
+            <a href="https://w1798.github.io/web/" target="_blank">&copy; 2026<span id="currentYearDisplay"></span> Charles Nextime</a> · <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">GPLv3</a>
             <span id="busuanzi_container_page_pv" style="margin-left:10px">
                 本頁使用量 <span id="busuanzi_value_page_pv"></span> 次
             </span>
@@ -204,6 +201,13 @@
                 } catch(err) { alert("JSON 格式錯誤！"); }
             };
             reader.readAsText(file);
+        });
+
+        // 初始化顯示年份 (替代原本的寫法)
+        document.addEventListener('DOMContentLoaded', () => {
+            const y = new Date().getFullYear();
+            const el = document.getElementById('currentYearDisplay');
+            if (el && y > 2026) el.innerText = "-" + y;
         });
 
         function renderMaster() {

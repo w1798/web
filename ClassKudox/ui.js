@@ -134,8 +134,8 @@ const renderGroups = () => {
         };
         fragment.appendChild(card);
     });
-    const create = document.createElement('div'); create.className = 'student-card create-group-card'; create.onclick = () => openManageGroupModal();
-    create.innerHTML = `<div class="student-avatar" style="background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:2rem;color:#94a3b8">+</div><div class="student-name">新增群組</div>`;
+    const create = document.createElement('div'); create.className = 'student-card group-card create-group-card'; create.onclick = () => openManageGroupModal();
+    create.innerHTML = `<div class="create-group-icon">+</div><div class="student-name">新增群組</div>`;
     fragment.appendChild(create);
     
     grid.innerHTML = '';

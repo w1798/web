@@ -22,7 +22,7 @@
         }
 
         // 使用全域定義的 APP_VER
-        const ver = typeof APP_VER !== 'undefined' ? APP_VER : Date.now();
+        const ver = typeof APP_VER !== 'undefined' ? APP_VER : "1.00a";
         el[attr] = `${url}?ver=${ver}`;
         
         el.onload = () => {

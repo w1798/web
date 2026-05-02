@@ -11,59 +11,20 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
     <script>
-    // === 版本管理：從 version.json 讀取唯一版本號 ===
-    var APP_VER = '1.00a'; // 預設值，若讀取失敗則使用此值
+    var APP_VER = '1.05a';
     try {
         var xhr = new XMLHttpRequest();
-        xhr.open('GET', 'version.json?t=' + Date.now(), false); // 同步讀取以確保版本正確
+        xhr.open('GET', 'version.json?t=' + Date.now(), false);
         xhr.send();
         if (xhr.status === 200) APP_VER = JSON.parse(xhr.responseText).ver;
-    } catch(e) { console.warn('[Version] 無法讀取 version.json, 使用預設值'); }
-    console.log('[Version] 目前程式版本: v' + APP_VER);
-
-    (function() {
-        var stored = localStorage.getItem('APP_VER');
-        if (stored && stored !== APP_VER) {
-            console.log('[Version] 偵測到版本變更 (' + stored + ' → ' + APP_VER + ')，強制重載...');
-            localStorage.setItem('APP_VER', APP_VER);
-            location.reload(true);
-            return;
-        }
-        localStorage.setItem('APP_VER', APP_VER);
-        
-        // 1. 先將頁面隱藏，防止 FOUC (樣式閃爍)
-        document.documentElement.style.visibility = 'hidden';
-
-        // 2. 動態建立 CSS 連結
-        var link = document.createElement('link');
-        link.rel = 'stylesheet'; 
-        link.href = 'style.css?v=' + APP_VER;
-
-        // 3. 顯示畫面的函數 (包含安全保險)
-        var reveal = function() {
-            document.documentElement.style.visibility = 'visible';
-        };
-
-        link.onload = reveal;
-        link.onerror = reveal; 
-        setTimeout(reveal, 3000); // 如果 3 秒沒載完也強迫顯示
-
-        document.head.appendChild(link);
-    })();
-
-    // === 背景輪詢：偵測版本更新 ===
-    setInterval(function() {
-        fetch('version.json?t=' + Date.now()).then(function(r) { return r.json(); }).then(function(d) {
-            if (d.ver && d.ver !== APP_VER) {
-                console.log('[Version] 🔄 偵測到新版本! (' + APP_VER + ' → ' + d.ver + ')，準備重載...');
-                localStorage.setItem('APP_VER', d.ver);
-                alert('系統已更新至 v' + d.ver + '，將自動重新載入頁面');
-                location.reload(true);
-            }
-        }).catch(function() { console.warn('[Version] 背景檢查失敗 (可能離線)'); });
-    }, 10 * 60 * 1000);
+    } catch(e) {}
+    document.documentElement.style.visibility = 'hidden';
     </script>
+    
+    <script src="../loader_engine.js?v=1.00b"></script>
+
 </head>
 <body data-font-size="medium">
 
@@ -513,71 +474,49 @@
                             </div>
                             <div class="input-group">
                                 <label for="avatarSizeSelect">頭像縮放</label>
-                                <select id="avatarSizeSelect" class="filter-select">
-                                    <script>for(let i=-60; i<=30; i+=10) document.write(`<option value="${i}">${i > 0 ? '+' : ''}${i}%</option>`);</script>
-                                </select>
+                                <select id="avatarSizeSelect" class="filter-select"></select>
                             </div>
                             <div class="input-group">
                                 <label for="gridColsSelect">學生卡每列</label>
-                                <select id="gridColsSelect" class="filter-select">
-                                    <script>for(let i=2; i<=15; i++) document.write(`<option value="${i}">${i} 人</option>`);</script>
-                                </select>
+                                <select id="gridColsSelect" class="filter-select"></select>
                             </div>
                             <div class="input-group">
                                 <label for="cardHeightSelect">學生卡高度</label>
-                                <select id="cardHeightSelect" class="filter-select">
-                                    <script>for(let i=-40; i<=100; i+=10) document.write(`<option value="${i}">${i > 0 ? '+' : ''}${i}px</option>`);</script>
-                                </select>
+                                <select id="cardHeightSelect" class="filter-select"></select>
                             </div>
                             <div class="input-group">
                                 <label for="groupColsSelect">群組卡每列</label>
-                                <select id="groupColsSelect" class="filter-select">
-                                    <script>for(let i=1; i<=10; i++) document.write(`<option value="${i}">${i} 個</option>`);</script>
-                                </select>
+                                <select id="groupColsSelect" class="filter-select"></select>
                             </div>
                             <div class="input-group">
                                 <label for="groupHeightSelect">群組卡高度</label>
-                                <select id="groupHeightSelect" class="filter-select">
-                                    <script>for(let i=-40; i<=100; i+=10) document.write(`<option value="${i}">${i > 0 ? '+' : ''}${i}px</option>`);</script>
-                                </select>
+                                <select id="groupHeightSelect" class="filter-select"></select>
                             </div>
                             <div class="input-group">
                                 <label for="itemColsSelect">行為卡每列</label>
-                                <select id="itemColsSelect" class="filter-select">
-                                    <script>for(let i=1; i<=10; i++) document.write(`<option value="${i}">${i} 個</option>`);</script>
-                                </select>
+                                <select id="itemColsSelect" class="filter-select"></select>
                             </div>
 
                             <div class="input-group">
                                 <label for="itemScaleSelect">行為卡高度</label>
-                                <select id="itemScaleSelect" class="filter-select">
-                                    <script>for(let i=-40; i<=60; i+=10) document.write(`<option value="${i}">${i > 0 ? '+' : ''}${i}px</option>`);</script>
-                                </select>
+                                <select id="itemScaleSelect" class="filter-select"></select>
                             </div>
 
                             <div class="input-group">
                                 <label for="cardGapVSelect">卡片上下距</label>
-                                <select id="cardGapVSelect" class="filter-select">
-                                    <script>for(let i=0; i<=60; i+=5) document.write(`<option value="${i}">${i}px</option>`);</script>
-                                </select>
+                                <select id="cardGapVSelect" class="filter-select"></select>
                             </div>
                             <div class="input-group">
                                 <label for="cardGapHSelect">卡片左右距</label>
-                                <select id="cardGapHSelect" class="filter-select">
-                                    <script>for(let i=0; i<=60; i+=5) document.write(`<option value="${i}">${i}px</option>`);</script>
-                                </select>
+                                <select id="cardGapHSelect" class="filter-select"></select>
                             </div>
                             <div class="input-group">
                                 <label for="itemGapVSelect">項目上下距</label>
-                                <select id="itemGapVSelect" class="filter-select">
-                                    <script>for(let i=0; i<=60; i+=5) document.write(`<option value="${i}">${i}px</option>`);</script>
-                                </select>
+                                <select id="itemGapVSelect" class="filter-select"></select>
                             </div>
                             <div class="input-group">
                                 <label for="itemGapHSelect">項目左右距</label>
-                                <select id="itemGapHSelect" class="filter-select">
-                                    <script>for(let i=0; i<=60; i+=5) document.write(`<option value="${i}">${i}px</option>`);</script>
-                                </select>
+                                <select id="itemGapHSelect" class="filter-select"></select>
                             </div>
 
                         </div>
@@ -913,30 +852,6 @@
    
     <footer></footer>
 
-    <!-- Core Modules (版本號由 APP_VER 自動帶入) -->
-    <script>
-    // 定義外部套件資源，供 ../plugins.js 使用
-    var resources = {
-        libs: [
-            {
-                url: 'https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js',
-                condition: typeof DecompressionStream === 'undefined'
-            }
-        ]
-    };
-
-    (function() {
-        var mods = ['utils.js','../counter.js','../plugins.js','state.js','sync.js','ui.js','actions.js','script.js'];
-        console.log('[Loader] 開始載入核心模組 (v' + APP_VER + ')...');
-        mods.forEach(function(m) {
-            var s = document.createElement('script');
-            s.src = m + '?v=' + APP_VER;
-            s.async = false;
-            s.onload = function() { console.log('[Loader] 模組載入成功: ' + m); };
-            s.onerror = function() { console.error('[Loader] 模組載入失敗: ' + m); };
-            document.head.appendChild(s);
-        });
-    })();
-    </script>
+    <!-- 資源清單由 loader_engine.js 從 config.js 讀取並自動載入 -->
 </body>
 </html>
