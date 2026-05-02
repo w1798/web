@@ -26,12 +26,12 @@
         el[attr] = `${url}?ver=${ver}`;
         
         el.onload = () => {
-            console.log(`%c[已載入] ${type.toUpperCase()}: ${url}`, "color: #00b894");
+            console.log(`%c[Loader] 已載入 ${type.toUpperCase()}: ${url}`, "color: #00b894");
             if (isCSS && onCssLoaded) onCssLoaded();
         };
 
         el.onerror = () => {
-            console.error(`[載入失敗] ${url}`);
+            console.error(`[Loader] 載入失敗 ${url}`);
             if (isCSS && onCssLoaded) onCssLoaded();
         };
 
@@ -48,7 +48,7 @@
             cssLoadedCount++;
             if (cssLoadedCount >= cssList.length) {
                 document.documentElement.style.visibility = 'visible';
-                console.log("%c[Display] 樣式套用完成，解除頁面鎖定", "color: #9b59b6; font-weight: bold;");
+                console.log("%c[Loader] 樣式套用完成，解除頁面鎖定", "color: #9b59b6; font-weight: bold;");
             }
         };
 
@@ -67,7 +67,7 @@
                     injectResource(config.type, url, config.type === 'css' ? checkCssProgress : null);
                 });
             } else {
-                console.log(`%c[Notice] 無外部 ${config.label} 資源需要載入`, "color: #e67e22");
+                console.log(`%c[Loader] 無外部 ${config.label} 資源需要載入`, "color: #e67e22");
             }
         });
     }

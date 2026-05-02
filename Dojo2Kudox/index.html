@@ -8,24 +8,10 @@
 
 <script>
     document.documentElement.style.visibility = 'hidden';
-
-    const APP_VER = "1.00f";
-
-    var resources = {
-        styles: [
-            "style.css"
-        ], 
-        
-        scripts: [
-            "../counter.js",
-             "script.js"
-        ]
-    };
-
-    const loader = document.createElement('script');
-    loader.src = `../loadapp.js?ver=${APP_VER}`;
-    document.head.appendChild(loader);
+    const APP_VER = "1.00a";
 </script>
+<script src="config.js?ver=1.00a"></script>
+<script src="../loader_engine.js?ver=1.00a"></script>
 
 </head>
 <body>

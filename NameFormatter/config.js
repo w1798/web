@@ -1,0 +1,10 @@
+var resources = {
+    styles: [
+//            "style.css"
+    ], 
+    
+    scripts: [
+        "../counter.js",
+        "../plugins.js"
+    ]
+};

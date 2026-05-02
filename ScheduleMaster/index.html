@@ -7,30 +7,10 @@
 
 <script>
     document.documentElement.style.visibility = 'hidden';
-
-    const APP_VER = "1.00f";
-
-    var resources = {
-        libs: [
-            {
-                url: 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js'
-            }
-        ],
-        styles: [
-            "style.css"
-        ], 
-        
-        scripts: [
-            "../counter.js",
-            "../plugins.js",
-            "script.js"
-        ]
-    };
-
-    const loader = document.createElement('script');
-    loader.src = `../loadapp.js?ver=${APP_VER}`;
-    document.head.appendChild(loader);
+    const APP_VER = "1.00a";
 </script>
+<script src="config.js?ver=1.00a"></script>
+<script src="../loader_engine.js?ver=1.00a"></script>
 
 </head>
 <body>

@@ -1,5 +1,5 @@
 /**
- * Charles Nextime - 通用套件載入引擎 (loadlibs.js)
+ * Charles Nextime - 通用套件載入引擎 (plugins.js)
  */
 (function() {
     function initLibraries() {
@@ -7,11 +7,11 @@
         const libraries = (typeof resources !== 'undefined' && resources.libs) ? resources.libs : [];
 
         if (libraries.length === 0) {
-            console.log("%c[LibLoader] 無外部套件需要載入", "color: #9E9E9E;");
+            console.log("%c[plugins] 無外部套件需要載入", "color: #9E9E9E;");
             return;
         }
 
-        console.log(`%c[LibLoader] 開始檢查外部套件...`, "color: #3498db;");
+        console.log(`%c[plugins] 開始檢查外部套件...`, "color: #3498db;");
 
         libraries.forEach(lib => {
             // 自動提取檔名
@@ -21,7 +21,7 @@
             const shouldLoad = (lib.condition !== undefined) ? lib.condition : true;
 
             if (!shouldLoad) {
-                console.log(`%c[跳過] 環境支援原生功能: ${fileName}`, 'color: #9E9E9E;');
+                console.log(`%c[plugins] [跳過] 環境支援原生功能: ${fileName}`, 'color: #9E9E9E;');
                 return;
             }
 
@@ -29,20 +29,26 @@
             script.src = lib.url;
             script.async = false;
 
-            script.onload = () => console.log(`%c[成功] 外部庫已載入: ${fileName}`, 'color: #4CAF50; font-weight: bold;');
+            script.onload = () => console.log(`%c[plugins] [成功] 外部庫已載入: ${fileName}`, 'color: #4CAF50; font-weight: bold;');
 
             // 在 loadlibs.js 的迴圈中
             script.onerror = function() {
-                // 如果有寫 fallback 就用 fallback，沒寫才用預設檔名
-                const fallbackPath = lib.fallback || `../libs/${fileName}`; 
+                // 1. 判斷是否為根目錄
+                const isRoot = (typeof APP_ROOT !== 'undefined' && APP_ROOT === 1);
                 
-                console.warn(`[失敗] CDN 失敗，嘗試備援: ${fallbackPath}`);
+                // 2. 根據 APP_ROOT 決定預設的備援路徑前綴
+                const defaultPrefix = isRoot ? "libs/" : "../libs/";
+                
+                // 3. 如果 lib.fallback 有值就用它的，否則組裝預設路徑
+                const fallbackPath = lib.fallback || `${defaultPrefix}${fileName}`;
+                
+                console.warn(`[plugins] [失敗] CDN 失敗，嘗試備援: ${fallbackPath}`);
                 
                 const fallbackScript = document.createElement('script');
                 fallbackScript.src = fallbackPath;
                 fallbackScript.async = false;
-                fallbackScript.onload = () => console.log(`%c[備援成功] 已載入: ${fileName}`, 'color: #FF9800; font-weight: bold;');
-                fallbackScript.onerror = () => console.error(`[重大錯誤] 備援失敗: ${fallbackPath}`);
+                fallbackScript.onload = () => console.log(`%c[plugins] [備援成功] 已載入: ${fileName}`, 'color: #FF9800; font-weight: bold;');
+                fallbackScript.onerror = () => console.error(`[[plugins] 重大錯誤] 備援失敗: ${fallbackPath}`);
 
                 document.head.appendChild(fallbackScript);
             };
