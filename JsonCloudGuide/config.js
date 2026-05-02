@@ -3,8 +3,7 @@ var resources = {
 //            "style.css"
     ], 
     
-    scripts: [
-        "../counter.js",     
-        "../plugins.js"
+    scripts: [   
+//        "script.js"
     ]
 };

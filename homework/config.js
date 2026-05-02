@@ -4,8 +4,6 @@ var resources = {
     ], 
     
     scripts: [
-        "../counter.js",     
-        "../plugins.js",
         "script.js"
     ]
 };

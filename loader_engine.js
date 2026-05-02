@@ -1,8 +1,7 @@
 /**
- * 資源載入引擎 - Engine.js
+ * 資源載入引擎 - Engine.js (優化版)
  */
 
-// 強制顯示函式
 function reveal() {
     if (document.documentElement.style.visibility === 'hidden') {
         document.documentElement.style.visibility = 'visible';
@@ -17,47 +16,59 @@ function reveal() {
     }
 }
 
-// 封裝載入邏輯
-function startLoading() {
+// 輔助函式：建立 Script 標籤並返回 Promise
+function loadScript(src) {
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = () => resolve(src);
+        script.onerror = () => reject(src);
+        document.head.appendChild(script);
+    });
+}
+
+async function startLoading() {
     const version = typeof APP_VER !== 'undefined' ? APP_VER : '1.00a';
     const isRoot = (typeof APP_ROOT !== 'undefined' && APP_ROOT === 1);
     const pathPrefix = isRoot ? "" : "../";
+    
+    // 設定 5 秒全域超時保險
+    const timeoutId = setTimeout(reveal, 5000);
 
-    // --- 第一步：先載入 config.js ---
-    const configScript = document.createElement('script');
-    configScript.src = `config.js?ver=${version}`;
-    console.log("[Engine] 開始載入 config.js 配置檔...");
+    try {
+        // --- 第一步：載入核心配置 ---
+        console.log("[Engine] 開始載入 config.js...");
+        await loadScript(`config.js?ver=${version}`);
 
-    configScript.onload = () => {
-        console.log("[Engine] config.js 載入成功，準備啟動 loadapp.js");
-
-        // --- 第二步：config 載入後，才建立 loadapp.js 的 script ---
-        const loader = document.createElement('script');
-        loader.src = `${pathPrefix}loadapp.js?ver=${version}`;
+        // --- 第二步：並行載入通用插件 ---
+        const commonAssets = [
+            `${pathPrefix}counter.js?ver=${version}`,
+            `${pathPrefix}plugins.js?ver=${version}`
+        ];
+        console.log(`[Engine] 載入通用資源: counter.js, plugins.js`);
         
-        // 設定 5 秒超時保險
-        const timeoutId = setTimeout(reveal, 5000); 
+        const results = await Promise.allSettled(commonAssets.map(src => loadScript(src)));
+        
+        results.forEach((result, index) => {
+            if (result.status === 'rejected') {
+                console.error(`[Engine] 資源載入失敗: ${commonAssets[index]}`);
+            } else {
+                console.log(`[Engine] 資源載入成功: ${result.value}`);
+            }
+        });
 
-        loader.onload = () => {
-            clearTimeout(timeoutId); 
-            console.log("[Engine] loadapp.js 載入成功");
-        };
+        // --- 第三步：載入主程式 loadapp.js ---
+        console.log("[Engine] 準備啟動 loadapp.js...");
+        await loadScript(`${pathPrefix}loadapp.js?ver=${version}`);
 
-        loader.onerror = () => {
-            clearTimeout(timeoutId);
-            reveal();
-            console.error("[Engine] loadapp.js 載入失敗");
-        };
+        // --- 全部成功：清除超時計時器 ---
+        clearTimeout(timeoutId);
+        console.log("[Engine] 所有核心資源載入完成，保險定時器已解除。");
 
-        document.head.appendChild(loader);
-    };
-
-    configScript.onerror = () => {
-        console.error("[Engine] config.js 載入失敗，無法繼續載入應用程式。");
-        reveal(); // 配置檔失敗也要顯示頁面，避免死當
-    };
-
-    document.head.appendChild(configScript);
+    } catch (error) {
+        console.error("[Engine] 載入過程中發生關鍵錯誤:", error);
+        // 如果 catch 抓到錯誤（通常是 loadScript 失敗），就不清除 timeout，讓 reveal 觸發
+    }
 }
 
 startLoading();

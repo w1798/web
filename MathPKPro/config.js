@@ -8,8 +8,6 @@ var resources = {
         }
     ],        
     scripts: [
-        "../counter.js", 
-        "../plugins.js", 
         "service.js", 
         "generator.js", 
         "ui.js", 

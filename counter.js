@@ -1,6 +1,6 @@
 /**
  * Charles Nextime - 全局計數器組件 (V3 自動化版)
- * 支援功能：CSS 注入、自動 Footer 生成、路徑識別、30分鐘冷卻、Vercount 統計
+ * 支援功能：自動 Footer 生成、30分鐘冷卻、Vercount 統計
  */
 
 (function() {
