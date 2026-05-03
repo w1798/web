@@ -68,7 +68,7 @@ body.is-locked-mode .vs-divider {
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid var(--glass-border);
     border-radius: 16px;
-    padding: 2rem;
+    padding: 1.5rem; /* 縮減內距 (原本 2rem) */
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
 }
 
@@ -168,14 +168,43 @@ body.is-locked-mode .vs-divider {
     max-width: 600px;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1rem 2rem;
+    gap: 0.5rem 1.5rem; /* 縮減間距 (原本 1rem 2rem) */
     align-items: center;
+    position: relative; /* 為了讓關閉按鈕絕對定位 */
+}
+
+.settings-container .close-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--glass-border);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    color: white;
+    font-size: 1.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    z-index: 10;
+}
+
+.settings-container .close-btn:hover {
+    background: var(--danger);
+    transform: rotate(90deg);
+}
+
+.settings-container .close-btn:active {
+    transform: scale(0.9) rotate(90deg);
 }
 
 .settings-container h2 {
     grid-column: span 2;
     text-align: center;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.2rem; /* 縮減間距 (原本 0.5rem) */
 }
 
 .settings-container .setting-buttons {
@@ -226,8 +255,8 @@ body.is-locked-mode .vs-divider {
 }
 
 .setting-group label {
-    margin-bottom: 0.5rem;
-    font-size: 1.1rem;
+    margin-bottom: 0.3rem; /* 縮減間距 (原本 0.5rem) */
+    font-size: 1.05rem; /* 稍微縮小字體 (原本 1.1rem) */
 }
 
 .setting-group select {
@@ -235,8 +264,8 @@ body.is-locked-mode .vs-divider {
     color: white;
     border: 1px solid var(--glass-border);
     border-radius: 8px;
-    padding: 8px;
-    font-size: 1.1rem;
+    padding: 6px; /* 縮減內距 (原本 8px) */
+    font-size: 1.05rem; /* 稍微縮小字體 (原本 1.1rem) */
     cursor: pointer;
     outline: none;
     transition: all 0.2s;
@@ -627,9 +656,30 @@ body.is-locked-mode .teacher-tools {
     font-size: 1.1rem;
 }
 .setting-group-row input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
+    width: 18px; /* 稍微縮小 (原本 20px) */
+    height: 18px;
     cursor: pointer;
+}
+
+@media screen and (max-width: 600px) {
+    .settings-container {
+        padding: 1.5rem 1rem !important;
+        gap: 0.4rem 1rem !important;
+    }
+    .settings-container .close-btn {
+        top: 0.5rem;
+        right: 0.5rem;
+        width: 35px;
+        height: 35px;
+        font-size: 1.2rem;
+    }
+    .setting-group label, .setting-group-row label {
+        font-size: 1rem !important;
+    }
+    .setting-group select {
+        padding: 4px !important;
+        font-size: 1rem !important;
+    }
 }
 
 /* 對向模式：內容往兩側靠邊 (P1靠左, P2靠右) */

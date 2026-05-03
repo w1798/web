@@ -117,7 +117,6 @@ function handleAnswer(player, selectedOpt, btnElement) {
     let state = gameState[player];
     let opponent = player === 'p1' ? 'p2' : 'p1';
     if(state.finished || !state.currentQuestion) return;
-    state.isOvertime = false;
 
     if (selectedOpt === state.currentQuestion.answer) {
         if(state.timer) clearInterval(state.timer);

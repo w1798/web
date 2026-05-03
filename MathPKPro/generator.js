@@ -110,6 +110,8 @@ function generateSharedQuestion() {
 
     gameState.p1.currentWrongAttempts = 0;
     gameState.p2.currentWrongAttempts = 0;
+    gameState.p1.isOvertime = false;
+    gameState.p2.isOvertime = false;
     let qBase = generateQuestion();
     
     let options = [qBase.answer];
@@ -172,6 +174,7 @@ function generateNextQuestion(player) {
     }
 
     state.currentWrongAttempts = 0;
+    state.isOvertime = false;
     let qBase = generateQuestion();
     let options = [qBase.answer];
     let maxLimit = 10, minLimit = 0;

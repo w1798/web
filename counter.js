@@ -9,43 +9,31 @@
     style.textContent = `
         .auto-footer {
             text-align: center !important;
-            padding: 20px !important;
-            font-size: 0.9rem !important;
-            border-top: 1px solid rgba(128, 128, 128, 0.2) !important;
+            padding: 10px !important;
+            font: 0.8rem Arial, sans-serif !important;
+            border-top: 1px solid rgba(128,128,128,0.2) !important;
             margin-top: 40px !important;
-            color: #888 !important; /* 預設文字顏色 */
+            color: #888 !important;
             display: block !important;
             clear: both !important;
         }
 
-        /* 作者資訊與連結顏色 */
-        .auto-footer a { 
-            color: #00b894 !important; 
-            text-decoration: none !important; 
-            background: none !important; /* 防止有些 CSS 會加背景色 */
-            border: none !important;     /* 防止有些 CSS 會加底線邊框 */
+        .auto-footer a,
+        #busuanzi_value_page_pv {
+            color: #00b894 !important;
+            text-decoration: none;
         }
 
-        .auto-footer a:hover { 
-            opacity: 0.8 !important; 
-            text-decoration: underline !important; 
-            color: #00b894 !important; 
+        .auto-footer a:hover {
+            text-decoration: underline;
+            opacity: 0.8;
         }
 
-        /* 計數器容器 */
         #busuanzi_container_page_pv {
-            margin-left: 10px !important;
-            border-left: 1px solid rgba(128, 128, 128, 0.4) !important;
-            padding-left: 10px !important;
-            display: none; /* 這裡不能加 !important，因為 JS 會動態控制顯示 */
-        }
-
-        /* 訪客人數數字顏色 */
-        #busuanzi_value_page_pv { 
-            color: #00b894 !important; 
-            font-weight: bold !important; 
+            display: none;
         }
     `;
+    
     document.head.appendChild(style);
 
     const init = () => {
@@ -68,10 +56,10 @@
 
         // 注入內容 (無論原本 footer 裡有什麼都會被覆蓋成標準格式)
         footer.innerHTML = `
-            <a href="https://w1798.github.io/web/" target="_blank">&copy; ${yearStr} Charles Nextime</a> · 
+            <a href="..." target="_blank">&copy;${yearStr} Charles Nextime</a>,
             <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">GPLv3</a>
             <span id="busuanzi_container_page_pv">
-                訪客 <span id="busuanzi_value_page_pv">--</span> 人次
+                👁️<span id="busuanzi_value_page_pv">--</span>
             </span>
         `;
 
