@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    1. 基礎變數與 15 種風格定義
    ============================================================ */
 :root { 
@@ -355,16 +355,101 @@ body, html {
 }
 
 @media (max-width: 768px) {
-    .modal-content { width: 100% !important; height: 100% !important; margin: 0 !important; border-radius: 0; }
-    .header-bar { justify-content: center; text-align: center; }
-    .logo-large { margin-bottom: 10px; }
-    .nav-center { width: 100%; justify-content: center; margin-bottom: 10px; }
-    .nav-right { width: 100%; justify-content: center; }
-    .nav-right button[onclick*="resetApp"] { margin-left: 10px; margin-right: 10px; }
-    .settings-five-cols { flex-direction: column; overflow-y: auto; }
-    .final-input-container { flex-direction: column; align-items: stretch; }
-    #taskFinalInput { flex: none; width: 100%; }
-    .prompt-btn-group { flex: none; width: 100%; }
+    /* 1. Header Bar Mobile adjustment */
+    .header-bar { 
+        padding: 10px; 
+        flex-direction: column; 
+        height: auto; 
+        min-height: auto; 
+        gap: 10px;
+    }
+    .logo-large { font-size: 1.5rem; margin-right: 0; }
+    .nav-center { width: 100%; justify-content: center; }
+    .nav-label { font-size: 1.1rem; }
+    .nav-right { 
+        width: 100%; 
+        justify-content: center; 
+        gap: 4px;
+    }
+    .small-btn { 
+        font-size: 16px; 
+        padding: 6px 10px; 
+        min-width: 50px;
+    }
+    .nav-right button[onclick*="resetApp"] { margin: 0 5px; }
+
+    /* 2. Main Board Mobile settings */
+    .main-content { 
+        padding: 10px; 
+        gap: 15px;
+        grid-template-columns: 1fr !important; /* 手機版強制單欄 */
+    }
+    .day-card { 
+        min-height: 300px; 
+        height: auto; /* 手機版讓內容撐開高度 */
+        padding: 15px;
+    }
+
+    /* 3. Modal adjustments */
+    .modal-content { 
+        width: 100% !important; 
+        height: 100% !important; 
+        margin: 0 !important; 
+        border-radius: 0; 
+    }
+    .modal-header-zone { 
+        height: auto; 
+        min-height: 60px; 
+        padding: 10px; 
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    .modal-header-zone .zone-title { width: 100%; display: flex; justify-content: space-between; align-items: center; }
+    .modal-header-zone .btn-group-right { width: 100%; justify-content: flex-end; }
+
+    /* 4. Settings Mobile Layout */
+    .settings-five-cols { 
+        flex-direction: column; 
+        gap: 20px; 
+    }
+    .col-a, .col-b, .col-c, .col-d, .col-e, .col-f { 
+        width: 100%; 
+        flex: none; 
+    }
+    .s-row { margin-bottom: 8px; }
+    .s-row span { min-width: 80px; font-size: 14px; }
+    .s-row select { flex: 1; width: auto; }
+    .settings-five-cols textarea { min-height: 120px; }
+
+    /* 5. Edit Modal Mobile */
+    .edit-grid-area { 
+        grid-template-columns: 1fr !important; 
+        gap: 10px;
+    }
+    .edit-card { height: auto; min-height: 250px; }
+    .edit-header-zone { padding: 10px; }
+    .edit-header-zone .btn-group-right { flex-wrap: wrap; gap: 5px; }
+    .edit-header-zone .btn-group-right button { font-size: 14px; padding: 5px 10px; flex: 1; min-width: 80px; }
+
+    /* 6. Task Prompt Mobile */
+    .prompt-row { flex-direction: column; gap: 5px; }
+    .prompt-label { text-align: left; flex: none; width: 100%; padding-top: 0; }
+    .tag-row { max-height: 150px; }
+    .clickable-tag { padding: 0 10px; height: 35px; line-height: 35px; font-size: 14px; }
+    
+    .final-input-container { flex-direction: column; align-items: stretch; gap: 10px; }
+    #taskFinalInput { 
+        width: 100%; 
+        flex: none; 
+        height: 45px; 
+        font-size: 1.1rem; 
+    }
+    .prompt-btn-group { width: 100%; }
+    .prompt-btn-group button { height: 45px; }
+
+    /* 7. Smart Schedule Modal */
+    #smartScheduleModal .modal-body-zone { flex-direction: column; }
+    #smartScheduleModal .modal-body-zone > div { border: none !important; padding: 0 !important; width: 100%; }
 }
 
 /* 滾動條樣式 */
