@@ -125,14 +125,23 @@ async function fetchStats(dataList) {
             
             let statsUrl = "";
 
-            // 判斷邏輯：
+
             if (item.url.startsWith('http')) {
-                // 如果原本就是完整網址 (如 blogspot)，就抓它原本的
+                // 情況 A：外部完整網址
                 statsUrl = item.url;
             } else {
-                // 統一強制去抓 GitHub 版的統計資料
-                // 補上結尾斜線 /，因為 GitHub Pages 的目錄追蹤通常帶斜線
-                statsUrl = `https://w1798.github.io/web/${item.url}/`;
+                // 情況 B：GitHub 內部路徑，先補上完整前綴
+                statsUrl = `https://w1798.github.io/web/${item.url}`;
+            }
+
+            // 規則：如果最後一個字不是 /，且網址最後一段不包含「點 (.)」
+            // (有「點」通常代表是檔案，例如 backup.html 或 image.png)
+            const urlParts = statsUrl.split('/');
+            const lastPart = urlParts[urlParts.length - 1];
+
+            // 補上結尾斜線 /，因為 GitHub Pages 的目錄追蹤通常帶斜線
+            if (!statsUrl.endsWith('/') && !lastPart.includes('.')) {
+                statsUrl += '/';
             }
 
             // 抓取 Vercount 資料
