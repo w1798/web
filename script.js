@@ -120,7 +120,8 @@ async function fetchStats(dataList) {
         }
 
         try {
-            await new Promise(resolve => setTimeout(resolve, 250)); 
+            // 增加延遲時間至 600ms，避免 GitHub Origin 的頻率限制
+            await new Promise(resolve => setTimeout(resolve, 600)); 
             
             let statsUrl = "";
 
@@ -129,15 +130,20 @@ async function fetchStats(dataList) {
                 // 如果原本就是完整網址 (如 blogspot)，就抓它原本的
                 statsUrl = item.url;
             } else {
-                // 只要不是完整網址，不論現在是 192.168 還是 file:///
                 // 統一強制去抓 GitHub 版的統計資料
-                statsUrl = `https://w1798.github.io/web/${item.url}`;
+                // 補上結尾斜線 /，因為 GitHub Pages 的目錄追蹤通常帶斜線
+                statsUrl = `https://w1798.github.io/web/${item.url}/`;
             }
 
+            // 抓取 Vercount 資料
             const response = await fetch(`https://events.vercount.one/log?url=${statsUrl}`);
+            
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
             const data = await response.json();
-            const num = data.page_pv !== undefined ? data.page_pv : 0;
+            
+            // 由於 Vercount 可能因為頻率限制回傳空物件，這裡做個檢查
+            const num = (data && data.page_pv !== undefined) ? data.page_pv : 0;
             
             // 更新顯示
             el.innerText = num.toLocaleString();
@@ -149,7 +155,7 @@ async function fetchStats(dataList) {
             }));
         } catch (error) {
             console.error('抓取失敗:', item.id, error);
-            el.innerText = '-';
+            el.innerText = '0'; // 失敗時顯示 0 或保持 '-' 視需求而定，這裡改為顯示 0 較不突兀
         }
     }
 }

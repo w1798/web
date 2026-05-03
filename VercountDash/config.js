@@ -9,6 +9,6 @@ var resources = {
     ], 
     
     scripts: [
-        "script.js"
+//        "script.js"
     ]
 };
