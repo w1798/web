@@ -17,7 +17,7 @@
             // 自動提取檔名
             const fileName = new URL(lib.url).pathname.split('/').pop();
             
-            // 判斷是否需要載入
+            // 判斷是否需要載入？(undefined 為沒定義，要載入。有定義時，依定義條件傳回是否載入)
             const shouldLoad = (lib.condition !== undefined) ? lib.condition : true;
 
             if (!shouldLoad) {
