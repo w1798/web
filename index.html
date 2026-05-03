@@ -9,24 +9,18 @@
     
 <script>
     document.documentElement.style.visibility = 'hidden';
-    const APP_VER = "1.00h";
+    const APP_VER = "1.00j";
     var APP_ROOT = 1;
 </script>
 
-<script src="loader_engine.js?ver=1.00h"></script>
+<script src="loader_engine.js?ver=1.00j"></script>
 
 </head>
 <body>
 
     <aside class="sidebar">
-        <div class="nav-group">
-            <div id="nav-all" class="nav-item active" onmouseenter="filterLinks('all', this)">全部彙整</div>
-            <div id="nav-fav" class="nav-item" onmouseenter="filterLinks('fav', this)">我的最愛</div>
-            <div id="nav-daily" class="nav-item" onmouseenter="filterLinks('daily', this)">教學日常</div>
-            <div id="nav-milestone" class="nav-item" onmouseenter="filterLinks('milestone', this)">階段任務</div>
-            <div id="nav-doc" class="nav-item" onmouseenter="filterLinks('doc', this)">文件相關</div>
-            <div id="nav-game" class="nav-item" onmouseenter="filterLinks('game', this)">教學遊戲</div>
-            <div id="nav-tool" class="nav-item" onmouseenter="filterLinks('tool', this)">其他軟體</div>
+        <div id="nav-group" class="nav-group">
+            <!-- 由 script.js 動態生成分類項目 -->
         </div>
     </aside>
 
