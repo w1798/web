@@ -518,6 +518,15 @@ color: var(--text); }
         grid-template-columns: repeat(2, 1fr) !important;
         gap: 8px;
     }
+
+    /* 手機版下拉選單修正：對齊按鈕左側（向右位移） */
+    .dropdown-content {
+        left: 0 !important;
+        right: auto !important;
+        transform: none !important;
+        min-width: 200px;
+        max-width: 90vw;
+    }
 }
 
 /* 讓導覽列容器內的內容全部向右靠齊 */
