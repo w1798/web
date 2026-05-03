@@ -19,7 +19,7 @@ const links = [
     { id: "jsoneditor", category: "doc", title: "JSON編輯器", desc: "　能自動解析各種簡單的 JSON 結構檔並視覺化編修，可以資料模組化為直觀的卡片，支援動態拖拽排序與即時編輯，任何配置檔都能輕鬆修改。", url: "jsonEditor" },            
     { id: "jsoncloudguide", category: "doc", title: "JSON雲端備份申請", desc: "　跨平台同步，數據如影隨形申請說明，透過 Upstash 與 JSONBin.io 雲端整合方案，您可以將本地 .json 設定檔透過雲端備份至雲端，輕鬆實現多裝置間的偏好設定共用，打造無縫接軌的數位體驗。", url: "JsonCloudGuide" },
     
-    { id: "MathPKPro", category: "game", title: "數學算術 PK 大賽", desc: "　這是一款專為觸屏或平板設計的雙人數學PK網頁。支援直向或面對面視角，結合 RPG 戰鬥機制：答對可發動攻擊、連續答對（Combo）與速答能強化傷害，但每秒會自動扣血，增加競技緊張感。內建多元題型與打地鼠模式，讓數學練習變得像對戰遊戲一樣刺激！", url: "MathPKPro/" },
+    { id: "MathPKPro", category: "game", title: "數學算術 PK 大賽", desc: "　這是一款專為觸屏或平板設計的雙人數學PK網頁。支援直向或面對面視角，結合 RPG 戰鬥機制：答對可發動攻擊、連續答對（Combo）與速答能強化傷害，但每秒會自動扣血，增加競技緊張感。內建多元題型與打地鼠模式，讓數學練習變得像對戰遊戲一樣刺激！", url: "MathPKPro" },
     
     { id: "Dojo2Kudox", category: "tool", title: "酷多搬家助手", desc: "　專為老師設計的無痛資料轉移工具。只需簡單複製貼上，程式便會自動解析學生名單、點數與加扣分技能，並聰明配對合適的代表圖示。一鍵生成專屬壓縮備份檔，讓您的班級從原本的 ClassDojo 中輕鬆無縫接軌 ClassKudox - 班級榮譽星！", url: "Dojo2Kudox" },            
     { id: "Divvy", category: "tool", title: "股息回本解套記", desc: "　是一套個人化的股息追蹤工具，讓您輕鬆記錄各股票的購入明細與配息歷史。只需貼入公開的配息資料，系統便自動計算每次除息日的應得股息，並支援多股票管理、快速輸入、雲端備份與資料匯出，幫您精準掌握每一筆現金流，逐步邁向解套之路。", url: "Divvy" },            
@@ -120,7 +120,7 @@ async function fetchStats(dataList) {
         }
 
         try {
-            await new Promise(resolve => setTimeout(resolve, 50)); 
+            await new Promise(resolve => setTimeout(resolve, 250)); 
             
             let statsUrl = "";
 
