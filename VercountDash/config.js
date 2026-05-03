@@ -5,7 +5,7 @@ var resources = {
         }
     ],
     styles: [
-        "style.css"
+//        "style.css"
     ], 
     
     scripts: [

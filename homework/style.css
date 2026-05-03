@@ -27,7 +27,7 @@
    ============================================================ */
 * { box-sizing: border-box; }
 body, html { 
-    height: 100vh; margin: 0; display: flex; flex-direction: column; 
+    height: 100vh; height: 100dvh; margin: 0; display: flex; flex-direction: column; 
     overflow: hidden; font-family: "Microsoft JhengHei", sans-serif; 
 }
 
@@ -66,7 +66,28 @@ body, html {
 }
 .small-btn:hover { background: #eee; }
 
-.footer-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; border-top: 1px solid #eee; padding: 2px 0; text-align: center; z-index: 1000; }
+.footer-bar, footer.auto-footer { 
+    flex: 0 0 auto;
+    width: 100% !important; 
+    background: #fff !important; 
+    border-top: 2px solid var(--btn) !important; 
+    padding: 8px 0 !important; 
+    text-align: center; 
+    z-index: 5000 !important; 
+    margin-top: 0 !important;
+}
+
+@media (max-width: 768px) {
+    footer.auto-footer { 
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        padding: 5px !important; 
+        font-size: 0.75rem !important; 
+        min-height: 40px;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    }
+}
 
 /* ============================================================
    4. 主內容區 (卡片) - 移除所有項目符號與縮排
@@ -380,13 +401,15 @@ body, html {
 
     /* 2. Main Board Mobile settings */
     .main-content { 
-        padding: 10px; 
+        padding: 10px 10px 80px 10px !important; /* 增加底部填充以防被固定 Footer 遮擋 */
         gap: 15px;
         grid-template-columns: 1fr !important; /* 手機版強制單欄 */
+        flex: 1;
+        overflow-y: auto;
     }
     .day-card { 
-        min-height: 300px; 
-        height: auto; /* 手機版讓內容撐開高度 */
+        min-height: 250px; 
+        height: auto; 
         padding: 15px;
     }
 
@@ -399,37 +422,150 @@ body, html {
     }
     .modal-header-zone { 
         height: auto; 
-        min-height: 60px; 
-        padding: 10px; 
-        flex-wrap: wrap;
-        gap: 10px;
+        min-height: 55px; 
+        padding: 8px 12px; 
+        flex-wrap: nowrap !important;
+        gap: 8px;
+        z-index: 2005 !important;
+        background: #f8f9fa !important;
+        border-bottom: 2px solid #ddd !important;
     }
-    .modal-header-zone .zone-title { width: 100%; display: flex; justify-content: space-between; align-items: center; }
-    .modal-header-zone .btn-group-right { width: 100%; justify-content: flex-end; }
+    .modal-header-zone .zone-title { 
+        flex: 1;
+        display: flex; 
+        align-items: center; 
+        white-space: nowrap; 
+        font-size: 0 !important; 
+        gap: 5px;
+        overflow: hidden;
+    }
+    .modal-header-zone .zone-title::before {
+        content: "設定"; 
+        font-size: 1.1rem;
+        font-weight: bold;
+    }
+    .modal-header-zone .zone-title .confirm-btn.danger {
+        padding: 4px 8px;
+        font-size: 0.8rem;
+        min-width: unset;
+        margin: 0;
+        white-space: nowrap;
+    }
+    .modal-header-zone .btn-group-right { 
+        flex: 0 0 auto;
+        width: auto !important; 
+        justify-content: flex-end; 
+        gap: 6px; 
+        display: flex;
+    }
+    .modal-header-zone .btn-group-right button {
+        padding: 5px 10px;
+        font-size: 0.9rem;
+        min-width: unset;
+    }
 
     /* 4. Settings Mobile Layout */
     .settings-five-cols { 
         flex-direction: column; 
         gap: 20px; 
+        padding-bottom: 50px;
     }
     .col-a, .col-b, .col-c, .col-d, .col-e, .col-f { 
         width: 100%; 
         flex: none; 
     }
-    .s-row { margin-bottom: 8px; }
-    .s-row span { min-width: 80px; font-size: 14px; }
-    .s-row select { flex: 1; width: auto; }
+    .s-row { margin-bottom: 10px; }
+    .s-row span { min-width: 85px; font-size: 15px; }
+    .s-row select { flex: 1; width: auto; font-size: 15px; }
     .settings-five-cols textarea { min-height: 120px; }
 
     /* 5. Edit Modal Mobile */
     .edit-grid-area { 
         grid-template-columns: 1fr !important; 
-        gap: 10px;
+        gap: 12px;
+        padding-bottom: 100px !important;
     }
     .edit-card { height: auto; min-height: 250px; }
-    .edit-header-zone { padding: 10px; }
-    .edit-header-zone .btn-group-right { flex-wrap: wrap; gap: 5px; }
-    .edit-header-zone .btn-group-right button { font-size: 14px; padding: 5px 10px; flex: 1; min-width: 80px; }
+    
+    /* 修正編修管理頭部擠壓與遮擋問題 - V3 極致排版整合 */
+    #editModal .modal-header-zone {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        padding: 5px 8px !important;
+        height: auto !important;
+        z-index: 3000 !important;
+        position: sticky !important;
+        top: 0;
+        background: #ffffff !important;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.1) !important;
+        border-bottom: 2px solid var(--btn) !important;
+        gap: 6px !important;
+    }
+    /* 強制跳過中間層級，讓內容併入同一層 Flex 排版 */
+    #editModal .modal-header-zone > div,
+    #editModal .modal-header-zone > div > div:first-child,
+    #editModal .btn-group-right {
+        display: contents !important;
+    }
+
+    #editModal .edit-title-text { display: none !important; }
+    
+    #editModal .modal-header-zone::before {
+        content: "編修:";
+        font-size: 0.9rem;
+        font-weight: bold;
+        color: var(--btn);
+        white-space: nowrap;
+        order: 1;
+    }
+    #editModal .edit-center-controls {
+        margin: 0 !important;
+        font-size: 0.85rem;
+        display: flex !important;
+        align-items: center !important;
+        gap: 2px;
+        flex: 0 0 auto !important;
+        padding: 0 !important;
+        order: 2;
+    }
+    #editModal .edit-center-controls::before {
+        content: "起點:";
+        font-weight: bold;
+    }
+    #editModal .edit-center-controls input {
+        padding: 2px;
+        font-size: 0.8rem;
+        width: 85px !important;
+        height: 28px !important;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    #editModal button {
+        min-width: unset !important;
+        flex: 0 0 auto !important;
+        padding: 6px 8px !important;
+        font-size: 0.75rem !important;
+        margin: 0 !important;
+        height: 30px !important;
+        background: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        white-space: nowrap;
+        order: 3;
+    }
+    /* 特別按鈕順序與顏色 */
+    #editModal button[onclick*="openSmartModal"] { background: #e3f2fd !important; color: #1976d2 !important; border-color: #b3e5fc !important; }
+    #editModal .confirm-btn {
+        background: var(--btn) !important;
+        color: #fff !important;
+        border-color: var(--btn) !important;
+        font-weight: bold;
+        order: 10;
+    }
+    /* 取消按鈕僅次於確定 */
+    #editModal button[onclick*="closeModal"] { order: 9; }
 
     /* 6. Task Prompt Mobile */
     .prompt-row { flex-direction: column; gap: 5px; }
