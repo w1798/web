@@ -496,9 +496,17 @@ const showClassSummary = () => {
     const content = document.getElementById('classSummaryContent'); if(!content) return;
     content.innerHTML = '';
     const range = getReportsTimeRange();
+    
+    // Update title to show if filtered
+    const titleEl = document.getElementById('classSummaryTitle');
+    if (titleEl) {
+        titleEl.textContent = range ? '時間内點數總覽' : '全班點數總覽 (所有紀錄)';
+    }
+
     let data = students.map(s => {
         let pts = logs.filter(l => l.sID === s.id).reduce((sum, l) => {
-            if (range && (l.TS < range.start || l.TS > range.end)) return sum;
+            const ts = getTS(l.TS);
+            if (range && (ts < range.start || ts > range.end)) return sum;
             return sum + (l.iSum === 1 ? 0 : l.pt);
         }, 0);
         return { ...s, pts };
@@ -520,28 +528,48 @@ const openStudentSummaryDetail = (id) => {
     const range = getReportsTimeRange();
     const studentLogs = logs.filter(l => {
         if (l.sID !== id) return false;
-        if (range && (l.TS < range.start || l.TS > range.end)) return false;
+        const ts = getTS(l.TS);
+        if (range && (ts < range.start || ts > range.end)) return false;
         return true;
-    }).sort((a,b) => b.TS.localeCompare(a.TS));
+    });
     const grid = document.getElementById('summaryDetailGrid');
     const titleEl = document.getElementById('summaryDetailStudentName');
     const totalEl = document.getElementById('summaryDetailTotal');
     if (!grid || !titleEl || !totalEl) return;
-    titleEl.textContent = id + ' 的紀錄明細';
+    titleEl.textContent = id + ' 的項目明細';
     const total = studentLogs.filter(l => l.iSum !== 1 && !l.trId).reduce((s, v) => s + v.pt, 0);
-    totalEl.textContent = total > 0 ? `目前積分：+${total}` : `目前積分：${total}`;
+    totalEl.textContent = total > 0 ? `時間內積分：+${total}` : `時間內積分：${total}`;
     totalEl.style.color = total > 0 ? 'var(--positive-color)' : (total < 0 ? 'var(--negative-color)' : 'var(--text-secondary)');
     grid.innerHTML = '';
+    
     if (!studentLogs.length) {
-        grid.innerHTML = `<p style="grid-column:1/-1; text-align:center; color:var(--text-secondary); padding:1rem;">此時間範圍內無紀錄</p>`;
+        grid.innerHTML = `<p style="grid-column:1/-1; text-align:center; color:var(--text-secondary); padding:1.5rem;">此時間範圍內無紀錄</p>`;
     } else {
+        // 分類加總
+        const aggregated = {};
         studentLogs.forEach(l => {
-            const isTreasure = !!l.trId;
-            const d = new Date(getTS(l.TS));
+            const key = l.lb + (l.iSum === 1 ? ' (不列排)' : '') + (!!l.trId ? '_tr' : '');
+            if (!aggregated[key]) {
+                aggregated[key] = { lb: l.lb, pt: 0, count: 0, isTreasure: !!l.trId, iSum: l.iSum };
+            }
+            aggregated[key].pt += (l.pt || 0);
+            aggregated[key].count += 1;
+        });
+
+        // 排序：先排正分、再排負分、最後排不計分/寶物
+        const sortedKeys = Object.keys(aggregated).sort((a, b) => {
+            const dataA = aggregated[a], dataB = aggregated[b];
+            if (dataA.iSum !== dataB.iSum) return dataA.iSum - dataB.iSum;
+            if (dataA.isTreasure !== dataB.isTreasure) return dataA.isTreasure - dataB.isTreasure;
+            return dataB.pt - dataA.pt;
+        });
+
+        sortedKeys.forEach(key => {
+            const data = aggregated[key];
             const card = document.createElement('div');
-            card.className = `summary-detail-card ${isTreasure ? '' : (l.pt > 0 ? 'positive' : 'negative')}`;
-            const ptsText = isTreasure ? '' : `<div class="detail-pts">${l.pt > 0 ? '+' : ''}${l.pt}</div>`;
-            card.innerHTML = `<div class="detail-label"><small style="display:block;color:var(--text-secondary);font-size:0.75em;">${d.toLocaleString()}</small>${l.lb}${l.iSum === 1 && !isTreasure ? ' <small>(不列排)</small>' : ''}</div>${ptsText}`;
+            card.className = `summary-detail-card ${data.isTreasure ? '' : (data.pt > 0 ? 'positive' : (data.pt < 0 ? 'negative' : ''))}`;
+            const ptsText = data.isTreasure ? '' : `<div class="detail-pts">${data.pt > 0 ? '+' : ''}${data.pt}</div>`;
+            card.innerHTML = `<div class="detail-label">${data.lb}${data.iSum === 1 ? ' <small>(不列排)</small>' : ''}<div style="font-size:0.85em; color:var(--text-secondary); margin-top:4px;">計 ${data.count} 次</div></div>${ptsText}`;
             grid.appendChild(card);
         });
     }

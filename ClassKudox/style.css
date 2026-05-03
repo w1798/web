@@ -452,6 +452,7 @@ body {
     width: 150px; height: 150px; border-radius: 50%;
     background: conic-gradient(#4f46e5 0% 100%);
     box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    flex-shrink: 0;
 }
 .pie-legend {
     display: flex; flex-direction: column; gap: 0.4rem; width: 100%;
@@ -691,7 +692,7 @@ input:focus, textarea:focus { outline: none; border-color: var(--primary-color);
     .reports-left-panel { border-right: none; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1rem; }
     .reports-right-inner { flex-direction: column !important; gap: 1rem !important; }
     .reports-modal-content .reports-list, .reports-modal-content .history-list { max-height: 40vh !important; }
-    .report-viz { width: 100% !important; flex-direction: column !important; align-items: center; padding: 1rem 0 !important; }
+    .reports-right-viz { width: 100% !important; flex-direction: column !important; align-items: center; padding: 1rem 0 !important; }
     .reports-right-viz { border-top: 1px dashed var(--border-color); padding-top: 1rem; }
 }
 
@@ -771,9 +772,24 @@ footer a:hover {
 /* --- Summary Detail Grid (inside classSummaryStudentDetailModal) --- */
 .summary-detail-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.6rem;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.8rem;
     margin-top: 0.5rem;
+    max-height: 65vh;
+    overflow-y: auto;
+    padding: 0.5rem;
+}
+@media (max-width: 1000px) {
+    .summary-detail-grid { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width: 800px) {
+    .summary-detail-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 600px) {
+    .summary-detail-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 400px) {
+    .summary-detail-grid { grid-template-columns: 1fr; }
 }
 .summary-detail-card {
     border-radius: 12px;
@@ -788,8 +804,14 @@ footer a:hover {
 }
 .summary-detail-card.positive { border-color: #bbf7d0; background: #f0fdf4; }
 .summary-detail-card.negative { border-color: #fecaca; background: #fef2f2; }
-.summary-detail-card .detail-label { font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); word-break: break-word; line-height: 1.2; }
-.summary-detail-card .detail-pts { font-size: 1.3rem; font-weight: 800; }
+
+/* Expanded modal content for student detail */
+.student-summary-detail-modal-content {
+    max-width: 1000px;
+    width: 95%;
+}
+.summary-detail-card .detail-label { font-size: 1.2rem; font-weight: 600; color: var(--text-secondary); word-break: break-word; line-height: 1.25; }
+.summary-detail-card .detail-pts { font-size: 1.6rem; font-weight: 800; }
 .summary-detail-card.positive .detail-pts { color: var(--positive-color); }
 .summary-detail-card.negative .detail-pts { color: var(--negative-color); }
 
