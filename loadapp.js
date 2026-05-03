@@ -1,6 +1,7 @@
 /**
  * Charles Nextime - 資源加載核心 (loadapp.js)
  */
+ 
 (function() {
     // 檢查全域變數 resources 是否存在
     if (typeof resources === 'undefined') {

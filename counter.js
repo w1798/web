@@ -1,5 +1,5 @@
 /**
- * Charles Nextime - 全局計數器組件 (V3 自動化版)
+ * Charles Nextime - 全局計數器組件
  * 支援功能：自動 Footer 生成、30分鐘冷卻、Vercount 統計
  */
 

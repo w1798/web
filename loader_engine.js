@@ -1,5 +1,5 @@
 /**
- * 資源載入引擎 - Engine.js (優化版)
+ * Charles Nextime - 資源載入引擎 (Engine.js)
  */
 
 function reveal() {

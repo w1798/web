@@ -1,7 +1,7 @@
 const links = [
     { id: "ClassKudox", category: "daily", title: "班級榮譽星", desc: "　是一套專為教師設計的現代化班級點數管理系統。老師可輕鬆記錄學生的優良行為與待改進事項，支援多班級管理、行為項目自訂、報表 CSV 匯出，讓教學管理更有效率，讓每位學生的努力都被看見。", url: "ClassKudox" },
     { id: "homework", category: "daily", title: "作業動態曆", desc: "　解放雙手的智慧作業排程助手，採「智慧動態推移」技術，讓相同作業自動遞延、精準避開假日。結合直覺的視覺化編輯與全面客製化風格，讓功課管理告別壓力，轉化為一場極簡高效的視覺享受。", url: "homework" },
-    { id: "markit", category: "daily", title: "教學清點小幫手", desc: "　快速清點作業與任務，簡化繁瑣流程透，過即時數據與視覺化介面。能精確掌握每位學生的學習動態，大幅減輕繁瑣的班級經營負擔，將寶貴的教學時間與心力，更專注地回歸到教育本質與學生關懷上。", url: "markit" },
+    { id: "markit", category: "daily", title: "清點小幫手", desc: "　快速清點作業與任務，簡化繁瑣流程透，過即時數據與視覺化介面。能精確掌握每位學生的學習動態，大幅減輕繁瑣的班級經營負擔，將寶貴的教學時間與心力，更專注地回歸到教育本質與學生關懷上。", url: "markit" },
     { id: "ClassSeatPlanner", category: "daily", title: "智慧班級排座家", desc: "　是一款專為導師設計的智慧化座位管理系統。它突破傳統手寫限制，提供自定義「禁用區域」與一鍵「隨機編排」。系統核心具備「十字」與「九宮格」衝突避讓演算法，能精準確保特定學生不相鄰。透過直觀的拖拽操作與即時位子標記功能，讓複雜的座位調整變得迅速且公平，是優化課堂秩序、提升行政效率的最佳數位幫手。", url: "ClassSeatPlanner" }, 
 
 
@@ -150,7 +150,6 @@ async function fetchStats(dataList) {
             
             let statsUrl = "";
 
-
             if (item.url.startsWith('http')) {
                 // 情況 A：外部完整網址
                 statsUrl = item.url;
@@ -193,7 +192,6 @@ async function fetchStats(dataList) {
         }
     }
 }
-
 
 function filterLinks(category, element) {
     if (currentCategory === category) return;

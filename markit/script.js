@@ -63,7 +63,9 @@ function getInitialState() {
             statusCount: 1,
             statusLabels: { ...DEFAULT_LABELS }, // 展開預設標籤
             binId: '',
-            apiKey: ''
+            apiKey: '',
+            expiryDays: 0,
+            pageSize: 10
         },
         assignments: []
     };
@@ -141,7 +143,9 @@ function syncSettingsToUI() {
         'quickTasksConfig': (el) => el.value = (s.quickTasks || "").split(',').join('\n'),
         'studentListConfig': (el) => el.value = (s.studentList || "").split(',').join('\n'),
         'binId': (el) => el.value = s.binId || '',
-        'apiKey': (el) => el.value = s.apiKey || ''
+        'apiKey': (el) => el.value = s.apiKey || '',
+        'expiryDaysSelect': (el) => el.value = s.expiryDays || 0,
+        'pageSizeSelect': (el) => el.value = s.pageSize || 10
     };
 
     for (const [id, setter] of Object.entries(setters)) {
@@ -152,12 +156,38 @@ function syncSettingsToUI() {
 
 function loadData() {
     const saved = localStorage.getItem('MarkIt');
-    // 直接使用 mergeWithDefault，它會自動處理「無資料」或「舊資料補齊」
     state = mergeWithDefault(saved ? JSON.parse(saved) : null);
+    
+    checkExpiry(); // 檢查過期任務
     
     syncSettingsToUI();
     applySettings();
     renderAssignments();
+}
+
+/**
+ * 檢查並刪除過期任務
+ */
+function checkExpiry() {
+    const days = parseInt(state.settings.expiryDays || 0);
+    if (days <= 0) return;
+
+    const now = Date.now();
+    const expiryMs = days * 24 * 60 * 60 * 1000;
+    const initialCount = state.assignments.length;
+    
+    state.assignments = state.assignments.filter(a => {
+        // a.id 是建立時的時間戳記
+        const isExpired = (now - a.id) > expiryMs;
+        if (isExpired) {
+            console.log(`[過期刪除] 任務名稱：${a.name}, 建立時間：${new Date(a.id).toLocaleString()}`);
+        }
+        return !isExpired;
+    });
+
+    if (state.assignments.length !== initialCount) {
+        saveDataQuietly();
+    }
 }
 
 function initQuickTags() {
@@ -278,6 +308,8 @@ function saveSettings() {
     
     if(document.getElementById('binId')) s.binId = getV('binId').trim();
     if(document.getElementById('apiKey')) s.apiKey = getV('apiKey').trim();
+    if(getV('expiryDaysSelect')) s.expiryDays = parseInt(getV('expiryDaysSelect'));
+    if(getV('pageSizeSelect')) s.pageSize = parseInt(getV('pageSizeSelect'));
 
     for(let i = 1; i <= 12; i++) {
         const input = document.getElementById(`statusLabel_${i}`);
@@ -294,16 +326,37 @@ function getSortedList() {
     return state.settings.sortOrder === 'desc' ? [...state.assignments].reverse() : [...state.assignments];
 }
 
+let currentPage = 1;
+
 function renderAssignments() {
     const container = document.getElementById('assignmentContainer');
+    const pagination = document.getElementById('paginationContainer');
     if(!container) return;
     container.innerHTML = '';
+    if (pagination) pagination.innerHTML = '';
+
     if (state.assignments.length === 0) {
         container.innerHTML = `<div class="empty-hint">請先「新增任務」開始使用！</div>`;
         return;
     }
+
+    const sortedList = getSortedList();
+    const pageSize = parseInt(state.settings.pageSize || 0); // 0 表示全部
+    
+    let displayList = sortedList;
+    if (pageSize > 0) {
+        const totalPages = Math.ceil(sortedList.length / pageSize);
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const start = (currentPage - 1) * pageSize;
+        displayList = sortedList.slice(start, start + pageSize);
+
+        renderPaginationControls(totalPages);
+    }
+
     const totalCount = parseList(state.settings.studentList).length;
-    getSortedList().forEach(item => {
+    displayList.forEach(item => {
         const undone = totalCount - item.doneList.length;
         const card = document.createElement('div');
         card.className = 'card';
@@ -311,6 +364,22 @@ function renderAssignments() {
         card.onclick = () => openDetail(item.id);
         container.appendChild(card);
     });
+}
+
+function renderPaginationControls(totalPages) {
+    const pagination = document.getElementById('paginationContainer');
+    if (!pagination) return;
+    
+    pagination.innerHTML = `
+        <button class="pagination-btn" onclick="changePage(-1)" ${currentPage === 1 ? 'disabled' : ''}>上一頁</button>
+        <span class="page-info">第 ${currentPage} / ${totalPages} 頁</span>
+        <button class="pagination-btn" onclick="changePage(1)" ${currentPage === totalPages ? 'disabled' : ''}>下一頁</button>
+    `;
+}
+
+function changePage(delta) {
+    currentPage += delta;
+    renderAssignments();
 }
 
 function parseList(input) {
