@@ -33,12 +33,31 @@ function renderLinks() {
     const container = document.getElementById('link-container');
     const favorites = JSON.parse(localStorage.getItem('my_favorites') || '[]');
     
+    // --- 1. 判斷目前的環境來決定 URL 前綴與後綴 ---
+    const currentHref = window.location.href;
+    let urlPrefix = "";
+    let urlSuffix = "";
+
+    if (currentHref.startsWith('http://192.168.') || currentHref.startsWith('http://127.0.')) {
+        // 情況 1：區域網路或本機伺服器
+        urlPrefix = "";
+        urlSuffix = "";
+    } else if (currentHref.startsWith('file:///')) {
+        // 情況 2：直接開啟本地檔案
+        urlPrefix = "";
+        urlSuffix = "/index.html";
+    } else {
+        // 情況 3：其他（通常是 GitHub Pages 正式環境）
+        urlPrefix = "https://w1798.github.io/web/";
+        urlSuffix = "";
+    }
+
     let filteredData = currentCategory === 'all' ? links : (
         currentCategory === 'fav' ? links.filter(i => favorites.includes(i.id)) :
         links.filter(i => i.category === currentCategory)
     );
 
-    // 排序：我的最愛排在最前面
+    // 排序與 Class 邏輯保持不變...
     filteredData.sort((a, b) => {
         const aFav = favorites.includes(a.id);
         const bFav = favorites.includes(b.id);
@@ -47,21 +66,24 @@ function renderLinks() {
         return 0;
     });
 
-    // 判斷是否需要啟用效果
     const isSimpleView = container.classList.contains('simple-view');
     const isLargeGroup = !isSimpleView && filteredData.length > 6;
 
     container.innerHTML = filteredData.map(item => {
         let cardClass = `card cat-${item.category}`;
-        // 所有在精簡模式下的卡片都啟用 tooltip
         if (isSimpleView) cardClass += ' has-tooltip';
-        // 只有在詳細模式項且項目多於 6 個時啟用 line-clamp
         if (isLargeGroup) cardClass += ' line-clamp';
         
         const isFav = favorites.includes(item.id);
 
+        // --- 2. 處理最終 URL ---
+        // 如果 url 本身已經是完整的 http 開頭（如 blogspot），則不進行轉換
+        const finalUrl = item.url.startsWith('http') 
+                         ? item.url 
+                         : `${urlPrefix}${item.url}${urlSuffix}`;
+
         return `
-            <a href="${item.url}" target="_blank" class="${cardClass}" onmouseenter="checkTooltipBoundary(this)">
+            <a href="${finalUrl}" target="_blank" class="${cardClass}" onmouseenter="checkTooltipBoundary(this)">
                 <h2>
                     <span class="heart-icon ${isFav ? 'is-fav' : ''}" onclick="toggleFavorite(event, '${item.id}')">${isFav ? '❤️' : '♡'}</span>
                     <span class="title-text">${item.title}</span>
