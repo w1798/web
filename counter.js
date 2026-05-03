@@ -56,7 +56,7 @@
 
         // 注入內容 (無論原本 footer 裡有什麼都會被覆蓋成標準格式)
         footer.innerHTML = `
-            <a href="..." target="_blank">&copy;${yearStr} Charles Nextime</a>,
+            <a href="https://w1798.github.io/web/" target="_blank">&copy;${yearStr} Charles Nextime</a>,
             <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">GPLv3</a>
             <span id="busuanzi_container_page_pv">
                 👁️<span id="busuanzi_value_page_pv">--</span>
