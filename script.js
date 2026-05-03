@@ -112,7 +112,7 @@ async function fetchStats(dataList) {
         const cachedData = localStorage.getItem(CACHE_KEY_PREFIX + item.id);
         if (cachedData) {
             const { value, timestamp } = JSON.parse(cachedData);
-            // 檢查是否在 5 分鐘內
+            // 檢查是否在 60 分鐘內
             if (now - timestamp < CACHE_TIME) {
                 el.innerText = value.toLocaleString();
                 continue; // 跳過這次 fetch，直接處理下一個
@@ -120,8 +120,8 @@ async function fetchStats(dataList) {
         }
 
         try {
-            // 增加延遲時間至 600ms，避免 GitHub Origin 的頻率限制
-            await new Promise(resolve => setTimeout(resolve, 600)); 
+            // 增加延遲時間至 500ms，避免 GitHub Origin 的頻率限制
+            await new Promise(resolve => setTimeout(resolve, 500)); 
             
             let statsUrl = "";
 
