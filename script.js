@@ -121,7 +121,21 @@ async function fetchStats(dataList) {
 
         try {
             await new Promise(resolve => setTimeout(resolve, 50)); 
-            const response = await fetch(`https://events.vercount.one/log?url=${item.url}`);
+            
+            let statsUrl = "";
+
+            // 判斷邏輯：
+            if (item.url.startsWith('http')) {
+                // 如果原本就是完整網址 (如 blogspot)，就抓它原本的
+                statsUrl = item.url;
+            } else {
+                // 只要不是完整網址，不論現在是 192.168 還是 file:///
+                // 統一強制去抓 GitHub 版的統計資料
+                statsUrl = `https://w1798.github.io/web/${item.url}`;
+            }
+
+            const response = await fetch(`https://events.vercount.one/log?url=${statsUrl}`);
+
             const data = await response.json();
             const num = data.page_pv !== undefined ? data.page_pv : 0;
             
