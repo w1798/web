@@ -46,11 +46,13 @@ const startApp = () => {
             if (currentReportPage > 1) {
                 currentReportPage--;
                 renderReports();
+                const alist = document.getElementById('reportActivityList'); if(alist) alist.scrollTop = 0;
             }
         });
         wire('reportNextPageBtn', () => {
             currentReportPage++;
             renderReports();
+            const alist = document.getElementById('reportActivityList'); if(alist) alist.scrollTop = 0;
         });
         wire('undoActionBtn', undoAction);
         wire('toggleMultiSelectBtn', toggleMultiSelectMode);

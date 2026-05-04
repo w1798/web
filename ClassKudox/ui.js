@@ -393,10 +393,15 @@ const renderReports = () => {
 
     const alist = document.getElementById('reportActivityList'); if(alist) {
         alist.innerHTML = '';
-        let f = filteredLogs.filter(log => { 
+        let rawF = filteredLogs.filter(log => { 
             if(currentProfileId && log.sID !== currentProfileId) return false; 
             return true; 
-        }).sort((a,b) => getTS(b.TS) - getTS(a.TS));
+        });
+        let f = rawF.map((log, index) => ({ log, index })).sort((a, b) => {
+            const tsDiff = getTS(b.log.TS) - getTS(a.log.TS);
+            if (tsDiff !== 0) return tsDiff;
+            return b.index - a.index; // Tiemstamp identical, newer index first
+        }).map(item => item.log);
 
         // 分頁處理
         const pageSize = 50;
