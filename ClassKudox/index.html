@@ -13,7 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <script>
-    var APP_VER = '1.05e';
+    var APP_VER = '1.05f';
     try {
         var xhr = new XMLHttpRequest();
         xhr.open('GET', 'version.json?t=' + Date.now(), false);
@@ -93,8 +93,8 @@
                 <div class="input-group">
                     <label for="newStudentName">座號+學生姓名 (支援多位學生，每行一個名字)</label>
                     <textarea id="newStudentName" rows="5" placeholder="例如：01王小明"></textarea>
-                    <span style="white-space: nowrap;">
-                            可到 <a href="https://w1798.github.io/web/TextLab" target="_blank" class="url-link" style="color:#c53030">多功能文字處理器</a> 在 原始資料1 中貼上學生姓名，<br>功能表中間下面的「編號」選2，按執行即可
+                    <span style="display: block; line-height: 1.5; color: var(--text-secondary); font-size: 0.85em; margin-top: 0.5rem;">
+                            可到 <a href="https://w1798.github.io/web/TextLab" target="_blank" class="url-link" style="color:#c53030; text-decoration: underline;">多功能文字處理器</a> 在 原始資料1 中貼上學生姓名，功能表中間下面的「編號」選2，按執行即可
                     </span>
                 </div>
             </div>
@@ -271,9 +271,13 @@
     <!-- REPORTS MODAL -->
     <div id="reportsModal" class="modal-overlay hidden">
         <div class="modal-content reports-modal-content" style="max-width: 1200px; width: 95%;">
-            <div class="modal-header">
-                <h2>📊 成長排名與動態 <span class="report-title-note">(此報表會排除不列入點數項目後的總點數)</span></h2>
+            <div class="modal-header" style="flex-wrap: wrap;">
+                <h2>成長排名<span class="report-title-note">(此報表會排除不列入點數項目後的總點數)</span></h2>
                 <button class="close-modal-btn reports-close">&times;</button>
+                <div class="reports-mobile-tabs hidden-desktop" style="width: 100%; margin-top: 0.5rem;">
+                    <button class="reports-mobile-tab active" data-target="reports-right-panel">報表內容</button>
+                    <button class="reports-mobile-tab" data-target="reports-left-panel">學生狀態</button>
+                </div>
             </div>
             <div class="reports-info-banner hidden">
                 此報表會排除不列入點數項目後的總點數。
@@ -283,23 +287,25 @@
 <div class="reports-body-layout">
                 <!-- Left Panel: Stats + Controls -->
                 <div class="reports-left-panel">
-                    <div class="sort-group" style="margin-bottom:0.6rem;">
-                        <label style="font-size:0.85em; color:var(--text-secondary); font-weight:600; display:block; margin-bottom:0.4rem;">報表內容</label>
-                        <div class="sort-tabs">
-                            <button class="report-view-btn active" data-report-view="points">📊 點數</button>
-                            <button class="report-view-btn" data-report-view="treasure">🎁 寶物</button>
+                    <div class="reports-controls-compact" style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <label style="font-size:0.85em; color:var(--text-secondary); font-weight:600; white-space: nowrap; margin-right: 0.5rem;">報表內容</label>
+                            <div class="sort-tabs" style="flex: 1; margin: 0;">
+                                <button class="report-view-btn active" data-report-view="points">點數</button>
+                                <button class="report-view-btn" data-report-view="treasure">寶物</button>
+                            </div>
                         </div>
-                    </div>
-                    <div class="sort-group" style="margin-bottom:1rem;">
-                        <label style="font-size:0.85em; color:var(--text-secondary); font-weight:600; display:block; margin-bottom:0.4rem;">報表排序方式</label>
-                        <div class="sort-tabs">
-                            <button class="sort-btn active" data-sort="score">點數/寶物</button>
-                            <button class="sort-btn" data-sort="name">姓名</button>
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <label style="font-size:0.85em; color:var(--text-secondary); font-weight:600; white-space: nowrap; margin-right: 0.5rem;">排序方式</label>
+                            <div class="sort-tabs" style="flex: 1; margin: 0;">
+                                <button class="sort-btn active" data-sort="score">點數</button>
+                                <button class="sort-btn" data-sort="name">姓名</button>
+                            </div>
                         </div>
                     </div>
                     <h3 class="report-panel-header">
-                        <span id="rankingTitle" class="clickable-title">排名總表</span>
-                        <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+                        <button id="rankingTitle" class="small-btn gold-btn" style="font-size: 0.85em; padding: 0.15rem 0.6rem; margin-right: auto; margin-left:-0.2rem; display: flex; align-items: center; gap: 0.3rem;">🏆 排名總表</button>
+                        <div class="report-panel-header-actions">
                             <button id="copyPointsBtn" class="small-btn primary-btn" style="font-size: 0.75em; padding: 0.15rem 0.4rem;">複製點數</button>
                             <button id="copyNamesBtn" class="small-btn primary-btn" style="font-size: 0.75em; padding: 0.15rem 0.4rem;">複製姓名</button>
                             <button id="resetReportFilterBtn" class="small-btn secondary-btn hidden" style="font-size: 0.75em; padding: 0.15rem 0.4rem;">全班</button>
@@ -323,7 +329,7 @@
                                 <option value="custom">自訂日期</option>
                             </select>
                         </div>
-                        <div id="customDateContainer" class="custom-date-container hidden" style="display: flex; align-items: center; gap: 0.3rem;">
+                        <div id="customDateContainer" class="custom-date-container hidden" style="display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap;">
                             <input type="date" id="startDateFilter">
                             <span>至</span>
                             <input type="date" id="endDateFilter">

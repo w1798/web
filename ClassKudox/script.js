@@ -31,6 +31,12 @@ const startApp = () => {
             const filter = document.getElementById('timeRangeFilter');
             if(filter) filter.value = 'today';
             renderReports(); 
+            // Reset mobile tabs
+            document.querySelectorAll('.reports-mobile-tab').forEach(t => t.classList.remove('active'));
+            const defaultTab = document.querySelector('.reports-mobile-tab[data-target="reports-right-panel"]');
+            if(defaultTab) defaultTab.classList.add('active');
+            const layout = document.querySelector('.reports-body-layout');
+            if(layout) { layout.classList.remove('mobile-show-left'); layout.classList.add('mobile-show-right'); }
             openModal(document.getElementById('reportsModal')); 
         });
         wire('resetReportFilterBtn', () => { 
@@ -39,6 +45,10 @@ const startApp = () => {
             document.getElementById('resetReportFilterBtn')?.classList.add('hidden'); 
             document.getElementById('reportActivityTitle').textContent = '全班最近紀錄'; 
             renderReports(); 
+            const rightTabBtn = document.querySelector('.reports-mobile-tab[data-target="reports-right-panel"]');
+            if(rightTabBtn) rightTabBtn.click();
+            const alist = document.getElementById('reportActivityList'); if(alist) alist.scrollTop = 0;
+            const rightViz = document.querySelector('.reports-right-viz'); if(rightViz) rightViz.scrollTop = 0;
         });
         
         // 報表分頁綁定
@@ -47,16 +57,38 @@ const startApp = () => {
                 currentReportPage--;
                 renderReports();
                 const alist = document.getElementById('reportActivityList'); if(alist) alist.scrollTop = 0;
+                const layout = document.querySelector('.reports-body-layout'); if(layout) layout.scrollTop = 0;
+                const modal = document.querySelector('.reports-modal-content'); if(modal) modal.scrollTop = 0;
             }
         });
         wire('reportNextPageBtn', () => {
             currentReportPage++;
             renderReports();
             const alist = document.getElementById('reportActivityList'); if(alist) alist.scrollTop = 0;
+            const layout = document.querySelector('.reports-body-layout'); if(layout) layout.scrollTop = 0;
+            const modal = document.querySelector('.reports-modal-content'); if(modal) modal.scrollTop = 0;
         });
         wire('undoActionBtn', undoAction);
         wire('toggleMultiSelectBtn', toggleMultiSelectMode);
         wire('addStudentBtn', () => openModal(document.getElementById('addStudentModal')));
+
+        document.querySelectorAll('.reports-mobile-tab').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('.reports-mobile-tab').forEach(t => t.classList.remove('active'));
+                btn.classList.add('active');
+                const target = btn.getAttribute('data-target');
+                const layout = document.querySelector('.reports-body-layout');
+                if(layout) {
+                    if (target === 'reports-left-panel') {
+                        layout.classList.add('mobile-show-left');
+                        layout.classList.remove('mobile-show-right');
+                    } else {
+                        layout.classList.add('mobile-show-right');
+                        layout.classList.remove('mobile-show-left');
+                    }
+                }
+            };
+        });
         
         document.querySelectorAll('.view-tab-btn').forEach(b => b.onclick = () => switchMainView(b.dataset.view));
         document.querySelectorAll('.close-modal-btn, .cancel-btn, .settings-close, .profile-close, .add-close, .edit-student-close, .classes-close, .group-close, .group-detail-close, .reports-close, .summary-close').forEach(b => b.onclick = () => closeModal(b.closest('.modal-overlay')));
@@ -255,6 +287,10 @@ const startApp = () => {
             currentReportPage = 1;
             document.querySelectorAll('.report-view-btn').forEach(x => x.classList.remove('active')); 
             b.classList.add('active'); 
+            const sortBtn = document.querySelector('.sort-btn[data-sort="score"]');
+            if (sortBtn) {
+                sortBtn.textContent = currentReportView === 'treasure' ? '寶物' : '點數';
+            }
             renderReports(); 
         });
         

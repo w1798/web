@@ -385,6 +385,10 @@ const renderReports = () => {
             document.getElementById('resetReportFilterBtn')?.classList.remove('hidden');
             document.getElementById('reportActivityTitle').textContent = s.id + ' 的紀錄'; 
             renderReports(); 
+            const rightTabBtn = document.querySelector('.reports-mobile-tab[data-target="reports-right-panel"]');
+            if(rightTabBtn) rightTabBtn.click();
+            const alist = document.getElementById('reportActivityList'); if(alist) alist.scrollTop = 0;
+            const rightViz = document.querySelector('.reports-right-viz'); if(rightViz) rightViz.scrollTop = 0;
             if (typeof scrollToReportLogs === 'function') scrollToReportLogs();
         };
         li.innerHTML = `<div class="report-item-left"><span class="report-rank">#${idx+1}</span><img src="${getAvatarUrl(s.aU||s.id, s.aS)}" class="report-avatar"><span class="report-name">${s.id}</span></div><div class="report-item-right ${s.pts > 0 ? 'positive-val' : 'negative-val'}">${s.pts > 0 ? '+' : ''}${s.pts}</div>`;
@@ -450,6 +454,10 @@ const renderTreasureReports = () => {
             document.getElementById('resetReportFilterBtn')?.classList.remove('hidden');
             document.getElementById('reportActivityTitle').textContent = s.id + ' 的寶物'; 
             renderReports(); 
+            const rightTabBtn = document.querySelector('.reports-mobile-tab[data-target="reports-right-panel"]');
+            if(rightTabBtn) rightTabBtn.click();
+            const alist = document.getElementById('reportActivityList'); if(alist) alist.scrollTop = 0;
+            const rightViz = document.querySelector('.reports-right-viz'); if(rightViz) rightViz.scrollTop = 0;
             if (typeof scrollToReportLogs === 'function') scrollToReportLogs();
         };
         let trDetail = treasureDefs.map(td => {
