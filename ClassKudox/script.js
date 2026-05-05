@@ -70,7 +70,28 @@ const startApp = () => {
         });
         wire('undoActionBtn', undoAction);
         wire('toggleMultiSelectBtn', toggleMultiSelectMode);
+        wire('floatingMultiSelectBtn', toggleMultiSelectMode);
         wire('addStudentBtn', () => openModal(document.getElementById('addStudentModal')));
+
+        // 監聽滾動以顯示右下角多選按鈕
+        window.addEventListener('scroll', () => {
+            const floatingBtn = document.getElementById('floatingMultiSelectBtn');
+            if (floatingBtn) {
+                // 如果已經在多選模式，或是在視窗開啟狀態，則不顯示浮動按鈕
+                const isModalOpen = !!document.querySelector('.modal-overlay:not(.hidden)');
+                if (isMultiSelectMode || isModalOpen) {
+                    floatingBtn.classList.add('hidden');
+                    return;
+                }
+                // 判斷是否接近底部 (距離底部 80px 內出現)
+                const isBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 80);
+                if (isBottom) {
+                    floatingBtn.classList.remove('hidden');
+                } else {
+                    floatingBtn.classList.add('hidden');
+                }
+            }
+        });
 
         document.querySelectorAll('.reports-mobile-tab').forEach(btn => {
             btn.onclick = () => {
@@ -87,6 +108,26 @@ const startApp = () => {
                         layout.classList.remove('mobile-show-left');
                     }
                 }
+            };
+        });
+
+        // 系統設定頁籤
+        document.querySelectorAll('.settings-tab-btn').forEach(btn => {
+            btn.onclick = () => {
+                const tabId = btn.dataset.settingsTab;
+                document.querySelectorAll('.settings-tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+                document.querySelectorAll('.settings-tab-content').forEach(c => c.classList.toggle('active', c.id === `settings${tabId.charAt(0).toUpperCase() + tabId.slice(1)}Tab`));
+                const body = document.querySelector('.settings-body'); if(body) body.scrollTop = 0;
+            };
+        });
+
+        // 班級管理頁籤 (手機版預設顯示「我的班級」)
+        document.querySelectorAll('.classes-tab-btn').forEach(btn => {
+            btn.onclick = () => {
+                const tabId = btn.dataset.classTab;
+                document.querySelectorAll('.classes-tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+                document.querySelectorAll('.classes-tab-content').forEach(c => c.classList.toggle('active', c.id === `classesTab${tabId.charAt(0).toUpperCase() + tabId.slice(1)}`));
+                const body = document.querySelector('.classes-modal-body'); if(body) body.scrollTop = 0;
             };
         });
         

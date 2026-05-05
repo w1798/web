@@ -12,11 +12,9 @@
             .then(res => res.json())
             .then(data => {
                 if (data.ver && typeof APP_VER !== 'undefined' && data.ver !== APP_VER) {
-                    console.log(`[Updater] 偵測到新版本: ${APP_VER} -> ${data.ver}`);
-                    if (confirm('偵測到程式有新版本 (' + data.ver + ')，建議現在更新以獲得更好的使用體驗。\n\n是否立即重新載入網頁？')) {
-                        localStorage.setItem('APP_VER', data.ver);
-                        location.reload(true);
-                    }
+                    console.log(`[Updater] 偵測到新版本: ${APP_VER} -> ${data.ver}，自動更新中...`);
+                    localStorage.setItem('APP_VER', data.ver);
+                    location.reload(true);
                 }
             })
             .catch(err => console.warn('[Updater] 版本檢查失敗 (可能處於離線狀態)'));

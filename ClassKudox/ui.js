@@ -2,8 +2,21 @@
  * ClassKudox - UI Rendering & Component Logic
  */
 
-const openModal = (m) => m?.classList.remove('hidden');
-const closeModal = (m) => m?.classList.add('hidden');
+const openModal = (m) => {
+    m?.classList.remove('hidden');
+    document.body.classList.add('modal-open');
+    // 有視窗開啟時，強制隱藏右下角多選按鈕
+    const fbtn = document.getElementById('floatingMultiSelectBtn');
+    if (fbtn) fbtn.classList.add('hidden');
+};
+const closeModal = (m) => {
+    m?.classList.add('hidden');
+    if (document.querySelectorAll('.modal-overlay:not(.hidden)').length === 0) {
+        document.body.classList.remove('modal-open');
+        // 關閉視窗後，根據目前位置重新判斷是否顯示多選按鈕
+        window.dispatchEvent(new Event('scroll'));
+    }
+};
 
 const updateSyncStatus = () => {
     const el = document.getElementById('syncStatus'); if (!el) return;
@@ -279,7 +292,15 @@ const renderClassSelector = () => {
         currentClassId = newId; localStorage.setItem('CD_cCId', currentClassId); location.reload(); 
     };
     const l = document.getElementById('classList'); if(l) { l.innerHTML = ''; classes.forEach(c => {
-        const li = document.createElement('li'); li.innerHTML = `<span style="${c.arc?'text-decoration:line-through;color:#94a3b8;':''}">${c.id}</span><div style="display:flex;gap:0.4rem;"><button class="rename-class-btn btn secondary-btn small-btn">✏️ 修改名稱</button><button class="archive-btn btn small-btn">${c.arc?'解封存':'封存'}</button><button class="del-class-btn btn negative-btn small-btn">🗑️</button></div>`;
+        const li = document.createElement('li'); 
+        li.innerHTML = `
+            <span class="class-item-id" style="${c.arc?'text-decoration:line-through;color:#94a3b8;':''}">${c.id}</span>
+            <div class="class-item-actions" style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-left:auto;justify-content:flex-end;">
+                <button class="rename-class-btn btn secondary-btn small-btn">✏️ 修改名稱</button>
+                <button class="archive-btn btn small-btn">${c.arc?'解封存':'封存'}</button>
+                <button class="del-class-btn btn negative-btn small-btn">🗑️</button>
+            </div>
+        `;
         li.querySelector('.rename-class-btn').onclick = () => {
             const newName = prompt('請輸入新的班級名稱：', c.id);
             const n = newName?.trim();
@@ -513,7 +534,7 @@ const showClassSummary = () => {
     // Update title to show if filtered
     const titleEl = document.getElementById('classSummaryTitle');
     if (titleEl) {
-        titleEl.textContent = range ? '時間内點數總覽' : '全班點數總覽 (所有紀錄)';
+        titleEl.textContent = range ? '時間內點數總覽' : '全班點數總覽 (所有紀錄)';
     }
 
     let data = students.map(s => {

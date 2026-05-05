@@ -222,6 +222,15 @@ const toggleMultiSelectMode = () => {
     selectedGroupIds.clear();
     const bar = document.getElementById('multiSelectBar'); if(bar) bar.classList.toggle('hidden', !isMultiSelectMode);
     const btn = document.getElementById('toggleMultiSelectBtn'); if(btn) btn.classList.toggle('active', isMultiSelectMode);
+    const fbtn = document.getElementById('floatingMultiSelectBtn'); 
+    if(fbtn) {
+        if (isMultiSelectMode) {
+            fbtn.classList.add('hidden');
+        } else {
+            // 如果解除多選且剛好在底部，則重新顯示 (觸發滾動偵測)
+            window.dispatchEvent(new Event('scroll'));
+        }
+    }
     const countEl = document.getElementById('multiSelectCount'); if(countEl) countEl.textContent = `已選擇 0 位學生`;
     if (typeof renderStudents === 'function') renderStudents();
     if (currentView === 'groups' && typeof renderGroups === 'function') renderGroups();
