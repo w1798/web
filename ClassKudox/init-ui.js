@@ -25,7 +25,7 @@ function initSelectOptions() {
     populateRange('itemScaleSelect', -40, 60, 10, 'px', true);
     
     // 7. 頭像縮放百分比 (-60 到 60)
-    populateRange('avatarSizeSelect', -40, 100, 10, '%', true);
+    populateRange('avatarSizeSelect', -80, 100, 10, '%', true);
     
     // 8. 卡片間距 (水平與垂直: 0-60)
     populateRange('cardGapVSelect', 0, 60, 5, 'px');

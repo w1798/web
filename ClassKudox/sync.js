@@ -180,12 +180,15 @@ const checkCloudSyncState = async () => {
         if (resp.ok) {
             const r = await resp.json();
             const raw = isUpstash ? r.result : (r.record || r);
+            
+            L(`[CloudSync] Step 2a 準備解析雲端數據...`);
             const cloudData = await parseCloudData(raw);
             if (!cloudData) throw new Error('解析雲端數據失敗');
 
             const cloudVer = cloudData.sVer || '000000000000';
-            L(`[CloudSync] Step 1 取得雲端版本: ${cloudVer}`);
+            L(`[CloudSync] Step 2b 取得雲端版本: ${cloudVer}`);
 
+            L(`[CloudSync] Step 3 進行紀錄清理與版本比對...`);
             // --- Ops 清理：時間錨點判斷 ---
             const preSysLen = sysOps.length;
             sysOps = sysOps.filter(o => o.t > localSyncVersion);
@@ -220,6 +223,28 @@ const checkCloudSyncState = async () => {
                 } catch(e) { /* 離線或讀取失敗時忽略，繼續正常同步 */ }
 
                 L(`[CloudSync] Step 4 版本不同，以雲端為基底覆蓋並重播 Ops (本地: ${localSyncVersion}, 雲端: ${cloudVer})...`);
+
+                // 覆蓋前詢問使用者是否先匯出備份
+                if (confirm('雲端資料和本地資料不同，是否先匯出資料做備份？')) {
+                    try {
+                        const backupData = getFullBackupData(true);
+                        const compressed = await compressJSON(backupData, true);
+                        if (compressed) {
+                            const raw = atob(compressed);
+                            const bytes = new Uint8Array(raw.length);
+                            for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+                            const blo = new Blob([bytes], { type: 'application/gzip' });
+                            const a = document.createElement('a');
+                            a.href = URL.createObjectURL(blo);
+                            a.download = `ClassKudox_${new Date().toLocaleDateString().replace(/\//g, '')}.json.gz`;
+                            a.click();
+                        }
+                        L('[CloudSync] 使用者已匯出本地備份，繼續同步...');
+                    } catch (exportErr) {
+                        LE('[CloudSync] 匯出備份失敗:', exportErr);
+                    }
+                }
+
                 const oldClassId = currentClassId;
                 const oldOps = [...ops]; 
                 
@@ -307,7 +332,7 @@ const checkCloudSyncState = async () => {
                     if (isDirty === 4) setDirty(3); 
                 }
             } else if (hadChanges || vComp > 0 || sysOps.length > 0) {
-                L(`[CloudSync] Step 5 版本變動或系統變動，執行上傳...`);
+                L(`[CloudSync] Step 4 版本相同，但資料變動或系統變動，執行上傳...`);
                 await performCloudUpload();
             } else if (ops.length > 0) {
                 // 如果版本相同 (vComp=0) 且僅有班級 Ops
