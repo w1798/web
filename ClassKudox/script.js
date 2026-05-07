@@ -607,21 +607,21 @@ const startApp = () => {
         wire('toggleMultiSelectBtn', toggleMultiSelectMode);
 
         wire('resetAllClassesPointsBtn', () => { 
-            if(confirm('重置「所有班級」學生的點數與紀錄？')) { 
+            if(confirm('重置「所有班級」學生的點數、寶物與紀錄？')) { 
                 classes.forEach(c => {
                     localStorage.setItem(`CD_${c.id}_Ls`, '[]');
                     const stus = JSON.parse(localStorage.getItem(`CD_${c.id}_Stus`) || '[]');
-                    stus.forEach(s => { s.cP = 0; s.iP = 0; });
+                    stus.forEach(s => { s.cP = 0; s.iP = 0; s.tr = {}; });
                     localStorage.setItem(`CD_${c.id}_Stus`, JSON.stringify(stus));
                 });
-                logs = []; students.forEach(s => { s.cP = 0; s.iP = 0; });
+                logs = []; students.forEach(s => { s.cP = 0; s.iP = 0; s.tr = {}; });
                 pushOp(18, null, true);
                 saveData(); renderStudents(); if(currentView === 'groups') renderGroups(); alert('已重置');
             } 
         });
         wire('resetCurrentClassPointsBtn', () => { 
-            if(confirm(`重置目前班級「${currentClassId}」學生的點數與紀錄？`)) { 
-                logs = []; students.forEach(s => { s.cP = 0; s.iP = 0; });
+            if(confirm(`重置目前班級「${currentClassId}」學生的點數、寶物與紀錄？`)) { 
+                logs = []; students.forEach(s => { s.cP = 0; s.iP = 0; s.tr = {}; });
                 pushOp(16, null); 
                 saveData(); renderStudents(); if(currentView === 'groups') renderGroups(); alert('已重置');
             } 
