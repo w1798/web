@@ -469,6 +469,7 @@ const startApp = () => {
         bindSelect('cardGapHSelect', 'cGH', true, '--card-gap-h');
         bindSelect('itemGapVSelect', 'iGV', true, '--item-gap-v');
         bindSelect('itemGapHSelect', 'iGH', true, '--item-gap-h');
+        bindSelect('versionBackupSetting', 'sBkup', false);
 
         const ivInp = document.getElementById('autoSyncInterval'); if(ivInp) { ivInp.value = autoSyncInterval; ivInp.onchange = (e) => { autoSyncInterval = parseInt(e.target.value); saveData(); startSyncTimer(); }; }
         wire('resetCloudBinId', () => { if(confirm('重置 URL 或 ID？')) { document.getElementById('cloudBinId').value = ''; cloudBinId = ''; saveData(); } });

@@ -60,6 +60,7 @@ const applySettings = () => {
     setVal('cardGapHSelect', settings.cGH ?? 25);
     setVal('itemGapVSelect', settings.iGV ?? 15);
     setVal('itemGapHSelect', settings.iGH ?? 15);
+    setVal('versionBackupSetting', settings.sBkup ?? 1);
     
     const ss = document.getElementById('enableSoundSetting'); if(ss) ss.checked = !!settings.eS;
     const sa = document.getElementById('showAvatarSetting'); if(sa) sa.checked = settings.sAv !== 0;

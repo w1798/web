@@ -13,7 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <script>
-    var APP_VER = '1.05s';
+    var APP_VER = '1.05t';
     try {
         var xhr = new XMLHttpRequest();
         xhr.open('GET', 'version.json?t=' + Date.now(), false);
@@ -721,6 +721,17 @@
                                 </select>
                             </div>
                             <div class="small-text" style="margin-top:0.4rem; color:#ef4444; font-weight: 500;">如有設定同步時間，會「優先從雲端下載覆蓋本地的資料」，然後補做已更動的加扣點！</div>
+                        </div>
+
+                        <div class="input-group">
+                            <div class="settings-sync-item no-margin-bottom">
+                                <label for="versionBackupSetting">異版跳備份</label>
+                                <select id="versionBackupSetting" class="filter-select">
+                                    <option value="1">是</option>
+                                    <option value="0">否</option>
+                                </select>
+                            </div>
+                            <div class="small-text" style="margin-top:0.4rem; color:#ef4444; font-weight: 500;">當雲端與本地資料版本不同時，是否彈出視窗詢問匯出備份。</div>
                         </div>
 
                         <div class="data-actions">

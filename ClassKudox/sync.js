@@ -224,8 +224,9 @@ const checkCloudSyncState = async () => {
 
                 L(`[CloudSync] Step 4 版本不同，以雲端為基底覆蓋並重播 Ops (本地: ${localSyncVersion}, 雲端: ${cloudVer})...`);
 
-                // 覆蓋前詢問使用者是否先匯出備份
-                if (confirm('雲端資料和本地資料不同，是否先匯出資料做備份？')) {
+                // 覆蓋前詢問使用者是否先匯出備份 (如果設定沒關閉的話)
+                const shouldPromptBackup = !settings || settings.sBkup !== 0;
+                if (shouldPromptBackup && confirm('雲端資料和本地資料不同，是否先匯出資料做備份？')) {
                     try {
                         const backupData = getFullBackupData(true);
                         const compressed = await compressJSON(backupData, true);

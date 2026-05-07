@@ -17,7 +17,7 @@ const defaultItems = {
     ]
 };
 
-const DEFAULT_SETTINGS = { ftS: 16, col: 10, gCol: 5, iCol: 5, itmS: 0, eS: 0, sCH: 0, gCH: 0, lRet: 0, avS: 0, sAv: 1, sTR: 1, cGV: 25, cGH: 25, iGV: 15, iGH: 15 };
+const DEFAULT_SETTINGS = { ftS: 16, col: 10, gCol: 5, iCol: 5, itmS: 0, eS: 0, sCH: 0, gCH: 0, lRet: 0, avS: 0, sAv: 1, sTR: 1, cGV: 25, cGH: 25, iGV: 15, iGH: 15, sBkup: 1 };
 
 const ACT = {
     STU_AWD: 1,
