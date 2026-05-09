@@ -73,10 +73,40 @@ const applySettings = () => {
 const switchProfileTab = (tab) => {
     document.querySelectorAll('.main-tabs .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.profileTab === tab));
     const awardTab = document.getElementById('profileAwardTab'); if(awardTab) awardTab.classList.toggle('active', tab === 'award');
+    const giftTab = document.getElementById('profileGiftTab'); if(giftTab) giftTab.classList.toggle('active', tab === 'gift');
     const treasTab = document.getElementById('profileTreasureTab'); if(treasTab) treasTab.classList.toggle('active', tab === 'treasure');
     const histTab = document.getElementById('profileHistoryTab'); if(histTab) histTab.classList.toggle('active', tab === 'history');
     if(tab === 'history') renderHistory();
     if(tab === 'treasure') renderStudentTreasures();
+    if(tab === 'gift') renderGiftTab();
+    // 贈與分頁需要更寬的 modal
+    const profileModal = document.querySelector('#editStudentModal .modal-content');
+    if (profileModal) profileModal.classList.toggle('modal-large', tab === 'gift');
+};
+
+const renderGiftTab = () => {
+    const el = document.getElementById('giftRecipientList'); if(!el) return; el.innerHTML = '';
+    // 如果是群組贈與，需排除掉群組內所有人
+    const excludeIds = awardContextIds.length > 0 ? awardContextIds : [currentProfileId];
+    
+    students.filter(s => !excludeIds.includes(s.id)).sort((a,b)=>a.id.localeCompare(b.id, 'zh-TW')).forEach(s => {
+        const div = document.createElement('div');
+        div.style = 'display:flex; align-items:center; gap:0.4rem; padding:0.3rem 0.5rem; cursor:pointer; background:white; border-radius:6px; font-size:0.9em; border:1px solid #e2e8f0;';
+        div.innerHTML = `<input type="checkbox" value="${s.id}" style="cursor:pointer;"><span style="cursor:pointer; flex:1; margin:0;">${s.id}</span>`;
+        div.onclick = (e) => { if(e.target.tagName !== 'INPUT') { const cb = div.querySelector('input'); cb.checked = !cb.checked; } };
+        el.appendChild(div);
+    });
+
+    // 載入雲端同步的手續費與偏好設定
+    const intInp = document.getElementById('giftFeeInterval');
+    const stepInp = document.getElementById('giftFeeStep');
+    const amtInp = document.getElementById('giftAmount');
+    const ignInp = document.getElementById('giftIgnoreRanking');
+    
+    if(intInp && giftSettings) intInp.value = giftSettings.gInt || 0;
+    if(stepInp && giftSettings) stepInp.value = giftSettings.gStep || 0;
+    if(amtInp) amtInp.value = "";
+    if(ignInp && giftSettings) ignInp.checked = giftSettings.gIgn !== undefined ? (giftSettings.gIgn === 1) : true;
 };
 
 const switchAwardTab = (tab) => {

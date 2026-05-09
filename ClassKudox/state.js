@@ -53,6 +53,8 @@ let localSyncVersion = localStorage.getItem('sVer') || '000000';
 let students = [], groups = [], logs = [], pointItems = null, settings = null, ops = [], mSyn = 30;
 let idleSeconds = 0;
 let customItems = [];
+let customPrefs = {};
+let giftSettings = { gInt: 0, gStep: 0, gAmt: 10, gIgn: 1 };
 let treasureDefs = [];
 
 let currentView = 'students', isMultiSelectMode = false;
@@ -126,6 +128,21 @@ const saveData = (skipDirty = false) => {
     localStorage.setItem(`CD_${currentClassId}_Ls`, JSON.stringify(logs));
     localStorage.setItem(`CD_${currentClassId}_itm`, JSON.stringify(pointItems));
     localStorage.setItem(`CD_${currentClassId}_cItm`, JSON.stringify(customItems));
+    
+    // 垃圾回收：刪除不在 customItems 中且不等於預設的孤兒屬性 (保留 '兌換點數')
+    Object.keys(customPrefs).forEach(k => {
+        if (k !== '兌換點數' && !customItems.includes(k)) {
+            delete customPrefs[k];
+        } else {
+            // 過濾預設值 ({sign: '-', ign: true})
+            const p = customPrefs[k];
+            if ((p.sign === '-' || p.sign === -1 || !p.sign) && (p.ign === true || p.ign === 1)) {
+                delete customPrefs[k];
+            }
+        }
+    });
+    localStorage.setItem(`CD_${currentClassId}_cPref`, JSON.stringify(customPrefs));
+    localStorage.setItem(`CD_${currentClassId}_gSet`, JSON.stringify(giftSettings));
     localStorage.setItem(`CD_${currentClassId}_tDef`, JSON.stringify(treasureDefs));
     localStorage.setItem(`CD_${currentClassId}_set`, JSON.stringify(settings));
     localStorage.setItem(`CD_${currentClassId}_Ops`, JSON.stringify(ops));
@@ -146,6 +163,8 @@ const loadClassData = () => {
     logs = safeLoad(`CD_${currentClassId}_Ls`, []);
     pointItems = safeLoad(`CD_${currentClassId}_itm`, JSON.parse(JSON.stringify(defaultItems)));
     customItems = safeLoad(`CD_${currentClassId}_cItm`, []);
+    customPrefs = safeLoad(`CD_${currentClassId}_cPref`, {});
+    giftSettings = safeLoad(`CD_${currentClassId}_gSet`, { gInt: 0, gStep: 0, gIgn: 1 });
     treasureDefs = safeLoad(`CD_${currentClassId}_tDef`, []);
     ops = safeLoad(`CD_${currentClassId}_Ops`, []);
 

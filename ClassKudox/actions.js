@@ -97,14 +97,19 @@ const openAwardModal = (ids, title, groupId = null) => {
     if(ids.length === 1) currentProfileId = ids[0]; 
     const header = document.getElementById('currentProfileName'); if(header) header.textContent = title;
     
-    // Load custom tab state
-    const savedCustom = safeLoad('CD_CustomTemp', null);
-    if (savedCustom) {
-        const v = document.getElementById('customAwardValue'); if(v) v.value = savedCustom.v;
-        const ign = document.getElementById('customAwardIgnore'); if(ign) ign.checked = !!savedCustom.ign;
-        const sel = document.getElementById('customAwardLabel'); if(sel) sel.value = savedCustom.l || '兌換點數';
-        const temp = document.getElementById('customAwardTempName'); if(temp) temp.value = savedCustom.temp || '';
+    // 恢復上次的 UI 狀態 (避免 F5 重整後看起來回到預設)
+    const uiState = safeLoad('CD_CustomUIState', null);
+    if (uiState) {
+        const temp = document.getElementById('customAwardTempName'); if(temp) temp.value = uiState.temp || '';
+        const sel = document.getElementById('customAwardLabel'); if(sel) sel.value = uiState.l || '兌換點數';
     }
+    
+    // 當開啟彈窗時，觸發自訂分頁載入以確保 UI 反映最新的 customPrefs 狀態
+    const cSel = document.getElementById('customAwardLabel');
+    if (cSel && cSel.options.length > 0) {
+        cSel.dispatchEvent(new Event('change'));
+    }
+    
     const profileModal = document.querySelector('.profile-modal');
     if(profileModal) profileModal.classList.toggle('modal-large', !!groupId);
     const editBtn = document.getElementById('editProfileBtn');

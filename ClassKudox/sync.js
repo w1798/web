@@ -26,7 +26,7 @@ const getFullBackupData = (includeOps = false) => {
         const k = localStorage.key(i); 
         if (!k.startsWith('CD_') && k !== 'aSyn' && k !== 'drty') continue; 
         
-        const match = k.match(/^CD_(.+)_(Stus|Gs|Ls|itm|cItm|tDef|set|Ops|meta)$/);
+        const match = k.match(/^CD_(.+)_(Stus|Gs|Ls|itm|cItm|tDef|set|Ops|meta|cPref|gSet)$/);
         if (match) {
             const cid = match[1];
             if (!validClassIds.has(cid)) {
@@ -51,9 +51,9 @@ const restoreFromBackup = (data, reload = true) => {
     for (let i = localStorage.length - 1; i >= 0; i--) {
         const k = localStorage.key(i);
         if (k.startsWith('CD_')) {
-            if (k.endsWith('_Ops') || k.endsWith('_set')) continue;
+            if (k.endsWith('_Ops') || k.endsWith('_set') || k === 'CD_CustomUIState') continue;
             localStorage.removeItem(k);
-        } else if (k === 'sVer' || k === 'drty' || k === 'CD_CustomTemp') {
+        } else if (k === 'sVer' || k === 'drty') {
             localStorage.removeItem(k);
         }
     }

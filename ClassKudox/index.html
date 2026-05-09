@@ -13,7 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <script>
-    var APP_VER = '1.05u';
+    var APP_VER = '1.06a';
     try {
         var xhr = new XMLHttpRequest();
         xhr.open('GET', 'version.json?t=' + Date.now(), false);
@@ -23,7 +23,7 @@
     document.documentElement.style.visibility = 'hidden';
     </script>
     
-    <script src="../loader_engine.js?v=1.05e"></script>
+    <script src="../loader_engine.js?v=1.06a"></script>
 
 </head>
 <body data-font-size="medium">
@@ -216,7 +216,8 @@
             <div class="modal-body">
                 
                 <div class="tabs main-tabs">
-                    <button class="tab-btn active" data-profile-tab="award">給予點數</button>
+                    <button class="tab-btn active" data-profile-tab="award" id="profileAwardTabBtn">給予點數</button>
+                    <button class="tab-btn" data-profile-tab="gift" id="profileGiftTabBtn">贈與點數</button>
                     <button class="tab-btn" data-profile-tab="treasure" id="profileTreasureTabBtn">寶物</button>
                     <button class="tab-btn" data-profile-tab="history" id="profileHistoryTabBtn">檢視紀錄</button>
                 </div>
@@ -244,11 +245,12 @@
                                 <input type="text" id="customAwardTempName" placeholder="輸入後自動加入設定">
                             </div>
                             <div class="input-group" style="margin:0;">
-                                <label>點數 (正數加點，負數扣點)</label>
+                                <label>點數 (由左方按鈕控制正負)</label>
                                 <div style="display:flex; gap:0.4rem; align-items:center;">
-                                    <input type="text" inputmode="numeric" id="customAwardValue" value="-10" style="flex:1;">
+                                    <button type="button" id="customAwardSignBtn" class="btn secondary-btn" style="padding:0.4rem 0.8rem; font-size:1.1em; font-weight: bold; width: 45px;">-</button>
+                                    <input type="number" inputmode="numeric" min="0" id="customAwardValue" value="" style="flex:1; min-width:80px;" oninput="if(this.value<0)this.value=Math.abs(this.value)" onfocus="this.value=''">
                                     <button type="button" id="customAwardClearBtn" class="btn secondary-btn" style="padding:0.3rem 0.5rem; font-size:0.85em; white-space:nowrap;">清空</button>
-                                    <button type="button" id="customAwardNegBtn" class="btn secondary-btn" style="padding:0.3rem 0.5rem; font-size:0.85em; white-space:nowrap;">加負號</button>
+                                    <button type="button" id="customAwardToggleSignBtn" class="btn secondary-btn" style="padding:0.3rem 0.5rem; font-size:0.85em; white-space:nowrap;">切正負</button>
                                 </div>
                             </div>
                             <div class="checkbox-group" style="margin:0; align-self:center; padding-top:1.2rem;">
@@ -257,6 +259,36 @@
                             </div>
                         </div>
                         <button class="btn primary-btn" id="saveCustomAwardBtn" style="width:100%; margin-top:0.8rem;">給予點數</button>
+                    </div>
+                </div>
+                
+                <div class="profile-tab-content" id="profileGiftTab">
+                    <div class="settings-section">
+                        <h4>🎁 贈與點數</h4>
+                        <div class="gift-form" style="display:flex; flex-direction:column; gap:0.8rem;">
+                            <div class="input-group" style="margin:0;">
+                                <label>1. 選擇贈與對象 (可多選)</label>
+                                <div id="giftRecipientList" class="gift-recipient-grid" style="display:grid; grid-template-columns: repeat(10, 1fr); gap:0.4rem; max-height:200px; overflow-y:auto; padding:0.5rem; border:1px solid var(--border-color); border-radius:8px;"></div>
+                            </div>
+                            <div style="display:flex; gap:1rem; align-items:flex-end; flex-wrap:wrap;">
+                                <div class="input-group" style="margin:0; flex:0 0 auto;">
+                                    <label>2. 贈與數量</label>
+                                    <input type="number" id="giftAmount" value="" min="1" style="width:80px;" onfocus="this.value=''">
+                                </div>
+                                <div class="input-group" style="margin:0; flex:0 0 auto;">
+                                    <label>3. 手續費</label>
+                                    <div style="display:flex; gap:0.3rem; align-items:center; font-size:0.9em;">
+                                        每 <input type="number" id="giftFeeInterval" value="0" style="width:80px;" onfocus="this.value=''"> 
+                                        點扣 <input type="number" id="giftFeeStep" value="0" style="width:80px;" onfocus="this.value=''"> 點
+                                    </div>
+                                </div>
+                                <div class="checkbox-group" style="margin:0; padding-bottom:0.3rem;">
+                                    <input type="checkbox" id="giftIgnoreRanking" checked>
+                                    <label for="giftIgnoreRanking">不列入排名</label>
+                                </div>
+                                <button class="btn primary-btn" id="confirmGiftBtn" style="padding:0.5rem 1.5rem; white-space:nowrap;">確定贈與</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

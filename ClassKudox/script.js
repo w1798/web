@@ -156,19 +156,6 @@ const startApp = () => {
         const trSel = document.getElementById('showTreasureSetting'); if(trSel) trSel.onchange = (e) => { settings.sTR = e.target.checked ? 1 : 0; renderStudents(); saveData(true); };
         const retSel = document.getElementById('logRetentionSetting'); if(retSel) retSel.onchange = (e) => { settings.lRet = parseInt(e.target.value); applySettings(); saveData(true); performLogRetention(); };
 
-        const saveCustState = () => {
-            const v = document.getElementById('customAwardValue');
-            const ign = document.getElementById('customAwardIgnore');
-            const sel = document.getElementById('customAwardLabel');
-            const temp = document.getElementById('customAwardTempName');
-            localStorage.setItem('CD_CustomTemp', JSON.stringify({ v: v?v.value:-10, ign: ign?ign.checked:true, l: sel?sel.value:'兌換點數', temp: temp?temp.value:'' }));
-        };
-        ['customAwardValue','customAwardIgnore','customAwardLabel','customAwardTempName'].forEach(id => {
-            const el = document.getElementById(id); 
-            if (el) el.addEventListener('change', saveCustState);
-            if (el && (el.tagName === 'INPUT')) el.addEventListener('input', saveCustState);
-        });
-
         try {
             L('[System] 啟動資料載入與渲染流程...');
             loadClassData(); renderClassSelector(); renderStudents();
@@ -273,6 +260,12 @@ const startApp = () => {
             const sel = document.getElementById('customAwardLabel'); 
             const tempInp = document.getElementById('customAwardTempName');
             let l = sel ? sel.value : '自訂項目'; 
+
+            // 先讀取點數設定，避免 renderCustomDropdown 觸發 change 事件覆蓋
+            const vRaw = Math.abs(parseFloat(document.getElementById('customAwardValue').value)) || 0; 
+            const sign = document.getElementById('customAwardSignBtn').textContent === '+' ? 1 : -1;
+            const ign = document.getElementById('customAwardIgnore').checked;
+
             if (tempInp && tempInp.value.trim()) {
                 l = tempInp.value.trim();
                 if (!customItems.includes(l)) {
@@ -282,32 +275,249 @@ const startApp = () => {
                     renderCustomDropdown();
                 }
             }
-            const v = parseInt(document.getElementById('customAwardValue').value) || 0; 
-            const ign = document.getElementById('customAwardIgnore').checked; 
-            awardPoints('custom', l, v, ign); 
-            if (tempInp) tempInp.value = '';
-            try {
-                const saved = JSON.parse(localStorage.getItem('CD_CustomTemp') || '{}');
-                saved.temp = '';
-                localStorage.setItem('CD_CustomTemp', JSON.stringify(saved));
-            } catch(e) {}
+            const v = vRaw * sign;
+            awardPoints('custom', l, v, ign);
+            
+            // 記憶此項目的偏好 (不存點數 val，依要求維持空白)
+            // 將預設物件過濾：如果 sign == '-' 且 ign == true 代表維持預設，則直接刪除該項目記憶節省空間
+            if (sign === -1 && ign === true) {
+                delete customPrefs[l];
+            } else {
+                // 如果是預設，甚至連該 key 都不用給；若只需單一變動就存單一
+                const prefToSave = {};
+                if (sign === 1) prefToSave.sign = '+';
+                if (ign === false) prefToSave.ign = false;
+                customPrefs[l] = prefToSave;
+            }
+            saveData(); 
+            
+            // 給予完後清空臨時名稱
+            if (tempInp) {
+                tempInp.value = '';
+                tempInp.dispatchEvent(new Event('input'));
+            }
+        });
+        
+        // 即時存檔：當正負號或勾選排名變動時，立即記錄偏好
+        const syncCustomPref = () => {
+            const sel = document.getElementById('customAwardLabel'); 
+            const tempInp = document.getElementById('customAwardTempName');
+            let l = (tempInp && tempInp.value.trim()) ? tempInp.value.trim() : (sel ? sel.value : null);
+            
+            // 隨時記憶目前的介面選取/輸入狀態，以免 F5 重整後跳回預設項目
+            localStorage.setItem('CD_CustomUIState', JSON.stringify({ l: sel ? sel.value : '兌換點數', temp: tempInp ? tempInp.value : '' }));
+            
+            if (!l) return;
+            const sign = document.getElementById('customAwardSignBtn').textContent;
+            const ign = document.getElementById('customAwardIgnore').checked;
+            
+            if (sign === '-' && ign === true) {
+                delete customPrefs[l];
+            } else {
+                const prefToSave = {};
+                if (sign === '+') prefToSave.sign = '+';
+                if (ign === false) prefToSave.ign = false;
+                customPrefs[l] = prefToSave;
+            }
+            saveData();
+        };
+
+        const signBtn = document.getElementById('customAwardSignBtn');
+        if (signBtn) {
+            // 原有的 click 事件之外，增加同步調用
+            signBtn.addEventListener('click', syncCustomPref);
+        }
+        const ignBtn = document.getElementById('customAwardIgnore');
+        if (ignBtn) {
+            ignBtn.addEventListener('change', syncCustomPref);
+        }
+        
+        const cSel = document.getElementById('customAwardLabel'); 
+        if(cSel) cSel.addEventListener('change', () => {
+            loadCustomItemPrefs();
         });
 
         wire('customAwardClearBtn', () => {
-            const v = document.getElementById('customAwardValue'); if (v) { v.value = ''; v.focus(); v.dispatchEvent(new Event('input')); }
-        });
-        wire('customAwardNegBtn', () => {
-            const v = document.getElementById('customAwardValue'); if (!v) return;
-            const cur = v.value.trim();
-            if (!cur || cur === '0') { v.value = '-'; }
-            else if (cur.startsWith('-')) { v.value = cur.substring(1); }
-            else { v.value = '-' + cur; }
-            v.focus();
-            v.dispatchEvent(new Event('input'));
+            const v = document.getElementById('customAwardValue'); if (v) { v.value = ''; v.focus(); }
         });
         
-        document.querySelectorAll('.tab-btn').forEach(b => b.onclick = () => switchProfileTab(b.dataset.profileTab));
-        document.querySelectorAll('.sub-tab-btn').forEach(b => b.onclick = () => switchAwardTab(b.dataset.awardTab));
+        const updateSignBtnColor = (btn) => {
+            if (btn.textContent === '+') {
+                btn.style.color = '#fff';
+                btn.style.backgroundColor = '#22c55e';
+                btn.style.borderColor = '#22c55e';
+            } else {
+                btn.style.color = '#fff';
+                btn.style.backgroundColor = '#ef4444';
+                btn.style.borderColor = '#ef4444';
+            }
+        };
+
+        wire('customAwardToggleSignBtn', () => {
+            const btn = document.getElementById('customAwardSignBtn');
+            if (btn) {
+                btn.textContent = btn.textContent === '+' ? '-' : '+';
+                updateSignBtnColor(btn);
+                syncCustomPref(); // 即時存檔
+            }
+        });
+        
+        // 直接替換 SignBtn 的點擊邏輯以確保同步
+        const sBtn = document.getElementById('customAwardSignBtn');
+        if (sBtn) {
+            sBtn.onclick = () => {
+                sBtn.textContent = sBtn.textContent === '+' ? '-' : '+';
+                updateSignBtnColor(sBtn);
+                syncCustomPref(); // 即時存檔
+            };
+        }
+
+        const loadCustomItemPrefs = () => {
+            const selEl = document.getElementById('customAwardLabel');
+            const tempEl = document.getElementById('customAwardTempName');
+            const selVal = selEl ? selEl.value : null;
+            const tempVal = tempEl ? tempEl.value : null;
+            
+            let label = null;
+            if (tempVal !== null && tempVal.trim() !== '') {
+                label = tempVal.trim();
+            } else if (selVal !== null && selVal.trim() !== '') {
+                label = selVal.trim();
+            }
+            
+            if (!label) return;
+            
+            // 加入 localStorage 直接讀取備援。由於 customPrefs 全域物件可能因未知原因在某些瀏覽器情境下參照錯誤，強制執行最新狀態提取
+            let pObj = null;
+            try {
+                const freshStorage = localStorage.getItem(`CD_${currentClassId}_cPref`);
+                if (freshStorage) {
+                    const parsed = JSON.parse(freshStorage);
+                    if (parsed && typeof parsed === 'object') {
+                        customPrefs = parsed; // 強制與硬碟同步
+                    }
+                }
+            } catch(e) {}
+
+            pObj = customPrefs[label];
+            if (!pObj || typeof pObj !== 'object') {
+                pObj = { sign: '-', ign: true };
+            }
+            
+            const signBtn = document.getElementById('customAwardSignBtn');
+            if (signBtn) {
+                // 強迫字串轉換避免奇怪的型別錯誤
+                let targetSign = '-';
+                if (pObj.sign === '+' || pObj.sign === 1 || pObj.sign === '1') targetSign = '+';
+                signBtn.textContent = targetSign;
+                updateSignBtnColor(signBtn);
+            }
+            const ignBox = document.getElementById('customAwardIgnore');
+            if (ignBox) {
+                // 強迫布林轉換
+                let targetIgn = true;
+                if (pObj.ign === false || pObj.ign === 0 || pObj.ign === '0' || pObj.ign === 'false') targetIgn = false;
+                ignBox.checked = targetIgn;
+            }
+            const valInp = document.getElementById('customAwardValue');
+            if (valInp) valInp.value = ''; // 依要求維持空白
+        };
+        const cSel_el = document.getElementById('customAwardLabel'); if(cSel_el) cSel_el.onchange = loadCustomItemPrefs;
+
+        // 當臨時名稱變更時，如果符合已存在的自訂項目，載入其偏好
+        const tempInpEl = document.getElementById('customAwardTempName');
+        if (tempInpEl) {
+            tempInpEl.addEventListener('input', () => {
+                const name = tempInpEl.value.trim();
+                
+                // 無論是否清空，都隨時保留最新的選取與名稱狀態
+                localStorage.setItem('CD_CustomUIState', JSON.stringify({ 
+                    l: document.getElementById('customAwardLabel')?.value || '兌換點數', 
+                    temp: tempInpEl.value 
+                }));
+                
+                if (!name) return; // 如果清空了，就不需要去為「空字串」尋找、綁定偏好
+
+                const p = customPrefs[name];
+                if (p) {
+                    const signBtn = document.getElementById('customAwardSignBtn');
+                    if (signBtn) { signBtn.textContent = p.sign || '-'; updateSignBtnColor(signBtn); }
+                    const ignBox = document.getElementById('customAwardIgnore');
+                    if (ignBox) ignBox.checked = p.ign !== undefined ? p.ign : true;
+                    // 點數依要求維持空白
+                } else {
+                    // 如果是新輸入的臨時名稱且尚無紀錄，則根據目前 UI 狀態建立初步紀錄
+                    syncCustomPref();
+                }
+            });
+        }
+        
+        // 贈與費率變動時同步至雲端
+        const wireGiftFee = (id, key) => {
+            const el = document.getElementById(id);
+            if(el) el.addEventListener('change', () => {
+                giftSettings[key] = parseInt(el.value) || 0;
+                saveData();
+            });
+        };
+        wireGiftFee('giftFeeInterval', 'gInt');
+        wireGiftFee('giftFeeStep', 'gStep');
+        
+        const giftIgnEl = document.getElementById('giftIgnoreRanking');
+        if(giftIgnEl) giftIgnEl.addEventListener('change', () => {
+            giftSettings.gIgn = giftIgnEl.checked ? 1 : 0;
+            saveData();
+        });
+        
+        wire('confirmGiftBtn', () => {
+            const amount = parseInt(document.getElementById('giftAmount').value) || 0;
+            if(amount <= 0) return alert('請輸入有效數量');
+            const interval = giftSettings.gInt;
+            const step = giftSettings.gStep;
+            const ign = document.getElementById('giftIgnoreRanking').checked;
+            const recipients = Array.from(document.querySelectorAll('#giftRecipientList input:checked')).map(cb => cb.value);
+            if(!recipients.length) return alert('請選擇至少一個對象');
+
+            const fee = (interval > 0 && step > 0) ? Math.ceil(amount / interval) * step : 0;
+            const totalPerRecipient = amount + fee;
+            const totalDeduction = totalPerRecipient * recipients.length;
+
+            if(confirm(`將贈與 ${recipients.length} 位學生每人 ${amount} 點，您將總共扣除 ${totalDeduction} 點（含手續費共 ${fee * recipients.length} 點）。確定嗎？`)) {
+                const getNowTS = () => StampTool.encode(Date.now());
+                
+                // A 扣點
+                const donor = students.find(s => s.id === currentProfileId);
+                if(donor) {
+                    donor.cP -= totalDeduction;
+                    logs.push({ sID: donor.id, lb: `贈與點數`, pt: -totalDeduction, TS: getNowTS(), iSum: ign ? 1 : 0 });
+                }
+                
+                // B...加點
+                recipients.forEach(rid => {
+                    const r = students.find(s => s.id === rid);
+                    if(r) {
+                        r.cP += amount;
+                        logs.push({ sID: r.id, lb: `獲得點數`, pt: amount, TS: getNowTS(), iSum: ign ? 1 : 0 });
+                    }
+                });
+
+                // 紀錄操作
+                pushOp(ACT.LOG_ADD, { bulk: true }); 
+                saveData(); renderStudents();
+                closeModal(document.getElementById('studentProfileModal'));
+                return;
+            }
+        });
+
+        document.querySelectorAll('.tab-btn').forEach(b => b.onclick = () => {
+            switchProfileTab(b.dataset.profileTab);
+            // 切換至贈與分頁時，如果需要額外邏輯可加在此（目前 renderGiftTab 已處理賦值）
+        });
+        document.querySelectorAll('.sub-tab-btn').forEach(b => b.onclick = () => {
+            const tab = b.dataset.awardTab;
+            switchAwardTab(tab);
+            if (tab === 'custom') loadCustomItemPrefs(); // 切換到自訂分頁時自動載入偏好
+        });
         document.querySelectorAll('.settings-tab-btn').forEach(b => b.onclick = () => { 
             document.querySelectorAll('.settings-tab-btn').forEach(x => x.classList.remove('active')); 
             b.classList.add('active'); 
@@ -561,13 +771,17 @@ const startApp = () => {
             const b = getFullBackupData(true); 
             const compressed = await compressJSON(b, true);
             if (!compressed) return alert('匯出壓縮失敗');
+            
+            const now = new Date();
+            const dateStr = now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0');
+            
             const raw = atob(compressed);
             const bytes = new Uint8Array(raw.length);
             for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
             const blo = new Blob([bytes], {type:'application/gzip'}); 
             const a = document.createElement('a'); 
             a.href = URL.createObjectURL(blo); 
-            a.download = `ClassKudox_${new Date().toLocaleDateString().replace(/\//g,'')}.json.gz`; 
+            a.download = `ClassKudox_${dateStr}.json.gz`; 
             a.click(); 
         });
         wire('importJsonBtn', () => document.getElementById('importJsonFile')?.click());
