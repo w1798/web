@@ -123,6 +123,9 @@ const openAwardModal = (ids, title, groupId = null) => {
     const histTabBtn = document.getElementById('profileHistoryTabBtn');
     if(histTabBtn) histTabBtn.classList.toggle('hidden', ids.length > 1 || !!groupId);
     
+    const giftTabBtn = document.getElementById('profileGiftTabBtn');
+    if(giftTabBtn) giftTabBtn.classList.toggle('hidden', ids.length > 1 || !!groupId);
+    
     const peek = document.getElementById('groupAwardMembersPeek');
     if(groupId && peek) {
         peek.classList.remove('hidden'); peek.innerHTML = '';
