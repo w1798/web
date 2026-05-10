@@ -88,10 +88,15 @@ body.is-locked-mode .vs-divider {
     padding: 2rem 1rem 5rem 1rem;
 }
 
+/* 戰鬥場景強制滿版 */
+#battleArena.screen {
+    padding: 0 !important;
+}
+
 /* 確保長內容在 flex center 下不會切掉頂部 */
-.screen > .battle-arena {
-    width: 100%;
-    height: 100%;
+.arena-layout {
+    width: 100% !important;
+    height: 100% !important;
     margin: 0;
 }
 
@@ -327,36 +332,39 @@ body.is-locked-mode .vs-divider {
 /* 無論直向橫向，面對面模式皆為實體絕對切割與平移旋轉 (數學完美貼合各尺寸螢幕一半) */
 .arena-layout.face-to-face {
     display: block; 
-    width: 100%;
-    height: 100%;
+    width: 100vw !important;
+    height: 100dvh !important;
+    position: absolute;
+    top: 0;
+    left: 0;
     overflow: hidden; /* 對向模式下限制背景溢出 */
 }
 
 .arena-layout.face-to-face .player-area {
     position: absolute;
-    width: 90vh !important; 
-    height: 48vw !important;
+    width: 100dvh !important; 
+    height: 50.1vw !important; /* 旋轉後的寬 = 視窗的一半 */
     top: 50%;
     margin: 0 !important; 
-    padding: 0.5rem !important;
-    overflow: visible; /* 透過 scale 縮放而非裁切 */
+    padding: 0 !important;
+    overflow: visible;
 }
 
 /* 手機版對向模式：向中心靠攏，選項 4 欄微型按鈕 */
-@media screen and (max-width: 600px) {
+@media screen and (max-width: 950px) {
     .arena-layout.face-to-face .player-area {
-        width: 90dvh !important;
-        height: 50vw !important;  /* 旋轉後=可視寬度，給滿半屏 */
+        width: 100dvh !important; 
+        height: 50.1vw !important; 
         transform-origin: center center;
-        padding: 0.3rem !important;
+        padding: 0 !important;
     }
     .arena-layout.face-to-face .player-left {
-        left: 35% !important; /* 大幅向中心靠攏，改用 % 修正偏移 */
-        --base-transform: translate(-50%, -50%) rotate(90deg) scale(0.75);
+        left: 25% !important;
+        --base-transform: translate(-50%, -50%) rotate(90deg);
     }
     .arena-layout.face-to-face .player-right {
-        left: 65% !important; /* 大幅向中心靠攏，改用 % 修正偏移 */
-        --base-transform: translate(-50%, -50%) rotate(-90deg) scale(0.75);
+        left: 75% !important;
+        --base-transform: translate(-50%, -50%) rotate(-90deg);
     }
     /* 4 欄微型按鈕，充分利用寬度 */
     .arena-layout.face-to-face .options-grid {
@@ -384,14 +392,21 @@ body.is-locked-mode .vs-divider {
     }
 }
 
+/* 針對直立螢幕 (Portrait) 的對向模式微調，避免 50vmax 導致的重疊 */
+@media screen and (orientation: portrait) {
+    .arena-layout.face-to-face .player-area {
+        height: 50vmin !important; /* 直立時，旋轉後的寬度應為短邊的一半 */
+    }
+}
+
 .arena-layout.face-to-face .player-left {
-    left: 20%; /* 向中心靠攏，改用 % 修正偏移 */
-    --base-transform: translate(-50%, -50%) rotate(90deg) scale(0.85); /* 縮放保護平板溢出 */
+    left: 25% !important;
+    --base-transform: translate(-50%, -50%) rotate(90deg);
 }
 
 .arena-layout.face-to-face .player-right {
-    left: 80%; /* 向中心靠攏，改用 % 修正偏移 */
-    --base-transform: translate(-50%, -50%) rotate(-90deg) scale(0.85);
+    left: 75% !important;
+    --base-transform: translate(-50%, -50%) rotate(-90deg);
 }
 
 .vs-divider {
@@ -684,7 +699,7 @@ body.is-locked-mode .teacher-tools {
 
 /* 對向模式：內容往兩側靠邊 (P1靠左, P2靠右) */
 .arena-layout.face-to-face .player-area {
-    justify-content: flex-start;
+    justify-content: flex-end !important;
 }
 
 /* 狂搶答模式等平行視角 */
