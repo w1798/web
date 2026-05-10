@@ -337,37 +337,68 @@ body {
 .multi-select-actions { display: flex; gap: 1rem; }
 .multi-select-actions .btn { font-size: 16px; }
 
-/* Undo Strip & Toast */
-.undo-strip {
-    position: fixed; bottom: 0px; left: 10px; z-index: 1100;
+/* Floating Bottom Strip (Multi-select & Undo) */
+.floating-bottom-strip {
+    position: fixed; bottom: 15px; right: 15px; z-index: 1100;
+    display: flex; align-items: center; gap: 0.75rem; 
+    pointer-events: none;
 }
-.undo-inline {
-    background: #1e293b; color: white; padding: 0.5rem 1rem; border-radius: 12px;
-    display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+.floating-bottom-strip * { pointer-events: auto; }
+
+/* Undo Toast Bubble */
+.undo-toast-bubble {
+    background: #1e293b; color: white; padding: 0.6rem 1rem; border-radius: 12px;
+    display: flex; align-items: center; gap: 0.5rem; 
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
     animation: fadeIn 0.3s ease;
-    min-height: 5px;
+    position: fixed; bottom: 15px; right: 15px; z-index: 1100;
+    transition: right 0.3s ease, transform 0.2s, opacity 0.3s;
 }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-#undoMessage { font-weight: 500; font-size: 16px; }
-.undo-inline .btn { font-size: 16px; }
+.undo-toast-bubble.has-floating-btn {
+    right: 140px;
+}
+.undo-btn-simple {
+    background: var(--warning-color); color: white; border: none;
+    padding: 0.5rem 0.8rem; border-radius: 8px; font-weight: 700;
+    cursor: pointer; transition: var(--transition);
+    font-size: 14px;
+}
+.undo-btn-simple:hover { background: var(--warning-hover); transform: scale(1.05); }
+
+.undo-msg-tooltip {
+    position: absolute; bottom: calc(100% + 10px); right: 0;
+    background: rgba(15, 23, 42, 0.95); color: white; 
+    padding: 0.6rem 1rem; border-radius: 10px; font-size: 0.85em;
+    white-space: nowrap; pointer-events: none; opacity: 0;
+    transform: translateY(10px); transition: var(--transition);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    z-index: 1200;
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+.undo-msg-tooltip::after {
+    content: ""; position: absolute; top: 100%; right: 20px;
+    border-width: 6px; border-style: solid;
+    border-color: rgba(15, 23, 42, 0.95) transparent transparent transparent;
+}
+.undo-toast-bubble:hover .undo-msg-tooltip { opacity: 1; transform: translateY(0); }
+
 .undo-close-btn {
     background: transparent; border: none; color: rgba(255,255,255,0.6); font-size: 1.3em;
     cursor: pointer; padding: 0 0.25rem; line-height: 1; transition: var(--transition);
 }
 .undo-close-btn:hover { color: white; }
-/* Floating Multi-select Strip */
-.floating-multi-select-strip {
-    position: fixed; bottom: 10px; right: 10px; z-index: 1100;
-    pointer-events: none;
-}
+
+/* Floating Multi-select Toggle */
 .floating-bottom-btn {
     background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--primary-color);
-    padding: 1.2rem 1rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    padding: 1rem 1rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
     display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary); font-weight: 600;
-    cursor: pointer; transition: var(--transition); pointer-events: auto;
+    cursor: pointer; transition: var(--transition); 
     animation: fadeIn 0.3s ease;
     min-height: 5px;
     font-size: 16px;
+    white-space: nowrap;
 }
 .floating-bottom-btn:hover { transform: translateY(-3px); box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
 .floating-bottom-btn.hidden { opacity: 0; pointer-events: none; transform: translateY(20px); }
@@ -923,8 +954,32 @@ footer a:hover {
     .multi-select-actions { flex-wrap: wrap; justify-content: center; }
     .btn { padding: 0.5rem 1rem; font-size: 0.85em; }
     .multi-select-actions .btn { font-size: 16px; }
-    .undo-strip { position: static; margin-bottom: 0.5rem; }
-    .undo-inline { padding: 0.5rem 0.75rem; justify-content: center; }
+    
+    /* Mobile Undo: Restore to banner style above cards */
+    .undo-toast-bubble {
+        position: static;
+        margin: 0.5rem 10px;
+        width: calc(100% - 20px);
+        justify-content: space-between;
+        padding: 0.75rem 1rem;
+        box-sizing: border-box;
+    }
+    .undo-msg-tooltip {
+        position: static;
+        opacity: 1 !important;
+        transform: none !important;
+        display: inline-block;
+        background: transparent;
+        box-shadow: none;
+        border: none;
+        padding: 0;
+        pointer-events: auto;
+        color: white;
+        font-size: 0.95em;
+    }
+    .undo-msg-tooltip::after { display: none; }
+    .undo-btn-simple { order: 2; }
+    .undo-close-btn { order: 3; }
 
     /* Full screen settings modal for mobile */
     #settingsModal.modal-overlay {

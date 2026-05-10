@@ -76,19 +76,20 @@ const startApp = () => {
         // 監聽滾動以顯示右下角多選按鈕
         window.addEventListener('scroll', () => {
             const floatingBtn = document.getElementById('floatingMultiSelectBtn');
+            const undoToast = document.getElementById('undoToast');
             if (floatingBtn) {
-                // 如果已經在多選模式，或是在視窗開啟狀態，則不顯示浮動按鈕
                 const isModalOpen = !!document.querySelector('.modal-overlay:not(.hidden)');
-                if (isMultiSelectMode || isModalOpen) {
-                    floatingBtn.classList.add('hidden');
-                    return;
-                }
-                // 判斷是否接近底部 (距離底部 80px 內出現)
                 const isBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 80);
-                if (isBottom) {
+                
+                // 只有在底部、非多選模式、且無視窗開啟時才顯示浮動按鈕
+                const shouldShowFloating = isBottom && !isMultiSelectMode && !isModalOpen;
+
+                if (shouldShowFloating) {
                     floatingBtn.classList.remove('hidden');
+                    if(undoToast) undoToast.classList.add('has-floating-btn');
                 } else {
                     floatingBtn.classList.add('hidden');
+                    if(undoToast) undoToast.classList.remove('has-floating-btn');
                 }
             }
         });

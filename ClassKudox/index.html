@@ -13,7 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <script>
-    var APP_VER = '1.06b';
+    var APP_VER = '1.06c';
     try {
         var xhr = new XMLHttpRequest();
         xhr.open('GET', 'version.json?t=' + Date.now(), false);
@@ -49,17 +49,15 @@
             </div>
         </header>
 
-        <!-- Undo Toast Strip -->
-        <div class="undo-strip">
-            <div id="undoToast" class="undo-inline hidden">
-                <button id="undoActionBtn" class="btn warning-btn">↩️ 復原</button>
-                <span id="undoMessage">已給予點數</span>
-                <button class="undo-close-btn" onclick="document.getElementById('undoToast').classList.add('hidden')">&times;</button>
-            </div>
+        <!-- Undo Toast Strip (Repositioned for Mobile Context) -->
+        <div id="undoToast" class="undo-toast-bubble hidden">
+            <span id="undoMessage" class="undo-msg-tooltip">已給予點數</span>
+            <button id="undoActionBtn" class="btn undo-btn-simple">復原</button>
+            <button class="undo-close-btn" onclick="document.getElementById('undoToast').classList.add('hidden')">&times;</button>
         </div>
 
-        <!-- Floating Multi-select Toggle (for bottom scroll) -->
-        <div class="floating-multi-select-strip">
+        <!-- Floating Bottom Strip (Multi-select) -->
+        <div class="floating-bottom-strip">
             <button id="floatingMultiSelectBtn" class="btn floating-bottom-btn hidden">☑️ 多選模式</button>
         </div>
 
