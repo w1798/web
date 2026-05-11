@@ -2,6 +2,8 @@
  * ClassKudox - Actions & Business Logic
  */
 
+
+
 const awardPoints = (iID, lb, pt, forcedIgnore = null) => {
     if(!awardContextIds.length) return;
     const count = awardContextIds.length;
@@ -86,12 +88,13 @@ const undoAction = () => {
     lastActionLogIds.forEach(lid => pushOp(ACT.STU_AWD_REV, lid));
     lastActionLogIds = [];
     saveData();
-    const toast = document.getElementById('undoToast'); if(toast) toast.classList.add('hidden');
+    hideUndoToast();
     if (typeof renderStudents === 'function') renderStudents(); 
     if (currentView === 'groups' && typeof renderGroups === 'function') renderGroups();
 };
 
 const openAwardModal = (ids, title, groupId = null) => {
+    hideUndoToast();
     awardContextIds = ids;
     currentGroupIdForAward = groupId;
     pendingTreasures = {};
@@ -159,6 +162,7 @@ const openAwardModal = (ids, title, groupId = null) => {
 };
 
 const openManageGroupModal = (groupId = null) => {
+    hideUndoToast();
     editingGroupId = groupId;
     const title = document.getElementById('groupModalTitle');
     const nameInp = document.getElementById('groupNameInput');
@@ -237,6 +241,7 @@ const openEditPointItemModal = (cat, itemId) => {
 };
 
 const toggleMultiSelectMode = () => {
+    hideUndoToast();
     isMultiSelectMode = !isMultiSelectMode;
     selectedStudentIds.length = 0;
     selectedGroupIds.clear();
@@ -246,8 +251,7 @@ const toggleMultiSelectMode = () => {
     if(fbtn) {
         if (isMultiSelectMode) {
             fbtn.classList.add('hidden');
-            const toast = document.getElementById('undoToast');
-            if(toast) toast.classList.add('hidden');
+            hideUndoToast();
         } else {
             // 如果解除多選且剛好在底部，則重新顯示 (觸發滾動偵測)
             window.dispatchEvent(new Event('scroll'));
@@ -270,7 +274,8 @@ const toggleStudentSelection = (id) => {
 
 const showUndoToast = (m) => { 
     if (isMultiSelectMode) return; // 多選模式不顯示復原按鈕
-    const el = document.getElementById('undoMessage'); if(el) el.textContent = m; 
+    if (m) lastUndoMessage = m; 
+    const el = document.getElementById('undoMessage'); if(el) el.textContent = lastUndoMessage; 
     const toast = document.getElementById('undoToast'); if(toast) toast.classList.remove('hidden'); 
     if(undoTimeout) clearTimeout(undoTimeout); 
 };

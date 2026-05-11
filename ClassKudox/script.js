@@ -24,6 +24,10 @@ const startApp = () => {
             } catch(e) {}
             openModal(document.getElementById('settingsModal')); applySettings(); renderPointItems(); 
         });
+        wire('manualShowUndoBtn', () => {
+            closeModal(document.getElementById('settingsModal'));
+            if (typeof showUndoToast === 'function') showUndoToast();
+        });
         wire('manageClassesBtn', () => { renderClassSelector(); openModal(document.getElementById('manageClassesModal')); });
         wire('reportsBtn', () => { 
             currentProfileId = null; 

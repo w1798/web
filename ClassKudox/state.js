@@ -68,7 +68,13 @@ selectedStudentIds.clear = function() { this.length = 0; };
 selectedStudentIds.toArray = function() { return this.slice(); };
 
 let isDirty = 0, isSyncing = false, autoSyncTimer = null; 
-let awardContextIds = [], currentProfileId = null, editingGroupId = null, currentGroupIdForAward = null, editingPointItemId = null, editingPointItemCat = null, lastActionLogIds = [], undoTimeout = null, currentSort = 'score';
+let awardContextIds = [], currentProfileId = null, editingGroupId = null, currentGroupIdForAward = null, editingPointItemId = null, editingPointItemCat = null, lastActionLogIds = [], undoTimeout = null, lastUndoMessage = "", currentSort = 'score';
+
+const hideUndoToast = () => {
+    const toast = document.getElementById('undoToast');
+    if (toast) toast.classList.add('hidden');
+    if (undoTimeout) clearTimeout(undoTimeout);
+};
 let currentReportView = 'points';
 let currentReportPage = 1;
 let pendingTreasures = {};

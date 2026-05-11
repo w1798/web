@@ -3,6 +3,7 @@
  */
 
 const openModal = (m) => {
+    if (typeof hideUndoToast === 'function') hideUndoToast();
     m?.classList.remove('hidden');
     document.body.classList.add('modal-open');
     // 有視窗開啟時，強制隱藏右下角多選按鈕

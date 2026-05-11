@@ -13,7 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <script>
-    var APP_VER = '1.06d';
+    var APP_VER = '1.06e';
     try {
         var xhr = new XMLHttpRequest();
         xhr.open('GET', 'version.json?t=' + Date.now(), false);
@@ -583,6 +583,9 @@
                              <div style="display: flex; align-items: center; gap: 0.5rem; flex:1;">
                                 <input type="checkbox" id="showTreasureSetting" style="width: 1.2rem; height: 1.2rem; cursor: pointer;">
                                 <label for="showTreasureSetting" style="cursor: pointer; font-weight: 500; margin:0;">🎁 顯示寶物</label>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; flex:1; justify-content: flex-end;">
+                                <button id="manualShowUndoBtn" class="small-btn secondary-btn" style="padding: 4px 10px; font-size: 0.85em; border-radius: 6px;">♻️ 顯示復原</button>
                             </div>
                         </div>
                         <div class="settings-row" style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
