@@ -71,6 +71,7 @@ const applySettings = () => {
 };
 
 const switchProfileTab = (tab) => {
+    localStorage.setItem('CD_LastProfileTab', tab);
     document.querySelectorAll('.main-tabs .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.profileTab === tab));
     const awardTab = document.getElementById('profileAwardTab'); if(awardTab) awardTab.classList.toggle('active', tab === 'award');
     const giftTab = document.getElementById('profileGiftTab'); if(giftTab) giftTab.classList.toggle('active', tab === 'gift');
@@ -110,6 +111,7 @@ const renderGiftTab = () => {
 };
 
 const switchAwardTab = (tab) => {
+    localStorage.setItem('CD_LastAwardSubTab', tab);
     document.querySelectorAll('.sub-tabs .sub-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.awardTab === tab));
     const pos = document.getElementById('positiveItems'); if(pos) pos.classList.toggle('active', tab === 'positive');
     const neg = document.getElementById('needsWorkItems'); if(neg) neg.classList.toggle('active', tab === 'needs-work');
@@ -284,10 +286,13 @@ const renderStudentTreasures = () => {
             createPointAnimation(1, awardContextIds.length);
             const titleText = awardContextIds.length > 1 ? `已給予 ${awardContextIds.length} 位學生寶物異動` : `已完成寶物發放`;
             lastActionLogIds = allLogIds;
+            pendingTreasures = {};
+            if(isMultiSelectMode) toggleMultiSelectMode();
             showUndoToast(titleText);
+        } else {
+            pendingTreasures = {};
+            if(isMultiSelectMode) toggleMultiSelectMode();
         }
-        pendingTreasures = {};
-        if(isMultiSelectMode) toggleMultiSelectMode();
         setTimeout(() => {
             closeModal(document.getElementById('studentProfileModal'));
             closeModal(document.getElementById('groupDetailModal'));

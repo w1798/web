@@ -29,8 +29,8 @@ const awardPoints = (iID, lb, pt, forcedIgnore = null) => {
     if (typeof renderStudents === 'function') renderStudents(); 
     if (currentView === 'groups' && typeof renderGroups === 'function') renderGroups();
     lastActionLogIds = newIds; 
-    showUndoToast(`${pt > 0 ? '+' : ''}${pt} 給予 ${count} 位學生`);
     if(isMultiSelectMode && typeof toggleMultiSelectMode === 'function') toggleMultiSelectMode();
+    showUndoToast(`${pt > 0 ? '+' : ''}${pt} 給予 ${count} 位學生`);
     setTimeout(() => {
         closeModal(document.getElementById('studentProfileModal'));
         closeModal(document.getElementById('groupDetailModal'));
@@ -69,6 +69,7 @@ const awardTreasure = (treasureId, qty, silent = false) => {
 
 const undoAction = () => {
     if (!lastActionLogIds.length) return;
+    if (!confirm('確定要復原上一次的操作嗎？')) return;
     const set = new Set(lastActionLogIds);
     logs.filter(l => set.has(l.id)).forEach(l => {
         const s = students.find(x => x.id === l.sID);
@@ -142,7 +143,18 @@ const openAwardModal = (ids, title, groupId = null) => {
             });
         }
     } else if(peek) { peek.classList.add('hidden'); }
-    if (typeof switchProfileTab === 'function') switchProfileTab('award'); 
+    if (typeof switchProfileTab === 'function') {
+        let lastTab = localStorage.getItem('CD_LastProfileTab') || 'award';
+        let lastSub = localStorage.getItem('CD_LastAwardSubTab') || 'positive';
+        
+        // 多選模式下不允許進入贈與，若上次是贈與或歷史則改回獎勵
+        if (ids.length > 1 || !!groupId) {
+            if (lastTab === 'gift' || lastTab === 'history') lastTab = 'award';
+        }
+        
+        switchProfileTab(lastTab);
+        if (lastTab === 'award') switchAwardTab(lastSub);
+    }
     openModal(document.getElementById('studentProfileModal')); 
 };
 
@@ -234,6 +246,8 @@ const toggleMultiSelectMode = () => {
     if(fbtn) {
         if (isMultiSelectMode) {
             fbtn.classList.add('hidden');
+            const toast = document.getElementById('undoToast');
+            if(toast) toast.classList.add('hidden');
         } else {
             // 如果解除多選且剛好在底部，則重新顯示 (觸發滾動偵測)
             window.dispatchEvent(new Event('scroll'));
@@ -255,6 +269,7 @@ const toggleStudentSelection = (id) => {
 };
 
 const showUndoToast = (m) => { 
+    if (isMultiSelectMode) return; // 多選模式不顯示復原按鈕
     const el = document.getElementById('undoMessage'); if(el) el.textContent = m; 
     const toast = document.getElementById('undoToast'); if(toast) toast.classList.remove('hidden'); 
     if(undoTimeout) clearTimeout(undoTimeout); 

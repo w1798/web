@@ -483,42 +483,39 @@ const startApp = () => {
             const totalPerRecipient = amount + fee;
             const totalDeduction = totalPerRecipient * recipients.length;
 
-            if(confirm(`將贈與 ${recipients.length} 位學生每人 ${amount} 點，您將總共扣除 ${totalDeduction} 點（含手續費共 ${fee * recipients.length} 點）。確定嗎？`)) {
-                const getNowTS = () => StampTool.encode(Date.now());
-                const tsHex = getNowTS();
-                
-                // A 扣點
-                let donorLogId = null;
-                const donor = students.find(s => s.id === currentProfileId);
-                if(donor) {
-                    donorLogId = Math.random().toString(36).substring(2, 8);
-                    donor.cP -= totalDeduction;
-                    logs.push({ id: donorLogId, sID: donor.id, lb: `贈與點數`, pt: -totalDeduction, TS: tsHex, iSum: ign ? 1 : 0 });
-                    pushOp(ACT.STU_AWD, { s: donor.id, lb: `贈與點數`, p: -totalDeduction, l: donorLogId, is: ign ? 1 : 0 });
-                }
-                
-                // B...加點
-                let currentIds = [];
-                recipients.forEach(rid => {
-                    const r = students.find(s => s.id === rid);
-                    if(r) {
-                        const logId = Math.random().toString(36).substring(2, 8);
-                        r.cP += amount;
-                        logs.push({ id: logId, sID: r.id, lb: `獲得點數`, pt: amount, TS: tsHex, iSum: ign ? 1 : 0 });
-                        pushOp(ACT.STU_AWD, { s: r.id, lb: `獲得點數`, p: amount, l: logId, is: ign ? 1 : 0 });
-                        currentIds.push(logId);
-                    }
-                });
-                
-                // 最後再加入 donor，讓 undo 時順序一致
-                if (donorLogId) currentIds.push(donorLogId);
-                lastActionLogIds = currentIds;
-
-                saveData(); renderStudents();
-                showUndoToast(`已贈與 ${amount} 點給 ${recipients.length} 位學生`);
-                closeModal(document.getElementById('studentProfileModal'));
-                return;
+            const getNowTS = () => StampTool.encode(Date.now());
+            const tsHex = getNowTS();
+            
+            // A 扣點
+            let donorLogId = null;
+            const donor = students.find(s => s.id === currentProfileId);
+            if(donor) {
+                donorLogId = Math.random().toString(36).substring(2, 8);
+                donor.cP -= totalDeduction;
+                logs.push({ id: donorLogId, sID: donor.id, lb: `贈與點數`, pt: -totalDeduction, TS: tsHex, iSum: ign ? 1 : 0 });
+                pushOp(ACT.STU_AWD, { s: donor.id, lb: `贈與點數`, p: -totalDeduction, l: donorLogId, is: ign ? 1 : 0 });
             }
+            
+            // B...加點
+            let currentIds = [];
+            recipients.forEach(rid => {
+                const r = students.find(s => s.id === rid);
+                if(r) {
+                    const logId = Math.random().toString(36).substring(2, 8);
+                    r.cP += amount;
+                    logs.push({ id: logId, sID: r.id, lb: `獲得點數`, pt: amount, TS: tsHex, iSum: ign ? 1 : 0 });
+                    pushOp(ACT.STU_AWD, { s: r.id, lb: `獲得點數`, p: amount, l: logId, is: ign ? 1 : 0 });
+                    currentIds.push(logId);
+                }
+            });
+            
+            // 最後再認 donor，讓 undo 時順序一致
+            if (donorLogId) currentIds.push(donorLogId);
+            lastActionLogIds = currentIds;
+
+            saveData(); renderStudents();
+            showUndoToast(`已贈與 ${amount} 點給 ${recipients.length} 位學生`);
+            closeModal(document.getElementById('studentProfileModal'));
         });
 
         document.querySelectorAll('.tab-btn').forEach(b => b.onclick = () => {

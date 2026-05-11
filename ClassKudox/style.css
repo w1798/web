@@ -358,12 +358,17 @@ body {
     right: 140px;
 }
 .undo-btn-simple {
-    background: var(--warning-color); color: white; border: none;
-    padding: 0.5rem 0.8rem; border-radius: 8px; font-weight: 700;
-    cursor: pointer; transition: var(--transition);
-    font-size: 14px;
+    background: #f8fafc; color: #475569; border: 1.5px solid #cbd5e1;
+    padding: 5px 10px; border-radius: 8px; cursor: pointer;
+    font-size: 0.85rem; font-weight: 600;
+    transition: all 0.2s;
+    white-space: nowrap;
 }
-.undo-btn-simple:hover { background: var(--warning-hover); transform: scale(1.05); }
+.undo-btn-simple:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+    transform: translateY(-1px);
+}
 
 .undo-msg-tooltip {
     position: absolute; bottom: calc(100% + 10px); right: 0;
