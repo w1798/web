@@ -23,7 +23,7 @@ const links = [
     { id: "MathPKPro", category: "game", title: "數學算術 PK 大賽", desc: "　這是一款專為觸屏或平板設計的雙人數學PK網頁。支援直向或面對面視角，結合 RPG 戰鬥機制：答對可發動攻擊、連續答對（Combo）與速答能強化傷害，但每秒會自動扣血，增加競技緊張感。內建多元題型與打地鼠模式，讓數學練習變得像對戰遊戲一樣刺激！", url: "MathPKPro" },
 
  
-    { id: "Dojo2Kudox", category: "tool", title: "酷多搬家助手", desc: "　專為老師設計的無痛資料轉移工具。只需簡單複製貼上，程式便會自動解析學生名單、點數與加扣分技能，並聰明配對合適的代表圖示。一鍵生成專屬壓縮備份檔，讓您的班級從原本的 ClassDojo 中輕鬆無縫接軌 ClassKudox - 班級榮譽星！", url: "Dojo2Kudox" },            
+    { id: "Dojo2Kudox", category: "tool", title: "Kudox搬家助手", desc: "　專為老師設計的無痛資料轉移工具。只需簡單複製貼上，程式便會自動解析學生名單、點數與加扣分技能，並聰明配對合適的代表圖示。一鍵生成專屬壓縮備份檔，讓您的班級從原本的 ClassDojo 中輕鬆無縫接軌 ClassKudox - 班級榮譽星！", url: "Dojo2Kudox" },            
     { id: "Divvy", category: "tool", title: "股息回本解套記", desc: "　是一套個人化的股息追蹤工具，讓您輕鬆記錄各股票的購入明細與配息歷史。只需貼入公開的配息資料，系統便自動計算每次除息日的應得股息，並支援多股票管理、快速輸入、雲端備份與資料匯出，幫您精準掌握每一筆現金流，逐步邁向解套之路。", url: "Divvy" },            
     { id: "VercountDash", category: "tool", title: "Vercount數據儀表板", desc: "　是為 Vercount 打造的視覺化儀表板，配合 JSONbin 服務能將資料存入雲端。支援多網址 PV/UV 即時監控與 30 日趨勢圖表。具備雙向雲端同步、自動緩衝更新及對比數據顯示，助您精準掌握多個專案的流量動態。", url: "VercountDash" },
     { id: "ClassDojoStats", category: "tool", title: "ClassDojo 點數統計", desc: "　專為教師打造的課堂管理工具，透過 ClassDojo 的 CSV 檔，系統能根據自訂關鍵字自動加減算出總點數。介面簡潔支援全班總覽，協助您高效掌握學生表現，是現代教室數據化管理的最佳助手。", url: "ClassDojoStats" }, 
