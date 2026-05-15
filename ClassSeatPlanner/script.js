@@ -27,6 +27,7 @@ function initApp() {
     initGridData();
     renderStudentList();
     renderGrid();
+    renderGroups();
     setupEventListeners();
 }
 
@@ -95,6 +96,8 @@ function renderListToContainer(container, isMini = false) {
         
         div.addEventListener('dragstart', handleDragStart);
         div.addEventListener('dragend', handleDragEnd);
+        div.addEventListener('dragover', handleListDragOver);
+        div.addEventListener('drop', handleListDrop);
 
         // Tap-to-Place Logic
         div.addEventListener('click', () => {
@@ -272,12 +275,47 @@ function handleDrop(e) {
     const targetStudentId = seatingData[targetRow][targetCol];
     
     if (draggedFromRow !== null && draggedFromCol !== null) {
+        // Swap within grid
         seatingData[draggedFromRow][draggedFromCol] = targetStudentId || null;
-    } 
+    } else {
+        // From list to grid: if target was filled, we don't swap back to list in a specific way here 
+        // because the list rendering handles "placedStudents" exclusion.
+        // But if we want to be consistent with "swap", we could do more.
+        // However, the current behavior is fine for list-to-grid.
+    }
     
     clearConstraintsUI();
     seatingData[targetRow][targetCol] = draggedStudentId;
     
+    saveToLocalStorage();
+    renderGrid();
+    renderStudentList();
+}
+
+function handleListDragOver(e) {
+    e.preventDefault();
+    this.classList.add('drag-over');
+}
+
+function handleListDrop(e) {
+    e.preventDefault();
+    this.classList.remove('drag-over');
+    const targetStudentId = this.dataset.id;
+    
+    if (!draggedStudentId || draggedStudentId === targetStudentId) return;
+
+    if (draggedFromRow !== null && draggedFromCol !== null) {
+        // From grid back to list (specifically onto another student)
+        seatingData[draggedFromRow][draggedFromCol] = null;
+    } else {
+        // From list to list (Swap)
+        const idx1 = allStudents.indexOf(draggedStudentId);
+        const idx2 = allStudents.indexOf(targetStudentId);
+        if (idx1 !== -1 && idx2 !== -1) {
+            [allStudents[idx1], allStudents[idx2]] = [allStudents[idx2], allStudents[idx1]];
+        }
+    }
+
     saveToLocalStorage();
     renderGrid();
     renderStudentList();
