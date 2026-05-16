@@ -135,16 +135,10 @@ const saveData = (skipDirty = false) => {
     localStorage.setItem(`CD_${currentClassId}_itm`, JSON.stringify(pointItems));
     localStorage.setItem(`CD_${currentClassId}_cItm`, JSON.stringify(customItems));
     
-    // 垃圾回收：刪除不在 customItems 中且不等於預設的孤兒屬性 (保留 '兌換點數')
+    // 垃圾回收：只刪除不在 customItems 中且不等於預設項目的孤兒屬性
     Object.keys(customPrefs).forEach(k => {
         if (k !== '兌換點數' && !customItems.includes(k)) {
             delete customPrefs[k];
-        } else {
-            // 過濾預設值 ({sign: '-', ign: true})
-            const p = customPrefs[k];
-            if ((p.sign === '-' || p.sign === -1 || !p.sign) && (p.ign === true || p.ign === 1)) {
-                delete customPrefs[k];
-            }
         }
     });
     localStorage.setItem(`CD_${currentClassId}_cPref`, JSON.stringify(customPrefs));

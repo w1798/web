@@ -34,6 +34,7 @@ const startApp = () => {
             currentReportPage = 1;
             const filter = document.getElementById('timeRangeFilter');
             if(filter) filter.value = 'today';
+            const cu = document.getElementById('customDateContainer'); if(cu) cu.classList.add('hidden');
             renderReports(); 
             // Reset mobile tabs
             document.querySelectorAll('.reports-mobile-tab').forEach(t => t.classList.remove('active'));
@@ -284,16 +285,7 @@ const startApp = () => {
             awardPoints('custom', l, v, ign);
             
             // 記憶此項目的偏好 (不存點數 val，依要求維持空白)
-            // 將預設物件過濾：如果 sign == '-' 且 ign == true 代表維持預設，則直接刪除該項目記憶節省空間
-            if (sign === -1 && ign === true) {
-                delete customPrefs[l];
-            } else {
-                // 如果是預設，甚至連該 key 都不用給；若只需單一變動就存單一
-                const prefToSave = {};
-                if (sign === 1) prefToSave.sign = '+';
-                if (ign === false) prefToSave.ign = false;
-                customPrefs[l] = prefToSave;
-            }
+            customPrefs[l] = { sign: sign === 1 ? '+' : '-', ign: ign };
             saveData(); 
             
             // 給予完後清空臨時名稱
@@ -316,14 +308,7 @@ const startApp = () => {
             const sign = document.getElementById('customAwardSignBtn').textContent;
             const ign = document.getElementById('customAwardIgnore').checked;
             
-            if (sign === '-' && ign === true) {
-                delete customPrefs[l];
-            } else {
-                const prefToSave = {};
-                if (sign === '+') prefToSave.sign = '+';
-                if (ign === false) prefToSave.ign = false;
-                customPrefs[l] = prefToSave;
-            }
+            customPrefs[l] = { sign: sign, ign: ign };
             saveData();
         };
 
@@ -712,6 +697,33 @@ const startApp = () => {
             }
         });
 
+        const copyTextToClipboard = (text, successMsg) => {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => alert(successMsg)).catch(e => {
+                    fallbackCopy(text, successMsg);
+                });
+            } else {
+                fallbackCopy(text, successMsg);
+            }
+        };
+        const fallbackCopy = (text, successMsg) => {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-999999px";
+            textArea.style.top = "-999999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                alert(successMsg);
+            } catch (err) {
+                alert('複製失敗，請手動複製！');
+            }
+            document.body.removeChild(textArea);
+        };
+
         wire('copyPointsBtn', () => {
              const range = getReportsTimeRange();
              let data = students.map(s => {
@@ -725,7 +737,7 @@ const startApp = () => {
              if (currentSort === 'name') data.sort((a,b) => a.name.localeCompare(b.name, 'zh-TW')); 
              else data.sort((a,b) => b.pts - a.pts);
              const text = data.map(d => `${d.pts}`).join('\n');
-             navigator.clipboard.writeText(text).then(() => alert('已按目前排序複製點數'));
+             copyTextToClipboard(text, '已按目前排序複製點數');
         });
 
         wire('copyNamesBtn', () => {
@@ -741,7 +753,7 @@ const startApp = () => {
              if (currentSort === 'name') data.sort((a,b) => a.name.localeCompare(b.name, 'zh-TW')); 
              else data.sort((a,b) => b.pts - a.pts);
              const text = data.map(d => `${d.name}`).join('\n');
-             navigator.clipboard.writeText(text).then(() => alert('已按目前排序複製姓名'));
+             copyTextToClipboard(text, '已按目前排序複製姓名');
         });
 
         wire('exportCsvBtn', () => {
