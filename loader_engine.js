@@ -61,12 +61,25 @@ async function startLoading() {
 
         // --- 第三步：載入主程式 loadapp.js ---
         console.log("[Engine] 準備啟動 loadapp.js...");
-        if (window.updateLoading) window.updateLoading(20, '啟動應用程式載入器...');
+        if (window.updateLoading) window.updateLoading(60, '啟動應用程式載入器...');
         await loadScript(`${pathPrefix}loadapp.js?ver=${version}`);
 
         // --- 全部成功：清除超時計時器 ---
         clearTimeout(timeoutId);
-        console.log("[Engine] 所有核心資源載入完成，保險定時器已解除。");
+        
+        // 如果是 JSX 模式（檢查全域變數或 config 資源清單），我們啟動背景下載
+        const isJSXMode = (typeof APP_JSX !== 'undefined' && APP_JSX === 1) || 
+                         (typeof resources !== 'undefined' && resources.libs && resources.libs.some(lib => {
+                             const l = typeof lib === 'string' ? lib : lib.url;
+                             return l.toLowerCase().includes('babel');
+                         }));
+
+        if (isJSXMode) {
+            console.log("[Engine] 啟動背景資源懶載入...");
+            if (typeof startLazyLoading === 'function') startLazyLoading();
+        }
+
+        console.log("[Engine] 核心啟動完成。");
 
     } catch (error) {
         console.error("[Engine] 載入過程中發生關鍵錯誤:", error);

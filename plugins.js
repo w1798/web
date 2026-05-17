@@ -3,57 +3,35 @@
  */
 
 (function() {
-    function initLibraries() {
-        // 讀取 index.html 傳進來的配置，如果沒寫就給個空陣列
+    function initLibraries(isLazy = false) {
         const libraries = (typeof resources !== 'undefined' && resources.libs) ? resources.libs : [];
 
-        if (libraries.length === 0) {
-            console.log("%c[plugins] 無外部套件需要載入", "color: #9E9E9E;");
-            return;
-        }
-
-        console.log(`%c[plugins] 開始檢查外部套件...`, "color: #3498db;");
+        if (libraries.length === 0) return;
 
         libraries.forEach(item => {
-            // 正規化參數：支援字串或是完整的設定物件
             const lib = typeof item === 'string' ? { url: item } : item;
-
-            // 自動提取檔名
             const fileName = new URL(lib.url).pathname.split('/').pop();
-            
-            // 判斷是否需要載入？(undefined 為沒定義，要載入。有定義時，依定義條件傳回是否載入)
             const shouldLoad = (lib.condition !== undefined) ? lib.condition : true;
+            
+            // 模式匹配：如果是正常模式，跳過標記為 lazy 的；如果是 lazy 模式，指抓載入標記為 lazy 的
+            const isItemLazy = lib.lazy === true;
+            if (isLazy !== isItemLazy) return;
 
-            if (!shouldLoad) {
-                console.log(`%c[plugins] [跳過] 環境支援原生功能: ${fileName}`, 'color: #9E9E9E;');
-                return;
-            }
+            if (!shouldLoad) return;
 
             const script = document.createElement('script');
             script.src = lib.url;
-            script.async = false;
+            // 關鍵修復：即使是延遲載入，也必須設為 async = false 以保證依賴順序 (React -> ReactDOM)
+            script.async = false; 
 
-            script.onload = () => console.log(`%c[plugins] [成功] 外部庫已載入: ${fileName}`, 'color: #4CAF50; font-weight: bold;');
-
-            // 在 loadlibs.js 的迴圈中
+            script.onload = () => console.log(`%c[plugins] [成功] ${isLazy ? '背景' : '核心'}庫已載入: ${fileName}`, 'color: #4CAF50;');
             script.onerror = function() {
-                // 1. 判斷是否為根目錄
                 const isRoot = (typeof APP_ROOT !== 'undefined' && APP_ROOT === 1);
-                
-                // 2. 根據 APP_ROOT 決定預設的備援路徑前綴
                 const defaultPrefix = isRoot ? "libs/" : "../libs/";
-                
-                // 3. 如果 lib.fallback 有值就用它的，否則組裝預設路徑
                 const fallbackPath = lib.fallback || `${defaultPrefix}${fileName}`;
-                
-                console.warn(`[plugins] [失敗] CDN 失敗，嘗試備援: ${fallbackPath}`);
-                
                 const fallbackScript = document.createElement('script');
                 fallbackScript.src = fallbackPath;
                 fallbackScript.async = false;
-                fallbackScript.onload = () => console.log(`%c[plugins] [備援成功] 已載入: ${fileName}`, 'color: #FF9800; font-weight: bold;');
-                fallbackScript.onerror = () => console.error(`[[plugins] 重大錯誤] 備援失敗: ${fallbackPath}`);
-
                 document.head.appendChild(fallbackScript);
             };
 
@@ -61,5 +39,12 @@
         });
     }
 
-    initLibraries();
+    // 第一階段：載入核心資源
+    initLibraries(false);
+
+    // 提供介面讓外部揭開第二階段
+    window.startLazyLoading = function() {
+        console.log("%c[plugins] 啟動背景資源載入...", "color: #9b59b6; font-weight: bold;");
+        initLibraries(true);
+    };
 })();

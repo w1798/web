@@ -8,30 +8,48 @@
     <link rel="apple-touch-icon" href="icon/GutTracker.png">
     
     <script>
-    // 單一版本控制機制 (One-Version Loader)
-    const APP_VER = "1.00f";
+    const APP_VER = "1.00g";
 
     // 資源載入進度回報介面
     window.updateLoading = function(percent, status) {
         const bar = document.getElementById('loading-bar');
         const text = document.getElementById('loading-text');
         const statusText = document.getElementById('loading-status');
-        if (bar) bar.style.width = percent + '%';
-        if (text) text.innerText = Math.round(percent) + '%';
-        if (statusText) statusText.innerText = status || '載入中...';
         
-        if (percent >= 100) {
-            setTimeout(() => {
-                const screen = document.getElementById('loading-screen');
-                const root = document.getElementById('root');
-                if (screen) {
-                    screen.style.opacity = '0';
-                    if (root) root.style.visibility = 'visible'; 
-                    setTimeout(() => {
-                        screen.style.display = 'none';
-                    }, 500); // 這裡保留 500ms 給淡出動畫
-                }
-            }, 50); // 將啟動後的等待從 500 縮短至 50
+        // 偵測頁面是否需要 Babel (解耦 APP_JSX)
+        // 增加判定：如果 loader 還沒跑完，我們先假設它是需要的，以免過早揭開遮罩
+        const hasBabelTags = !!document.querySelector('script[type="text/babel"]');
+        const isWaitingForLoader = typeof window.loaderFinished === 'undefined';
+        const isJSXMode = hasBabelTags || isWaitingForLoader;
+        
+        let displayPercent = percent;
+        let displayStatus = status || '載入中...';
+
+        if (isJSXMode && percent >= 80 && percent < 90) {
+            displayPercent = 80;
+            displayStatus = '100% 載入完成，正在啟動引擎...';
+        } else if (isJSXMode && percent >= 90) {
+            displayPercent = 90;
+            displayStatus = '引擎啟動完成';
+        }
+        
+        if (bar) bar.style.width = displayPercent + '%';
+        if (text) text.innerText = Math.round(displayPercent) + '%';
+        if (statusText) statusText.innerText = displayStatus;
+        
+        // 絕對穩健：只有到 100% (React 掛載完畢) 才揭開
+        const shouldReveal = (percent >= 100);
+
+        if (shouldReveal) {
+            const screen = document.getElementById('loading-screen');
+            const root = document.getElementById('root');
+            if (screen && screen.style.display !== 'none') {
+                screen.style.opacity = '0';
+                if (root) root.style.visibility = 'visible'; 
+                setTimeout(() => {
+                    screen.style.display = 'none';
+                }, 500); 
+            }
         }
     };
     </script>
@@ -63,7 +81,24 @@
             font-size: 12px; /* 稍微縮小字體以防破版 */
         }
         #root { visibility: hidden; } /* 初始隱藏，由 loader 啟動 */
+        
+        /* 純 CSS 骨架屏閃爍動畫 (防止 Tailwind 還沒載入) */
+        .skeleton-pulse {
+            background: #e2e8f0;
+            background-image: linear-gradient(90deg, #e2e8f0 0px, #f8fafc 40px, #e2e8f0 80px);
+            background-size: 600px;
+            animation: skeleton-loading 2s infinite linear;
+        }
+        .dark .skeleton-pulse {
+            background: #1e293b;
+            background-image: linear-gradient(90deg, #1e293b 0px, #334155 40px, #1e293b 80px);
+        }
+        @keyframes skeleton-loading {
+            0% { background-position: -100px; }
+            100% { background-position: 500px; }
+        }
     </style>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 transition-colors duration-300">
     <!-- Loading Screen -->
@@ -82,21 +117,22 @@
 
     <!-- Core Engine & Frameworks -->
     <script src="../loader_engine.js?ver=1.00a"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#6366f1',
-                        secondary: '#f43f5e',
-                        accent: '#10b981',
-                        background: '#f8fafc',
-                        darkBg: '#0f172a',
-                    },
-                    boxShadow: {
-                        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
+        if (typeof tailwind !== 'undefined') {
+            tailwind.config = {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        colors: {
+                            primary: '#6366f1',
+                            secondary: '#f43f5e',
+                            accent: '#10b981',
+                            background: '#f8fafc',
+                            darkBg: '#0f172a',
+                        },
+                        boxShadow: {
+                            'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
+                        }
                     }
                 }
             }
@@ -107,14 +143,24 @@
         // 由於 loader_engine 核心是非同步載入 Babel
         // 所以我們在這裡等待 Babel 準備好，並且確保 loadapp.js 已經將 JSX 標籤注入後，手動觸發 JSX 編譯！
         let babelTimer = setInterval(function() {
-            if (window.Babel && document.querySelector('script[type="text/babel"]')) {
+            const hasBabelTags = !!document.querySelector('script[type="text/babel"]');
+            
+            if (hasBabelTags && window.Babel) {
                 clearInterval(babelTimer);
-                if (window.updateLoading) window.updateLoading(85, '正在編譯 JSX 組件...');
+                if (window.updateLoading) window.updateLoading(90, '正在編譯 JSX 組件...');
                 // 延遲一下讓畫面顯示編譯中狀態
                 setTimeout(() => {
+                    console.log("[GutTracker] 開始執行 Babel 轉換...");
                     Babel.transformScriptTags();
-                    if (window.updateLoading) window.updateLoading(90, '正在啟動介面...');
-                }, 100);
+                    // React 會在 script.js 載入後自動掛載
+                    if (window.updateLoading) window.updateLoading(100, '引擎啟動完成');
+                }, 50);
+            } else if (window.loaderFinished) {
+                // 只有當資源注入完全結束 (loaderFinished)，且頁面上依然沒有標籤，才判定為非 JSX
+                if (!hasBabelTags) {
+                    clearInterval(babelTimer);
+                    if (window.updateLoading) window.updateLoading(100);
+                }
             }
         }, 50);
     </script>

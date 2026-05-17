@@ -22,13 +22,28 @@
         if (isCSS) {
             el.rel = 'stylesheet';
         } else {
-            // 處理 Script Type
-            if (scriptType) {
-                el.type = scriptType === 'jsx' ? 'text/babel' : scriptType;
+            // 智慧型別判定 (解耦 APP_JSX)
+            let finalType = scriptType;
+            if (!finalType) {
+                // 如果沒指定型別，先看全域變數，若無全域變數則檢查資源清單中是否包含 babel
+                const isJSXMode = (typeof APP_JSX !== 'undefined' && APP_JSX === 1) || 
+                                 (resources.libs && resources.libs.some(lib => {
+                                     const l = typeof lib === 'string' ? lib : lib.url;
+                                     return l.toLowerCase().includes('babel');
+                                 }));
+                                 
+                finalType = isJSXMode ? 'jsx' : 'js';
+            }
+
+            if (finalType === 'jsx') {
+                el.type = 'text/babel';
+                el.setAttribute('data-presets', 'react');
+            } else if (finalType !== 'js') {
+                el.type = finalType;
             }
             
             // 只要不是 ES Module，就強制關閉 async 以確保按順序執行
-            if (scriptType !== 'module') {
+            if (finalType !== 'module') {
                 el.async = false;
             }
         }
@@ -60,17 +75,26 @@
 
         // 核心顯示邏輯：決定何時展示頁面
         const handleComplete = () => {
+            const hasJSX = typeof APP_JSX !== 'undefined' && APP_JSX === 1;
+            
             if (window.updateLoading) {
-                window.updateLoading(window.Babel ? 60 : 100, window.Babel ? '處理 JSX 編譯中...' : '載入完成');
-            } else {
-                document.documentElement.style.visibility = 'visible';
+                // 接納用戶建議：JSX 模式下資源到位即顯示 80%，文字偽裝為 100% 載入
+                window.updateLoading(hasJSX ? 80 : 100, hasJSX ? '100% 載入完成' : '載入完成');
             }
+            
+            // 強制顯示頁面 (如果引擎還沒 reveal)
+            if (typeof reveal === 'function') reveal();
+            else document.documentElement.style.visibility = 'visible';
+
+            window.loaderFinished = true; // 標記載入完成，通知 index.html 進入編譯判定
             console.log("%c[Loader] 所有資源確認完成", "color: #9b59b6; font-weight: bold;");
         };
 
         const reportProgress = (url) => {
             loadedCount++;
-            const progress = 20 + (loadedCount / totalResources) * 40;
+            const hasJSX = typeof APP_JSX !== 'undefined' && APP_JSX === 1;
+            // 如果是 JSX，資源載入佔 20-80%
+            const progress = 20 + (loadedCount / totalResources) * (hasJSX ? 60 : 80);
             const fileName = url.split('/').pop();
             if (window.updateLoading) window.updateLoading(progress, `載入模組: ${fileName}`);
             
