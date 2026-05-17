@@ -12,17 +12,19 @@ function reveal(isTimeout) {
         window.overallTimeoutId = null;
     }
 
-    console.warn(isTimeout ? "[Engine] 載入資源超時，已強行顯示頁面。" : "[Engine] 偵測到載入異常，提前開放介面。");
-    
-    // 如果是超時，才顯示警告；否則如果是正常載入完成路徑，本函式不應該被呼叫
     const statusEl = document.getElementById('status');
-    if (statusEl) {
-        if (isTimeout) {
-            statusEl.innerHTML = "<span style='color:red; font-weight:bold;'>[Engine] 系統載入稍慢，部分功能可能尚未就緒。</span>";
-        } else {
-            // 正常路徑：確保清空
-            statusEl.innerHTML = "";
-        }
+    
+    if (isTimeout) {
+        // 真正的超時情況
+        console.warn("[Engine] 載入資源超時，已強行顯示頁面。");
+        if (statusEl) statusEl.innerHTML = "<span style='color:red; font-weight:bold;'>[Engine] 系統載入稍慢，部分功能可能尚未就緒。</span>";
+    } else if (typeof window.loaderFinished === 'undefined') {
+        // 只有在還沒標記為完成、卻被 catch 觸發時才報異常
+        console.warn("[Engine] 偵測到載入異常，提前開放介面。");
+        if (statusEl) statusEl.innerHTML = "";
+    } else {
+        // 正常路徑：完全沈默
+        if (statusEl) statusEl.innerHTML = "";
     }
 
     // 確保遮罩移除，主體顯示
