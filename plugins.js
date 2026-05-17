@@ -14,7 +14,10 @@
 
         console.log(`%c[plugins] 開始檢查外部套件...`, "color: #3498db;");
 
-        libraries.forEach(lib => {
+        libraries.forEach(item => {
+            // 正規化參數：支援字串或是完整的設定物件
+            const lib = typeof item === 'string' ? { url: item } : item;
+
             // 自動提取檔名
             const fileName = new URL(lib.url).pathname.split('/').pop();
             

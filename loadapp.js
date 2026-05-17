@@ -11,7 +11,10 @@
     }
 
     // 內部核心邏輯 (完全保留你提供的代碼)
-    function injectResource(type, url, onCssLoaded) {
+    function injectResource(type, item, onCssLoaded) {
+        const url = typeof item === 'string' ? item : item.url;
+        const scriptType = typeof item === 'object' ? item.type : null;
+
         const isCSS = type === 'css';
         const el = document.createElement(isCSS ? 'link' : 'script');
         const attr = isCSS ? 'href' : 'src';
@@ -19,7 +22,15 @@
         if (isCSS) {
             el.rel = 'stylesheet';
         } else {
-            el.async = false;
+            // 處理 Script Type
+            if (scriptType) {
+                el.type = scriptType === 'jsx' ? 'text/babel' : scriptType;
+            }
+            
+            // 只要不是 ES Module，就強制關閉 async 以確保按順序執行
+            if (scriptType !== 'module') {
+                el.async = false;
+            }
         }
 
         // 使用全域定義的 APP_VER
@@ -28,12 +39,12 @@
         
         el.onload = () => {
             console.log(`%c[Loader] 已載入 ${type.toUpperCase()}: ${url}`, "color: #00b894");
-            if (isCSS && onCssLoaded) onCssLoaded();
+            if (onCssLoaded) onCssLoaded(); // 這裡現在作為資源載入完成的統一回呼
         };
 
         el.onerror = () => {
             console.error(`[Loader] 載入失敗 ${url}`);
-            if (isCSS && onCssLoaded) onCssLoaded();
+            if (onCssLoaded) onCssLoaded(); // 失敗也回報進度，避免卡死
         };
 
         document.head.appendChild(el);
@@ -43,32 +54,50 @@
         console.log(`%c[Loader] 開始初始化資源 (版本: ${typeof APP_VER !== 'undefined' ? APP_VER : 'N/A'})`, "color: #3498db; font-weight: bold;");
 
         const cssList = resources.styles || [];
-        let cssLoadedCount = 0;
+        const scriptList = resources.scripts || [];
+        const totalResources = cssList.length + scriptList.length;
+        let loadedCount = 0;
 
-        const checkCssProgress = () => {
-            cssLoadedCount++;
-            if (cssLoadedCount >= cssList.length) {
+        // 核心顯示邏輯：決定何時展示頁面
+        const handleComplete = () => {
+            if (window.updateLoading) {
+                window.updateLoading(window.Babel ? 60 : 100, window.Babel ? '處理 JSX 編譯中...' : '載入完成');
+            } else {
                 document.documentElement.style.visibility = 'visible';
-                console.log("%c[Loader] 樣式套用完成，解除頁面鎖定", "color: #9b59b6; font-weight: bold;");
+            }
+            console.log("%c[Loader] 所有資源確認完成", "color: #9b59b6; font-weight: bold;");
+        };
+
+        const reportProgress = (url) => {
+            loadedCount++;
+            const progress = 20 + (loadedCount / totalResources) * 40;
+            const fileName = url.split('/').pop();
+            if (window.updateLoading) window.updateLoading(progress, `載入模組: ${fileName}`);
+            
+            if (loadedCount >= totalResources) {
+                handleComplete();
             }
         };
 
-        if (cssList.length === 0) {
-            document.documentElement.style.visibility = 'visible';
-        }
-
         const configs = [
             { data: cssList, type: 'css', label: 'CSS' },
-            { data: resources.scripts, type: 'js', label: 'JS' }
+            { data: scriptList, type: 'js', label: 'JS' }
         ];
 
+        // 如果完全沒有資源，也要印出日誌並完成初始化
+        if (totalResources === 0) {
+            configs.forEach(config => {
+                console.log(`%c[Loader] 無外部 ${config.label} 資源需要載入`, "color: #e67e22");
+            });
+            handleComplete();
+            return; 
+        }
+        
         configs.forEach(config => {
             if (config.data && config.data.length > 0) {
-                config.data.forEach(url => {
-                    injectResource(config.type, url, config.type === 'css' ? checkCssProgress : null);
+                config.data.forEach(item => {
+                    injectResource(config.type, item, () => reportProgress(typeof item === 'string' ? item : item.url));
                 });
-            } else {
-                console.log(`%c[Loader] 無外部 ${config.label} 資源需要載入`, "color: #e67e22");
             }
         });
     }

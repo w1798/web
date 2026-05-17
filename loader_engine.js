@@ -38,6 +38,7 @@ async function startLoading() {
     try {
         // --- 第一步：載入核心配置 ---
         console.log("[Engine] 開始載入 config.js...");
+        if (window.updateLoading) window.updateLoading(5, '讀取系統配置...');
         await loadScript(`config.js?ver=${version}`);
 
         // --- 第二步：並行載入通用插件 ---
@@ -48,6 +49,7 @@ async function startLoading() {
         console.log(`[Engine] 載入通用資源: counter.js, plugins.js`);
         
         const results = await Promise.allSettled(commonAssets.map(src => loadScript(src)));
+        if (window.updateLoading) window.updateLoading(20, '準備核心插件...');
         
         results.forEach((result, index) => {
             if (result.status === 'rejected') {
@@ -59,6 +61,7 @@ async function startLoading() {
 
         // --- 第三步：載入主程式 loadapp.js ---
         console.log("[Engine] 準備啟動 loadapp.js...");
+        if (window.updateLoading) window.updateLoading(20, '啟動應用程式載入器...');
         await loadScript(`${pathPrefix}loadapp.js?ver=${version}`);
 
         // --- 全部成功：清除超時計時器 ---

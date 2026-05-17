@@ -48,11 +48,15 @@ function updateStats() {
 }
 
 async function pasteTo(id) { 
+    if (!navigator.clipboard) {
+        alert("瀏覽器安全性限制：貼上功能僅支援 localhost 或 HTTPS 環境。請使用 Ctrl+V 手動貼上。");
+        return;
+    }
     try { 
         document.getElementById(id).value = await navigator.clipboard.readText(); 
         if (id === 'inputArea' || id === 'inputArea2') clearOutputIfInputChanged();
         updateStats(); 
-    } catch(e) { alert("請手動貼上"); } 
+    } catch(e) { alert("貼上失敗，請手動貼上"); } 
 }
 
 function clearArea(id) { 
@@ -67,8 +71,34 @@ function clearArea(id) {
 }
 
 function copyOut() {
-    navigator.clipboard.writeText(out.value);
-    showToast('已複製到剪貼簿！');
+    const text = out.value;
+    if (!text) return;
+
+    // 現代 Clipboard API
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+            showToast('已複製到剪貼簿！');
+        });
+        return;
+    }
+
+    // 降級備援方案 (傳統方法)
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-9999px";
+    textArea.style.top = "0";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) showToast('已複製！(備援模式)');
+        else alert('複製失敗，請手動複製');
+    } catch (err) {
+        alert('複製失敗，請手動複製');
+    }
+    document.body.removeChild(textArea);
 }
 
 function showToast(msg) {

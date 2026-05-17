@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>順暢日記</title>
+    <link rel="icon" type="image/png" href="icon/GutTracker.png">
+    <link rel="apple-touch-icon" href="icon/GutTracker.png">
+    
+    <script>
+    // 單一版本控制機制 (One-Version Loader)
+    const APP_VER = "1.00f";
+
+    // 資源載入進度回報介面
+    window.updateLoading = function(percent, status) {
+        const bar = document.getElementById('loading-bar');
+        const text = document.getElementById('loading-text');
+        const statusText = document.getElementById('loading-status');
+        if (bar) bar.style.width = percent + '%';
+        if (text) text.innerText = Math.round(percent) + '%';
+        if (statusText) statusText.innerText = status || '載入中...';
+        
+        if (percent >= 100) {
+            setTimeout(() => {
+                const screen = document.getElementById('loading-screen');
+                const root = document.getElementById('root');
+                if (screen) {
+                    screen.style.opacity = '0';
+                    if (root) root.style.visibility = 'visible'; 
+                    setTimeout(() => {
+                        screen.style.display = 'none';
+                    }, 500); // 這裡保留 500ms 給淡出動畫
+                }
+            }, 50); // 將啟動後的等待從 500 縮短至 50
+        }
+    };
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+
+    
+    <style>
+        body { font-family: 'Outfit', 'Noto Sans TC', sans-serif; }
+        [v-cloak] { display: none; }
+        .glass-card {
+            background: rgba(241, 245, 249, 0.7); /* Tailwind slate-100 */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .dark .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        footer {
+            position: fixed;
+            bottom: 0px;
+            width: 100%;
+            text-align: center;
+            z-index: 60;
+            font-size: 12px; /* 稍微縮小字體以防破版 */
+        }
+        #root { visibility: hidden; } /* 初始隱藏，由 loader 啟動 */
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-900 transition-colors duration-300">
+    <!-- Loading Screen -->
+    <div id="loading-screen" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#f8fafc; color:#1e293b; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; transition: opacity 0.5s ease; font-family: 'Outfit', sans-serif;">
+        <div style="width: 200px; height: 4px; background: #e2e8f0; border-radius: 10px; overflow: hidden; margin-bottom: 12px;">
+            <div id="loading-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #6366f1, #f43f5e); transition: width 0.3s ease;"></div>
+        </div>
+        <div style="font-size: 24px; font-weight: 800; margin-bottom: 4px;" id="loading-text">0%</div>
+        <div style="font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;" id="loading-status">系統啟動中</div>
+    </div>
+
+    <!-- React Mount Point -->
+    <div id="root"></div>
+
+    <footer></footer>
+
+    <!-- Core Engine & Frameworks -->
+    <script src="../loader_engine.js?ver=1.00a"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                        secondary: '#f43f5e',
+                        accent: '#10b981',
+                        background: '#f8fafc',
+                        darkBg: '#0f172a',
+                    },
+                    boxShadow: {
+                        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <script>
+        // 由於 loader_engine 核心是非同步載入 Babel
+        // 所以我們在這裡等待 Babel 準備好，並且確保 loadapp.js 已經將 JSX 標籤注入後，手動觸發 JSX 編譯！
+        let babelTimer = setInterval(function() {
+            if (window.Babel && document.querySelector('script[type="text/babel"]')) {
+                clearInterval(babelTimer);
+                if (window.updateLoading) window.updateLoading(85, '正在編譯 JSX 組件...');
+                // 延遲一下讓畫面顯示編譯中狀態
+                setTimeout(() => {
+                    Babel.transformScriptTags();
+                    if (window.updateLoading) window.updateLoading(90, '正在啟動介面...');
+                }, 100);
+            }
+        }, 50);
+    </script>
+
+    <script>
+        // 初始化檢查
+        document.addEventListener('DOMContentLoaded', function() {
+            if (document.readyState === "interactive" || document.readyState === "complete") {
+                console.log("[GutTracker] 系統準備就緒, 版本: " + APP_VER);
+            }
+        });
+    </script>
+</body>
+</html>
