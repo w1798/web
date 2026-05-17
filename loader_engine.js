@@ -64,19 +64,6 @@ async function startLoading() {
         if (window.updateLoading) window.updateLoading(5, '讀取系統配置...');
         await loadScript(`config.js?ver=${version}`);
 
-        // --- 智慧判斷：自動補完 APP_JSX 旗標 (已優化短路邏輯) ---
-        if (typeof window.APP_JSX === 'undefined' && typeof resources !== 'undefined' && resources.scripts) {
-            const hasJSX = resources.scripts.some(item => {
-                const url = typeof item === 'string' ? item : item.url;
-                const type = typeof item === 'object' ? item.type : null;
-                return (url && url.toLowerCase().endsWith('.jsx')) || type === 'jsx';
-            });
-            if (hasJSX) {
-                console.log("[Engine] 偵測到 JSX 需求，自動啟用 APP_JSX 模式");
-                window.APP_JSX = 1;
-            }
-        }
-
         // --- 第二步：並行載入通用插件 ---
         const commonAssets = [
             `${pathPrefix}counter.js?ver=${version}`,

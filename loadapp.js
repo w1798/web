@@ -82,13 +82,8 @@
         } else {
             let finalType = scriptType;
             if (!finalType) {
-                // 智慧判斷：如果副檔名是 .jsx，則強制設為 jsx
-                if (url.toLowerCase().endsWith('.jsx')) {
-                    finalType = 'jsx';
-                } else {
-                    // 否則依照 APP_JSX 旗標決定預設值 (JSX 專案中預設為 jsx，純 JS 專案預設為 js)
-                    finalType = (typeof APP_JSX !== 'undefined' && APP_JSX === 1) ? 'jsx' : 'js';
-                }
+                // 恢復簡單判斷：依照 APP_JSX 旗標決定預設值
+                finalType = (typeof APP_JSX !== 'undefined' && APP_JSX === 1) ? 'jsx' : 'js';
             }
 
             if (finalType === 'jsx') {

@@ -6,13 +6,8 @@
     function initLibraries(isLazy = false) {
         let libraries = (typeof resources !== 'undefined' && resources.libs) ? [...resources.libs] : [];
 
-        // 智慧注入：識別是否需要載入 React / Babel (使用短路邏輯優化效能)
-        const shouldLoadJSX = (typeof APP_JSX !== 'undefined' && APP_JSX === 1) || 
-            (typeof resources !== 'undefined' && resources.scripts && resources.scripts.some(item => {
-                const url = typeof item === 'string' ? item : item.url;
-                const type = typeof item === 'object' ? item.type : null;
-                return (url && url.toLowerCase().endsWith('.jsx')) || type === 'jsx';
-            }));
+        // 恢復簡單注入：只識別顯式的 APP_JSX 旗標
+        const shouldLoadJSX = typeof APP_JSX !== 'undefined' && APP_JSX === 1;
 
         if (shouldLoadJSX) {
             const jsxLibs = [
