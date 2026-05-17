@@ -32,13 +32,13 @@ const Layout = ({ children, activeTab, setActiveTab }) => {
         { id: 'settings', icon: '⚙️', label: '設定' }
     ];
     return (
-        <div className="h-screen flex flex-col max-w-md mx-auto relative bg-slate-100 dark:bg-slate-900 transition-colors shadow-2xl overflow-hidden">
+        <div className="h-[100dvh] flex flex-col max-w-md mx-auto relative bg-slate-100 dark:bg-slate-900 transition-colors shadow-2xl overflow-hidden">
             <header className="px-4 py-2 flex justify-between items-center sticky top-0 bg-slate-100/80 dark:bg-slate-800/80 backdrop-blur-md z-40 border-b border-gray-200 dark:border-slate-700">
                 <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-500 to-rose-500 bg-clip-text text-transparent flex items-center gap-2">順暢日記</h1>
                 <button onClick={() => setDarkMode(!darkMode)} className="w-11 h-11 flex items-center justify-center rounded-full bg-gray-100 dark:bg-slate-700 text-lg">{darkMode ? '☀️' : '🌙'}</button>
             </header>
             <main ref={mainRef} onScroll={handleScroll} className="flex-1 overflow-y-auto pb-24">{children}</main>
-            <nav className="absolute bottom-6 left-4 right-4 bg-slate-100/90 dark:bg-slate-800/90 backdrop-blur-lg border border-gray-200 dark:border-slate-700 px-4 py-1 flex justify-around items-center z-50 rounded-2xl shadow-xl">
+            <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-[calc(448px-2rem)] bg-slate-100/90 dark:bg-slate-800/90 backdrop-blur-lg border border-gray-200 dark:border-slate-700 px-4 py-1 flex justify-around items-center z-50 rounded-2xl shadow-xl">
                 {tabs.map(tab => (
                     <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                         className={`flex flex-col items-center gap-0 px-3 py-1 rounded-xl transition-all ${activeTab === tab.id ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 scale-105' : 'text-gray-400 dark:text-gray-500'}`}>

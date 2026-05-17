@@ -36,12 +36,10 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
         footer {
-            position: fixed;
-            bottom: 0px;
+            /* 移除固定定位，交由 React Layout 處理 */
             width: 100%;
             text-align: center;
-            z-index: 60;
-            font-size: 12px; /* 稍微縮小字體以防破版 */
+            font-size: 12px;
         }
         #root { visibility: hidden; } /* 初始隱藏，由 loader 啟動 */
         
