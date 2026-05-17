@@ -6,9 +6,15 @@
     function initLibraries(isLazy = false) {
         let libraries = (typeof resources !== 'undefined' && resources.libs) ? [...resources.libs] : [];
 
-        // 智慧注入：如果設定了 APP_JSX，自動補上需要的延遲載入庫
-        const hasJSX = typeof APP_JSX !== 'undefined' && APP_JSX === 1;
-        if (hasJSX) {
+        // 智慧注入：識別是否需要載入 React / Babel (使用短路邏輯優化效能)
+        const shouldLoadJSX = (typeof APP_JSX !== 'undefined' && APP_JSX === 1) || 
+            (typeof resources !== 'undefined' && resources.scripts && resources.scripts.some(item => {
+                const url = typeof item === 'string' ? item : item.url;
+                const type = typeof item === 'object' ? item.type : null;
+                return (url && url.toLowerCase().endsWith('.jsx')) || type === 'jsx';
+            }));
+
+        if (shouldLoadJSX) {
             const jsxLibs = [
                 { url: "https://unpkg.com/react@18/umd/react.development.js", lazy: true },
                 { url: "https://unpkg.com/react-dom@18/umd/react-dom.development.js", lazy: true },
