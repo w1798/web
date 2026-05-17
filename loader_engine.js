@@ -2,18 +2,40 @@
  * Charles Nextime - 資源載入引擎 (Engine.js)
  */
 
-function reveal() {
-    if (document.documentElement.style.visibility === 'hidden') {
-        document.documentElement.style.visibility = 'visible';
-        console.warn("[Engine] 載入資源超時，已強行顯示頁面。");
-        
-        setTimeout(() => {
-            const statusEl = document.getElementById('status');
-            if (statusEl) {
-                statusEl.innerHTML = "<span style='color:red; font-weight:bold;'>[Engine] 系統載入稍慢，部分功能可能尚未就緒。</span>";
-            }
-        }, 0);
+function reveal(isTimeout) {
+    // 只有當「是因為超時觸發」且「事實上已經載入完成」時，才攔截不處理
+    if (isTimeout && typeof window.loaderFinished !== 'undefined') return;
+
+    // 清除計時器（如果是手動呼叫）
+    if (window.overallTimeoutId) {
+        clearTimeout(window.overallTimeoutId);
+        window.overallTimeoutId = null;
     }
+
+    console.warn(isTimeout ? "[Engine] 載入資源超時，已強行顯示頁面。" : "[Engine] 偵測到載入異常，提前開放介面。");
+    
+    // 如果是超時，才顯示警告；否則如果是正常載入完成路徑，本函式不應該被呼叫
+    const statusEl = document.getElementById('status');
+    if (statusEl) {
+        if (isTimeout) {
+            statusEl.innerHTML = "<span style='color:red; font-weight:bold;'>[Engine] 系統載入稍慢，部分功能可能尚未就緒。</span>";
+        } else {
+            // 正常路徑：確保清空
+            statusEl.innerHTML = "";
+        }
+    }
+
+    // 確保遮罩移除，主體顯示
+    const screen = document.getElementById('loading-screen');
+    if (screen) {
+        screen.style.opacity = '0';
+        setTimeout(() => { screen.style.display = 'none'; }, 500);
+    }
+    const root = document.getElementById('root');
+    if (root) root.style.visibility = 'visible';
+    
+    // 強制讓 HTML 可見 (應對某些舊專案設定)
+    document.documentElement.style.visibility = 'visible';
 }
 
 // 輔助函式：建立 Script 標籤並返回 Promise
@@ -32,12 +54,11 @@ async function startLoading() {
     const isRoot = (typeof APP_ROOT !== 'undefined' && APP_ROOT === 1);
     const pathPrefix = isRoot ? "" : "../";
     
-    // 設定 5 秒全域超時保險
-    const timeoutId = setTimeout(reveal, 5000);
+    // 設定 6 秒全域超時保險，將 ID 掛在 window 以便跨實體清除
+    window.overallTimeoutId = setTimeout(() => reveal(true), 6000);
 
     try {
         // --- 第一步：載入核心配置 ---
-        console.log("[Engine] 開始載入 config.js...");
         if (window.updateLoading) window.updateLoading(5, '讀取系統配置...');
         await loadScript(`config.js?ver=${version}`);
 
@@ -46,44 +67,32 @@ async function startLoading() {
             `${pathPrefix}counter.js?ver=${version}`,
             `${pathPrefix}plugins.js?ver=${version}`
         ];
-        console.log(`[Engine] 載入通用資源: counter.js, plugins.js`);
         
         const results = await Promise.allSettled(commonAssets.map(src => loadScript(src)));
         if (window.updateLoading) window.updateLoading(20, '準備核心插件...');
         
-        results.forEach((result, index) => {
-            if (result.status === 'rejected') {
-                console.error(`[Engine] 資源載入失敗: ${commonAssets[index]}`);
-            } else {
-                console.log(`[Engine] 資源載入成功: ${result.value}`);
-            }
-        });
-
         // --- 第三步：載入主程式 loadapp.js ---
-        console.log("[Engine] 準備啟動 loadapp.js...");
         if (window.updateLoading) window.updateLoading(60, '啟動應用程式載入器...');
         await loadScript(`${pathPrefix}loadapp.js?ver=${version}`);
 
-        // --- 全部成功：清除超時計時器 ---
-        clearTimeout(timeoutId);
+        // --- 全部成功：清除超時計時器並確保 UI 乾淨 ---
+        if (window.overallTimeoutId) {
+            clearTimeout(window.overallTimeoutId);
+            window.overallTimeoutId = null;
+        }
         
-        // 如果是 JSX 模式（檢查全域變數或 config 資源清單），我們啟動背景下載
-        const isJSXMode = (typeof APP_JSX !== 'undefined' && APP_JSX === 1) || 
-                         (typeof resources !== 'undefined' && resources.libs && resources.libs.some(lib => {
-                             const l = typeof lib === 'string' ? lib : lib.url;
-                             return l.toLowerCase().includes('babel');
-                         }));
+        // 強致清理一次 status (應對極速載入時的殘留)
+        const statusEl = document.getElementById('status');
+        if (statusEl) statusEl.innerHTML = "";
 
-        if (isJSXMode) {
-            console.log("[Engine] 啟動背景資源懶載入...");
+        // 如果是 JSX 模式，啟動背景載入
+        if (typeof APP_JSX !== 'undefined' && APP_JSX === 1) {
             if (typeof startLazyLoading === 'function') startLazyLoading();
         }
 
-        console.log("[Engine] 核心啟動完成。");
-
     } catch (error) {
         console.error("[Engine] 載入過程中發生關鍵錯誤:", error);
-        // 如果 catch 抓到錯誤（通常是 loadScript 失敗），就不清除 timeout，讓 reveal 觸發
+        reveal(false); // 發生錯誤時，提前解鎖 UI，但傳入 false 表示不是「超時」而是「異常」
     }
 }
 

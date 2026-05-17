@@ -1,20 +1,78 @@
 /**
- * Charles Nextime - 資源加載核心 (loadapp.js)
+ * Charles Nextime - 資源加載核心 (loadapp.js) - 穩定相容版
  */
  
 (function() {
-    // 檢查全域變數 resources 是否存在
-    if (typeof resources === 'undefined') {
-        document.documentElement.style.visibility = 'visible';
-        console.error('[Loader] 找不到 resources 配置');
-        return;
+    // --- 核心 UI 分發器 ---
+    window.updateLoading = function(percent, status) {
+        const bar = document.getElementById('loading-bar');
+        const text = document.getElementById('loading-text');
+        const statusText = document.getElementById('loading-status');
+        const hasJSX = typeof APP_JSX !== 'undefined' && APP_JSX === 1;
+        
+        let displayPercent = percent;
+        let displayStatus = status || '載入中...';
+
+        if (hasJSX && percent >= 80 && percent < 90) {
+            displayPercent = 80;
+            displayStatus = '100% 載入完成，正在啟動引擎...';
+        } else if (hasJSX && percent >= 90) {
+            displayPercent = 90;
+            displayStatus = '引擎啟動完成';
+        }
+        
+        if (bar) bar.style.width = displayPercent + '%';
+        if (text) text.innerText = Math.round(displayPercent) + '%';
+        if (statusText) statusText.innerText = displayStatus;
+        
+        // 揭開遮罩邏輯
+        if (percent >= 100) {
+            const screen = document.getElementById('loading-screen');
+            const root = document.getElementById('root');
+            const statusEl = document.getElementById('status');
+            
+            // 重要：清理主引擎留下的任何警告
+            if (statusEl) statusEl.innerHTML = '';
+
+            if (screen && screen.style.display !== 'none') {
+                screen.style.opacity = '0';
+                if (root) root.style.visibility = 'visible'; 
+                setTimeout(() => {
+                    screen.style.display = 'none';
+                    if (root) root.style.visibility = 'visible';
+                }, 500); 
+            }
+        }
+    };
+
+    function startBabelOrFinish() {
+        const hasJSX = typeof APP_JSX !== 'undefined' && APP_JSX === 1;
+        if (!hasJSX) {
+            window.updateLoading(100, '載入完成');
+            return;
+        }
+
+        let babelTimer = setInterval(function() {
+            const hasBabelTags = !!document.querySelector('script[type="text/babel"]');
+            if (hasBabelTags && window.Babel) {
+                clearInterval(babelTimer);
+                window.updateLoading(90, '正在編譯分析組件...');
+                setTimeout(() => {
+                    console.log("[Loader] 開始執行 Babel 轉換...");
+                    Babel.transformScriptTags();
+                    window.updateLoading(100, '引擎啟動完成');
+                }, 50);
+            } else if (window.loaderFinished && !hasBabelTags) {
+                clearInterval(babelTimer);
+                window.updateLoading(100);
+            }
+        }, 50);
     }
 
-    // 內部核心邏輯 (完全保留你提供的代碼)
-    function injectResource(type, item, onCssLoaded) {
+    // 核心注入邏輯 (回歸 Script Tag 以保證相容性)
+    function injectResource(type, item, onComplete) {
         const url = typeof item === 'string' ? item : item.url;
         const scriptType = typeof item === 'object' ? item.type : null;
-
         const isCSS = type === 'css';
         const el = document.createElement(isCSS ? 'link' : 'script');
         const attr = isCSS ? 'href' : 'src';
@@ -22,17 +80,9 @@
         if (isCSS) {
             el.rel = 'stylesheet';
         } else {
-            // 智慧型別判定 (解耦 APP_JSX)
             let finalType = scriptType;
             if (!finalType) {
-                // 如果沒指定型別，先看全域變數，若無全域變數則檢查資源清單中是否包含 babel
-                const isJSXMode = (typeof APP_JSX !== 'undefined' && APP_JSX === 1) || 
-                                 (resources.libs && resources.libs.some(lib => {
-                                     const l = typeof lib === 'string' ? lib : lib.url;
-                                     return l.toLowerCase().includes('babel');
-                                 }));
-                                 
-                finalType = isJSXMode ? 'jsx' : 'js';
+                finalType = (typeof APP_JSX !== 'undefined' && APP_JSX === 1) ? 'jsx' : 'js';
             }
 
             if (finalType === 'jsx') {
@@ -42,90 +92,79 @@
                 el.type = finalType;
             }
             
-            // 只要不是 ES Module，就強制關閉 async 以確保按順序執行
-            if (finalType !== 'module') {
+            // 核心優化：只有 JS (正常執行腳本) 才需要 async = false
+            // JSX 不要 async = false，否則會導致瀏覽器在執行隊列中卡死無法觸發 onload
+            if (finalType === 'js') {
                 el.async = false;
             }
         }
 
-        // 使用全域定義的 APP_VER
+        // 狀態管理
+        let isDone = false;
+        const done = () => {
+            if (isDone) return;
+            isDone = true;
+            console.log(`%c[Loader] 已載入 ${type.toUpperCase()}: ${url.split('/').pop()}`, "color: #00b894");
+            if (onComplete) onComplete();
+        };
+
+        // 先掛監聽，再設網址，防止本機快取漏掉事件
+        el.onload = done;
+        el.onerror = done;
+
+        // 針對 text/babel 增加 1.5 秒的保險，應對某些老舊瀏覽器不對資料標籤觸發 onload
+        if (!isCSS && el.type === 'text/babel') {
+            setTimeout(done, 1500);
+        }
+
         const ver = typeof APP_VER !== 'undefined' ? APP_VER : "1.00a";
         el[attr] = `${url}?ver=${ver}`;
-        
-        el.onload = () => {
-            console.log(`%c[Loader] 已載入 ${type.toUpperCase()}: ${url}`, "color: #00b894");
-            if (onCssLoaded) onCssLoaded(); // 這裡現在作為資源載入完成的統一回呼
-        };
-
-        el.onerror = () => {
-            console.error(`[Loader] 載入失敗 ${url}`);
-            if (onCssLoaded) onCssLoaded(); // 失敗也回報進度，避免卡死
-        };
-
         document.head.appendChild(el);
     }
 
     function loadApp() {
-        console.log(`%c[Loader] 開始初始化資源 (版本: ${typeof APP_VER !== 'undefined' ? APP_VER : 'N/A'})`, "color: #3498db; font-weight: bold;");
+        console.log(`%c[Loader] 開始初始化資源`, "color: #3498db; font-weight: bold;");
+
+        if (typeof resources === 'undefined') {
+            console.error('[Loader] 找不到 resources 配置');
+            window.updateLoading(100, '讀取配置失敗');
+            if (typeof reveal === 'function') reveal();
+            return;
+        }
 
         const cssList = resources.styles || [];
         const scriptList = resources.scripts || [];
         const totalResources = cssList.length + scriptList.length;
         let loadedCount = 0;
 
-        // 核心顯示邏輯：決定何時展示頁面
         const handleComplete = () => {
-            const hasJSX = typeof APP_JSX !== 'undefined' && APP_JSX === 1;
-            
-            if (window.updateLoading) {
-                // 接納用戶建議：JSX 模式下資源到位即顯示 80%，文字偽裝為 100% 載入
-                window.updateLoading(hasJSX ? 80 : 100, hasJSX ? '100% 載入完成' : '載入完成');
-            }
-            
-            // 強制顯示頁面 (如果引擎還沒 reveal)
-            if (typeof reveal === 'function') reveal();
-            else document.documentElement.style.visibility = 'visible';
-
-            window.loaderFinished = true; // 標記載入完成，通知 index.html 進入編譯判定
+            window.loaderFinished = true;
             console.log("%c[Loader] 所有資源確認完成", "color: #9b59b6; font-weight: bold;");
+            startBabelOrFinish();
+            if (typeof reveal === 'function') reveal();
         };
 
         const reportProgress = (url) => {
             loadedCount++;
             const hasJSX = typeof APP_JSX !== 'undefined' && APP_JSX === 1;
-            // 如果是 JSX，資源載入佔 20-80%
             const progress = 20 + (loadedCount / totalResources) * (hasJSX ? 60 : 80);
             const fileName = url.split('/').pop();
-            if (window.updateLoading) window.updateLoading(progress, `載入模組: ${fileName}`);
+            window.updateLoading(progress, `載入模組: ${fileName}`);
             
             if (loadedCount >= totalResources) {
                 handleComplete();
             }
         };
 
-        const configs = [
-            { data: cssList, type: 'css', label: 'CSS' },
-            { data: scriptList, type: 'js', label: 'JS' }
-        ];
-
-        // 如果完全沒有資源，也要印出日誌並完成初始化
         if (totalResources === 0) {
-            configs.forEach(config => {
-                console.log(`%c[Loader] 無外部 ${config.label} 資源需要載入`, "color: #e67e22");
-            });
             handleComplete();
             return; 
         }
         
-        configs.forEach(config => {
-            if (config.data && config.data.length > 0) {
-                config.data.forEach(item => {
-                    injectResource(config.type, item, () => reportProgress(typeof item === 'string' ? item : item.url));
-                });
-            }
-        });
+        // 分批啟動載入
+        cssList.forEach(item => injectResource('css', item, () => reportProgress(typeof item === 'string' ? item : item.url)));
+        scriptList.forEach(item => injectResource('js', item, () => reportProgress(typeof item === 'string' ? item : item.url)));
     }
 
-    // 執行
     loadApp();
 })();

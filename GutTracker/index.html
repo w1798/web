@@ -9,50 +9,13 @@
     
     <script>
     const APP_VER = "1.00g";
+    const APP_JSX = 1;
 
-    // 資源載入進度回報介面
-    window.updateLoading = function(percent, status) {
-        const bar = document.getElementById('loading-bar');
-        const text = document.getElementById('loading-text');
-        const statusText = document.getElementById('loading-status');
-        
-        // 偵測頁面是否需要 Babel (解耦 APP_JSX)
-        // 增加判定：如果 loader 還沒跑完，我們先假設它是需要的，以免過早揭開遮罩
-        const hasBabelTags = !!document.querySelector('script[type="text/babel"]');
-        const isWaitingForLoader = typeof window.loaderFinished === 'undefined';
-        const isJSXMode = hasBabelTags || isWaitingForLoader;
-        
-        let displayPercent = percent;
-        let displayStatus = status || '載入中...';
-
-        if (isJSXMode && percent >= 80 && percent < 90) {
-            displayPercent = 80;
-            displayStatus = '100% 載入完成，正在啟動引擎...';
-        } else if (isJSXMode && percent >= 90) {
-            displayPercent = 90;
-            displayStatus = '引擎啟動完成';
-        }
-        
-        if (bar) bar.style.width = displayPercent + '%';
-        if (text) text.innerText = Math.round(displayPercent) + '%';
-        if (statusText) statusText.innerText = displayStatus;
-        
-        // 絕對穩健：只有到 100% (React 掛載完畢) 才揭開
-        const shouldReveal = (percent >= 100);
-
-        if (shouldReveal) {
-            const screen = document.getElementById('loading-screen');
-            const root = document.getElementById('root');
-            if (screen && screen.style.display !== 'none') {
-                screen.style.opacity = '0';
-                if (root) root.style.visibility = 'visible'; 
-                setTimeout(() => {
-                    screen.style.display = 'none';
-                }, 500); 
-            }
-        }
-    };
     </script>
+    
+    <script src="../loader_engine.js?ver=1.00a"></script>
+    
+    
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -116,7 +79,6 @@
     <footer></footer>
 
     <!-- Core Engine & Frameworks -->
-    <script src="../loader_engine.js?ver=1.00a"></script>
     <script>
         if (typeof tailwind !== 'undefined') {
             tailwind.config = {
@@ -139,31 +101,6 @@
         }
     </script>
 
-    <script>
-        // 由於 loader_engine 核心是非同步載入 Babel
-        // 所以我們在這裡等待 Babel 準備好，並且確保 loadapp.js 已經將 JSX 標籤注入後，手動觸發 JSX 編譯！
-        let babelTimer = setInterval(function() {
-            const hasBabelTags = !!document.querySelector('script[type="text/babel"]');
-            
-            if (hasBabelTags && window.Babel) {
-                clearInterval(babelTimer);
-                if (window.updateLoading) window.updateLoading(90, '正在編譯 JSX 組件...');
-                // 延遲一下讓畫面顯示編譯中狀態
-                setTimeout(() => {
-                    console.log("[GutTracker] 開始執行 Babel 轉換...");
-                    Babel.transformScriptTags();
-                    // React 會在 script.js 載入後自動掛載
-                    if (window.updateLoading) window.updateLoading(100, '引擎啟動完成');
-                }, 50);
-            } else if (window.loaderFinished) {
-                // 只有當資源注入完全結束 (loaderFinished)，且頁面上依然沒有標籤，才判定為非 JSX
-                if (!hasBabelTags) {
-                    clearInterval(babelTimer);
-                    if (window.updateLoading) window.updateLoading(100);
-                }
-            }
-        }, 50);
-    </script>
 
     <script>
         // 初始化檢查

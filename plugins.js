@@ -4,7 +4,23 @@
 
 (function() {
     function initLibraries(isLazy = false) {
-        const libraries = (typeof resources !== 'undefined' && resources.libs) ? resources.libs : [];
+        let libraries = (typeof resources !== 'undefined' && resources.libs) ? [...resources.libs] : [];
+
+        // 智慧注入：如果設定了 APP_JSX，自動補上需要的延遲載入庫
+        const hasJSX = typeof APP_JSX !== 'undefined' && APP_JSX === 1;
+        if (hasJSX) {
+            const jsxLibs = [
+                { url: "https://unpkg.com/react@18/umd/react.development.js", lazy: true },
+                { url: "https://unpkg.com/react-dom@18/umd/react-dom.development.js", lazy: true },
+                { url: "https://unpkg.com/@babel/standalone/babel.min.js", lazy: true }
+            ];
+            // 避免重複加入
+            jsxLibs.forEach(jl => {
+                if (!libraries.some(l => (typeof l === 'string' ? l : l.url) === jl.url)) {
+                    libraries.push(jl);
+                }
+            });
+        }
 
         if (libraries.length === 0) return;
 
