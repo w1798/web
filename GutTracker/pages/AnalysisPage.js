@@ -136,7 +136,7 @@ const AnalysisPage = () => {
         return matchedMeals.sort((a,b) => a.mealMs - b.mealMs);
     };
 
-    const getInsight = (matchedMeals, bowelStatus) => {
+    const getInsight = (matchedMeals, bowel) => {
         const allEntries = [];
         matchedMeals.forEach(m => {
             if (!m.data) return;
@@ -146,13 +146,16 @@ const AnalysisPage = () => {
         });
         if (allEntries.length === 0) return null;
         const insights = [];
-        if (allEntries.some(e => e.cook === '炸') && (bowelStatus === '軟' || bowelStatus === '稀'))
+        const status = bowel.status;
+        const amount = bowel.amount || '適中';
+
+        if (allEntries.some(e => e.cook === '炸') && (status === '軟' || status === '稀' || status === '拉肚子'))
             insights.push('🍟 炸物可能導致軟便/腹瀉');
-        if (bowelStatus === '便祕' && !allEntries.some(e => e.food.includes('菜') || e.food.includes('水果')))
+        if ((status === '便祕' || status === '硬') && !allEntries.some(e => e.food.includes('菜') || e.food.includes('水果')))
             insights.push('🥦 缺乏纖維攝取可能導致便祕');
-        if (allEntries.some(e => e.cook === '滷') && bowelStatus === '硬')
+        if (allEntries.some(e => e.cook === '滷') && status === '硬')
             insights.push('🧂 重口味飲食可能影響排便');
-        if (allEntries.some(e => e.amount === '多') && bowelStatus === '多')
+        if (allEntries.some(e => e.amount === '多') && amount === '多')
             insights.push('📏 大量進食可能導致排便增量');
         return insights.length > 0 ? insights : null;
     };
@@ -227,7 +230,7 @@ const AnalysisPage = () => {
                 )}
                 {sortedBowel.map(bowel => {
                     const matchedMeals = getMealsInTimeWindow(bowel.date, bowel.time);
-                    const insights = getInsight(matchedMeals, bowel.status);
+                    const insights = getInsight(matchedMeals, bowel);
                     const hasAnyDiet = matchedMeals.length > 0;
                     return (
                         <div key={bowel.id} className="space-y-2">
@@ -271,9 +274,10 @@ const AnalysisPage = () => {
                                             <span className="text-2xl">
                                                 {bowel.status === '正常' ? '🟢' : bowel.status === '多' ? '🌊' :
                                                  bowel.status === '少' ? '🌑' : bowel.status === '硬' ? '🪨' :
-                                                 bowel.status === '軟' ? '☁️' : bowel.status === '稀' ? '💧' : '⏳'}
+                                                 bowel.status === '軟' ? '☁️' : bowel.status === '稀' ? '💧' :
+                                                 bowel.status === '拉肚子' ? '🔥' : '⏳'}
                                             </span>
-                                            <span className="font-bold text-base dark:text-gray-100">{bowel.status}</span>
+                                            <span className="font-bold text-base dark:text-gray-100">{bowel.amount || '適中'} / {bowel.status}</span>
                                         </div>
                                         <div className="text-xs text-gray-400">⏰ {bowel.time}</div>
                                         {bowel.note && <div className="text-xs text-gray-500 mt-1 line-clamp-2">💬 {bowel.note}</div>}

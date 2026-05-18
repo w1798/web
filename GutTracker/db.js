@@ -54,7 +54,8 @@ const DEFAULTS = {
     foodTypes:   ['飯', '水煮蛋','麥片','漢堡','三明治','麵', '肉', '菜', '湯', '咖啡','茶','水','水果'],
     amounts:     ['多', '適中', '少'],
     cookMethods: ['炸', '滷', '烤', '蒸', '煮', '生食'],
-    bowelStatuses: ['正常', '多', '少', '硬', '軟', '稀', '便祕', '拉肚子'],
+    bowelAmounts:  ['多', '適中', '少'],
+    bowelStatuses: ['正常', '硬', '軟', '稀', '便祕', '拉肚子'],
     fontSizeZoom: 100,
     binUrl: '',
     apiKey: ''

@@ -17,6 +17,7 @@ const SettingsPage = () => {
     const [foodText, setFoodText]   = useState(config.foodTypes.join('\n'));
     const [amountText, setAmountText] = useState(config.amounts.join('\n'));
     const [cookText, setCookText]   = useState(config.cookMethods.join('\n'));
+    const [bowelAmountText, setBowelAmountText] = useState((config.bowelAmounts || []).join('\n'));
     const [bowelText, setBowelText] = useState(config.bowelStatuses.join('\n'));
     const [fontSizeZoom, setFontSizeZoom] = useState(config.fontSizeZoom || 100);
     const [binUrl, setBinUrl] = useState(config.binUrl || '');
@@ -31,6 +32,7 @@ const SettingsPage = () => {
         setFoodText(config.foodTypes.join('\n'));
         setAmountText(config.amounts.join('\n'));
         setCookText(config.cookMethods.join('\n'));
+        setBowelAmountText((config.bowelAmounts || []).join('\n'));
         setBowelText(config.bowelStatuses.join('\n'));
         setFontSizeZoom(config.fontSizeZoom || 100);
         setBinUrl(config.binUrl || '');
@@ -45,6 +47,7 @@ const SettingsPage = () => {
             foodTypes: parseLines(foodText),
             amounts: parseLines(amountText),
             cookMethods: parseLines(cookText),
+            bowelAmounts: parseLines(bowelAmountText),
             bowelStatuses: parseLines(bowelText),
             fontSizeZoom: parseInt(fontSizeZoom),
             binUrl: binUrl.trim(),
@@ -186,7 +189,8 @@ const SettingsPage = () => {
                 <ConfigTextarea label="食物種類" value={foodText} onChange={e => setFoodText(e.target.value)} placeholder="🍚 飯" />
                 <ConfigTextarea label="量" value={amountText} onChange={e => setAmountText(e.target.value)} placeholder="多" />
                 <ConfigTextarea label="調理方式" value={cookText} onChange={e => setCookText(e.target.value)} placeholder="炸" />
-                <ConfigTextarea label="排便狀態" value={bowelText} onChange={e => setBowelText(e.target.value)} placeholder="正常" />
+                <ConfigTextarea label="排便量選項" value={bowelAmountText} onChange={e => setBowelAmountText(e.target.value)} placeholder="多" />
+                <ConfigTextarea label="排便狀況選項" value={bowelText} onChange={e => setBowelText(e.target.value)} placeholder="正常" />
                 
                 <div className="mb-4 pt-3 border-t border-gray-100 dark:border-slate-600">
                     <label className="text-sm font-bold text-gray-600 dark:text-gray-300 mb-2 flex justify-between">
