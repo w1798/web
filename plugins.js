@@ -25,9 +25,9 @@
 
         if (shouldLoadJSX) {
             const jsxLibs = [
-                { url: "https://unpkg.com/react@18/umd/react.development.js", lazy: true },
-                { url: "https://unpkg.com/react-dom@18/umd/react-dom.development.js", lazy: true },
-                { url: "https://unpkg.com/@babel/standalone/babel.min.js", lazy: true }
+                { url: "https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js", lazy: true },
+                { url: "https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js", lazy: true },
+                { url: "https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js", lazy: true }
             ];
             // 避免重複加入
             jsxLibs.forEach(jl => {
