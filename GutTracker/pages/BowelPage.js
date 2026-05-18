@@ -96,7 +96,7 @@ const BowelPage = () => {
                                     {record.amount || '適中'} / {record.status}
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <div className="date-text text-[11px] text-gray-400 font-medium whitespace-nowrap">
+                                    <div className="date-text text-xs text-gray-400 font-medium whitespace-nowrap">
                                         {record.date} ({formatDateStr(record.date)})
                                     </div>
                                     <span className="time-tag text-[10px] bg-gray-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-rose-500 font-bold shrink-0">{record.time}</span>
