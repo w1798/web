@@ -13,10 +13,6 @@ var resources = {
         'updater.js'
     ],
     libs: [
-        {
-            url: 'https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js',
-            condition: typeof DecompressionStream === 'undefined'
-        }
     ]
 
 };

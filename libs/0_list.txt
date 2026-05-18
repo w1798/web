@@ -4,7 +4,7 @@ exceljs.min.js          https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exc
 FileSaver.min.js        https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js  URL2StickPro
 index.umd.js            https://unpkg.com/docx@8.2.2/build/index.umd.js                             URL2StickPro
 mammoth.browser.min.js  https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js ScheduleMaster
-pako.min.js             https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js               ClassKudox
+pako.min.js             https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js               ClassKudox GutTracker
 papaparse.min.js        https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js     ClassDojoStats
 qrcode.min.js           https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js         MathPKPro URL2StickPro
 Sortable.min.js         https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js              jsonEditor

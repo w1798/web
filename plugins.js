@@ -6,6 +6,20 @@
     function initLibraries(isLazy = false) {
         let libraries = (typeof resources !== 'undefined' && resources.libs) ? [...resources.libs] : [];
 
+        // 基礎裝備：Pako.js (當瀏覽器不支援原生 DecompressionStream 時自動補位)
+        const baseLibs = [
+            { 
+                url: "https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js", 
+                condition: typeof DecompressionStream === "undefined" 
+            }
+        ];
+        // 預置基礎庫
+        baseLibs.forEach(bl => {
+            if (!libraries.some(l => (typeof l === 'string' ? l : l.url) === bl.url)) {
+                libraries.unshift(bl); // 放在最前面優先判斷
+            }
+        });
+
         // 恢復簡單注入：只識別顯式的 APP_JSX 旗標
         const shouldLoadJSX = typeof APP_JSX !== 'undefined' && APP_JSX === 1;
 
@@ -34,7 +48,10 @@
             const isItemLazy = lib.lazy === true;
             if (isLazy !== isItemLazy) return;
 
-            if (!shouldLoad) return;
+            if (!shouldLoad) {
+                console.log(`%c[plugins] [略過]: ${fileName} (環境已支援)`, 'color: #9E9E9E;');
+                return;
+            }
 
             const script = document.createElement('script');
             script.src = lib.url;
