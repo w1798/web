@@ -43,13 +43,13 @@ const BowelPage = () => {
             `}</style>
             <div className="glass-card rounded-2xl p-5 shadow-sm mb-6">
                 <h3 className="text-lg font-bold mb-4 flex items-center gap-2 dark:text-gray-200">📋 新增排便紀錄</h3>
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                    <div>
+                <div className="grid grid-cols-5 gap-3 mb-4">
+                    <div className="col-span-3">
                         <label className="text-xs text-gray-400 mb-1 block font-semibold">日期</label>
                         <input type="date" value={date} onChange={e => setDate(e.target.value)}
                             className="bg-gray-100 dark:bg-slate-700 border-none rounded-xl p-2.5 w-full font-medium text-sm dark:text-gray-200 focus:outline-none focus:ring-2 ring-rose-400" />
                     </div>
-                    <div>
+                    <div className="col-span-2">
                         <label className="text-xs text-gray-400 mb-1 block font-semibold">時間</label>
                         <input type="time" value={time} onChange={e => setTime(e.target.value)}
                             className="bg-gray-100 dark:bg-slate-700 border-none rounded-xl p-2.5 w-full font-medium text-sm dark:text-gray-200 focus:outline-none focus:ring-2 ring-rose-400" />
@@ -89,19 +89,23 @@ const BowelPage = () => {
             <div className="space-y-2">
                 {paginatedRecords.map(record => (
                     <div key={record.id} className="glass-card rounded-2xl p-3 flex items-center justify-between animate-slide-up">
-                        <div className="flex items-center gap-3 overflow-hidden">
+                        <div className="flex items-center gap-3 flex-1 overflow-hidden">
                             <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-xl flex-shrink-0">{getIcon(record.status)}</div>
-                            <div className="overflow-hidden">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                    <span className="font-bold text-sm dark:text-gray-200 truncate">{record.amount || '適中'} / {record.status}</span>
-                                    <span className="time-tag text-[11px] bg-gray-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-gray-500">{record.time}</span>
+                            <div className="flex-1 min-w-0">
+                                <div className="font-bold text-sm dark:text-gray-200 truncate mb-0.5">
+                                    {record.amount || '適中'} / {record.status}
                                 </div>
-                                <div className="date-text text-[11px] text-gray-400 whitespace-nowrap">{record.date} ({formatDateStr(record.date)})</div>
-                                {record.note && <div className="text-[11px] text-gray-500 mt-0.5 italic truncate">💬 {record.note}</div>}
+                                <div className="flex items-center gap-2">
+                                    <div className="date-text text-[11px] text-gray-400 font-medium whitespace-nowrap">
+                                        {record.date} ({formatDateStr(record.date)})
+                                    </div>
+                                    <span className="time-tag text-[10px] bg-gray-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-rose-500 font-bold shrink-0">{record.time}</span>
+                                </div>
+                                {record.note && <div className="text-[11px] text-gray-500 mt-1 italic truncate opacity-70">💬 {record.note}</div>}
                             </div>
                         </div>
                         <button onClick={() => { if(confirm('確定刪除此紀錄？')) deleteBowel(record.id); }}
-                            className="w-8 h-8 flex items-center justify-center text-gray-300 hover:text-red-500 flex-shrink-0">✕</button>
+                            className="w-8 h-8 flex items-center justify-center text-gray-300 hover:text-red-500 flex-shrink-0 ml-1">✕</button>
                     </div>
                 ))}
                 

@@ -267,20 +267,20 @@ const AnalysisPage = () => {
                                 </div>
                                 <div className="flex flex-col justify-center items-center text-gray-300 dark:text-gray-600 text-xl">→</div>
                                 {/* 右：排便 */}
-                                <div className="flex-1">
-                                    <div className="text-xs font-bold text-rose-500 mb-1 pl-1">🚽 排便 ({formatDateStr(bowel.date)})</div>
-                                    <div className="glass-card rounded-2xl p-3 min-h-[80px] border-l-4 border-l-rose-400 shadow-sm">
-                                        <div className="flex items-center gap-2 mb-1.5">
-                                            <span className="text-2xl">
+                                <div className="flex-1 min-w-0">
+                                    <div className="text-[11px] font-bold text-rose-500 mb-1 pl-1 truncate">🚽 排便 ({formatDateStr(bowel.date)})</div>
+                                    <div className="glass-card rounded-2xl p-3 min-h-[80px] border-l-4 border-l-rose-400 shadow-sm relative overflow-hidden">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="text-xl shrink-0">
                                                 {bowel.status === '正常' ? '🟢' : bowel.status === '多' ? '🌊' :
                                                  bowel.status === '少' ? '🌑' : bowel.status === '硬' ? '🪨' :
                                                  bowel.status === '軟' ? '☁️' : bowel.status === '稀' ? '💧' :
                                                  bowel.status === '拉肚子' ? '🔥' : '⏳'}
                                             </span>
-                                            <span className="font-bold text-base dark:text-gray-100">{bowel.amount || '適中'} / {bowel.status}</span>
+                                            <span className="font-bold text-sm dark:text-gray-100 truncate">{bowel.amount || '適中'} / {bowel.status}</span>
                                         </div>
-                                        <div className="text-xs text-gray-400">⏰ {bowel.time}</div>
-                                        {bowel.note && <div className="text-xs text-gray-500 mt-1 line-clamp-2">💬 {bowel.note}</div>}
+                                        <div className="text-[10px] text-gray-400 font-bold bg-gray-50 dark:bg-slate-800/50 px-2 py-0.5 rounded-md inline-block">⏰ {bowel.time}</div>
+                                        {bowel.note && <div className="text-[10px] text-gray-500 mt-1 line-clamp-2 italic">💬 {bowel.note}</div>}
                                     </div>
                                 </div>
                             </div>
