@@ -8,15 +8,17 @@
         const bar = document.getElementById('loading-bar');
         const text = document.getElementById('loading-text');
         const statusText = document.getElementById('loading-status');
-        const hasJSX = typeof APP_JSX !== 'undefined' && APP_JSX === 1;
+        const jsxMode = typeof APP_JSX !== 'undefined' ? String(APP_JSX).toLowerCase() : 'vanilla';
+        const isBabelMode = ['1', 'babel', 'bb'].includes(jsxMode);
+        const isJSXProject = isBabelMode || ['esbuild', 'es', 'pro'].includes(jsxMode);
         
         let displayPercent = percent;
         let displayStatus = status || '載入中...';
 
-        if (hasJSX && percent >= 80 && percent < 90) {
+        if (isBabelMode && percent >= 80 && percent < 90) {
             displayPercent = 80;
             displayStatus = '100% 載入完成，正在啟動引擎...';
-        } else if (hasJSX && percent >= 90) {
+        } else if (isBabelMode && percent >= 90) {
             displayPercent = 90;
             displayStatus = '引擎啟動完成';
         }
@@ -46,8 +48,10 @@
     };
 
     function startBabelOrFinish() {
-        const hasJSX = typeof APP_JSX !== 'undefined' && APP_JSX === 1;
-        if (!hasJSX) {
+        const jsxMode = typeof APP_JSX !== 'undefined' ? String(APP_JSX).toLowerCase() : 'vanilla';
+        const isBabelMode = ['1', 'babel', 'bb'].includes(jsxMode);
+        
+        if (!isBabelMode) {
             window.updateLoading(100, '載入完成');
             return;
         }
@@ -82,8 +86,9 @@
         } else {
             let finalType = scriptType;
             if (!finalType) {
-                // 恢復簡單判斷：依照 APP_JSX 旗標決定預設值
-                finalType = (typeof APP_JSX !== 'undefined' && APP_JSX === 1) ? 'jsx' : 'js';
+                const jsxMode = typeof APP_JSX !== 'undefined' ? String(APP_JSX).toLowerCase() : 'vanilla';
+                const isBabelMode = ['1', 'babel', 'bb'].includes(jsxMode);
+                finalType = isBabelMode ? 'jsx' : 'js';
             }
 
             if (finalType === 'jsx') {
@@ -147,8 +152,9 @@
 
         const reportProgress = (url) => {
             loadedCount++;
-            const hasJSX = typeof APP_JSX !== 'undefined' && APP_JSX === 1;
-            const progress = 20 + (loadedCount / totalResources) * (hasJSX ? 60 : 80);
+            const jsxMode = typeof APP_JSX !== 'undefined' ? String(APP_JSX).toLowerCase() : 'vanilla';
+            const isBabelMode = ['1', 'babel', 'bb'].includes(jsxMode);
+            const progress = 20 + (loadedCount / totalResources) * (isBabelMode ? 60 : 80);
             const fileName = url.split('/').pop();
             window.updateLoading(progress, `載入模組: ${fileName}`);
             

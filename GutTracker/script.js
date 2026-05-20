@@ -90,5 +90,17 @@ const App = () => {
     );
 };
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<GutProvider><App /></GutProvider>);
+// 確保在 DOM 與核心庫就緒後才進行渲染
+const mountApp = () => {
+    const rootElement = document.getElementById('root');
+    if (rootElement && typeof ReactDOM !== 'undefined') {
+        const root = ReactDOM.createRoot(rootElement);
+        root.render(<GutProvider><App /></GutProvider>);
+    }
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', mountApp);
+} else {
+    mountApp();
+}

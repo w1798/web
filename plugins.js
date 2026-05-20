@@ -20,15 +20,25 @@
             }
         });
 
-        // 恢復簡單注入：只識別顯式的 APP_JSX 旗標
-        const shouldLoadJSX = typeof APP_JSX !== 'undefined' && APP_JSX === 1;
+        // 模式識別：支援 1(舊版), 'babel'/'bb', 'esbuild'/'es'/'pro'
+        const jsxMode = typeof APP_JSX !== 'undefined' ? String(APP_JSX).toLowerCase() : 'vanilla';
+        const isBabelMode = ['1', 'babel', 'bb'].includes(jsxMode);
+        const isEsbuildMode = ['esbuild', 'es', 'pro'].includes(jsxMode);
 
-        if (shouldLoadJSX) {
+        if (isBabelMode || isEsbuildMode) {
+            // pro 模式：React 必須在 loadapp.js 之前載入 (lazy: false)
+            // babel 模式：React 可延遲載入，因為 Babel 轉換會等待 (lazy: true)
+            const isLazyReact = isBabelMode;
             const jsxLibs = [
-                { url: "https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js", lazy: true },
-                { url: "https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js", lazy: true },
-                { url: "https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js", lazy: true }
+                { url: "https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js", lazy: isLazyReact },
+                { url: "https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js", lazy: isLazyReact }
             ];
+            
+            // 只有 Babel 模式才加載 Babel
+            if (isBabelMode) {
+                jsxLibs.push({ url: "https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js", lazy: true });
+            }
+
             // 避免重複加入
             jsxLibs.forEach(jl => {
                 if (!libraries.some(l => (typeof l === 'string' ? l : l.url) === jl.url)) {

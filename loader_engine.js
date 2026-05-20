@@ -61,8 +61,12 @@ async function startLoading() {
 
     try {
         // --- 第一步：載入核心配置 ---
+        // pro/esbuild/es 模式自動導向 dist/config.js
+        const jsxMode = typeof APP_JSX !== 'undefined' ? String(APP_JSX).toLowerCase() : 'vanilla';
+        const isProMode = ['esbuild', 'es', 'pro'].includes(jsxMode);
+        const configPath = isProMode ? 'dist/config.js' : 'config.js';
         if (window.updateLoading) window.updateLoading(5, '讀取系統配置...');
-        await loadScript(`config.js?ver=${version}`);
+        await loadScript(`${configPath}?ver=${version}`);
 
         // --- 第二步：並行載入通用插件 ---
         const commonAssets = [
