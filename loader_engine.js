@@ -2,6 +2,18 @@
  * Charles Nextime - 資源載入引擎 (Engine.js)
  */
 
+// --- 集中系統狀態 ---
+window.APP_ENV = (function() {
+    const rawMode = typeof APP_JSX !== 'undefined' ? String(APP_JSX).toLowerCase() : 'vanilla';
+    const isBabel = ['1', 'babel', 'bb'].includes(rawMode);
+    const isEsbuild = ['esbuild', 'es', 'pro'].includes(rawMode);
+    return {
+        isBabel: isBabel,
+        isEsbuild: isEsbuild,
+        version: typeof APP_VER !== 'undefined' ? APP_VER : '1.00a'
+    };
+})();
+
 function reveal(isTimeout) {
     // 只有當「是因為超時觸發」且「事實上已經載入完成」時，才攔截不處理
     if (isTimeout && typeof window.loaderFinished !== 'undefined') return;
@@ -52,7 +64,7 @@ function loadScript(src) {
 }
 
 async function startLoading() {
-    const version = typeof APP_VER !== 'undefined' ? APP_VER : '1.00a';
+    const version = window.APP_ENV.version;
     const isRoot = (typeof APP_ROOT !== 'undefined' && APP_ROOT === 1);
     const pathPrefix = isRoot ? "" : "../";
     
@@ -61,12 +73,8 @@ async function startLoading() {
 
     try {
         // --- 第一步：載入核心配置 ---
-        // pro/esbuild/es 模式自動導向 dist/config.js
-        const jsxMode = typeof APP_JSX !== 'undefined' ? String(APP_JSX).toLowerCase() : 'vanilla';
-        const isProMode = ['esbuild', 'es', 'pro'].includes(jsxMode);
-        const configPath = isProMode ? 'dist/config.js' : 'config.js';
         if (window.updateLoading) window.updateLoading(5, '讀取系統配置...');
-        await loadScript(`${configPath}?ver=${version}`);
+        await loadScript(`config.js?ver=${version}`);
 
         // --- 第二步：並行載入通用插件 ---
         const commonAssets = [

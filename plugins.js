@@ -20,10 +20,7 @@
             }
         });
 
-        // 模式識別：支援 1(舊版), 'babel'/'bb', 'esbuild'/'es'/'pro'
-        const jsxMode = typeof APP_JSX !== 'undefined' ? String(APP_JSX).toLowerCase() : 'vanilla';
-        const isBabelMode = ['1', 'babel', 'bb'].includes(jsxMode);
-        const isEsbuildMode = ['esbuild', 'es', 'pro'].includes(jsxMode);
+        const { isBabel: isBabelMode, isEsbuild: isEsbuildMode } = window.APP_ENV;
 
         if (isBabelMode || isEsbuildMode) {
             // pro 模式：React 必須在 loadapp.js 之前載入 (lazy: false)

@@ -8,9 +8,8 @@
         const bar = document.getElementById('loading-bar');
         const text = document.getElementById('loading-text');
         const statusText = document.getElementById('loading-status');
-        const jsxMode = typeof APP_JSX !== 'undefined' ? String(APP_JSX).toLowerCase() : 'vanilla';
-        const isBabelMode = ['1', 'babel', 'bb'].includes(jsxMode);
-        const isJSXProject = isBabelMode || ['esbuild', 'es', 'pro'].includes(jsxMode);
+        const { isBabel: isBabelMode, isEsbuild: isEsbuildMode } = window.APP_ENV;
+        const isJSXProject = isBabelMode || isEsbuildMode;
         
         let displayPercent = percent;
         let displayStatus = status || '載入中...';
@@ -48,8 +47,7 @@
     };
 
     function startBabelOrFinish() {
-        const jsxMode = typeof APP_JSX !== 'undefined' ? String(APP_JSX).toLowerCase() : 'vanilla';
-        const isBabelMode = ['1', 'babel', 'bb'].includes(jsxMode);
+        const isBabelMode = window.APP_ENV.isBabel;
         
         if (!isBabelMode) {
             window.updateLoading(100, '載入完成');
@@ -86,9 +84,7 @@
         } else {
             let finalType = scriptType;
             if (!finalType) {
-                const jsxMode = typeof APP_JSX !== 'undefined' ? String(APP_JSX).toLowerCase() : 'vanilla';
-                const isBabelMode = ['1', 'babel', 'bb'].includes(jsxMode);
-                finalType = isBabelMode ? 'jsx' : 'js';
+                finalType = window.APP_ENV.isBabel ? 'jsx' : 'js';
             }
 
             if (finalType === 'jsx') {
@@ -139,7 +135,21 @@
         }
 
         const cssList = resources.styles || [];
-        const scriptList = resources.scripts || [];
+        let scriptList = resources.scripts || [];
+
+        // 動態路徑注入：pro 模式下自動為腳本加上 dist/ 前綴
+        const isProMode = window.APP_ENV.isEsbuild;
+        if (isProMode) {
+            scriptList = scriptList.map(item => {
+                const url = typeof item === 'string' ? item : item.url;
+                if (url && !url.startsWith('dist/')) {
+                    if (typeof item === 'string') return 'dist/' + url;
+                    return { ...item, url: 'dist/' + url };
+                }
+                return item;
+            });
+        }
+
         const totalResources = cssList.length + scriptList.length;
         let loadedCount = 0;
 
@@ -152,9 +162,10 @@
 
         const reportProgress = (url) => {
             loadedCount++;
-            const jsxMode = typeof APP_JSX !== 'undefined' ? String(APP_JSX).toLowerCase() : 'vanilla';
-            const isBabelMode = ['1', 'babel', 'bb'].includes(jsxMode);
-            const progress = 20 + (loadedCount / totalResources) * (isBabelMode ? 60 : 80);
+            const { isBabel: isBabelMode, isEsbuild: isEsbuildMode } = window.APP_ENV;
+            const isJSXProject = isBabelMode || isEsbuildMode;
+            
+            const progress = 20 + (loadedCount / totalResources) * (isJSXProject ? 60 : 80);
             const fileName = url.split('/').pop();
             window.updateLoading(progress, `載入模組: ${fileName}`);
             
