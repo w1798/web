@@ -13,7 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <script>
-    var APP_VER = '1.06g';
+    var APP_VER = '1.06h';
     try {
         var xhr = new XMLHttpRequest();
         xhr.open('GET', 'version.json?t=' + Date.now(), false);
@@ -23,7 +23,7 @@
     document.documentElement.style.visibility = 'hidden';
     </script>
     
-    <script src="../loader_engine.js?v=1.06g"></script>
+    <script src="../loader_engine.js?v=1.06h"></script>
 
 </head>
 <body data-font-size="medium">
@@ -232,13 +232,13 @@
                     <div class="award-content" id="needsWorkItems"></div>
                     <div class="award-content" id="customAwardArea">
                         <div class="custom-award-grid">
-                            <div class="input-group" style="margin:0;">
+                            <div class="input-group" style="margin:0; grid-column: 1 / -1;">
                                 <label>自訂項目名稱</label>
                                 <select id="customAwardLabel" class="filter-select" style="width:100%;">
-                                    <option value="兌換點數">兌換點數</option>
+                                    <option value="新增項目">新增項目</option>
                                 </select>
                             </div>
-                            <div class="input-group" style="margin:0;">
+                            <div class="input-group" id="customAwardTempNameGroup" style="margin:0; display:block; grid-column: 1 / -1;">
                                 <label>臨時名稱 <small style="color:var(--text-secondary);">(有填優先)</small></label>
                                 <input type="text" id="customAwardTempName" placeholder="輸入後自動加入設定">
                             </div>
@@ -692,7 +692,7 @@
                         <div class="input-group" style="text-align: center;">
                             <label>自訂項目名稱 (每行一個)</label>
                             <div style="display:flex; justify-content:center; gap:0.5rem; align-items: stretch;">
-                                <textarea id="customItemsTextarea" rows="8" placeholder="兌換點數&#10;分領獎品&#10;清除事項" style="width: 100%; max-width: 250px; resize:vertical;"></textarea>
+                                <textarea id="customItemsTextarea" rows="8" placeholder="新增項目&#10;分領獎品&#10;清除事項" style="width: 100%; max-width: 250px; resize:vertical;"></textarea>
                                 <button class="btn primary-btn" id="saveCustomItemsBtn" style="white-space: nowrap; width: auto; padding: 0 1rem; align-self: flex-start; min-height: 40px;">儲存自訂<br>項目</button>
                             </div>
                         </div>

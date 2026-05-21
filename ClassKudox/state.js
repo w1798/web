@@ -137,7 +137,7 @@ const saveData = (skipDirty = false) => {
     
     // 垃圾回收：只刪除不在 customItems 中且不等於預設項目的孤兒屬性
     Object.keys(customPrefs).forEach(k => {
-        if (k !== '兌換點數' && !customItems.includes(k)) {
+        if (k !== '新增項目' && !customItems.includes(k)) {
             delete customPrefs[k];
         }
     });

@@ -267,6 +267,12 @@ const startApp = () => {
             const tempInp = document.getElementById('customAwardTempName');
             let l = sel ? sel.value : '自訂項目'; 
 
+            if (l === '新增項目') {
+                if (!tempInp || !tempInp.value.trim()) {
+                    return alert('名稱不可以為空白');
+                }
+            }
+
             // 先讀取點數設定，避免 renderCustomDropdown 觸發 change 事件覆蓋
             const vRaw = Math.abs(parseFloat(document.getElementById('customAwardValue').value)) || 0; 
             const sign = document.getElementById('customAwardSignBtn').textContent === '+' ? 1 : -1;
@@ -302,7 +308,7 @@ const startApp = () => {
             let l = (tempInp && tempInp.value.trim()) ? tempInp.value.trim() : (sel ? sel.value : null);
             
             // 隨時記憶目前的介面選取/輸入狀態，以免 F5 重整後跳回預設項目
-            localStorage.setItem('CD_CustomUIState', JSON.stringify({ l: sel ? sel.value : '兌換點數', temp: tempInp ? tempInp.value : '' }));
+            localStorage.setItem('CD_CustomUIState', JSON.stringify({ l: sel ? sel.value : '新增項目', temp: tempInp ? tempInp.value : '' }));
             
             if (!l) return;
             const sign = document.getElementById('customAwardSignBtn').textContent;
@@ -365,7 +371,19 @@ const startApp = () => {
         const loadCustomItemPrefs = () => {
             const selEl = document.getElementById('customAwardLabel');
             const tempEl = document.getElementById('customAwardTempName');
+            const tempGroup = document.getElementById('customAwardTempNameGroup');
+            
             const selVal = selEl ? selEl.value : null;
+
+            if (selEl && tempGroup) {
+                if (selVal === '新增項目') {
+                    tempGroup.style.display = 'block';
+                } else {
+                    tempGroup.style.display = 'none';
+                    if (tempEl) tempEl.value = ''; // 隱藏時清空內容
+                }
+            }
+
             const tempVal = tempEl ? tempEl.value : null;
             
             let label = null;
@@ -422,7 +440,7 @@ const startApp = () => {
                 
                 // 無論是否清空，都隨時保留最新的選取與名稱狀態
                 localStorage.setItem('CD_CustomUIState', JSON.stringify({ 
-                    l: document.getElementById('customAwardLabel')?.value || '兌換點數', 
+                    l: document.getElementById('customAwardLabel')?.value || '新增項目', 
                     temp: tempInpEl.value 
                 }));
                 

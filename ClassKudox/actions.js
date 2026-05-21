@@ -105,7 +105,7 @@ const openAwardModal = (ids, title, groupId = null) => {
     const uiState = safeLoad('CD_CustomUIState', null);
     if (uiState) {
         const temp = document.getElementById('customAwardTempName'); if(temp) temp.value = uiState.temp || '';
-        const sel = document.getElementById('customAwardLabel'); if(sel) sel.value = uiState.l || '兌換點數';
+        const sel = document.getElementById('customAwardLabel'); if(sel) sel.value = uiState.l || '新增項目';
     }
     
     // 當開啟彈窗時，觸發自訂分頁載入以確保 UI 反映最新的 customPrefs 狀態

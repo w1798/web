@@ -202,10 +202,10 @@ const renderCustomDropdown = () => {
     const sel = document.getElementById('customAwardLabel'); if(!sel) return;
     sel.innerHTML = '';
     const defaultOpt = document.createElement('option');
-    defaultOpt.value = '兌換點數'; defaultOpt.textContent = '兌換點數';
+    defaultOpt.value = '新增項目'; defaultOpt.textContent = '新增項目';
     sel.appendChild(defaultOpt);
     customItems.forEach(name => {
-        if (name === '兌換點數') return; 
+        if (name === '新增項目') return; 
         const opt = document.createElement('option');
         opt.value = name; opt.textContent = name;
         sel.appendChild(opt);
