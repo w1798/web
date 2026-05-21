@@ -141,11 +141,22 @@
         const isProMode = window.APP_ENV.isEsbuild;
         if (isProMode) {
             scriptList = scriptList.map(item => {
-                const url = typeof item === 'string' ? item : item.url;
+                // 1. 拆解出 url 與 type
+                const isString = typeof item === 'string';
+                const url = isString ? item : item.url;
+                const type = isString ? null : item.type;
+
+                // 2. 核心排除條件：如果是 type 為 'js' 的物件，直接原樣回傳，不加 dist/
+                if (type === 'js') {
+                    return item;
+                }
+
+                // 3. 原有的條件：確保有 url 且開頭不是 dist/ 才會加上前綴
                 if (url && !url.startsWith('dist/')) {
-                    if (typeof item === 'string') return 'dist/' + url;
+                    if (isString) return 'dist/' + url;
                     return { ...item, url: 'dist/' + url };
                 }
+                
                 return item;
             });
         }
