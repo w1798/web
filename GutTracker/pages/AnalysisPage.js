@@ -118,8 +118,12 @@ const AnalysisPage = () => {
                 }
 
                 const mealMs = new Date(`${dDate}T${String(hour).padStart(2,'0')}:${String(min).padStart(2,'0')}:00`).getTime();
+                const marginMs = 4 * 3600 * 1000; // 4 小時軟邊界
 
-                if (mealMs > startMs && mealMs <= endMs) {
+                const inWindow = mealMs > startMs && mealMs <= endMs;
+                const isSoft = (mealMs > endMs && mealMs <= endMs + marginMs) || (mealMs > startMs - marginMs && mealMs <= startMs);
+
+                if (inWindow || isSoft) {
                     matchedMeals.push({
                         mealStr,
                         name: parsed.name,
@@ -127,7 +131,8 @@ const AnalysisPage = () => {
                         min,
                         dateStr: dDate,
                         mealMs,
-                        data: mData
+                        data: mData,
+                        isSoft: !inWindow // 如果不在主視窗內即為軟性邊界
                     });
                 }
             });
@@ -210,7 +215,7 @@ const AnalysisPage = () => {
             {/* 位移滑桿 (移到第三區塊) */}
             <div className="glass-card rounded-2xl p-2 shadow-sm mb-2 sticky top-2 z-10">
                 <div className="flex justify-between items-center mb-1">
-                    <h3 className="font-extrabold text-[13px] text-gray-700 dark:text-gray-200 flex items-center gap-1.5">⚡ 時間位移分析</h3>
+                    <h3 className="font-extrabold text-[13px] text-gray-700 dark:text-gray-200 flex items-center gap-1.5">⚡ 食物在肚子消化時間</h3>
                     <span className="text-indigo-500 font-black text-sm">{formatOffset(offsetHours)}</span>
                 </div>
                 <input type="range" min="0" max="120" step="6" value={offsetHours}
@@ -248,12 +253,15 @@ const AnalysisPage = () => {
                                                     if (!text) return null;
                                                     const showDateHeader = idx === 0 || matchedMeals[idx-1].dateStr !== m.dateStr;
                                                     return (
-                                                        <div key={`${m.dateStr}-${m.mealStr}`} className="border-b border-gray-100 dark:border-slate-700/50 pb-2 mb-2 last:border-0 last:pb-0 last:mb-0">
+                                                        <div key={`${m.dateStr}-${m.mealStr}`} className={`border-b border-gray-100 dark:border-slate-700/50 pb-2 mb-2 last:border-0 last:pb-0 last:mb-0 ${m.isSoft ? 'opacity-60 italic' : ''}`}>
                                                             {showDateHeader && (
                                                                 <div className="text-[11px] font-bold text-indigo-400 mb-0.5">{formatDateStr(m.dateStr)}</div>
                                                             )}
                                                             <div className="text-xs leading-relaxed">
-                                                                <span className="font-bold text-gray-500 dark:text-gray-400">{m.name} ({String(m.hour).padStart(2,'0')}:{String(m.min).padStart(2,'0')}):</span>{' '}
+                                                                <span className="font-bold text-gray-500 dark:text-gray-400">
+                                                                    {m.name} ({String(m.hour).padStart(2,'0')}:{String(m.min).padStart(2,'0')})
+                                                                    {m.isSoft && <span className="ml-1 text-[10px] font-normal opacity-70">(鄰近)</span>}:
+                                                                </span>{' '}
                                                                 <span className="text-gray-600 dark:text-gray-300">{text}</span>
                                                             </div>
                                                         </div>
