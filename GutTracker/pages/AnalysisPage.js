@@ -250,7 +250,7 @@ const AnalysisPage = () => {
                                                     return (
                                                         <div key={`${m.dateStr}-${m.mealStr}`} className="border-b border-gray-100 dark:border-slate-700/50 pb-2 mb-2 last:border-0 last:pb-0 last:mb-0">
                                                             {showDateHeader && (
-                                                                <div className="text-[10px] font-bold text-indigo-400 mb-0.5">{formatDateStr(m.dateStr)}</div>
+                                                                <div className="text-[11px] font-bold text-indigo-400 mb-0.5">{formatDateStr(m.dateStr)}</div>
                                                             )}
                                                             <div className="text-xs leading-relaxed">
                                                                 <span className="font-bold text-gray-500 dark:text-gray-400">{m.name} ({String(m.hour).padStart(2,'0')}:{String(m.min).padStart(2,'0')}):</span>{' '}
@@ -268,7 +268,7 @@ const AnalysisPage = () => {
                                 <div className="flex flex-col justify-center items-center text-gray-300 dark:text-gray-600 text-xl">→</div>
                                 {/* 右：排便 */}
                                 <div className="flex-1 min-w-0">
-                                    <div className="text-[11px] font-bold text-rose-500 mb-1 pl-1 truncate">🚽 排便 ({formatDateStr(bowel.date)})</div>
+                                    <div className="text-[13px] font-bold text-rose-500 mb-1 pl-1 truncate">🚽 排便 ({formatDateStr(bowel.date)})</div>
                                     <div className="glass-card rounded-2xl p-3 min-h-[80px] border-l-4 border-l-rose-400 shadow-sm relative overflow-hidden">
                                         <div className="flex items-center gap-2 mb-1">
                                             <span className="text-xl shrink-0">
@@ -277,10 +277,13 @@ const AnalysisPage = () => {
                                                  bowel.status === '軟' ? '☁️' : bowel.status === '稀' ? '💧' :
                                                  bowel.status === '拉肚子' ? '🔥' : '⏳'}
                                             </span>
-                                            <span className="font-bold text-sm dark:text-gray-100 truncate">{bowel.amount || '適中'} / {bowel.status}</span>
+                                            <div className="flex flex-col min-w-0">
+                                                <span className="font-bold text-sm dark:text-gray-100 leading-tight">{bowel.amount || '適中'}</span>
+                                                <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">{bowel.status}</span>
+                                            </div>
                                         </div>
-                                        <div className="text-[10px] text-gray-400 font-bold bg-gray-50 dark:bg-slate-800/50 px-2 py-0.5 rounded-md inline-block">⏰ {bowel.time}</div>
-                                        {bowel.note && <div className="text-[10px] text-gray-500 mt-1 line-clamp-2 italic">💬 {bowel.note}</div>}
+                                        <div className="text-[12px] text-gray-400 font-bold bg-gray-50 dark:bg-slate-800/50 px-2 py-0.5 rounded-md inline-block">⏰ {bowel.time}</div>
+                                        {bowel.note && <div className="text-[11px] text-gray-500 mt-1 line-clamp-2 italic">💬 {bowel.note}</div>}
                                     </div>
                                 </div>
                             </div>
