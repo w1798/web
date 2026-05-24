@@ -24,31 +24,35 @@ const calcBowelFrequency = (bowelRecords) => {
     const sameDayCount = bowelRecords.length - uniqueDates.length;
     const multiPerDay = sameDayCount / uniqueDates.length;
 
-    let avgDays, label, description;
+    let avgDays, label, description, suggestedOffset;
     if (multiPerDay >= 0.5) {
-        // 有超過一半的天數是一天多次
         avgDays = 0.5;
         label = '一天多次';
         description = `平均一天約 ${(1 + multiPerDay).toFixed(1)} 次`;
+        suggestedOffset = '4-12 小時';
     } else if (avgGap <= 1.2) {
         avgDays = 1;
         label = '每天';
         description = '大約每天排便 1 次';
+        suggestedOffset = '18-24 小時';
     } else if (avgGap <= 2.2) {
         avgDays = 2;
         label = '兩天一次';
         description = `平均間隔 ${avgGap.toFixed(1)} 天`;
+        suggestedOffset = '24-36 小時';
     } else if (avgGap <= 3.5) {
         avgDays = 3;
         label = '三天一次';
         description = `平均間隔 ${avgGap.toFixed(1)} 天`;
+        suggestedOffset = '36-48 小時';
     } else {
         avgDays = Math.round(avgGap);
         label = `${avgDays} 天一次`;
         description = `平均間隔 ${avgGap.toFixed(1)} 天`;
+        suggestedOffset = '48-72 小時';
     }
 
-    return { avgDays, label, description };
+    return { avgDays, label, description, suggestedOffset };
 };
 
 // =============================================
@@ -154,14 +158,15 @@ const AnalysisPage = () => {
         const status = bowel.status;
         const amount = bowel.amount || '適中';
 
-        if (allEntries.some(e => e.cook === '炸') && (status === '軟' || status === '稀' || status === '拉肚子'))
-            insights.push('🍟 炸物可能導致軟便/腹瀉');
-        if ((status === '便祕' || status === '硬') && !allEntries.some(e => e.food.includes('菜') || e.food.includes('水果')))
-            insights.push('🥦 缺乏纖維攝取可能導致便祕');
-        if (allEntries.some(e => e.cook === '滷') && status === '硬')
-            insights.push('🧂 重口味飲食可能影響排便');
+        if (allEntries.some(e => ['炸', '辣', '油', '生'].some(keyword => e.cook.includes(keyword))) && (status.includes('軟') || status.includes('稀') || status.includes('拉')))
+            insights.push('🍟 炸物、辛辣、甜食、乳製品或生冷可能軟便');
+
+        if (['秘', '硬',  '祕'].some(keyword => status.includes(keyword)))
+            insights.push('🥦 低纖、肉類、炸物或少水可能便祕');
+
         if (allEntries.some(e => e.amount === '多') && amount === '多')
-            insights.push('📏 大量進食可能導致排便增量');
+            insights.push('📏 高纖、大量進食可能排便增量');
+            
         return insights.length > 0 ? insights : null;
     };
 
@@ -193,7 +198,12 @@ const AnalysisPage = () => {
                     <h4 className="text-sm font-bold text-gray-600 dark:text-gray-300 flex items-center gap-2">🔄 排便頻率分析</h4>
                     <span className="text-base font-black text-rose-500">{frequency.label}</span>
                 </div>
-                <p className="text-xs text-gray-400 mt-1">{frequency.description}，分析將合併 {Math.max(1, Math.ceil(frequency.avgDays))} 天的飲食</p>
+                <p className="text-xs text-gray-400 mt-1">
+                    {frequency.description}，分析將合併 {Math.max(1, Math.ceil(frequency.avgDays))} 天的飲食。
+                    {frequency.suggestedOffset && (
+                        <span className="block mt-1 text-indigo-400 font-bold italic">💡「預估消化耗時」建議為：{frequency.suggestedOffset}</span>
+                    )}
+                </p>
             </div>
 
             {/* 14天統計摘要 (排在第二區塊) */}
@@ -215,13 +225,13 @@ const AnalysisPage = () => {
             {/* 位移滑桿 (移到第三區塊) */}
             <div className="glass-card rounded-2xl p-2 shadow-sm mb-2 sticky top-2 z-10">
                 <div className="flex justify-between items-center mb-1">
-                    <h3 className="font-extrabold text-[13px] text-gray-700 dark:text-gray-200 flex items-center gap-1.5">⚡ 食物在肚子消化時間</h3>
+                    <h3 className="font-extrabold text-[13px] text-gray-700 dark:text-gray-200 flex items-center gap-1.5">⚡ 預估消化耗時</h3>
                     <span className="text-indigo-500 font-black text-sm">{formatOffset(offsetHours)}</span>
                 </div>
-                <input type="range" min="0" max="120" step="6" value={offsetHours}
+                <input type="range" min="0" max="72" step="4" value={offsetHours}
                     onChange={e => setOffsetHours(parseInt(e.target.value))} className="mb-1" />
                 <div className="flex justify-between text-[10px] text-gray-400 px-0.5 font-medium">
-                    <span>0</span><span>1天</span><span>2天</span><span>3天</span><span>4天</span><span>5天</span>
+                    <span>0</span><span>1天</span><span>2天</span><span>3天</span>
                 </div>
             </div>
 
