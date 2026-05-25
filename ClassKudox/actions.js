@@ -5,7 +5,8 @@
 
 
 const awardPoints = (iID, lb, pt, forcedIgnore = null) => {
-    if(!awardContextIds.length) return;
+    if(isAwarding || !awardContextIds.length) return;
+    isAwarding = true;
     const count = awardContextIds.length;
     const now = Date.now(); 
     const tsHex = StampTool.encode(now);
@@ -36,12 +37,15 @@ const awardPoints = (iID, lb, pt, forcedIgnore = null) => {
     setTimeout(() => {
         closeModal(document.getElementById('studentProfileModal'));
         closeModal(document.getElementById('groupDetailModal'));
+        isAwarding = false;
     }, 400);
 };
 
 const awardTreasure = (treasureId, qty, silent = false) => {
+    if (isAwarding) return [];
     const td = treasureDefs.find(t => t.id === treasureId);
     if (!td) return [];
+    isAwarding = true;
     let newIds = [];
     awardContextIds.forEach(sid => {
         const s = students.find(x => x.id === sid);
@@ -65,6 +69,14 @@ const awardTreasure = (treasureId, qty, silent = false) => {
         if (typeof createPointAnimation === 'function') createPointAnimation(qty, awardContextIds.length);
         lastActionLogIds = newIds;
         showUndoToast(`${qty > 0 ? '+' : ''}${qty} ${td.lb} 給予 ${awardContextIds.length} 位學生`);
+        
+        setTimeout(() => {
+            closeModal(document.getElementById('studentProfileModal'));
+            closeModal(document.getElementById('groupDetailModal'));
+            isAwarding = false;
+        }, 400);
+    } else {
+        isAwarding = false;
     }
     return newIds;
 };
@@ -95,6 +107,7 @@ const undoAction = () => {
 
 const openAwardModal = (ids, title, groupId = null) => {
     hideUndoToast();
+    isAwarding = false;
     awardContextIds = ids;
     currentGroupIdForAward = groupId;
     pendingTreasures = {};

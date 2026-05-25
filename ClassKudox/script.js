@@ -263,6 +263,7 @@ const startApp = () => {
         wire('editGroupDetailBtn', () => { const g = groups.find(x => x.sIds.every(sid => awardContextIds.includes(sid)) && x.sIds.length === awardContextIds.length); if(g) openManageGroupModal(g.id); closeModal(document.getElementById('groupDetailModal')); });
 
         wire('saveCustomAwardBtn', () => { 
+            if (isAwarding) return;
             const sel = document.getElementById('customAwardLabel'); 
             const tempInp = document.getElementById('customAwardTempName');
             let l = sel ? sel.value : '自訂項目'; 
@@ -478,6 +479,8 @@ const startApp = () => {
         });
         
         wire('confirmGiftBtn', () => {
+            if (isAwarding) return;
+            isAwarding = true;
             const amount = parseInt(document.getElementById('giftAmount').value) || 0;
             if(amount <= 0) return alert('請輸入有效數量');
             const interval = giftSettings.gInt;
@@ -523,6 +526,7 @@ const startApp = () => {
             saveData(); renderStudents();
             showUndoToast(`已贈與 ${amount} 點給 ${recipients.length} 位學生`);
             closeModal(document.getElementById('studentProfileModal'));
+            isAwarding = false;
         });
 
         document.querySelectorAll('.tab-btn').forEach(b => b.onclick = () => {

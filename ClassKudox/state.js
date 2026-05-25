@@ -67,7 +67,7 @@ selectedStudentIds.delete = function(id) { const i = this.indexOf(id); if (i > -
 selectedStudentIds.clear = function() { this.length = 0; };
 selectedStudentIds.toArray = function() { return this.slice(); };
 
-let isDirty = 0, isSyncing = false, autoSyncTimer = null; 
+let isDirty = 0, isSyncing = false, autoSyncTimer = null, isAwarding = false; 
 let awardContextIds = [], currentProfileId = null, editingGroupId = null, currentGroupIdForAward = null, editingPointItemId = null, editingPointItemCat = null, lastActionLogIds = [], undoTimeout = null, lastUndoMessage = "", currentSort = 'score';
 
 const hideUndoToast = () => {
