@@ -238,7 +238,7 @@ function handleDragStart(e) {
         draggedFromRow = null;
         draggedFromCol = null;
     }
-    showConstraintsForStudent(draggedStudentId);
+    showConstraintsForStudent(draggedStudentId, draggedFromRow, draggedFromCol);
 }
 
 function handleDragEnd(e) {
@@ -254,7 +254,9 @@ function handleDragOver(e) {
     const row = parseInt(this.dataset.row);
     const col = parseInt(this.dataset.col);
     if (seatingData[row][col] === 'disabled') return;
-    if (draggedStudentId && !isValidSeat(draggedStudentId, row, col)) return;
+    
+    if (draggedStudentId && !isMoveValid(draggedStudentId, draggedFromRow, draggedFromCol, row, col, false)) return;
+    
     this.classList.add('drag-over');
 }
 
@@ -270,7 +272,10 @@ function handleDrop(e) {
     const targetCol = parseInt(this.dataset.col);
     
     if (seatingData[targetRow][targetCol] === 'disabled') return;
-    if (!isValidSeat(draggedStudentId, targetRow, targetCol, false)) return; // Don't enforce gender in drag-drop
+    if (!isMoveValid(draggedStudentId, draggedFromRow, draggedFromCol, targetRow, targetCol, false)) {
+        alert('此位置或交換後的位置不符合避讓規則！');
+        return;
+    }
     
     const targetStudentId = seatingData[targetRow][targetCol];
     
@@ -326,12 +331,12 @@ function clearConstraintsUI() {
     cells.forEach(el => el.classList.remove('restricted'));
 }
 
-function showConstraintsForStudent(studentId) {
+function showConstraintsForStudent(studentId, fromRow = null, fromCol = null) {
     clearConstraintsUI();
     for (let r = 0; r < gridRows; r++) {
         for (let c = 0; c < gridCols; c++) {
             if (seatingData[r][c] === 'disabled') continue;
-            if (!isValidSeat(studentId, r, c, false)) { // No gender check for UI masking
+            if (!isMoveValid(studentId, fromRow, fromCol, r, c, false)) { // No gender check for UI masking
                 const cell = document.querySelector(`.seat-cell[data-row="${r}"][data-col="${c}"]`);
                 if(cell) cell.classList.add('restricted');
             }
@@ -678,6 +683,52 @@ function renderGroups() {
 function getUnplacedStudents() {
     const placed = getPlacedStudents();
     return allStudents.filter(s => !placed.includes(s));
+}
+
+/**
+ * 檢查移動是否合法 (考量交換邏輯)
+ */
+function isMoveValid(studentId, fromRow, fromCol, targetRow, targetCol, checkGender = false) {
+    if (seatingData[targetRow][targetCol] === 'disabled') return false;
+    
+    const targetStudentId = seatingData[targetRow][targetCol];
+    
+    // 如果目的地跟來源一樣，視為合法
+    if (fromRow === targetRow && fromCol === targetCol) return true;
+
+    // 暫存原始數據
+    const backupSource = (fromRow !== null) ? seatingData[fromRow][fromCol] : null;
+    const backupTarget = seatingData[targetRow][targetCol];
+
+    // 模擬移動/交換
+    // 如果是網格間移動，先把原位清空或放上被交換者
+    if (fromRow !== null) {
+        seatingData[fromRow][fromCol] = (targetStudentId && targetStudentId !== studentId) ? targetStudentId : null;
+    }
+    // 把主角放到目的地
+    seatingData[targetRow][targetCol] = studentId;
+
+    let result = true;
+
+    // 檢查主角在目的地是否衝突
+    if (!isValidSeat(studentId, targetRow, targetCol, checkGender)) {
+        result = false;
+    }
+
+    // 如果是交換，還得檢查被交換的人在原位是否衝突
+    if (result && fromRow !== null && targetStudentId && targetStudentId !== studentId) {
+        if (!isValidSeat(targetStudentId, fromRow, fromCol, checkGender)) {
+            result = false;
+        }
+    }
+
+    // 還原數據
+    if (fromRow !== null) {
+        seatingData[fromRow][fromCol] = backupSource;
+    }
+    seatingData[targetRow][targetCol] = backupTarget;
+
+    return result;
 }
 
 function isValidSeat(studentId, row, col, checkGender = false) {
