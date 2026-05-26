@@ -398,7 +398,20 @@ const getReportsTimeRange = () => {
     const v = document.getElementById('timeRangeFilter')?.value || 'all'; if(v === 'all') return null;
     let s = new Date(), e = new Date(); s.setHours(0,0,0,0); e.setHours(23,59,59,999);
     if(v === 'today') return { start: s.getTime(), end: e.getTime() };
-    if(v === 'week') { s.setDate(s.getDate() - (s.getDay()||7) + 1); e.setDate(s.getDate() + 6); return { start: s.getTime(), end: e.getTime() }; }
+    if(v === 'week') { 
+        s.setDate(s.getDate() - (s.getDay()||7) + 1); 
+        e.setTime(s.getTime());
+        e.setDate(s.getDate() + 6);
+        e.setHours(23,59,59,999);
+        return { start: s.getTime(), end: e.getTime() }; 
+    }
+    if(v === 'lastWeek') {
+        s.setDate(s.getDate() - (s.getDay()||7) + 1 - 7);
+        e.setTime(s.getTime());
+        e.setDate(s.getDate() + 6);
+        e.setHours(23,59,59,999);
+        return { start: s.getTime(), end: e.getTime() };
+    }
     if(v === 'month') { s.setDate(1); let skip = new Date(s); skip.setMonth(skip.getMonth()+1); skip.setDate(0); skip.setHours(23,59,59,999); return { start: s.getTime(), end: skip.getTime() }; }
     if(v === 'custom') { const sval = document.getElementById('startDateFilter')?.value, evalStr = document.getElementById('endDateFilter')?.value; if(sval && evalStr) {
         let sd = new Date(sval); sd.setHours(0,0,0,0);
