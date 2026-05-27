@@ -91,7 +91,7 @@ const renderGiftTab = () => {
     // 如果是群組贈與，需排除掉群組內所有人
     const excludeIds = awardContextIds.length > 0 ? awardContextIds : [currentProfileId];
     
-    students.filter(s => !excludeIds.includes(s.id)).sort((a,b)=>a.id.localeCompare(b.id, 'zh-TW')).forEach(s => {
+    students.filter(s => !excludeIds.includes(s.id)).sort(sortByName).forEach(s => {
         const div = document.createElement('div');
         div.style = 'display:flex; align-items:center; gap:0.4rem; padding:0.3rem 0.5rem; cursor:pointer; background:white; border-radius:6px; font-size:0.9em; border:1px solid #e2e8f0;';
         div.innerHTML = `<input type="checkbox" value="${s.id}" style="cursor:pointer;"><span style="cursor:pointer; flex:1; margin:0;">${s.id}</span>`;
@@ -130,7 +130,7 @@ const switchMainView = (v) => {
 const renderStudents = () => {
     const grid = document.getElementById('studentGrid'); if(!grid) return;
     const fragment = document.createDocumentFragment();
-    [...students].sort((a,b) => a.id.localeCompare(b.id, 'zh-TW')).forEach(s => {
+    [...students].sort(sortByName).forEach(s => {
         const card = document.createElement('div'); card.className = 'student-card' + (selectedStudentIds.includes(s.id) ? ' selected' : '');
         card.onclick = () => isMultiSelectMode ? toggleStudentSelection(s.id) : openAwardModal([s.id], s.id, null);
         let total = (s.cP || 0) + (s.iP || 0);
@@ -190,9 +190,9 @@ const renderGroups = () => {
 };
 
 const renderPointItems = () => {
-    const rGrid = (id, items, cat) => { const el = document.getElementById(id); if(!el) return; el.innerHTML = ''; items.slice().sort((a,b)=>a.lb.localeCompare(b.lb,'zh-TW')).forEach(item => { const btn = document.createElement('button'); btn.className = `point-item-btn ${cat}`; btn.innerHTML = `<div class="point-icon">${item.ic}</div><div class="point-label">${item.lb}${item.iSum===1?'<small>(不列排)</small>':''}</div><div class="point-value">${item.vl > 0 ? '+' : ''}${item.vl}</div>`; btn.onclick = () => awardPoints(item.id, item.lb, item.vl, item.iSum===1); el.appendChild(btn); }); };
+    const rGrid = (id, items, cat) => { const el = document.getElementById(id); if(!el) return; el.innerHTML = ''; items.slice().sort(sortByName).forEach(item => { const btn = document.createElement('button'); btn.className = `point-item-btn ${cat}`; btn.innerHTML = `<div class="point-icon">${item.ic}</div><div class="point-label">${item.lb}${item.iSum===1?'<small>(不列排)</small>':''}</div><div class="point-value">${item.vl > 0 ? '+' : ''}${item.vl}</div>`; btn.onclick = () => awardPoints(item.id, item.lb, item.vl, item.iSum===1); el.appendChild(btn); }); };
     rGrid('positiveItems', pointItems.pos, 'positive'); rGrid('needsWorkItems', pointItems.neg, 'negative');
-    const rList = (id, items, cat) => { const el = document.getElementById(id); if(!el) return; el.innerHTML = ''; items.slice().sort((a,b)=>a.lb.localeCompare(b.lb,'zh-TW')).forEach(item => { const div = document.createElement('div'); div.className = `point-item-btn ${cat==='pos'?'positive':'negative'}`; div.onclick = () => openEditPointItemModal(cat, item.id); div.innerHTML = `<div class="point-icon">${item.ic}</div><div class="point-label">${item.lb}${item.iSum===1?'<small>(不列排)</small>':''}</div><div class="point-value">${item.vl > 0 ? '+' : ''}${item.vl}</div><button class="remove-item-btn" onclick="event.stopPropagation(); window.removePointItem('${cat}', '${item.id}')">×</button>`; el.appendChild(div); }); };
+    const rList = (id, items, cat) => { const el = document.getElementById(id); if(!el) return; el.innerHTML = ''; items.slice().sort(sortByName).forEach(item => { const div = document.createElement('div'); div.className = `point-item-btn ${cat==='pos'?'positive':'negative'}`; div.onclick = () => openEditPointItemModal(cat, item.id); div.innerHTML = `<div class="point-icon">${item.ic}</div><div class="point-label">${item.lb}${item.iSum===1?'<small>(不列排)</small>':''}</div><div class="point-value">${item.vl > 0 ? '+' : ''}${item.vl}</div><button class="remove-item-btn" onclick="event.stopPropagation(); window.removePointItem('${cat}', '${item.id}')">×</button>`; el.appendChild(div); }); };
     rList('settingsPositiveList', pointItems.pos, 'pos'); rList('settingsNeedsWorkList', pointItems.neg, 'neg');
     renderCustomDropdown();
     renderTreasureSettings();
@@ -204,7 +204,7 @@ const renderCustomDropdown = () => {
     const defaultOpt = document.createElement('option');
     defaultOpt.value = '新增項目'; defaultOpt.textContent = '新增項目';
     sel.appendChild(defaultOpt);
-    customItems.forEach(name => {
+    customItems.sort(sortByName).forEach(name => {
         if (name === '新增項目') return; 
         const opt = document.createElement('option');
         opt.value = name; opt.textContent = name;
@@ -220,7 +220,7 @@ const loadCustomTextarea = () => {
 const renderTreasureSettings = () => {
     const el = document.getElementById('settingsTreasureList'); if(!el) return;
     el.innerHTML = '';
-    treasureDefs.slice().sort((a,b)=>a.lb.localeCompare(b.lb,'zh-TW')).forEach(item => {
+    treasureDefs.slice().sort(sortByName).forEach(item => {
         const div = document.createElement('div');
         div.className = 'point-item-btn positive';
         div.onclick = () => openEditPointItemModal('treasure', item.id);
@@ -237,7 +237,7 @@ const renderStudentTreasures = () => {
         return;
     }
 
-    treasureDefs.slice().sort((a,b)=>a.lb.localeCompare(b.lb,'zh-TW')).forEach(td => {
+    treasureDefs.slice().sort(sortByName).forEach(td => {
         const card = document.createElement('div');
         card.className = 'treasure-card';
         const qtyText = pendingTreasures[td.id] || 0;
@@ -447,7 +447,7 @@ const renderReports = () => {
         }, 0);
         return { ...s, pts };
     });
-    if (currentSort === 'name') data.sort((a,b) => a.id.localeCompare(b.id, 'zh-TW')); else data.sort((a,b) => b.pts - a.pts);
+    if (currentSort === 'name') data.sort(sortByName); else data.sort((a,b) => b.pts - a.pts);
     data.forEach((s, idx) => {
         const li = document.createElement('li'); li.className = 'report-item' + (currentProfileId === s.id ? ' active' : '');
         li.onclick = () => { 
@@ -516,7 +516,7 @@ const renderTreasureReports = () => {
         const totalTr = treasureDefs.reduce((sum, td) => sum + ((s.tr && s.tr[td.id]) || 0), 0);
         return { ...s, totalTr };
     });
-    if (currentSort === 'name') data.sort((a,b) => a.id.localeCompare(b.id, 'zh-TW')); else data.sort((a,b) => b.totalTr - a.totalTr);
+    if (currentSort === 'name') data.sort(sortByName); else data.sort((a,b) => b.totalTr - a.totalTr);
     data.forEach((s, idx) => {
         const li = document.createElement('li'); li.className = 'report-item' + (currentProfileId === s.id ? ' active' : '');
         li.onclick = () => { 
@@ -595,7 +595,7 @@ const showClassSummary = () => {
         }, 0);
         return { ...s, pts };
     });
-    if (currentSort === 'name') data.sort((a,b) => a.id.localeCompare(b.id, 'zh-TW')); else data.sort((a,b) => b.pts - a.pts);
+    if (currentSort === 'name') data.sort(sortByName); else data.sort((a,b) => b.pts - a.pts);
     data.forEach((s, idx) => {
         const box = document.createElement('div');
         box.className = 'summary-box';

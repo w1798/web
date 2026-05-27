@@ -17,7 +17,7 @@ const defaultItems = {
     ]
 };
 
-const DEFAULT_SETTINGS = { ftS: 16, col: 10, gCol: 5, iCol: 5, itmS: 0, eS: 0, sCH: 0, gCH: 0, lRet: 0, avS: 0, sAv: 1, sTR: 1, cGV: 25, cGH: 25, iGV: 15, iGH: 15, sBkup: 1 };
+const DEFAULT_SETTINGS = { ftS: 16, col: 10, gCol: 5, iCol: 5, itmS: 0, eS: 0, sCH: 0, gCH: 0, lRet: 0, avS: 0, sAv: 1, sTR: 1, cGV: 25, cGH: 25, iGV: 15, iGH: 15, sBkup: 1, cPvd: 'upstash' };
 
 const ACT = {
     STU_AWD: 1,
@@ -47,6 +47,7 @@ let sysOps = JSON.parse(localStorage.getItem('CD_SysOps') || '[]');
 let currentClassId = localStorage.getItem('CD_cCId');
 let cloudBinId = localStorage.getItem('BId') || '';
 let cloudApiKey = localStorage.getItem('Key') || '';
+let cloudProvider = localStorage.getItem('cPvd') || 'upstash';
 let autoSyncInterval = parseInt(localStorage.getItem('aSyn')) || 0;
 let localSyncVersion = localStorage.getItem('sVer') || '000000';
 
@@ -83,10 +84,10 @@ let pendingTreasures = {};
 
 const getSmartSyncInterval = () => {
     const m = idleSeconds / 60;
-    if (m < 15) return 30;
-    if (m < 30) return 60;
-    if (m < 60) return 120;
-    return 180;
+    if (m < 30) return 600;
+    if (m < 120) return 3600;
+    if (m < 360) return 7200;
+    return 14400;
 };
 
 // --- Global Helpers ---
@@ -127,6 +128,7 @@ const saveData = (skipDirty = false) => {
     localStorage.setItem('CD_cCId', currentClassId || '');
     localStorage.setItem('BId', cloudBinId);
     localStorage.setItem('Key', cloudApiKey);
+    localStorage.setItem('cPvd', cloudProvider);
     localStorage.setItem('aSyn', String(autoSyncInterval));
     localStorage.setItem('sVer', String(localSyncVersion));
     localStorage.setItem(`CD_${currentClassId}_Stus`, JSON.stringify(students));

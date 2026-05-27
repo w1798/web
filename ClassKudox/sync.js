@@ -76,33 +76,71 @@ const restoreFromBackup = (data, reload = true) => {
         if (typeof applySettings === 'function') applySettings(); 
         if (typeof renderStudents === 'function') renderStudents(); 
         if (currentView === 'groups' && typeof renderGroups === 'function') renderGroups(); 
-        if (typeof renderPointItems === 'function') renderPointItems(); 
+        if (typeof renderPointItems === 'function') renderPointItems(); // 內含 renderCustomDropdown()
+        if (typeof loadCustomItemPrefs === 'function') loadCustomItemPrefs(); // 復原當前項目的 +/- 與打勾偏好
         if (typeof renderClassSelector === 'function') renderClassSelector(); 
         if (typeof updateSyncStatus === 'function') updateSyncStatus(); 
         L(`[System] 已還原版本 ${localSyncVersion}，且不重整頁面`);
     }
 };
+const getCloudProvider = (id = cloudBinId) => {
+    if (!id) return null;
+    if (id.includes('firebaseio.com')) return 'firebase';
+    if (id.includes('upstash.io')) return 'upstash';
+    if (id.includes('jsonbin.io') || /^[0-9a-f]{24}$/.test(id)) return 'jsonbin';
+    return null;
+};
+
+const getCloudRequest = (type = 'PUT') => {
+    let url = cloudBinId;
+    let headers = { 'Content-Type': 'application/json' };
+    const pvd = getCloudProvider();
+    
+    if (pvd === 'firebase') {
+        const baseUrl = url.split('?')[0];
+        let targetUrl = baseUrl;
+        if (targetUrl.endsWith('.firebaseio.com') || targetUrl.endsWith('.firebaseio.com/')) {
+            if (!targetUrl.endsWith('/')) targetUrl += '/';
+            targetUrl += 'classKudox_backup';
+        }
+        if (!targetUrl.endsWith('.json')) targetUrl += '.json';
+        url = targetUrl;
+        if (cloudApiKey) url += (url.includes('?') ? '&' : '?') + 'auth=' + cloudApiKey;
+    } else if (pvd === 'jsonbin') {
+        if (!url.startsWith('http')) url = `https://api.jsonbin.io/v3/b/${url}`;
+        if (type === 'GET' && !url.includes('/latest')) url += '/latest';
+        headers['X-Access-Key'] = cloudApiKey;
+    } else {
+        // Upstash
+        if (!url.startsWith('http')) url = `https://${url}`;
+        if (url.includes('upstash.io')) {
+            if (type === 'PUT' && !url.includes('/SET/')) url += '/SET/classKudox_backup';
+            if (type === 'GET' && !url.includes('/GET/')) url += '/GET/classKudox_backup';
+        }
+        headers['Authorization'] = `Bearer ${cloudApiKey}`;
+    }
+    return { url, headers, pvd };
+};
 
 const performCloudUpload = async () => {
-    if (!cloudBinId || !cloudApiKey) return;
+    if (!cloudBinId) return;
     if (typeof updateSyncStatus === 'function') updateSyncStatus(); 
     try {
         const newVer = StampTool.encode();
         const oldVer = localSyncVersion;
         localSyncVersion = newVer;
-        L(`[CloudSync連線] 準備同步上傳新版本: ${newVer}，本地舊版本: ${oldVer}`);
+        
+        const { url, headers, pvd } = getCloudRequest('PUT');
+        L(`[CloudSync連線] 準備同步上傳新版本: ${newVer} (${pvd || '未知'})`);
+        
         const toPush = getFullBackupData(false);
         const compressed = await compressJSON(toPush);
-        const isUpstash = cloudBinId.includes('upstash.io');
-        const putUrl = isUpstash ? (cloudBinId.startsWith('http') ? `${cloudBinId}/SET/classKudox_backup` : cloudBinId) : (cloudBinId.startsWith('http') ? cloudBinId : `https://api.jsonbin.io/v3/b/${cloudBinId}`);
-        const h = isUpstash ? {'Authorization':`Bearer ${cloudApiKey}`, 'Content-Type':'application/json'} : {'X-Access-Key':cloudApiKey, 'Content-Type':'application/json'};
-        const resp = await fetch(putUrl, { method:'PUT', headers:h, body:JSON.stringify({ d: compressed }) });
+        const body = JSON.stringify({ d: compressed });
+        
+        const resp = await fetch(url, { method: 'PUT', headers, body });
         if (resp.ok) { 
             L(`[CloudSync] 同步成功，最新版本：${localSyncVersion}`);
             localStorage.setItem('sVer', localSyncVersion);
-            
-            // 遵照要求：上傳後不立即清空 Ops，純粹標記為已同步以停止循環。
-            // 真正的清理會在下次同步下載 (Step 4) 時比對 ID 指令後執行。
             saveData(true); 
             setDirty(3); 
         } else {
@@ -114,23 +152,24 @@ const performCloudUpload = async () => {
 };
 
 const performCloudDownload = async (manual = false) => {
-    if (!cloudBinId || !cloudApiKey) return;
+    if (!cloudBinId) return;
     isSyncing = true; setDirty(4); 
+    const pvd = getCloudProvider();
     try {
-        const isUpstash = cloudBinId.includes('upstash.io'), h = isUpstash?{'Authorization':`Bearer ${cloudApiKey}`}:{'X-Access-Key':cloudApiKey};
-        const url = isUpstash ? (cloudBinId.startsWith('http') ? `${cloudBinId}/GET/classKudox_backup` : cloudBinId) : (cloudBinId.startsWith('http') ? cloudBinId : `https://api.jsonbin.io/v3/b/${cloudBinId}/latest?t=${Date.now()}`);
-        
-        const resp = await fetch(url, { headers: h });
+        const { url, headers } = getCloudRequest('GET');
+        const resp = await fetch(url, { method: 'GET', headers });
         if (resp.ok) {
             const r = await resp.json();
-            const raw = isUpstash ? r.result : (r.record || r);
+            // Firebase 直接回傳物件，Upstash 回傳 {result: ...}，Jsonbin 回傳 {record: ...}
+            const raw = (pvd === 'firebase') ? r : (pvd === 'jsonbin' ? r.record : (r.result || r));
             const cloudData = await parseCloudData(raw);
             if (cloudData) {
                 restoreFromBackup(cloudData, true);
                 setDirty(3); 
                 if(manual) alert('從雲端下載並還原成功');
             } else {
-                throw new Error('解析雲端數據失敗');
+                if (manual && raw === null) alert('雲端目前尚無資料 (空的資料庫)');
+                else throw new Error('解析雲端數據失敗');
             }
         } else {
             throw new Error('雲端讀取失敗');
@@ -167,23 +206,28 @@ const parseCloudData = async (raw) => {
 };
 
 const checkCloudSyncState = async () => {
-    if (isSyncing || !cloudBinId || !cloudApiKey) return;
+    if (isSyncing || !cloudBinId) return;
     const hadChanges = (isDirty === 1);
     isSyncing = true; setDirty(4); 
+    const pvd = getCloudProvider();
 
     L(`[CloudSync連線] Step 1 開始預檢及下載雲端版本...`);
     try {
-        const isUpstash = cloudBinId.includes('upstash.io'), h = isUpstash?{'Authorization':`Bearer ${cloudApiKey}`}:{'X-Access-Key':cloudApiKey};
-        const url = isUpstash ? (cloudBinId.startsWith('http') ? `${cloudBinId}/GET/classKudox_backup` : cloudBinId) : (cloudBinId.startsWith('http') ? cloudBinId : `https://api.jsonbin.io/v3/b/${cloudBinId}/latest?t=${Date.now()}`);
+        const { url, headers } = getCloudRequest('GET');
         
-        const resp = await fetch(url, { headers: h });
+        const resp = await fetch(url, { headers });
         if (resp.ok) {
             const r = await resp.json();
-            const raw = isUpstash ? r.result : (r.record || r);
+            const raw = (pvd === 'firebase') ? r : (pvd === 'jsonbin' ? r.record : (r.result || r));
             
             L(`[CloudSync] Step 2a 準備解析雲端數據...`);
-            const cloudData = await parseCloudData(raw);
-            if (!cloudData) throw new Error('解析雲端數據失敗');
+            let cloudData = await parseCloudData(raw);
+            
+            // 如果雲端完全沒資料 (Firebase 回傳 null)，視為一個初始空的版本
+            if (!cloudData) {
+                L(`[CloudSync] 偵測到雲端尚無資料，準備執行初始同步...`);
+                cloudData = { sVer: '000000000000' };
+            }
 
             const cloudVer = cloudData.sVer || '000000000000';
             L(`[CloudSync] Step 2b 取得雲端版本: ${cloudVer}`);

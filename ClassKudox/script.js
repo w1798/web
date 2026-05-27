@@ -22,6 +22,7 @@ const startApp = () => {
                 const sz = document.getElementById('jsonSizeEst'); 
                 if(sz) sz.textContent = `(約 ${(JSON.stringify(getFullBackupData(false)).length / 1024).toFixed(1)} KB)`; 
             } catch(e) {}
+            if (typeof updateCloudPlaceholders === 'function') updateCloudPlaceholders();
             openModal(document.getElementById('settingsModal')); applySettings(); renderPointItems(); 
         });
         wire('manualShowUndoBtn', () => {
@@ -644,8 +645,8 @@ const startApp = () => {
                     const siValue = localStorage.getItem(`CD_${src}_itm`);
                     const si = siValue ? JSON.parse(siValue) : null;
                     if (si) {
-                        items.pos = (si.pos||[]).sort((a,b)=>a.lb.localeCompare(b.lb, 'zh-TW')).map(x => ({...x, id: Math.random().toString(36).substring(2, 8)}));
-                        items.neg = (si.neg||[]).sort((a,b)=>a.lb.localeCompare(b.lb, 'zh-TW')).map(x => ({...x, id: Math.random().toString(36).substring(2, 8)}));
+                        items.pos = (si.pos||[]).sort(sortByName).map(x => ({...x, id: Math.random().toString(36).substring(2, 8)}));
+                        items.neg = (si.neg||[]).sort(sortByName).map(x => ({...x, id: Math.random().toString(36).substring(2, 8)}));
                     }
                 }
                 if (copyStudents) { 
@@ -665,8 +666,39 @@ const startApp = () => {
         wire('cloudUploadBtn', () => { if(confirm('會以上傳的本地資料覆蓋雲端，確定？')) performCloudUpload(); });
         wire('cloudDownloadBtn', () => { if(confirm('會覆蓋本地資料，確定？')) performCloudDownload(true); });
         
-        const binInp = document.getElementById('cloudBinId'); if(binInp) { binInp.value = cloudBinId; binInp.onchange = (e) => { cloudBinId = e.target.value; saveData(); startSyncTimer(); }; }
-        const keyInp = document.getElementById('cloudApiKey'); if(keyInp) { keyInp.value = cloudApiKey; keyInp.onchange = (e) => { cloudApiKey = e.target.value; saveData(); startSyncTimer(); }; }
+        const binInp = document.getElementById('cloudBinId'); 
+        if(binInp) { 
+            binInp.value = cloudBinId; 
+            binInp.oninput = (e) => { // 使用 oninput 即時更新提示文字
+                cloudBinId = e.target.value; 
+                updateCloudPlaceholders();
+            };
+            binInp.onchange = (e) => { 
+                cloudBinId = e.target.value; 
+                saveData(); 
+                startSyncTimer(); 
+            }; 
+        }
+        const keyInp = document.getElementById('cloudApiKey'); 
+        if(keyInp) { 
+            keyInp.value = cloudApiKey; 
+            keyInp.onchange = (e) => { cloudApiKey = e.target.value; saveData(); startSyncTimer(); }; 
+        }
+
+        const updateCloudPlaceholders = () => {
+            const binLabel = document.getElementById('cloudBinIdLabel');
+            const keyLabel = document.getElementById('cloudApiKeyLabel');
+            const binInp = document.getElementById('cloudBinId');
+            const keyInp = document.getElementById('cloudApiKey');
+            
+            const pvd = typeof getCloudProvider === 'function' ? getCloudProvider() : null;
+
+            if(binLabel) binLabel.textContent = '資料庫 URL';
+            if(keyLabel) keyLabel.textContent = 'Key ID';
+            if(binInp) binInp.placeholder = 'https://xxx.upstash.io / https://xxx.firebaseio.com / Jsonbin Bin ID';
+            if(keyInp) keyInp.placeholder = 'Token / 專案編號 / X-ACCESS-KEY';
+        };
+        updateCloudPlaceholders();
         
         const bindSelect = (id, key, isStyleVar = true, styleVarName = null, isPercent = false, isUnitless = false) => {
             const el = document.getElementById(id); if(!el) return;

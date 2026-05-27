@@ -163,3 +163,15 @@ const safeLoad = (key, template) => {
         return template;
     }
 };
+const sortByName = (a, b) => {
+    const la = (a?.lb || a?.id || String(a)).toLowerCase();
+    const lb = (b?.lb || b?.id || String(b)).toLowerCase();
+    
+    // 檢查是否為英數開頭 (ASCII 0-127)
+    const isAsciiA = la.charCodeAt(0) < 128;
+    const isAsciiB = lb.charCodeAt(0) < 128;
+    
+    if (isAsciiA !== isAsciiB) return isAsciiA ? -1 : 1;
+    
+    return la.localeCompare(lb, 'zh-TW', { numeric: true });
+};
