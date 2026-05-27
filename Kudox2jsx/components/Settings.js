@@ -15,9 +15,9 @@ function Settings() {
     React.useEffect(() => {
         if (modals.settings) {
             setTimeout(() => {
+                if (window.initSelectOptions) window.initSelectOptions();
                 if (window.applySettings) window.applySettings();
                 if (window.renderPointItems) window.renderPointItems();
-                if (window.initSelectOptions) window.initSelectOptions();
             }, 0);
         }
     }, [modals.settings]);
@@ -27,6 +27,47 @@ function Settings() {
         if (body) body.scrollTop = 0;
         if (activeTab === 'custom' && typeof loadCustomTextarea === 'function') {
             loadCustomTextarea();
+        }
+        if (activeTab === 'display') {
+            if (window.initSelectOptions) window.initSelectOptions();
+            if (window.applySettings) window.applySettings();
+            const bind = (id, fn) => { const el = document.getElementById(id); if (el) el.onchange = fn; };
+            bind('fontSizeSelect', (e) => { window.settings.ftS = e.target.value; window.applySettings(); window.saveData(true); });
+            bind('enableSoundSetting', (e) => { window.settings.eS = e.target.checked ? 1 : 0; window.saveData(true); });
+            bind('showAvatarSetting', (e) => { window.settings.sAv = e.target.checked ? 1 : 0; window.applySettings(); window.saveData(true); });
+            bind('showTreasureSetting', (e) => { window.settings.sTR = e.target.checked ? 1 : 0; window.renderStudents(); window.saveData(true); });
+            bind('logRetentionSetting', (e) => { window.settings.lRet = parseInt(e.target.value); window.applySettings(); window.saveData(true); window.performLogRetention(); });
+            const bindSelect = (id, key, isStyleVar = true, styleVarName = null, isPercent = false, isUnitless = false) => {
+                const el = document.getElementById(id); if(!el) return;
+                el.onchange = (e) => {
+                    const val = Number(e.target.value);
+                    window.settings[key] = val;
+                    if(isStyleVar) {
+                        const unit = isUnitless ? '' : (isPercent ? '%' : 'px');
+                        document.documentElement.style.setProperty(styleVarName || `--${key}`, val + unit);
+                    }
+                    if(key === 'ftS') document.documentElement.style.setProperty('--body-font-size', val + 'px');
+                    if(key === 'itmS') document.documentElement.style.setProperty('--item-scale', val + 'px');
+                    window.saveData(true);
+                    if(['ftS','col','sTR'].includes(key)) window.renderStudents(); 
+                    if(['gCol'].includes(key)) window.renderGroups();
+                };
+            };
+            bindSelect('fontSizeSelect', 'ftS', false);
+            bindSelect('gridColsSelect', 'col', true, '--grid-cols', false, true);
+            bindSelect('cardHeightSelect', 'sCH', true, '--student-card-height');
+            bindSelect('groupHeightSelect', 'gCH', true, '--group-card-height');
+            bindSelect('groupColsSelect', 'gCol', true, '--group-grid-cols', false, true);
+            bindSelect('itemColsSelect', 'iCol', true, '--item-grid-cols', false, true);
+            bindSelect('itemScaleSelect', 'itmS', false); 
+            bindSelect('avatarSizeSelect', 'avS', false);
+            const avSel = document.getElementById('avatarSizeSelect');
+            if(avSel) avSel.addEventListener('change', () => window.applySettings());
+            bindSelect('cardGapVSelect', 'cGV', true, '--card-gap-v');
+            bindSelect('cardGapHSelect', 'cGH', true, '--card-gap-h');
+            bindSelect('itemGapVSelect', 'iGV', true, '--item-gap-v');
+            bindSelect('itemGapHSelect', 'iGH', true, '--item-gap-h');
+            bindSelect('versionBackupSetting', 'sBkup', false);
         }
     }, [activeTab]);
 

@@ -85,6 +85,7 @@ function AppProvider({ children }) {
         });
 
         if (isOpen) {
+            if (window.hideUndoToast) window.hideUndoToast();
             document.body.classList.add('modal-open');
             if (name === 'manageClasses' && window.renderClassSelector) {
                 setTimeout(() => window.renderClassSelector(), 0);

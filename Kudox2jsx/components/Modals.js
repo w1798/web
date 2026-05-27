@@ -365,8 +365,11 @@ function Modals() {
                     </div>
                     <div className="modal-body">
                         <div className="input-group">
-                            <label>座號+學生姓名</label>
+                            <label>座號+學生姓名 (支援多位學生，每行一個名字)</label>
                             <textarea id="newStudentName" rows="5"></textarea>
+                            <p className="small-text" style={{ marginTop: '0.3rem', color: 'var(--text-secondary)' }}>
+                                可到 <a href="https://w1798.github.io/web/TextLab" target="_blank" className="url-link" style={{ color: '#c53030', textDecoration: 'underline' }}>多功能文字處理器</a> 在 原始資料1 中貼上學生姓名，功能表中間下面的「編號」選2，按執行即可
+                            </p>
                         </div>
                     </div>
                     <div className="modal-footer">
