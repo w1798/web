@@ -112,10 +112,11 @@ let pendingTreasures = {};
 
 const getSmartSyncInterval = () => {
     const m = idleSeconds / 60;
-    if (m < 30) return 600;
-    if (m < 120) return 3600;
-    if (m < 360) return 7200;
-    return 14400;
+    if (m < 10) return 120;
+    if (m < 30) return 300;
+    if (m < 60) return 600;
+    if (m < 180) return 1800;
+    return 3600;
 };
 
 // --- Global Helpers ---
