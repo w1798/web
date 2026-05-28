@@ -69,6 +69,15 @@ function Settings() {
             bindSelect('itemGapHSelect', 'iGH', true, '--item-gap-h');
             bindSelect('versionBackupSetting', 'sBkup', false);
         }
+        if (activeTab === 'cloud') {
+            const bind = (id, fn) => { const el = document.getElementById(id); if (el) el.onchange = fn; };
+            const binInp = document.getElementById('cloudBinId');
+            if(binInp) { binInp.value = window.cloudBinId; binInp.onchange = (e) => { window.cloudBinId = e.target.value; window.saveData(); if(window.startSyncTimer) window.startSyncTimer(); }; }
+            const keyInp = document.getElementById('cloudApiKey');
+            if(keyInp) { keyInp.value = window.cloudApiKey; keyInp.onchange = (e) => { window.cloudApiKey = e.target.value; window.saveData(); if(window.startSyncTimer) window.startSyncTimer(); }; }
+            const ivInp = document.getElementById('autoSyncInterval');
+            if(ivInp) { ivInp.value = window.autoSyncInterval; ivInp.onchange = (e) => { window.autoSyncInterval = parseInt(e.target.value); window.saveData(); if(window.startSyncTimer) window.startSyncTimer(); }; }
+        }
     }, [activeTab]);
 
     const close = () => setModal('settings', false);
@@ -333,12 +342,12 @@ function Settings() {
                     <div className={`settings-tab-content ${activeTab === 'cloud' ? 'active' : ''}`} id="settingsCloudTab">
                         <div className="settings-section">
                             <h3>☁️ 雲端同步設定</h3>
-                            <p className="small-text" style={{ marginBottom: '1rem', color: 'var(--text-secondary)' }}>支援 Upstash / Firebase / Jsonbin。上傳時會自動排除您的金鑰資訊以保護隱私。</p>
+                            <p className="small-text" style={{ marginBottom: '1rem', color: 'var(--text-secondary)' }}>支援 Upstash / Firebase。上傳時會自動排除您的金鑰資訊以保護隱私。</p>
                             
                             <div className="settings-sync-item">
-                                <label>資料庫URL</label>
+                                <label>資料庫 URL</label>
                                 <div className="input-with-btn">
-                                    <input type="text" id="cloudBinId" placeholder="https://xxx.upstash.io / https://xxx.firebaseio.com / Jsonbin Bin ID" />
+                                    <input type="text" id="cloudBinId" placeholder="Firebase: https://xxx.firebaseio.com / Upstash: https://xxx.upstash.io" />
                                     <button className="btn icon-btn" id="resetCloudBinId" title="重置">🧹</button>
                                 </div>
                             </div>

@@ -3,18 +3,20 @@
  */
 
 const openModal = (m) => {
+    if (!m) return;
+    if (window.openModal) { window.openModal(m); return; }
     if (typeof hideUndoToast === 'function') hideUndoToast();
-    m?.classList.remove('hidden');
+    m.classList.remove('hidden');
     document.body.classList.add('modal-open');
-    // 有視窗開啟時，強制隱藏右下角多選按鈕
     const fbtn = document.getElementById('floatingMultiSelectBtn');
     if (fbtn) fbtn.classList.add('hidden');
 };
 const closeModal = (m) => {
-    m?.classList.add('hidden');
+    if (!m) return;
+    if (window.closeModal) { window.closeModal(m); return; }
+    m.classList.add('hidden');
     if (document.querySelectorAll('.modal-overlay:not(.hidden)').length === 0) {
         document.body.classList.remove('modal-open');
-        // 關閉視窗後，根據目前位置重新判斷是否顯示多選按鈕
         window.dispatchEvent(new Event('scroll'));
     }
 };
@@ -330,7 +332,9 @@ const renderTreasureReports = () => {
 };
 
 const showClassSummary = () => {
-    openModal(document.getElementById('classSummaryModal'));
+    const el = document.getElementById('classSummaryModal');
+    if (el && window.openModal) window.openModal(el);
+    else if (el) openModal(el);
 };
 
 const createPointAnimation = (pts, count) => { for(let i=0; i<Math.min(count, 5); i++) { const el = document.createElement('div'); el.className = 'point-animation'; el.textContent = `${pts>0?'+':''}${pts}`; el.style.color = pts>0?'var(--positive-color)':'var(--negative-color)'; el.style.left = (50+Math.random()*10-5)+'%'; el.style.top = (40+Math.random()*10-5)+'%'; document.body.appendChild(el); setTimeout(() => el.remove(), 1000); } };

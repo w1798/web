@@ -68,13 +68,15 @@
         .icon { width: 50px; height: 50px; border-radius: 12px; margin-right: 20px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.5rem; }
         .icon-blue { background: #4299e1; }
         .icon-red { background: #f56565; }
+        .icon-orange { background: #f6993f; }
 
-        .url-link { font-size: 2rem; font-bold: 800; text-decoration: none; color: inherit; transition: 0.3s; }
+        .url-link { font-size: 2rem; font-weight: 800; text-decoration: none; color: inherit; transition: 0.3s; }
         .url-link:hover { text-decoration: underline; opacity: 0.7; }
         
         .badge { font-size: 1rem; padding: 4px 12px; border-radius: 20px; margin-left: 15px; vertical-align: middle; }
         .badge-blue { background: #ebf8ff; color: #2b6cb0; }
         .badge-red { background: #fff5f5; color: #c53030; }
+        .badge-orange { background: #fffaf0; color: #dd6b20; }
         .author-link {text-decoration: none;}
         /* 步驟列表樣式 */
         .step-row { display: flex; margin-bottom: 30px; }
@@ -85,6 +87,7 @@
         }
         .jsonbin-num { background: #4299e1; }
         .upstash-num { background: #f56565; }
+        .firebase-num { background: #f6993f; }
 
         .step-content { flex: 1; }
         .step-title { font-size: 1.4rem; font-weight: bold; margin-bottom: 10px; color: #1a202c; }
@@ -127,7 +130,7 @@
                 <p class="alert-text">
                 ★ 提供以下方案：
                 <br>□ Upstash (推薦) 所有網頁服務都共用一組 URL 和 Token 
-                <br>□ JSONBin.io 只有 Key 可共用，Bin ID 每個網頁服務都要建立各自的 ID
+                <br>□ Firebase 每個網頁服務都要建立各自的專案，空間大且穩定
                 <br><br>
                     ★ 第一次在應用程式中設定好連線資訊後，<br>請務必先按一下「上傳」按鈕，以更新雲端端的初始資料，確保後續讀取正常。
                 </p>
@@ -177,41 +180,62 @@
         
         <section class="glass-card">
             <div class="card-header">
-                <div class="icon icon-blue">J</div>
-                <a href="https://jsonbin.io" target="_blank" class="url-link" style="color:#2b6cb0">https://jsonbin.io</a>
-                <span class="badge badge-blue">免費版限制：終身 10k 次讀取(實測每天8點都會回復到滿，不知是重置或是加一定的次數回去？)，一個 Bin 容量 100kb</span>
+                <div class="icon icon-orange">F</div>
+                <a href="https://firebase.google.com" target="_blank" class="url-link" style="color:#e67e22">https://firebase.google.com</a>
+                <span class="badge badge-orange">免費版限制：每個專案 1GB 儲存量，每天下載 360MB</span>
             </div>
 
             <div class="step-row">
-                <div class="step-num jsonbin-num">1</div>
+                <div class="step-num firebase-num">1</div>
                 <div class="step-content">
                     <p class="step-title">用 google 帳號登入</p>
-                </div>
-            </div>
-
-            <div class="step-row">
-                <div class="step-num jsonbin-num">2</div>
-                <div class="step-content">
-                    <p class="step-title">選 [BINS] 的 [Create a Bin]</p>
-                    <p style="color:#4299e1; font-weight: bold; margin-bottom: 10px;">★每個網頁服務都要申請一個專用的 Bin 名稱<br>例如：「教學清點小幫手」取 markit，「作業動態曆」取 homework</p>
                     <ul class="sub-list">
-                        <li>畫面拉到右邊，按設定，在 <strong>[Name]</strong> 輸入 Bin 的名稱(英文，如上說明，自己看得懂就好)</li>
-                        <li>在 JSON 下面，貼上符合格式的隨意值，例如： <code>{"a":1,"b":1}</code></li>
-                        <li>最後按 <strong>[Save Bin]</strong></li>
-                        <p style="margin-top: 20px; color: #e53e3e; font-weight: bold; background: #fff5f5; padding: 10px; border-radius: 8px; display: inline-block; border: 1px solid #feb2b2;">
-                        畫面拉到左邊，畫面中剛剛取的名稱 <span class="highlight-red">Bin ID</span> 複製起來，設定要用到</p>
+                        <li>選擇中間下方「建立新的 Firebase 專案」或點選「Get started in console」</li>
                     </ul>
                 </div>
             </div>
 
             <div class="step-row">
-                <div class="step-num jsonbin-num">3</div>
+                <div class="step-num firebase-num">2</div>
                 <div class="step-content">
-                    <p class="step-title">按 [API KEYS]，選 [Create Access Key]</p>
+                    <p class="step-title">建立新的 Firebase 專案</p>
                     <ul class="sub-list">
-                        <li>畫面拉到右邊，勾選 <strong>[Read]</strong> 和 <strong>[Update]</strong>，按右上角 <strong>[Save Access Key]</strong></li>
-                        <p style="margin-top: 20px; color: #e53e3e; font-weight: bold; background: #fff5f5; padding: 10px; border-radius: 8px; display: inline-block; border: 1px solid #feb2b2;">
-                        畫面拉到左邊，<span class="highlight-red">X-ACCESS-KEY</span> 「一串很長的英文和數字」複製起來，設定要用到</p>
+                        <li>點選「建立新的 Firebase 專案」或「如要開始使用，請設定 Firebase 專案」</li>
+                        <li><strong>[專案名稱]</strong> 隨便取 -> 一直按「繼續」</li>
+                        <li>選擇帳面帳號後按「建立專案」</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step-row">
+                <div class="step-num firebase-num">3</div>
+                <div class="step-content">
+                    <p class="step-title">啟用 Realtime Database</p>
+                    <ul class="sub-list">
+                        <li>在側邊欄選擇「資料庫和儲存空間」 -> <strong>[Realtime Database]</strong></li>
+                        <li>點選「建立資料庫」 -> 選擇「美國」 (下一步)</li>
+                        <li>選擇<strong>「以測試模式啟動」</strong>並按「啟用」</li>
+                        <li>★ 得到資料庫 URL：<code>https://你的專案名稱-default-rtdb.firebaseio.com/</code></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step-row">
+                <div class="step-num firebase-num">4</div>
+                <div class="step-content">
+                    <p class="step-title">規則設定與取得 ID</p>
+                    <ul class="sub-list">
+                        <li>點選上方「規則」，將原有內容取代為：</li>
+                        <div class="code-block" style="color: #68d391; padding: 10px 20px;">
+{
+  "rules": {
+    ".read": true,
+    ".write": true
+  }
+}
+                        </div>
+                        <li>按<strong>「發布」</strong></li>
+                        <li>到「設定」(齒輪圖示) -> <strong>[專案設定]</strong> -> 「一般」下可得到 <strong>[專案 ID]</strong> (即為設定所需的專案編號)</li>
                     </ul>
                 </div>
             </div>

@@ -86,24 +86,21 @@ const restoreFromBackup = (data, reload = true) => {
 const getCloudProvider = () => {
     if (cloudBinId.includes('firebaseio.com')) return 'firebase';
     if (cloudBinId.includes('upstash.io')) return 'upstash';
-    return 'jsonbin';
+    return null;
 };
 const getCloudRequest = (method = 'PUT') => {
     const provider = getCloudProvider();
+    if (!provider) return null;
     let url = cloudBinId;
     let headers = { 'Content-Type': 'application/json' };
     if (provider === 'firebase') {
         let baseUrl = cloudBinId.split('?')[0].replace(/\/$/,'');
         if (!baseUrl.endsWith('.json')) baseUrl += '/classKudox_backup.json';
         url = baseUrl + (cloudApiKey ? `?auth=${cloudApiKey}` : '');
-    } else if (provider === 'upstash') {
+    } else {
         const suffix = method === 'PUT' ? 'SET' : 'GET';
         url = `${cloudBinId.replace(/\/$/,'')}/${suffix}/classKudox_backup`;
         headers['Authorization'] = `Bearer ${cloudApiKey}`;
-    } else {
-        const bid = cloudBinId.startsWith('http') ? cloudBinId : `https://api.jsonbin.io/v3/b/${cloudBinId}`;
-        url = method === 'PUT' ? bid : `${bid}/latest?t=${Date.now()}`;
-        headers['X-Access-Key'] = cloudApiKey;
     }
     return { url, headers, provider };
 };
@@ -113,7 +110,7 @@ const performCloudUpload = async () => {
     if (typeof updateSyncStatus === 'function') updateSyncStatus(); 
     try {
         const req = getCloudRequest('PUT');
-        if (!req) throw new Error('不支援的雲端服務，請使用 Firebase 或 Upstash');
+        if (!req) throw new Error('不支援的雲端服務');
         const newVer = StampTool.encode();
         const oldVer = localSyncVersion;
         localSyncVersion = newVer;
@@ -146,12 +143,9 @@ const performCloudDownload = async (manual = false) => {
             if (req.provider === 'firebase') {
                 const text = await resp.text();
                 raw = text && text !== 'null' ? JSON.parse(text) : null;
-            } else if (req.provider === 'upstash') {
-                const r = await resp.json();
-                raw = r.result;
             } else {
                 const r = await resp.json();
-                raw = r.record || r;
+                raw = r.result;
             }
             if (!raw) {
                 if(manual) alert('雲端尚無資料，請先上傳');
@@ -159,6 +153,7 @@ const performCloudDownload = async (manual = false) => {
             }
             const cloudData = await parseCloudData(raw);
             if (cloudData) {
+
                 restoreFromBackup(cloudData, true);
                 setDirty(3); 
                 if(manual) alert('從雲端下載並還原成功');
@@ -214,12 +209,9 @@ const checkCloudSyncState = async () => {
             if (req.provider === 'firebase') {
                 const text = await resp.text();
                 raw = text && text !== 'null' ? JSON.parse(text) : null;
-            } else if (req.provider === 'upstash') {
-                const r = await resp.json();
-                raw = r.result;
             } else {
                 const r = await resp.json();
-                raw = r.record || r;
+                raw = r.result;
             }
             
             L(`[CloudSync] Step 2a 準備解析雲端數據...`);

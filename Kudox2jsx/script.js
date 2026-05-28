@@ -152,6 +152,7 @@ const startApp = () => {
         if (!el) return;
         const reactName = MODAL_ID_MAP[el.id];
         if (reactName && window._setReactModal) {
+            el.classList.remove('hidden');
             window._setReactModal(reactName, true);
         } else {
             el.classList.remove('hidden'); 
@@ -167,7 +168,6 @@ const startApp = () => {
         } else {
             el.classList.remove('visible'); 
             setTimeout(() => el.classList.add('hidden'), 300);
-            // 檢查是否還有其他視窗開著
             setTimeout(() => {
                 const anyOpen = !!document.querySelector('.modal-overlay:not(.hidden)');
                 if (!anyOpen) document.body.classList.remove('modal-open');
@@ -684,7 +684,7 @@ const startApp = () => {
 
         const startSyncTimer = () => {
             if (window.checkTimer) clearInterval(window.checkTimer); if (autoSyncTimer) clearInterval(autoSyncTimer);
-            if (!cloudBinId || !cloudApiKey || autoSyncInterval <= 0) return;
+            if (!cloudBinId || !cloudApiKey) return;
             window.checkTimer = setInterval(() => {
                 if (isSyncing) return; idleSeconds++;
                 if (isDirty > 0) { 
@@ -701,14 +701,21 @@ const startApp = () => {
             setTimeout(() => { if (!isSyncing) checkCloudSyncState(); }, 1500);
         };
         startSyncTimer();
+        window.startSyncTimer = startSyncTimer;
 
         // --- Key Listeners ---
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                const modals = document.querySelectorAll('.modal-overlay:not(.hidden)');
-                if (modals.length > 0) {
-                    // Close the last (top-most) modal
-                    closeModal(modals[modals.length - 1]);
+                const stack = window._openModalStack || [];
+                const top = stack[stack.length - 1];
+                if (top && window._setReactModal) {
+                    const map = {manageGroup:'manageGroupModal',groupDetail:'groupDetailModal',editStudent:'editStudentModal',addStudent:'addStudentModal',studentProfile:'studentProfileModal',classSummary:'classSummaryModal',settings:'settingsModal',manageClasses:'manageClassesModal',reports:'reportsModal',summaryDetail:'classSummaryStudentDetailModal',editPointItem:'editPointItemModal',avatarPicker:'avatarPickerModal',iconPicker:'iconPickerModal'};
+                    const el = document.getElementById(map[top]);
+                    if (el) el.classList.add('hidden');
+                    window._setReactModal(top, false);
+                } else {
+                    const els = document.querySelectorAll('.modal-overlay:not(.hidden)');
+                    if (els.length > 0) closeModal(els[els.length - 1]);
                 }
             }
         });

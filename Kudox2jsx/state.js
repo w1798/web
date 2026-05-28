@@ -410,6 +410,7 @@ Object.defineProperty(window, 'customItems', { get: () => customItems });
 Object.defineProperty(window, 'customPrefs', { get: () => customPrefs });
 Object.defineProperty(window, 'cloudBinId', { get: () => cloudBinId });
 Object.defineProperty(window, 'cloudApiKey', { get: () => cloudApiKey });
+Object.defineProperty(window, 'autoSyncInterval', { get: () => autoSyncInterval, set: (v) => { autoSyncInterval = v; } });
 Object.defineProperty(window, 'isSyncing', { get: () => isSyncing });
 Object.defineProperty(window, 'localSyncVersion', { get: () => localSyncVersion });
 Object.defineProperty(window, 'currentProfileId', { get: () => currentProfileId, set: (v) => { currentProfileId = v; } });

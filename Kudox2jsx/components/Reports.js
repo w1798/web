@@ -102,6 +102,10 @@ const Reports = React.memo(function Reports() {
     };
 
     React.useEffect(() => {
+        window._reportsTimeFilter = timeFilter;
+    }, [timeFilter]);
+
+    React.useEffect(() => {
         if (modals.reports) {
             setTimeFilter('today');
             setReportView('points');

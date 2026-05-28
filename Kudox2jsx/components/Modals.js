@@ -25,6 +25,12 @@ function Modals() {
 
     const close = (name) => setModal(name, false);
 
+    // 維持浮動視窗堆疊供 Escape 按鍵使用（依 z-index 由低到高排序）
+    const modalStackOrder = ['addStudent', 'manageGroup', 'groupDetail', 'manageClasses', 'reports', 'settings', 'studentProfile', 'classSummary', 'summaryDetail', 'editStudent', 'avatarPicker', 'editPointItem', 'iconPicker'];
+    React.useEffect(() => {
+        window._openModalStack = modalStackOrder.filter(n => modals[n]);
+    }, modalStackOrder.map(n => modals[n]));
+
     // 使用 Context 中的 awardContext （由 openAwardModal bridge 寫入）
     const cIds = awardContext.ids || [];
     const cId = cIds.length === 1 ? cIds[0] : (ctxProfileId || null);
@@ -217,14 +223,14 @@ function Modals() {
 
     // Class Summary State
     const [summaryData, setSummaryData] = React.useState([]);
-    const [summaryRange, setSummaryRange] = React.useState('today');
-    const [summaryRangeText, setSummaryRangeText] = React.useState('📅 今天點數總覽');
+    const [summaryRangeVal, setSummaryRangeVal] = React.useState('all');
+    const [summaryRangeText, setSummaryRangeText] = React.useState('');
     const [summaryDetailName, setSummaryDetailName] = React.useState('');
     const [summaryDetailTotal, setSummaryDetailTotal] = React.useState(0);
     const [summaryDetailItems, setSummaryDetailItems] = React.useState([]);
     const [summaryDetailRangeText, setSummaryDetailRangeText] = React.useState('');
 
-    const summaryRangeLabels = { today: '📅 今天', week: '📅 本週', month: '📅 本月', all: '📅 所有紀錄' };
+    const summaryRangeLabels = { today: '📅 今天', week: '📅 本週', month: '📅 本月', lastWeek: '📅 上週', all: '📅 所有紀錄' };
 
     const getSummaryTimeRange = React.useCallback((v) => {
         if (v === 'all') return null;
@@ -233,13 +239,24 @@ function Modals() {
         e.setHours(23, 59, 59, 999);
         if (v === 'today') return { start: s.getTime(), end: e.getTime() };
         if (v === 'week') { s.setDate(s.getDate() - (s.getDay() || 7) + 1); e.setDate(s.getDate() + 6); return { start: s.getTime(), end: e.getTime() }; }
+        if (v === 'lastWeek') { s.setDate(s.getDate() - (s.getDay() || 7) + 1 - 7); e.setDate(s.getDate() + 6); return { start: s.getTime(), end: e.getTime() }; }
         if (v === 'month') { s.setDate(1); s.setHours(0,0,0,0); let skip = new Date(s); skip.setMonth(skip.getMonth() + 1); skip.setDate(0); skip.setHours(23, 59, 59, 999); return { start: s.getTime(), end: skip.getTime() }; }
+        if (v === 'custom') {
+            const sval = document.getElementById('startDateFilter')?.value;
+            const evalStr = document.getElementById('endDateFilter')?.value;
+            if (sval && evalStr) {
+                let sd = new Date(sval); sd.setHours(0, 0, 0, 0);
+                let ed = new Date(evalStr); ed.setHours(23, 59, 59, 999);
+                return { start: sd.getTime(), end: ed.getTime() };
+            }
+        }
         return null;
     }, []);
 
     const updateSummaryData = React.useCallback((rangeVal) => {
         const range = rangeVal === 'all' ? null : getSummaryTimeRange(rangeVal);
-        setSummaryRangeText(summaryRangeLabels[rangeVal] + ' 點數總覽');
+        setSummaryRangeVal(rangeVal);
+        setSummaryRangeText((summaryRangeLabels[rangeVal] || '📅 時間範圍') + ' 點數總覽');
         const stu = window.students || [];
         const lgs = window.logs || [];
         const data = stu.map(s => {
@@ -259,12 +276,12 @@ function Modals() {
 
     React.useEffect(() => {
         if (modals.classSummary) {
-            updateSummaryData(summaryRange);
+            updateSummaryData(window._reportsTimeFilter || 'all');
         }
-    }, [modals.classSummary, summaryRange, updateSummaryData]);
+    }, [modals.classSummary, updateSummaryData]);
 
     const openStudentSummaryDetail = (id) => {
-        const range = summaryRange === 'all' ? null : getSummaryTimeRange(summaryRange);
+        const range = summaryRangeVal === 'all' ? null : getSummaryTimeRange(summaryRangeVal);
         const lgs = window.logs || [];
         const studentLogs = lgs.filter(l => {
             if (l.sID !== id) return false;
@@ -716,12 +733,6 @@ function Modals() {
                 <div className="modal-content reports-modal-content">
                     <div className="modal-header" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                         <h2 style={{ flex: 1, minWidth: '150px' }}>{summaryRangeText}</h2>
-                        <select className="filter-select" value={summaryRange} onChange={e => setSummaryRange(e.target.value)} style={{ fontSize: '0.85rem', padding: '0.3rem 0.6rem' }}>
-                            <option value="today">今天</option>
-                            <option value="week">本週</option>
-                            <option value="month">本月</option>
-                            <option value="all">所有紀錄</option>
-                        </select>
                         <button className="close-modal-btn" onClick={() => close('classSummary')}>×</button>
                     </div>
                     <div className="modal-body">
@@ -755,7 +766,7 @@ function Modals() {
                             ) : (
                                 summaryDetailItems.map((item, idx) => (
                                     <div key={idx} className={`summary-detail-card ${item.isTreasure ? '' : (item.pt > 0 ? 'positive' : (item.pt < 0 ? 'negative' : ''))}`}>
-                                        <div className="detail-label">{item.lb}{item.iSum === 1 ? ' <small>(不列排)</small>' : ''}<div style={{ fontSize: '0.85em', color: 'var(--text-secondary)', marginTop: '4px' }}>計 {item.count} 次</div></div>
+                                        <div className="detail-label">{item.lb}{item.iSum === 1 ? <> <small>(不列排)</small></> : ''}<div style={{ fontSize: '0.85em', color: 'var(--text-secondary)', marginTop: '4px' }}>計 {item.count} 次</div></div>
                                         {!item.isTreasure && <div className="detail-pts">{item.pt > 0 ? '+' : ''}{item.pt}</div>}
                                     </div>
                                 ))
