@@ -76,7 +76,7 @@ const restoreFromBackup = (data, reload = true) => {
         if (typeof applySettings === 'function') applySettings(); 
         
         // 交由 React 接管重繪，不直接呼叫 renderXxx，避免 DOMException
-        if (typeof window.refreshProxy === 'function') window.refreshProxy();
+        if (typeof window.refreshProxy === 'function') setTimeout(() => window.refreshProxy(), 0);
         
         if (typeof updateSyncStatus === 'function') updateSyncStatus(); 
         L(`[System] 已還原版本 ${localSyncVersion}，且不重整頁面`);
