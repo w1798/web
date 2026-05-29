@@ -1364,7 +1364,7 @@ footer a:hover {
 .summary-name {
     font-weight: 700;
     color: var(--text-primary);
-    font-size: 1.05rem;
+    font-size: 1.5rem;
     margin-bottom: 4px;
     width: 100%;
     overflow: hidden;
