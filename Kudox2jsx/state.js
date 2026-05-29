@@ -97,7 +97,7 @@ selectedStudentIds.delete = function(id) { const i = this.indexOf(id); if (i > -
 selectedStudentIds.clear = function() { this.length = 0; };
 selectedStudentIds.toArray = function() { return this.slice(); };
 
-let isDirty = 0, isSyncing = false, autoSyncTimer = null; 
+let isDirty = (cloudBinId && cloudApiKey) ? (parseInt(localStorage.getItem('drty')) || 0) : 0, isSyncing = false, autoSyncTimer = null; 
 let awardContextIds = [], currentProfileId = null, editingGroupId = null, currentGroupIdForAward = null, editingPointItemId = null, editingPointItemCat = null, lastActionLogIds = [], undoTimeout = null, lastUndoMessage = "", currentSort = 'score';
 
 const hideUndoToast = () => {
@@ -132,7 +132,7 @@ const setDirty = (v) => {
         const wasZero = (idleSeconds >= 1); // 判斷是否原本就在閒置
         idleSeconds = 0;
         // 只有當原本是乾淨狀態變髒，或者剛從閒置恢復時，才輸出日誌，避免重複輸出
-        if (old === 0 || wasZero) {
+        if ((old === 0 || wasZero) && autoSyncInterval > 0) {
             mSyn = getSmartSyncInterval();
             L(`[CloudSync] 智慧同步啟動：閒置 0.0 分鐘，頻率為每 ${mSyn} 秒一次。`);
         }
@@ -142,6 +142,7 @@ const setDirty = (v) => {
     }
     
     if (typeof updateSyncStatus === 'function') updateSyncStatus();
+    if (typeof window._refreshReact === 'function') setTimeout(() => window._refreshReact(), 0);
     
     if (old === 0 && v === 1) {
         if (autoSyncInterval > 0 && cloudBinId && cloudApiKey) {
@@ -409,8 +410,8 @@ Object.defineProperty(window, 'giftSettings', { get: () => giftSettings });
 Object.defineProperty(window, 'treasureDefs', { get: () => treasureDefs });
 Object.defineProperty(window, 'customItems', { get: () => customItems });
 Object.defineProperty(window, 'customPrefs', { get: () => customPrefs });
-Object.defineProperty(window, 'cloudBinId', { get: () => cloudBinId });
-Object.defineProperty(window, 'cloudApiKey', { get: () => cloudApiKey });
+Object.defineProperty(window, 'cloudBinId', { get: () => cloudBinId, set: (v) => { cloudBinId = v; } });
+Object.defineProperty(window, 'cloudApiKey', { get: () => cloudApiKey, set: (v) => { cloudApiKey = v; } });
 Object.defineProperty(window, 'autoSyncInterval', { get: () => autoSyncInterval, set: (v) => { autoSyncInterval = v; } });
 Object.defineProperty(window, 'isSyncing', { get: () => isSyncing });
 Object.defineProperty(window, 'localSyncVersion', { get: () => localSyncVersion });
@@ -421,5 +422,6 @@ Object.defineProperty(window, 'currentGroupIdForAward', { get: () => currentGrou
 Object.defineProperty(window, 'currentReportPage', { get: () => currentReportPage, set: (v) => { currentReportPage = v; } });
 
 window.saveData = saveData;
+Object.defineProperty(window, 'isDirty', { get: () => isDirty });
 window.setDirty = setDirty;
 window.loadClassData = loadClassData;

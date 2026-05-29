@@ -685,6 +685,7 @@ const startApp = () => {
         const startSyncTimer = () => {
             if (window.checkTimer) clearInterval(window.checkTimer); if (autoSyncTimer) clearInterval(autoSyncTimer);
             if (!cloudBinId || !cloudApiKey) return;
+            if (autoSyncInterval <= 0) return;
             window.checkTimer = setInterval(() => {
                 if (isSyncing) return; idleSeconds++;
                 if (isDirty > 0) { 

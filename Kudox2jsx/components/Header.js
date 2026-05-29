@@ -23,8 +23,8 @@ function Header() {
         <header id="mainHeader" className="app-header">
             <div className="header-left">
                 <h1 id="rankingTitle" onClick={handleRankingClick} style={{ cursor: 'pointer' }}>班級榮譽星</h1>
-                <div id="syncStatus" className={`sync-badge ${cloudStatus.isSyncing ? 'syncing' : ''}`}>
-                    {cloudStatus.isSyncing ? '🔄 同步中...' : '☁️ 雲端已就緒'}
+                <div id="syncStatus" className={`sync-badge state-${cloudStatus.dirty}`}>
+                    {['本機儲存','等待同步','同步錯誤','同步完成','正在同步'][cloudStatus.dirty] || '本機儲存'}
                 </div>
             </div>
             <div className="header-actions">

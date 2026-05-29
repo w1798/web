@@ -914,6 +914,7 @@ footer a:hover {
 .sync-badge.state-1 { background: #fffbeb; color: #d97706; border-color: #fbbf24; } /* Waiting */
 .sync-badge.state-2 { background: #fff1f2; color: #e11d48; border-color: #fb7185; } /* Error */
 .sync-badge.state-0 { background: #f1f5f9; color: #64748b; border-color: #cbd5e1; } /* Incomplete */
+.sync-badge.state-4 { background: #eef2ff; color: #4f46e5; border-color: #818cf8; } /* Syncing */
 
 /* Better mobile settings */
 .settings-modal-content { 

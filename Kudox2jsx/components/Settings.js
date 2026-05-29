@@ -355,7 +355,7 @@ function Settings() {
                             <div className="settings-sync-item">
                                 <label>Key ID</label>
                                 <div className="input-with-btn">
-                                    <input type="password" id="cloudApiKey" placeholder="Token / 專案編號 / X-ACCESS-KEY" />
+                                    <input type="password" id="cloudApiKey" placeholder="Token / 專案編號" />
                                     <button className="btn icon-btn" id="resetCloudApiKey" title="重置">🧹</button>
                                 </div>
                             </div>

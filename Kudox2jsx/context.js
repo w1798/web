@@ -29,7 +29,8 @@ function AppProvider({ children }) {
         cloudStatus: {
             binId: window.cloudBinId || '',
             apiKey: window.cloudApiKey || '',
-            isSyncing: window.isSyncing || false
+            isSyncing: window.isSyncing || false,
+            dirty: typeof window.isDirty === 'number' ? window.isDirty : 0
         },
         // 彈窗狀態管理
         modals: {
@@ -122,7 +123,8 @@ function AppProvider({ children }) {
             cloudStatus: {
                 binId: window.cloudBinId || '',
                 apiKey: window.cloudApiKey || '',
-                isSyncing: window.isSyncing || false
+                isSyncing: window.isSyncing || false,
+                dirty: typeof window.isDirty === 'number' ? window.isDirty : 0
             }
             // 注意：modals 和 awardContext 刻意保留 prev 的值，不被 refresh 覆蓋
         }));

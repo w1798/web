@@ -211,6 +211,7 @@ const checkCloudSyncState = async () => {
     isSyncing = true; setDirty(4); 
 
     let cloudVer = '000000000000';
+    let cloudData = null;
     let skipDownload = false;
 
     L(`[CloudSync連線] Step 1 開始預檢及下載雲端版本...`);
@@ -270,7 +271,7 @@ const checkCloudSyncState = async () => {
                 }
                 
                 L(`[CloudSync] Step 2a 準備解析雲端數據...`);
-                let cloudData = null;
+                cloudData = null;
                 if (raw) {
                     cloudData = await parseCloudData(raw);
                 }
