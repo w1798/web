@@ -5,8 +5,9 @@
 // --- 集中系統狀態 ---
 window.APP_ENV = (function() {
     const rawMode = typeof APP_JSX !== 'undefined' ? String(APP_JSX).toLowerCase() : 'vanilla';
-    const isBabel = ['1', 'babel', 'bb'].includes(rawMode);
-    const isEsbuild = ['esbuild', 'es', 'pro'].includes(rawMode);
+    const isEsbuild = ['es', 'esbuild', '1'].includes(rawMode);
+    const isBabel = ['test', 'babel', 'ba'].includes(rawMode);
+
     return {
         isBabel: isBabel,
         isEsbuild: isEsbuild,

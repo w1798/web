@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>各司其職</title>
+    <script>
+        window.APP_VER = '1.0.0';
+        window.APP_JSX = 'babel'; // 使用 Babel 模式進行開發
+    </script>
+    <!-- 引入核心載入引擎 -->
+    <script src="../loader_engine.js?ver=1.0.0"></script>
+</head>
+<body>
+    <!-- 進度條遮罩 (規則 🚀 Master Centralization) -->
+    <div id="loading-screen">
+        <div id="loading-text" style="margin-bottom: 5px; font-weight: bold; font-size: 1.2rem;">0%</div>
+        <div class="progress-wrapper">
+            <div id="loading-bar" style="width: 0%; height: 100%; background: var(--primary); transition: width 0.3s ease;"></div>
+        </div>
+        <div id="loading-status" style="color: var(--text-muted); font-size: 0.9rem; height: 1.2rem; margin-top: 5px;">啟動中...</div>
+    </div>
+
+    <div id="root"></div>
+
+    <script>
+        // 實作進度更新介面
+        window.updateLoading = function(percent, text) {
+            const bar = document.getElementById('loading-bar');
+            const status = document.getElementById('loading-status');
+            const percentEl = document.getElementById('loading-text');
+            if (bar) bar.style.width = percent + '%';
+            if (percentEl) percentEl.innerText = Math.round(percent) + '%';
+            if (status) status.innerText = text || '';
+            console.log(`[Loader] ${percent}% - ${text}`);
+            
+            // 如果達到 90% (Babel 完成)，預備進入 100%
+            if (percent >= 90) {
+                window.loaderFinished = true;
+            }
+        };
+    </script>
+</body>
+</html>

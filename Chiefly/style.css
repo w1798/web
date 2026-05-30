@@ -1,0 +1,375 @@
+:root {
+    --primary: #818cf8;
+    --primary-hover: #6366f1;
+    --bg-main: #0f172a;
+    --sidebar-bg: #1e293b;
+    --card-bg: #334155;
+    --text-main: #f1f5f9;
+    --text-muted: #94a3b8;
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+    --sidebar-width: 320px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Outfit', 'Inter', -apple-system, system-ui, sans-serif;
+    background: var(--bg-main);
+    color: var(--text-main);
+    min-height: 100vh;
+    overflow-x: hidden;
+    font-size: 1.1rem; /* 整體字體大一點 */
+}
+
+/* App Container */
+.app-container {
+    display: flex;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Sidebar */
+.sidebar {
+    width: var(--sidebar-width);
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--glass-border);
+    z-index: 100;
+    transition: transform 0.4s ease;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 1rem 0 1rem; /* 底部不留白 */
+    box-shadow: 10px 0 30px rgba(0,0,0,0.2);
+}
+
+.sidebar.collapsed {
+    transform: translateX(-100%);
+}
+
+.sidebar-toggle {
+    position: absolute;
+    right: -30px;
+    top: 15px;
+    width: 30px;
+    height: 30px;
+    background: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0 6px 6px 0;
+    cursor: pointer;
+    z-index: 101;
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    margin-left: var(--sidebar-width);
+    padding: 1rem;
+    min-height: 100vh;
+    transition: margin 0.4s ease;
+}
+
+.sidebar.collapsed + .main-content {
+    margin-left: 0;
+}
+
+/* Grid Layout */
+.job-grid {
+    display: grid;
+    gap: 5px;
+    margin-top: 0.5rem;
+}
+
+/* Job Card (Simple Mode) */
+.job-card {
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    padding: 8px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+    min-height: 80px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.job-card:hover, .job-card.dragover {
+    background: #475569;
+    border-color: var(--primary);
+    z-index: 10;
+}
+
+.job-card.dragover {
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.job-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+    padding-bottom: 2px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.job-title {
+    font-weight: 700;
+    font-size: 1rem; /* 職位卡標題大一點 */
+    color: var(--text-main);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.job-quota {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    background: #1e293b;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+/* Tags */
+.tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1px; /* 極致縮小間距 */
+}
+
+.student-tag {
+    font-size: 0.85rem;
+    padding: 0px 2px; /* 水平內距縮小 */
+    background: #1e293b;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 1px; /* 座號與×的間距縮小 */
+    color: #e2e8f0;
+}
+
+.student-tag:hover {
+    border-color: var(--primary);
+    background: #334155;
+}
+
+.tag-remove {
+    cursor: pointer;
+    font-size: 0.7rem; /* 字體再縮小一點點 */
+    color: #94a3b8;
+    margin-left: -1px; /* 強制向左貼近 */
+}
+
+.tag-remove:hover {
+    color: #ef4444;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 1rem;
+    background: #0f172a;
+    padding: 2px;
+    border-radius: 6px;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 8px;
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    font-size: 1rem; /* Tab 字體大一點 */
+    cursor: pointer;
+    color: var(--text-muted);
+}
+
+.tab-btn.active {
+    background: var(--card-bg);
+    color: var(--text-main);
+    font-weight: 600;
+}
+
+/* Sidebar Content */
+.sidebar-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* Forms */
+textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.8rem;
+    resize: none;
+    background: #0f172a;
+    color: #f1f5f9;
+}
+
+textarea:focus {
+    border-color: var(--primary);
+    outline: none;
+}
+
+/* Sidebar Footer */
+.sidebar-footer {
+    margin-top: auto;
+    padding-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.btn {
+    padding: 0.8rem 1rem; /* 按鈕加大 */
+    border-radius: 10px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 1.1rem; /* 字體加大 */
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+    transform: scale(1.02);
+}
+
+.btn-secondary {
+    background: #475569;
+    color: #f1f5f9;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.btn-secondary:hover {
+    background: #64748b;
+}
+
+.btn-danger {
+    background: #7f1d1d;
+    color: #fecaca;
+}
+
+.btn-danger:hover {
+    background: #991b1b;
+}
+
+/* Back to Top (Rule #5) */
+.back-to-top {
+    position: fixed;
+    bottom: 2rem;
+    right: 2.5rem;
+    width: 45px;
+    height: 45px;
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 10px 20px rgba(99, 102, 241, 0.4);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s;
+    z-index: 1000;
+}
+
+.back-to-top.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-border {
+    0% { border-color: var(--primary); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+    70% { border-color: #818cf8; box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
+    100% { border-color: var(--primary); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+}
+
+.highlight-pulse {
+    animation: pulse-border 2s infinite;
+    cursor: pointer;
+}
+
+.job-card {
+    animation: fadeIn 0.4s ease-out backwards;
+}
+
+/* --- Loading Screen (Master Centralization) --- */
+#loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #0f172a;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    transition: opacity 0.5s ease;
+}
+
+.progress-wrapper {
+    width: 300px;
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+#loading-bar {
+    /* 樣式已在 HTML 內定，此處僅輔助 */
+}
+
+/* 進度條百分比文字 */
+#loading-text {
+    color: white;
+    font-weight: bold;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+#loading-status {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    height: 1.2rem;
+}
+
+#root {
+    visibility: hidden; /* 初始隱藏，由 loader_engine 揭曉 */
+}
