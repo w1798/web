@@ -111,9 +111,12 @@
                         </select>
                     </div>
                     <div class="col-right">
-                        <h3>雲端同步設定</h3>
-                        <input type="text" id="cloudURL" placeholder="URL or JSONBin ID">
-                        <input type="text" id="cloudToken" placeholder="Token or X-Access-Key">
+                        <h3>雲端備份管理</h3>
+                        <p style="font-size:0.8rem; color:#666; margin-bottom:10px;">支援 Upstash / Firebase。上傳時會自動排除您的金鑰資訊以保護隱私。</p>
+                        <label>資料庫 URL：</label>
+                        <input type="text" id="cloudURL" placeholder="Upstash: https://xxx.upstash.io / Firebase: https://xxx.firebaseio.com">
+                        <label>Key ID：</label>
+                        <input type="text" id="cloudToken" placeholder="Token / 自設 rules pwd">
                         <a href="https://w1798.github.io/web/JsonCloudGuide" target="_blank">申請說明</a>
                     </div>
                 </div>

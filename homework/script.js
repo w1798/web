@@ -17,8 +17,8 @@ const DEFAULT_VALS = {
 };
 
 // --- Gzip 壓縮/解壓工具 ---
-const compressJSON = async (obj) => {
-    const str = JSON.stringify(obj);
+const compressJSON = async (obj, indent = 0) => {
+    const str = indent ? JSON.stringify(obj, null, indent) : JSON.stringify(obj);
     const stream = new Blob([str]).stream().pipeThrough(new CompressionStream('gzip'));
     const buf = await new Response(stream).arrayBuffer();
     return btoa(String.fromCharCode(...new Uint8Array(buf)));
@@ -1165,7 +1165,10 @@ async function cloudSync(method = 'UPLOAD') {
     const { binId, apiKey } = appData;
     if (!binId || !apiKey) return alert("請先填寫雲端設定 (URL 與 Token)");
 
+    const isFirebase = binId.includes('firebaseio.com');
     const isUpstash = binId.includes('upstash.io');
+    if (!isFirebase && !isUpstash) return alert("目前僅支援 Firebase 或 Upstash！");
+
     const storageKey = 'homework_v1'; 
 
     try {
@@ -1179,74 +1182,62 @@ async function cloudSync(method = 'UPLOAD') {
             const compressed = await compressJSON(uploadData);
 
             let response;
-            if (isUpstash) {
-                // Upstash: 資料必須轉成字串存入
-                response = await fetch(`${binId}/set/${storageKey}`, {
+            if (isFirebase) {
+                const baseUrl = binId.replace(/\/$/, "");
+                const url = `${baseUrl}/${apiKey}/${storageKey}.json`;
+                response = await fetch(url, { method: 'PUT', body: JSON.stringify({ d: compressed }) });
+            } else {
+                const baseUrl = binId.replace(/\/$/, '').replace(/\/set\/.*$/, '').replace(/\/get\/.*$/, '');
+                response = await fetch(`${baseUrl}/set/${storageKey}`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify(compressed)
                 });
-            } else {
-                // JSONBin
-                response = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Access-Key': apiKey
-                    },
-                    body: JSON.stringify({ d: compressed })
-                });
             }
 
             if (response.ok) alert("✅ 雲端備份成功！");
-            else alert("❌ 上傳失敗，請檢查 Key 權限。");
+            else {
+                const txt = await response.text();
+                alert(`❌ 上傳失敗：${response.status} ${txt}`);
+            }
 
         } else if (method === 'DOWNLOAD') {
             if (!confirm("確定從雲端下載資料嗎？\n這將覆蓋現在的所有資料。")) return;
 
             let fetchedData = null;
+            let response;
 
-            if (isUpstash) {
-                const response = await fetch(`${binId}/get/${storageKey}`, {
-                    headers: { 'Authorization': `Bearer ${apiKey}` }
-                });
-                const res = await response.json();
-                
-                // 關鍵：Upstash 取回後需解析 result 欄位
-                if (res && res.result) {
-                    try {
-                        const raw = res.result;
-                        if (typeof raw === 'string' && raw.includes('{') === false && raw.includes('[') === false) {
-                            fetchedData = await decompressJSON(raw);
-                        } else {
-                            fetchedData = JSON.parse(raw);
-                        }
-                    } catch (e) {
-                         try { fetchedData = JSON.parse(res.result); } catch(err) { console.error("解析雲端 JSON 失敗", e); }
-                    }
+            if (isFirebase) {
+                const baseUrl = binId.replace(/\/$/, "");
+                const url = `${baseUrl}/${apiKey}/${storageKey}.json`;
+                response = await fetch(url);
+                if (response.ok) {
+                    const json = await response.json();
+                    if (json && json.d) fetchedData = await decompressJSON(json.d);
                 }
             } else {
-                const response = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
-                    headers: { 'X-Access-Key': apiKey }
+                const baseUrl = binId.replace(/\/$/, '').replace(/\/set\/.*$/, '').replace(/\/get\/.*$/, '');
+                response = await fetch(`${baseUrl}/get/${storageKey}`, {
+                    headers: { 'Authorization': `Bearer ${apiKey}` }
                 });
-                const res = await response.json();
-                const raw = res.record;
-                if (raw && typeof raw.d === 'string') {
-                    try { fetchedData = await decompressJSON(raw.d); } catch(e) { fetchedData = raw; }
-                } else { fetchedData = raw; }
+                if (response.ok) {
+                    const res = await response.json();
+                    if (res && res.result) {
+                        const raw = res.result;
+                        try {
+                            fetchedData = (typeof raw === 'string' && !raw.includes('{')) ? await decompressJSON(raw) : JSON.parse(raw);
+                        } catch(e) { fetchedData = JSON.parse(raw); }
+                    }
+                }
             }
 
-            if (fetchedData && typeof fetchedData === 'object') {
-                // 1. 保留目前的連線設定，避免下載後欄位變空白
+            if (response && response.ok && fetchedData) {
+                // 確保下載後保留原本的雲端設定
                 fetchedData.binId = binId;
                 fetchedData.apiKey = apiKey;
-
-                // 2. 使用結構擴展 (Spread) 確保新舊版本欄位都能補齊
                 appData = { ...appData, ...fetchedData };
-
-                // 3. 立即存入本地端並重新整理
                 localStorage.setItem('homework_v1', JSON.stringify(appData));
-                alert("✨ 載入成功！");
+                alert("✨ 雲端資料下載成功！");
                 location.reload();
             } else {
                 alert("❌ 載入失敗：雲端似乎沒有資料，或資料格式不正確。");
@@ -1287,13 +1278,16 @@ function resetApp() {
 }
 
 async function exportJSON() {
-    const compressed = await compressJSON(appData);
+    const toSave = { ...appData };
+    delete toSave.binId;
+    delete toSave.apiKey;
+    const compressed = await compressJSON(toSave, 2);
     const raw = atob(compressed);
     const bytes = new Uint8Array(raw.length);
     for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
     const blob = new Blob([bytes], {type: 'application/gzip'});
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-    a.download = `homework_${new Date().toISOString().split('T')[0]}.gz`; a.click();
+    a.download = `homework_${new Date().toISOString().split('T')[0]}.json.gz`; a.click();
 }
 function importJSON(e) {
     const file = e.target.files[0]; if (!file) return;

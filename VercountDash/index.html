@@ -56,7 +56,9 @@
             <div style="display: flex; gap: 8px;">
                 <button class="btn btn-danger" onclick="fullSystemReset()">🗑️ 全域重置</button>
                 <button class="btn btn-export" onclick="exportData()">📤 匯出備份</button>
-                <button class="btn btn-import" onclick="triggerImport()">📥 匯入雲端</button>
+                <div class="dropdown" style="display:inline-block;">
+                    <button class="btn btn-import" onclick="handleLoadAction()">📥 讀取資料</button>
+                </div>
                 <button class="btn btn-sync" onclick="handleManualRefresh()">⚡ 立即更新</button>
                 <button class="btn btn-config" onclick="toggleSettings(true)">⚙️ 系統設定</button>
             </div>
@@ -94,14 +96,13 @@
                 <textarea id="set-urls" class="form-control" placeholder="每行輸入一個網址..."></textarea>
             </div>
             <div>
-<p> 雲端備份設定 (<a href="https://w1798.github.io/web/JsonCloudGuide" target="_blank">申請說明</a>)</p>
+                <p> 雲端備份管理 (支援 Upstash / Firebase。上傳時會自動排除您的金鑰資訊以保護隱私。 <a href="https://w1798.github.io/web/JsonCloudGuide" target="_blank">申請說明</a>)</p>
                 <div style="margin-bottom:15px;">
-                     <input type="text" id="set-bin-id" class="form-control" style="width:200px" placeholder="URL or JSONBinID"><button class="btn btn-reset" onclick="resetField('set-bin-id')">重置</button>
+                     資料庫 URL： <input type="text" id="set-bin-id" class="form-control" style="width:250px" placeholder="Upstash: https://xxx.upstash.io / Firebase: https://xxx.firebaseio.com"><button class="btn btn-reset" onclick="resetField('set-bin-id')">重置</button>
                 </div>
                 <div style="margin-bottom:15px;">                    
-                    <input type="text" id="set-api-key" class="form-control" style="width:200px" placeholder="Token or X-Access-Key">
-<button class="btn btn-reset" onclick="resetField('set-api-key')">重置</button>
-        
+                    Key ID： <input type="text" id="set-api-key" class="form-control" style="width:250px" placeholder="Token / 自設 rules pwd">
+                    <button class="btn btn-reset" onclick="resetField('set-api-key')">重置</button>
                 </div>
                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div><label>雲端緩衝 (分)</label><input type="number" id="set-cloud-cd" style="width:60px" class="form-control"></div>
@@ -127,7 +128,7 @@
     </div>
 </div>
 
-<input type="file" id="import-file" style="display:none;" accept=".json,.gz" onchange="handleFileImport(event)">
+<input type="file" id="import-file" style="display:none;" accept=".json,.gz" onchange="importData(event)">
 
 <script>
 
@@ -241,99 +242,62 @@
         return output;
     }
 
-    // 支援 Upstash 與 JSONBin 的通用雲端下載
+    // 支援 Upstash 與 Firebase 的通用雲端下載
     async function loadFromCloud() {
         console.log("[VercountDash] 開始執行雲端下載流程...");
         const { binId, apiKey } = appData.settings;
         if (!binId || !apiKey) return false;
 
+        const isFirebase = binId.includes('firebaseio.com');
         const isUpstash = binId.includes('upstash.io');
         const storageKey = 'vercount_v1';
 
         try {
             updateStatusUI('syncing');
             let cloudRecord = null;
+            let res;
 
-            if (isUpstash) {
-                console.log("[VercountDash] 連接至 Upstash 獲取資料...");
-                const res = await fetch(`${binId}/get/${storageKey}`, {
-                    headers: { 'Authorization': `Bearer ${apiKey}` }
-                });
-                console.log(`[VercountDash] Upstash 回應狀態碼: ${res.status}`);
-                const data = await res.json();
-                if (data.result) {
-                    console.log("[VercountDash] 嘗試將 Upstash 取得資料進行 gzip 解壓縮...");
-                    try { 
-                        let dOutput = data.result;
-                        if(typeof dOutput === 'string') {
-                            dOutput = dOutput.trim();
-                            if(dOutput.startsWith('"') && dOutput.endsWith('"')) {
-                                dOutput = dOutput.slice(1, -1);
-                            }
-                        }
-                        cloudRecord = await decompressJSON(dOutput); 
-                        console.log("[VercountDash] 解壓縮成功。");
-                    }
-                    catch(e) { 
-                        console.log("[VercountDash] 解壓縮失敗，退回使用 JSON.parse 解析。錯誤: ", e);
-                        cloudRecord = JSON.parse(data.result); 
-                        if (typeof cloudRecord === 'string') cloudRecord = JSON.parse(cloudRecord); // 針對防爆再解一次
-                    }
+            if (isFirebase) {
+                const baseUrl = binId.replace(/\/$/, "");
+                const url = `${baseUrl}/${apiKey}/${storageKey}.json`;
+                res = await fetch(url);
+                if (res.ok) {
+                    const json = await res.json();
+                    if (json && json.d) cloudRecord = await decompressJSON(json.d);
                 }
-            } else {
-                console.log("[VercountDash] 連接至 JSONBin 獲取資料...");
-                const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
-                    headers: { 'X-Access-Key': apiKey }
-                });
-                console.log(`[VercountDash] JSONBin 回應狀態碼: ${res.status}`);
+            } else if (isUpstash) {
+                const baseUrl = binId.replace(/\/$/, '').replace(/\/set\/.*$/, '').replace(/\/get\/.*$/, '');
+                res = await fetch(`${baseUrl}/get/${storageKey}`, { headers: { 'Authorization': `Bearer ${apiKey}` } });
                 if (res.ok) {
                     const data = await res.json();
-                    const raw = data.record;
-                    if (raw && typeof raw.d === 'string') {
-                        console.log("[VercountDash] 嘗試將 JSONBin 取得之 d 欄位進行 gzip 解壓縮...");
-                        try { 
-                            cloudRecord = await decompressJSON(raw.d); 
-                            console.log("[VercountDash] 解壓縮成功。");
-                        } catch(e) { 
-                            console.log("[VercountDash] 解壓縮失敗，直接取原始內容。");
-                            cloudRecord = raw; 
-                        }
-                    } else {
-                        cloudRecord = raw;
+                    if (data.result) {
+                        const raw = data.result;
+                        try {
+                            cloudRecord = (typeof raw === 'string' && !raw.includes('{')) ? await decompressJSON(raw) : JSON.parse(raw);
+                        } catch(e) { cloudRecord = JSON.parse(raw); }
                     }
                 }
             }
 
             if (cloudRecord) {
                 console.log("[VercountDash] 成功取得並解析雲端數據，正在同步至本地...");
-                // 如果雲端為空但 parse 後是空物件，這裡做保護
-                if (typeof cloudRecord === 'object' && cloudRecord !== null && !cloudRecord.settings) {
-                    console.log("[VercountDash] 雲端格式好像不是 Vercount，可能剛建立");
-                } else {
-                    const remoteSettings = cloudRecord.settings || {};
+                if (typeof cloudRecord === 'object' && cloudRecord !== null) {
                     const { binId: currentBin, apiKey: currentKey } = appData.settings; 
-                    
                     appData.stats = cloudRecord.stats || {};
-                    // 這裡使用 mergeDeep 確保雲端新增欄位也能進來
-                    appData.settings = mergeDeep(DEFAULT_SETTINGS, remoteSettings);
-                    
-                    // 重要：還原目前的 Key，避免雲端舊備份把正在用的 Key 蓋掉
+                    appData.settings = mergeDeep(DEFAULT_SETTINGS, cloudRecord.settings || {});
                     appData.settings.binId = currentBin;
                     appData.settings.apiKey = currentKey;
-
                     localStorage.setItem(DATA_KEY, JSON.stringify(appData.stats));
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(appData.settings));
                     localStorage.setItem('LAST_CLOUD_LOAD', Date.now());
                 }
-                
-                updateStatusUI('online'); // 成功才顯示 online
-                console.log("[VercountDash] 雲端下載並合併結束");
+                updateStatusUI('online');
                 return true;
             }
         } catch (e) {
             console.error("[VercountDash] 雲端讀取失敗:", e);
         }
-        updateStatusUI('offline'); // 失敗顯示 offline
+        updateStatusUI('offline');
         return false;
     }
 
@@ -346,7 +310,7 @@
         await refreshPV(true);
     }
 
-    // 支援 Upstash 與 JSONBin 的通用雲端上傳
+    // 支援 Upstash 與 Firebase 的通用雲端上傳
     async function refreshPV(isManualUpload = false) {
         if (!appData.settings.urls || appData.settings.urls.length === 0) return;
         const todayStr = new Date().toLocaleDateString('zh-TW');
@@ -379,39 +343,41 @@
             localStorage.setItem(DATA_KEY, JSON.stringify(appData.stats));
             localStorage.setItem('LAST_SYNC_TIME', Date.now());
 
-            // 2. 推送到雲端（gzip 壓縮後上傳）
+            // 2. 推送到雲端（gzip 壓縮後上傳，不含金鑰）
             if (binId && apiKey) {
                 console.log("[VercountDash] 準備推送數據至雲端...");
+                const isFirebase = binId.includes('firebaseio.com');
                 const isUpstash = binId.includes('upstash.io');
                 const storageKey = 'vercount_v1';
-                const { binId: _, apiKey: __, ...safeSettings } = appData.settings;
+                
+                // 排除金鑰資訊
+                const uploadData = JSON.parse(JSON.stringify({ settings: appData.settings, stats: appData.stats }));
+                delete uploadData.settings.binId;
+                delete uploadData.settings.apiKey;
                 
                 console.log("[VercountDash] 進行 Gzip 資料壓縮...");
-                const compressed = await compressJSON({ settings: safeSettings, stats: appData.stats });
+                const compressed = await compressJSON(uploadData);
 
                 let res;
-                if (isUpstash) {
-                    console.log("[VercountDash] 使用 Upstash 上傳介面...");
-                    res = await fetch(`${binId}/set/${storageKey}`, {
+                if (isFirebase) {
+                    const baseUrl = binId.replace(/\/$/, "");
+                    const url = `${baseUrl}/${apiKey}/${storageKey}.json`;
+                    res = await fetch(url, { method: 'PUT', body: JSON.stringify({ d: compressed }) });
+                } else if (isUpstash) {
+                    const baseUrl = binId.replace(/\/$/, '').replace(/\/set\/.*$/, '').replace(/\/get\/.*$/, '');
+                    res = await fetch(`${baseUrl}/set/${storageKey}`, {
                         method: 'POST',
                         headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
                         body: JSON.stringify(compressed)
                     });
-                } else {
-                    console.log("[VercountDash] 使用 JSONBin 上傳介面...");
-                    res = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json', 'X-Access-Key': apiKey },
-                        body: JSON.stringify({ d: compressed })
-                    });
                 }
                 
-                console.log(`[VercountDash] 推送結果: ${res.status}`);
-                if (res.ok) {
+                if (res && res.ok) {
                     console.log("[VercountDash] 雲端資料更新成功！");
                     updateStatusUI('online');
                 } else {
                     console.error("[VercountDash] 雲端更新失敗!");
+                    if (res) console.error(await res.text());
                 }
             }
         } catch (e) {
@@ -421,6 +387,78 @@
         }
     }
 
+    // 匯出資料為 .json.gz (包含讀取優化的縮進)
+    async function exportData() {
+        const toSave = { stats: appData.stats, settings: { ...appData.settings } };
+        delete toSave.settings.binId;
+        delete toSave.settings.apiKey;
+        
+        // 使用 2 格縮進以符合「容易閱讀」的要求
+        const compressed = await compressJSON(toSave, 2);
+        const raw = atob(compressed);
+        const bytes = new Uint8Array(raw.length);
+        for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+        const blob = new Blob([bytes], {type: 'application/gzip'});
+        
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `VercountDash_Backup_${new Date().toISOString().split('T')[0]}.json.gz`;
+        a.click();
+    }
+
+    async function importData(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const isGz = file.name.endsWith('.gz');
+        const reader = new FileReader();
+
+        const processImport = (imported) => {
+            if (imported && imported.stats) {
+                const { binId, apiKey } = appData.settings;
+                appData.stats = imported.stats;
+                appData.settings = mergeDeep(DEFAULT_SETTINGS, imported.settings || {});
+                appData.settings.binId = binId;
+                appData.settings.apiKey = apiKey;
+                localStorage.setItem(DATA_KEY, JSON.stringify(appData.stats));
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(appData.settings));
+                alert("✅ 匯入成功！");
+                location.reload();
+            } else {
+                alert("❌ 資料格式不正確");
+            }
+        };
+
+        if (isGz) {
+            reader.onload = async (evt) => {
+                try {
+                    const imported = await decompressBinary(evt.target.result);
+                    processImport(imported);
+                } catch(err) { alert("❌ 解壓縮失敗"); }
+            };
+            reader.readAsArrayBuffer(file);
+        } else {
+            reader.onload = (evt) => {
+                try {
+                    processImport(JSON.parse(evt.target.result));
+                } catch(err) { alert("❌ JSON 解析失敗"); }
+            };
+            reader.readAsText(file);
+        }
+    }
+
+    function handleLoadAction() {
+        if (!appData.settings.binId || !appData.settings.apiKey) {
+            document.getElementById('import-file').click();
+        } else {
+            if(confirm("📲 是否從雲端下載並同步？\n按下取消則執行『本地匯入』。")) {
+                loadFromCloud().then(res => { if(res) location.reload(); });
+            } else {
+                document.getElementById('import-file').click();
+            }
+        }
+    }
+    
     // --- 其餘輔助函數保持不變 ---
     function renderUI() {
         const tbody = document.getElementById('stats-body');
@@ -527,7 +565,7 @@
         const blob = new Blob([bytes], { type: 'application/gzip' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `Vercount_${new Date().toISOString().slice(0,10)}.json.gz`;
+        a.download = `Vercount_${new Date().toISOString().split('T')[0]}.json.gz`;
         a.click();
     }
     function triggerImport() { document.getElementById('import-file').click(); }

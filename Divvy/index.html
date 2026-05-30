@@ -172,20 +172,20 @@
             <h2>☁️ 雲端備份設定</h2>
             <span class="close" id="closeCloudModal">&times;</span>
         </div>
-        <p style="margin-bottom: 15px;">
-            <a href="https://w1798.github.io/web/JsonCloudGuide" target="_blank">📘 申請說明</a>
+        <p style="margin-bottom: 10px;">
+            支援 Upstash / Firebase。上傳時會自動排除您的金鑰資訊以保護隱私。 (<a href="https://w1798.github.io/web/JsonCloudGuide" target="_blank">📘 申請說明</a>)
         </p>
         <div style="margin-bottom: 15px;">
-            <label style="font-weight:600; display:block; margin-bottom:5px;">URL / JSONBin ID</label>
+            <label style="font-weight:600; display:block; margin-bottom:5px;">資料庫 URL</label>
             <div style="display: flex; gap: 10px;">
-                <input type="text" id="cloudUrl" autocomplete="off" placeholder="https://... 或 Bin ID" style="flex: 1; padding:12px; border-radius:15px; border:2px solid #e2e8f0;">
+                <input type="text" id="cloudUrl" autocomplete="off" placeholder="Upstash: https://xxx.upstash.io / Firebase: https://xxx.firebaseio.com" style="flex: 1; padding:12px; border-radius:15px; border:2px solid #e2e8f0;">
                 <button class="btn btn-outline" id="resetCloudUrlBtn">重置</button>
             </div>
         </div>
         <div style="margin-bottom: 20px;">
-            <label style="font-weight:600; display:block; margin-bottom:5px;">Token / X-Access-Key</label>
+            <label style="font-weight:600; display:block; margin-bottom:5px;">Key ID</label>
             <div style="display: flex; gap: 10px;">
-                <input type="text" id="cloudToken" autocomplete="off" placeholder="Token 或 Access Key" style="flex: 1; padding:12px; border-radius:15px; border:2px solid #e2e8f0;">
+                <input type="text" id="cloudToken" autocomplete="off" placeholder="Token / 自設 rules pwd" style="flex: 1; padding:12px; border-radius:15px; border:2px solid #e2e8f0;">
                 <button class="btn btn-outline" id="resetCloudTokenBtn">重置</button>
             </div>
         </div>

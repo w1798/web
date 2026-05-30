@@ -188,13 +188,19 @@ class="select-short-width"><option value="desc">新 → 舊</option><option valu
                     <option value="360">360 天</option>
                 </select></label></div>
 
+<div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+    <span>雲端備份管理 (支援 Upstash / Firebase。上傳時會自動排除您的金鑰資訊以保護隱私。 <a href="https://w1798.github.io/web/JsonCloudGuide" target="_blank">申請說明</a>)</span>
+    <label style="width:100%">資料庫 URL：
+        <input type="text" id="binId" style="width:90%" class="select-short-width" autocomplete="off" placeholder="Upstash: https://xxx.upstash.io / Firebase: https://xxx.firebaseio.com">
+    	<button onclick="resetBinField('binId')">重置</button>
+    </label>
+</div>
 <div class="settings-row">
-雲端備份設定 (<a href="https://w1798.github.io/web/JsonCloudGuide" target="_blank">申請說明</a>)
-<label>
-<input type="text" id="binId" style="width:180px" class="select-short-width" autocomplete="off" placeholder="URL or JSONBinID">
-	<button onclick="resetBinField('binId')">重置</button></label></div>
-    <div class="settings-row"><label><input type="text" id="apiKey" style="width:180px" class="select-short-width" autocomplete="off" placeholder="Token or X-Access-Key">
-<button onclick="resetBinField('apiKey')">重置</button></label></div>
+    <label style="width:100%">Key ID：
+        <input type="text" id="apiKey" style="width:90%" class="select-short-width" autocomplete="off" placeholder="Token / 自設 rules pwd">
+        <button onclick="resetBinField('apiKey')">重置</button>
+    </label>
+</div>
 
                 <div class="settings-row"><button class="btn-danger btn-small" 
 

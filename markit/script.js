@@ -19,8 +19,8 @@ const DEFAULT_LABELS = {
 let state = getInitialState();
 
 // --- Gzip 壓縮/解壓工具 ---
-const compressJSON = async (obj) => {
-    const str = JSON.stringify(obj);
+const compressJSON = async (obj, indent = 0) => {
+    const str = indent ? JSON.stringify(obj, null, indent) : JSON.stringify(obj);
     const stream = new Blob([str]).stream().pipeThrough(new CompressionStream('gzip'));
     const buf = await new Response(stream).arrayBuffer();
     return btoa(String.fromCharCode(...new Uint8Array(buf)));
@@ -586,14 +586,17 @@ function copyTotalList() {
 }
 
 async function exportData() {
-    const compressed = await compressJSON(state);
+    const toSave = JSON.parse(JSON.stringify(state));
+    delete toSave.settings.binId;
+    delete toSave.settings.apiKey;
+    const compressed = await compressJSON(toSave, 2);
     const raw = atob(compressed);
     const bytes = new Uint8Array(raw.length);
     for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
     const blob = new Blob([bytes], { type: 'application/gzip' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `Markit_Backup_${new Date().getTime()}.gz`; 
+    a.download = `Markit_Backup_${new Date().toISOString().split('T')[0]}.json.gz`; 
     a.click();
 }
 
@@ -645,98 +648,79 @@ function mergeWithDefault(source) {
 
 async function cloudSync(method = 'UPLOAD') {
     const { binId, apiKey } = state.settings;
+    if (!binId || !apiKey) return alert("⚠️ 請先前往「設定」填寫雲端設定！");
 
-    // 1. 檢查是否已填寫必要設定
-    if (!binId || !apiKey) {
-        return alert("⚠️ 請先前往「設定」填寫雲端 ID (或 URL) 與 API Key (或 Token)！");
-    }
-
-    // 2. 判斷雲端類型
+    const isFirebase = binId.includes('firebaseio.com');
     const isUpstash = binId.includes('upstash.io');
-    const actionText = method === 'UPLOAD' ? "上傳備份到雲端" : "從雲端下載並覆蓋本地資料";
-    const warnText = method === 'DOWNLOAD' ? "\n(注意：這將會刪除您目前瀏覽器中的所有任務紀錄！)" : "";
+    if (!isFirebase && !isUpstash) return alert("目前僅支援 Firebase 或 Upstash！");
 
-    // 3. 彈出確認視窗
-    if (!confirm(`確定要執行【${actionText}】嗎？${warnText}`)) return;
+    const storageKey = 'markit_backup';
+    const actionText = method === 'UPLOAD' ? "上傳備份到雲端" : "從雲端下載並覆蓋本地資料";
+    if (!confirm(`確定要執行【${actionText}】嗎？`)) return;
 
     try {
         if (method === 'UPLOAD') {
-            // --- 上傳邏輯 ---
-            // 排除敏感欄位：複製一份 state 並刪除 settings 中的 binId 與 apiKey
             const uploadData = JSON.parse(JSON.stringify(state));
             delete uploadData.settings.binId;
             delete uploadData.settings.apiKey;
 
             const compressed = await compressJSON(uploadData);
-
             let res;
-            if (isUpstash) {
-                // Upstash (Redis SET)
-                res = await fetch(binId.startsWith('http') ? binId : `https://${binId}`, {
+            if (isFirebase) {
+                const baseUrl = binId.replace(/\/$/, "");
+                const url = `${baseUrl}/${apiKey}/${storageKey}.json`;
+                res = await fetch(url, { method: 'PUT', body: JSON.stringify({ d: compressed }) });
+            } else {
+                const baseUrl = binId.replace(/\/$/, '').replace(/\/set\/.*$/, '').replace(/\/get\/.*$/, '');
+                res = await fetch(`${baseUrl}/set/${storageKey}`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify(["SET", "markit_backup", compressed])
-                });
-            } else {
-                // JSONBin.io (PUT)
-                res = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'X-Access-Key': apiKey },
-                    body: JSON.stringify({ d: compressed })
+                    body: JSON.stringify(compressed)
                 });
             }
 
             if (res.ok) alert("✅ 雲端備份成功！");
-            else throw new Error(`伺服器回傳錯誤: ${res.status}`);
-
+            else {
+                const txt = await res.text();
+                throw new Error(`${res.status} ${txt}`);
+            }
         } else {
-            // --- 下載邏輯 ---
-            let res;
-            let downloadedData;
-
-            if (isUpstash) {
-                // Upstash (Redis GET)
-                res = await fetch(`${binId.startsWith('http') ? binId : 'https://' + binId}/get/markit_backup`, {
-                    headers: { 'Authorization': `Bearer ${apiKey}` }
-                });
-                const json = await res.json();
-                const raw = json.result;
-                if (typeof raw === 'string') {
-                    try { downloadedData = await decompressJSON(raw); } catch(e) { downloadedData = JSON.parse(raw); }
-                } else { downloadedData = raw; }
+            let res, downloadedData;
+            if (isFirebase) {
+                const baseUrl = binId.replace(/\/$/, "");
+                const url = `${baseUrl}/${apiKey}/${storageKey}.json`;
+                res = await fetch(url);
+                if (res.ok) {
+                    const json = await res.json();
+                    if (json && json.d) downloadedData = await decompressJSON(json.d);
+                }
             } else {
-                // JSONBin.io (GET)
-                res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
-                    headers: { 'X-Access-Key': apiKey }
-                });
-                const json = await res.json();
-                const raw = json.record;
-                if (raw && typeof raw.d === 'string') {
-                    try { downloadedData = await decompressJSON(raw.d); } catch(e) { downloadedData = raw; }
-                } else { downloadedData = raw; }
+                const baseUrl = binId.replace(/\/$/, '').replace(/\/set\/.*$/, '').replace(/\/get\/.*$/, '');
+                res = await fetch(`${baseUrl}/get/${storageKey}`, { headers: { 'Authorization': `Bearer ${apiKey}` } });
+                if (res.ok) {
+                    const json = await res.json();
+                    if (json && json.result) {
+                        const raw = json.result;
+                        try {
+                            downloadedData = (typeof raw === 'string' && !raw.includes('{')) ? await decompressJSON(raw) : JSON.parse(raw);
+                        } catch(e) { downloadedData = JSON.parse(raw); }
+                    }
+                }
             }
 
             if (downloadedData) {
-                // 1. 備份當前的金鑰（因為下載的資料通常不含金鑰，避免蓋掉後無法再次上傳）
-                const currentKeys = { 
-                    binId: state.settings.binId, 
-                    apiKey: state.settings.apiKey 
-                };
-
-                // 2. 利用萬用合併器處理向後相容
+                const currentKeys = { binId: state.settings.binId, apiKey: state.settings.apiKey };
                 state = mergeWithDefault(downloadedData);
-
-                // 3. 回填金鑰
                 state.settings.binId = currentKeys.binId;
                 state.settings.apiKey = currentKeys.apiKey;
-
                 saveData();
                 alert("✅ 雲端資料下載並合併成功！");
                 location.reload();
+            } else {
+                throw new Error("無法取得雲端資料或資料格式錯誤");
             }
         }
     } catch (e) {
-        console.error(e);
         alert("⚠️ 雲端同步失敗：" + e.message);
     }
 }

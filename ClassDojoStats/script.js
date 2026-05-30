@@ -17,8 +17,8 @@ const DEFAULT_DATA = {
 };
 
 // --- Gzip 壓縮/解壓工具 ---
-const compressJSON = async (obj) => {
-    const str = JSON.stringify(obj);
+const compressJSON = async (obj, indent = 0) => {
+    const str = indent ? JSON.stringify(obj, null, indent) : JSON.stringify(obj);
     const stream = new Blob([str]).stream().pipeThrough(new CompressionStream('gzip'));
     const buf = await new Response(stream).arrayBuffer();
     return btoa(String.fromCharCode(...new Uint8Array(buf)));
@@ -32,29 +32,38 @@ const decompressJSON = async (base64) => {
     return await new Response(stream).json();
 };
 
+const STORAGE_KEY = 'classDojoAppData';
 let appData = JSON.parse(JSON.stringify(DEFAULT_DATA));
 
+// 立即執行載入，確保全局狀態就緒
+const saved = localStorage.getItem(STORAGE_KEY);
+if (saved) {
+    try {
+        const parsed = JSON.parse(saved);
+        // 先用預設值打底，再用存檔覆蓋，最後確保嵌套物件不遺失
+        appData = { ...DEFAULT_DATA, ...parsed };
+        appData.cloudConfig = { ...DEFAULT_DATA.cloudConfig, ...(parsed.cloudConfig || {}) };
+        appData.settings = { ...DEFAULT_DATA.settings, ...(parsed.settings || {}) };
+        appData.students = parsed.students || [];
+        console.log("[ClassDojo] 已載入存檔學生數:", appData.students.length);
+    } catch(e) { console.error("Data load error", e); }
+}
 
-// 頁面載入初始化
+// 頁面載入後的 UI 初始化
 document.addEventListener('DOMContentLoaded', () => {
-    const saved = localStorage.getItem('classDojoAppData');
-    if (saved) {
-        const parsedData = JSON.parse(saved);
-        
-        // 【核心修正】使用展開運算子 (...) 將預設值與舊資料合併
-        // 這樣如果 parsedData 缺少 showSurname，就會自動採用 DEFAULT_DATA 的值
-        appData = {
-            ...DEFAULT_DATA,
-            ...parsedData,
-            // 針對嵌套層級較深的物件也要確保合併（例如雲端設定與計算規則）
-            cloudConfig: { ...DEFAULT_DATA.cloudConfig, ...parsedData.cloudConfig },
-            settings: { ...DEFAULT_DATA.settings, ...parsedData.settings }
-        };
-
-        if (appData.students && appData.students.length > 0) renderTable();
-    }
     applyStyles();
+    // 確保在 DOM 都準備好後再渲染
+    setTimeout(() => {
+        if (appData.students && appData.students.length > 0) {
+            console.log("[ClassDojo] 啟動自動渲染...");
+            renderTable();
+        }
+    }, 100);
 });
+
+function saveData() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+}
 
 // 全域字體大小連動
 function applyStyles() {
@@ -93,14 +102,15 @@ function processData() {
             // 強制預設按號碼排序
             appData.students.sort((a,b) => a.numId - b.numId);
             renderTable();
-            localStorage.setItem('classDojoAppData', JSON.stringify(appData));
+            saveData();
         }
     });
 }
 
 function formatStudentName(fullName) {
+    if (!fullName) return "未命名";
     const hasChinese = /[\u4E00-\u9FFF]/.test(fullName);
-    const parts = fullName.trim().split(/\s+/);
+    const parts = fullName.toString().trim().split(/\s+/);
 
     if (appData.showSurname) {
         // 顯示姓氏：是
@@ -120,13 +130,35 @@ function formatStudentName(fullName) {
 }
 
 function renderTable() {
-    document.getElementById('resultTable').style.display = 'table';
-    document.getElementById('tableBody').innerHTML = appData.students.map((s, idx) => `
-        <tr onclick="showIndividualDetail(${idx})">
-            <td>${formatStudentName(s.name)}</td> 
-            <td><strong>${s.sum}</strong></td>
-        </tr>
-    `).join('');
+    console.log("[ClassDojo] 開始渲染主表格, 學生數:", appData.students.length);
+    const table = document.getElementById('resultTable');
+    const body = document.getElementById('tableBody');
+    const container = document.getElementById('tableContainer');
+    
+    if (!table || !body) {
+        console.error("[ClassDojo] 找不到表格 DOM 元素！");
+        return;
+    }
+
+    if (container) container.style.display = 'block';
+    table.style.display = 'table';
+    table.style.visibility = 'visible';
+    table.style.opacity = '1';
+
+    try {
+        body.innerHTML = appData.students.map((s, idx) => {
+            if (!s) return '';
+            return `
+                <tr onclick="showIndividualDetail(${idx})">
+                    <td>${formatStudentName(s.name)}</td> 
+                    <td><strong>${s.sum}</strong></td>
+                </tr>
+            `;
+        }).join('');
+        console.log("[ClassDojo] 渲染完成");
+    } catch (e) {
+        console.error("[ClassDojo] 渲染過程中出錯:", e);
+    }
 }
 
 // 姓名/點數排序功能
@@ -192,10 +224,10 @@ function saveSettings() {
         minusKeywords: document.getElementById('setMin').value
     };
     appData.cloudConfig = {
-        binId: document.getElementById('setBinId').value,
-        apiKey: document.getElementById('setApiKey').value
+        binId: (document.getElementById('setBinId').value || "").trim(),
+        apiKey: (document.getElementById('setApiKey').value || "").trim()
     };
-    localStorage.setItem('classDojoAppData', JSON.stringify(appData));
+    saveData();
     applyStyles();
     toggleModal('settingsModal', false);
 }
@@ -204,64 +236,68 @@ async function cloudAction(action) {
     const { binId, apiKey } = appData.cloudConfig;
     if (!binId || !apiKey) return alert("⚠️ 請先在『設定』填寫雲端資訊！");
     
+    const isFirebase = binId.includes('firebaseio.com');
+    const isUpstash = binId.includes('upstash.io');
+    if (!isFirebase && !isUpstash) return alert("⚠️ 目前僅支援 Firebase 或 Upstash！");
+
     if (action === 'upload') {
         if (!confirm("⚠️ 確定要將【本地資料】上傳至雲端嗎？\n注意：這會覆蓋雲端上的舊資料。")) return;
     } else if (action === 'download') {
         if (!confirm("⚠️ 確定要從雲端下載資料嗎？\n注意：這會覆蓋本地的所有學生與設定資料。")) return;
     }
     
-    const isUpstash = binId.includes('upstash.io');
-    
     try {
         if (action === 'upload') {
             const payload = { ...appData }; delete payload.cloudConfig;
             const compressed = await compressJSON(payload);
             
-            if (isUpstash) {
-                await fetch(binId, { method: 'POST', headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }, body: JSON.stringify(["SET", "classdojo_backup", JSON.stringify(compressed)]) });
-            } else {
-                await fetch(`https://api.jsonbin.io/v3/b/${binId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Access-Key': apiKey }, body: JSON.stringify({ d: compressed }) });
+            if (isFirebase) {
+                const baseUrl = binId.replace(/\/$/, "");
+                const url = `${baseUrl}/${apiKey}/classdojo_backup.json`;
+                await fetch(url, { method: 'PUT', body: JSON.stringify({ d: compressed }) });
+            } else if (isUpstash) {
+                const baseUrl = binId.replace(/\/$/, '').replace(/\/set\/.*$/, '').replace(/\/get\/.*$/, '');
+                await fetch(`${baseUrl}/set/classdojo_backup`, { method: 'POST', headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }, body: JSON.stringify(compressed) });
             }
             alert("✅ 上傳成功");
         } else {
             let data;
-            if (isUpstash) {
-                const res = await fetch(`${binId}/get/classdojo_backup`, { headers: { 'Authorization': `Bearer ${apiKey}` } });
+            if (isFirebase) {
+                const baseUrl = binId.replace(/\/$/, "");
+                const url = `${baseUrl}/${apiKey}/classdojo_backup.json`;
+                const res = await fetch(url);
+                const json = await res.json();
+                if (json && json.d) data = await decompressJSON(json.d);
+            } else if (isUpstash) {
+                const baseUrl = binId.replace(/\/$/, '').replace(/\/set\/.*$/, '').replace(/\/get\/.*$/, '');
+                const res = await fetch(`${baseUrl}/get/classdojo_backup`, { headers: { 'Authorization': `Bearer ${apiKey}` } });
                 const json = await res.json();
                 if (json && json.result) {
+                    const raw = json.result;
                     try {
-                        const raw = json.result;
-                        if (typeof raw === 'string' && raw.includes('{') === false && raw.includes('[') === false) {
-                            data = await decompressJSON(raw);
-                        } else {
-                            data = JSON.parse(raw);
-                        }
-                    } catch(e) {
-                         data = JSON.parse(json.result);
-                    }
+                        data = (typeof raw === 'string' && !raw.includes('{')) ? await decompressJSON(raw) : JSON.parse(raw);
+                    } catch(e) { data = JSON.parse(raw); }
                 }
-            } else {
-                const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, { headers: { 'X-Access-Key': apiKey } });
-                const json = await res.json(); 
-                const raw = json.record;
-                if (raw && typeof raw.d === 'string') {
-                    try { data = await decompressJSON(raw.d); } catch(e) { data = raw; }
-                } else { data = raw; }
             }
 
+            if (data) {
+                // 下載成功：保留目前的雲端設定，其餘由雲端蓋掉
+                const currentConfig = { ...appData.cloudConfig };
+                appData = { 
+                    ...DEFAULT_DATA, 
+                    ...data, 
+                    settings: { ...DEFAULT_DATA.settings, ...(data.settings || {}) },
+                    cloudConfig: currentConfig
+                };
+                // 確保學生資料正確繼承
+                if (!appData.students && data.students) appData.students = data.students;
 
-            // 在 cloudAction 的下載成功處修改：
-            const currentConfig = appData.cloudConfig;
-            // 同樣進行資料補齊，避免從雲端下載到舊格式的備份檔
-            appData = {
-                ...DEFAULT_DATA,
-                ...data,
-                settings: { ...DEFAULT_DATA.settings, ...data.settings }
-            }; 
-            appData.cloudConfig = currentConfig;
-
-            localStorage.setItem('classDojoAppData', JSON.stringify(appData));
-            location.reload();
+                saveData();
+                alert("✅ 下載成功，頁面將自動刷新以顯示資料");
+                location.reload();
+            } else {
+                alert("⚠️ 雲端尚無資料");
+            }
         }
     } catch (e) { alert("❌ 雲端同步失敗，請檢查網路或金鑰"); }
 }
@@ -272,7 +308,7 @@ function clearResults() {
         document.getElementById('resultTable').style.display = 'none';
         document.getElementById('tableBody').innerHTML = '';
         document.getElementById('csvFile').value = ''; // 清空檔案選取器
-        localStorage.setItem('classDojoAppData', JSON.stringify(appData));
+        saveData();
     }
 }
 
@@ -284,7 +320,7 @@ function resetSettings() {
         appData.cloudConfig = { ...DEFAULT_DATA.cloudConfig };
         
         // 2. 同步到 LocalStorage
-        localStorage.setItem('classDojoAppData', JSON.stringify(appData));
+        saveData();
         
         // 3. 立即更新畫面 UI
         applyStyles();
@@ -305,6 +341,41 @@ function copyStudentNames() {
     if (!appData.students.length) return alert("無資料可複製");
     const text = appData.students.map(s => formatStudentName(s.name)).join('\n');
     navigator.clipboard.writeText(text).then(() => alert("已複製學生姓名列表"));
+}
+
+async function exportData() {
+    const payload = { ...appData }; delete payload.cloudConfig;
+    const compressed = await compressJSON(payload, 2);
+    const raw = atob(compressed);
+    const bytes = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+    const blob = new Blob([bytes], { type: 'application/gzip' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `ClassDojo_${new Date().toISOString().slice(0,10)}.json.gz`;
+    a.click();
+}
+
+function triggerImport() { document.getElementById('importFile').click(); }
+
+async function handleImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const stream = new Blob([e.target.result]).stream().pipeThrough(new DecompressionStream('gzip'));
+            const data = await new Response(stream).json();
+            if (confirm("⚠️ 確定要匯入備份嗎？這會覆蓋目前的資料。")) {
+                const currentConfig = appData.cloudConfig;
+                appData = { ...DEFAULT_DATA, ...data, settings: { ...DEFAULT_DATA.settings, ...data.settings } };
+                appData.cloudConfig = currentConfig;
+                saveData();
+                location.reload();
+            }
+        } catch (err) { alert("❌ 匯入失敗，請確認檔案格式正確 (.json.gz)"); }
+    };
+    reader.readAsArrayBuffer(file);
 }
 
 // 在 script.js 最下方加入此監聽器

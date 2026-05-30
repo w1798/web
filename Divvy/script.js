@@ -65,8 +65,8 @@ let currentStock = '';
 let isEditMode = false;
 
 // --- Gzip 壓縮/解壓工具 ---
-const compressJSON = async (obj) => {
-    const str = JSON.stringify(obj);
+const compressJSON = async (obj, indent = 0) => {
+    const str = indent ? JSON.stringify(obj, null, indent) : JSON.stringify(obj);
     const stream = new Blob([str]).stream().pipeThrough(new CompressionStream('gzip'));
     const buf = await new Response(stream).arrayBuffer();
     return btoa(String.fromCharCode(...new Uint8Array(buf)));
@@ -944,19 +944,23 @@ document.getElementById('loadBtn').addEventListener('click', (e) => {
                         let response;
                         let data;
                         
-                        if (cloudSettings.url.match(/^[a-zA-Z0-9]+$/)) {
-                            // JSONBin.io
-                            response = await fetch(`https://api.jsonbin.io/v3/b/${cloudSettings.url}/latest`, {
-                                headers: { 'X-Access-Key': cloudSettings.token }
-                            });
+                        const isFirebase = cloudSettings.url.includes('firebaseio.com');
+                        const isUpstash = cloudSettings.url.includes('upstash.io');
+                        if (!isFirebase && !isUpstash) {
+                             throw new Error("目前僅支援 Firebase 或 Upstash！");
+                        }
+
+                        if (isFirebase) {
+                            const baseUrl = cloudSettings.url.replace(/\/$/, "");
+                            const url = `${baseUrl}/${cloudSettings.token}/divvy_backup.json`;
+                            response = await fetch(url);
                             if (response.ok) {
                                 const json = await response.json();
-                                data = json.record;
+                                if (json && json.d) data = await decompressJSON(json.d);
                             }
-                        } else {
-                            // Upstash
-                            const baseUrl = cloudSettings.url.replace(/\/$/, '');
-                            const getUrl = `${baseUrl}/get/dividend-data`;
+                        } else if (isUpstash) {
+                            const baseUrl = cloudSettings.url.replace(/\/$/, '').replace(/\/set\/.*$/, '').replace(/\/get\/.*$/, '');
+                            const getUrl = `${baseUrl}/get/divvy_backup`;
                             
                             response = await fetch(getUrl, {
                                 headers: { 'Authorization': `Bearer ${cloudSettings.token}` }
@@ -965,30 +969,22 @@ document.getElementById('loadBtn').addEventListener('click', (e) => {
                             if (response.ok) {
                                 const json = await response.json();
                                 if (json.result) {
+                                    const raw = json.result;
                                     try {
-                                        const raw = json.result;
-                                        if (typeof raw === 'string' && raw.includes('{') === false && raw.includes('[') === false) {
-                                            data = await decompressJSON(raw);
-                                        } else {
-                                            data = JSON.parse(raw);
-                                        }
-                                    } catch(e) {
-                                        data = JSON.parse(json.result);
-                                        console.error(e);
-                                    }
+                                        data = (typeof raw === 'string' && !raw.includes('{')) ? await decompressJSON(raw) : JSON.parse(raw);
+                                    } catch(e) { data = JSON.parse(raw); }
                                 }
                             }
                         }
                         
-                        // 若為 JSONBin，對 .d 屬性做解壓縮
-                        if (cloudSettings.url.match(/^[a-zA-Z0-9]+$/) && data && typeof data.d === 'string') {
-                            try { data = await decompressJSON(data.d); } catch(e) { /* ignore */ }
-                        }
-                        
-                        if (response.ok && data) {
-                            const migrated = migrateData({ stockData: data }); 
-                            appData = migrated; // 先更新總物件
-                            stockData = appData.stockData; // 再重新指向引用
+                        if (response && response.ok && data) {
+                            // 下載成功：保留目前的雲端設定，其餘由雲端蓋掉 (data 已包含 { stockData: ... })
+                            const currentCloud = { ...cloudSettings };
+                            appData = migrateData(data); 
+                            appData.cloudSettings = currentCloud;
+                            
+                            // 更新全域引用
+                            stockData = appData.stockData;
                             cloudSettings = appData.cloudSettings;
                             
                             saveToStorage();
@@ -1017,8 +1013,8 @@ document.getElementById('saveBtn').addEventListener('click', (e) => {
     if (!hasCloud) {
         // 沒有雲端設定：直接匯出
         (async () => {
-            const toSave = { stockData: stockData, cloudSettings: cloudSettings };
-            const compressed = await compressJSON(toSave);
+            const toSave = { stockData: stockData }; // 匯出不含雲端設定
+            const compressed = await compressJSON(toSave, 2);
             const raw = atob(compressed);
             const bytes = new Uint8Array(raw.length);
             for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
@@ -1026,7 +1022,7 @@ document.getElementById('saveBtn').addEventListener('click', (e) => {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `divvy-${new Date().toISOString().slice(0,10)}.gz`;
+            a.download = `Divvy_${new Date().toISOString().slice(0,10)}.json.gz`;
             a.click();
             URL.revokeObjectURL(url);
         })();
@@ -1037,8 +1033,8 @@ document.getElementById('saveBtn').addEventListener('click', (e) => {
                 icon: '📥',
                 text: '匯出到本地',
                 action: async () => {
-                    const toSave = { stockData: stockData, cloudSettings: cloudSettings };
-                    const compressed = await compressJSON(toSave);
+                    const toSave = { stockData: stockData };
+                    const compressed = await compressJSON(toSave, 2);
                     const raw = atob(compressed);
                     const bytes = new Uint8Array(raw.length);
                     for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
@@ -1046,7 +1042,7 @@ document.getElementById('saveBtn').addEventListener('click', (e) => {
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `divvy-${new Date().toISOString().slice(0,10)}.gz`;
+                    a.download = `Divvy_${new Date().toISOString().slice(0,10)}.json.gz`;
                     a.click();
                     URL.revokeObjectURL(url);
                 }
@@ -1059,36 +1055,28 @@ document.getElementById('saveBtn').addEventListener('click', (e) => {
                         return;
                     }
                     
-                    const toUpload = {
-                        stockData: stockData,
-                        cloudSettings: cloudSettings
-                    };
+                    const toUpload = { stockData: stockData }; // 不上傳雲端資訊
                     const compressed = await compressJSON(toUpload);
                     
                     try {
                         let response;
+                        const isFirebase = cloudSettings.url.includes('firebaseio.com');
+                        const isUpstash = cloudSettings.url.includes('upstash.io');
+                        if (!isFirebase && !isUpstash) {
+                             throw new Error("目前僅支援 Firebase 或 Upstash！");
+                        }
                         
-                        if (cloudSettings.url.match(/^[a-zA-Z0-9]+$/)) {
-                            // JSONBin.io
-                            response = await fetch(`https://api.jsonbin.io/v3/b/${cloudSettings.url}`, {
+                        if (isFirebase) {
+                            const baseUrl = cloudSettings.url.replace(/\/$/, "");
+                            const url = `${baseUrl}/${cloudSettings.token}/divvy_backup.json`;
+                            response = await fetch(url, {
                                 method: 'PUT',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-Access-Key': cloudSettings.token
-                                },
                                 body: JSON.stringify({ d: compressed })
                             });
-                            
-                            if (response.ok) {
-                                alert('✅ 雲端上傳成功！');
-                            } else {
-                                const errorText = await response.text();
-                                alert(`❌ 上傳失敗：${response.status} ${errorText}`);
-                            }
                         } else {
                             // Upstash
-                            const baseUrl = cloudSettings.url.replace(/\/$/, '');
-                            const setUrl = `${baseUrl}/set/dividend-data`;
+                            const baseUrl = cloudSettings.url.replace(/\/$/, '').replace(/\/set\/.*$/, '').replace(/\/get\/.*$/, '');
+                            const setUrl = `${baseUrl}/set/divvy_backup`;
                             
                             response = await fetch(setUrl, {
                                 method: 'POST',
@@ -1098,14 +1086,13 @@ document.getElementById('saveBtn').addEventListener('click', (e) => {
                                 },
                                 body: JSON.stringify(compressed)
                             });
-                            
+                        }
+                        
+                        if (response.ok) {
+                            alert('✅ 雲端上傳成功！');
+                        } else {
                             const responseText = await response.text();
-                            
-                            if (response.ok) {
-                                alert('✅ 雲端上傳成功！');
-                            } else {
-                                alert(`❌ 上傳失敗：${response.status} - ${responseText}`);
-                            }
+                            alert(`❌ 上傳失敗：${response.status} - ${responseText}`);
                         }
                     } catch (error) {
                         alert(`❌ 上傳錯誤：${error.message}`);

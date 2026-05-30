@@ -40,8 +40,8 @@ let myChart = null;
 const STORAGE_KEY = 'attention_app_data';
 
 // --- Gzip 壓縮/解壓工具 ---
-const compressJSON = async (obj) => {
-    const str = JSON.stringify(obj);
+const compressJSON = async (obj, indent = 0) => {
+    const str = indent ? JSON.stringify(obj, null, indent) : JSON.stringify(obj);
     const stream = new Blob([str]).stream().pipeThrough(new CompressionStream('gzip'));
     const buf = await new Response(stream).arrayBuffer();
     return btoa(String.fromCharCode(...new Uint8Array(buf)));
@@ -648,15 +648,21 @@ window.exportExcel = function() {
 
 // 基礎功能：上傳、下載、匯入、匯出
 async function fileExport() {
-    const dataObj = { state, local: localStorage.getItem('custom_dimensions') };
-    const compressed = await compressJSON(dataObj);
+    const dataObj = { state: JSON.parse(JSON.stringify(state)), local: localStorage.getItem('custom_dimensions') };
+    // 匯出時排除金鑰
+    const cloud = JSON.parse(localStorage.getItem('cloud_config') || '{}');
+    if (cloud) {
+        delete cloud.binId;
+        delete cloud.apiKey;
+    }
+    const compressed = await compressJSON(dataObj, 2);
     const raw = atob(compressed);
     const bytes = new Uint8Array(raw.length);
     for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
     const blob = new Blob([bytes], { type: 'application/gzip' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `SpeTeacher_backup_${new Date().getTime()}.gz`;
+    a.download = `SpeTeacher_backup_${new Date().toISOString().split('T')[0]}.json.gz`;
     a.click();
 }
 
@@ -706,99 +712,90 @@ function fileImport() {
 }
 
 
-// --- 雲端安全上傳 ---
+// --- 雲端安全同步 ---
 window.cloudUpload = async function() {
     const cloud = JSON.parse(localStorage.getItem('cloud_config') || '{}');
-    const isUpstash = cloud.binId.includes('upstash.io');
+    const { binId, apiKey } = cloud;
+    if (!binId || !apiKey) return alert("請先至「設定」頁面填寫 URL 與 Token/Key！");
 
-    let url = cloud.binId;
-    let options = {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${cloud.apiKey}` }
-    };
+    const isFirebase = binId.includes('firebaseio.com');
+    const isUpstash = binId.includes('upstash.io');
+    if (!isFirebase && !isUpstash) return alert("目前僅支援 Firebase 或 Upstash！");
 
-    if (isUpstash) {
-        // Upstash Redis REST 格式：/set/key/value
-        url = `${cloud.binId}/set/speteacher_data`; 
-        const compressed = await compressJSON(state);
-        options.body = JSON.stringify(compressed);
-        options.headers['Content-Type'] = 'application/json';
-    } else {
-        // JSONBin v3 格式
-        options.method = 'PUT';
-        options.headers = { 'Content-Type': 'application/json', 'X-Access-Key': cloud.apiKey };
-        const compressed = await compressJSON(state);
-        options.body = JSON.stringify({ d: compressed });
-    }
+    const storageKey = 'speteacher_data';
+    if (!confirm("確定要將資料上傳至雲端嗎？")) return;
 
     try {
-        const res = await fetch(url, options);
-        if (!res.ok) throw new Error(await res.text());
-        alert("上傳成功");
-    } catch(e) { alert("上傳失敗: " + e.message); }
+        // 排除金鑰資訊
+        const uploadData = JSON.parse(JSON.stringify(state));
+        delete uploadData.binId;
+        delete uploadData.apiKey;
+
+        const compressed = await compressJSON(uploadData);
+        let res;
+        if (isFirebase) {
+            const baseUrl = binId.replace(/\/$/, "");
+            const url = `${baseUrl}/${apiKey}/${storageKey}.json`;
+            res = await fetch(url, { method: 'PUT', body: JSON.stringify({ d: compressed }) });
+        } else {
+            const baseUrl = binId.replace(/\/$/, '').replace(/\/set\/.*$/, '').replace(/\/get\/.*$/, '');
+            res = await fetch(`${baseUrl}/set/${storageKey}`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(compressed)
+            });
+        }
+
+        if (res.ok) alert("✅ 雲端備份成功！");
+        else {
+            const txt = await res.text();
+            throw new Error(`${res.status} ${txt}`);
+        }
+    } catch(e) { alert("❌ 上傳失敗: " + e.message); }
 };
 
-// --- 雲端安全下載 ---
 window.cloudDownload = async function() {
     const cloud = JSON.parse(localStorage.getItem('cloud_config') || '{}');
-    
-    // 1. 檢查設定
-    if (!cloud.binId || !cloud.apiKey) {
-        return alert("請先至「設定」頁面填寫 URL 與 Token/Key！");
-    }
-
+    if (!cloud.binId || !cloud.apiKey) return alert("請先至「設定」頁面填寫 URL 與 Token/Key！");
     if (!confirm("警告：下載將會覆蓋您目前的本地資料，確定繼續嗎？")) return;
 
+    const isFirebase = cloud.binId.includes('firebaseio.com');
     const isUpstash = cloud.binId.includes('upstash.io');
-    let url = cloud.binId;
-    let options = { method: 'GET' };
-
-    // 2. 根據不同服務設定 Header 與 URL
-    if (isUpstash) {
-        // Upstash 的 GET 請求：通常是 /get/key_name
-        url = `${cloud.binId}/get/speteacher_data`;
-        options.headers = { 'Authorization': `Bearer ${cloud.apiKey}` };
-    } else {
-        // JSONBin 的 GET 請求：v3 API
-        // 確保你的 URL 是指向 /v3/b/{binId}
-        options.headers = { 'X-Access-Key': cloud.apiKey };
-    }
+    const storageKey = 'speteacher_data';
 
     try {
-        const res = await fetch(url, options);
-        if (!res.ok) throw new Error("下載失敗，請檢查設定或連結");
-        
-        const result = await res.json();
-        
-        // 3. 解析資料 (JSONBin 的資料在 record 欄位中)
-        const raw = isUpstash ? result.result : result.record;
-        
-        let remoteData = null;
-        if (raw) {
-            if (typeof raw === 'string') {
-                try { remoteData = await decompressJSON(raw); } catch(e) { remoteData = JSON.parse(raw); }
-            } else if (raw.d && typeof raw.d === 'string') {
-                try { remoteData = await decompressJSON(raw.d); } catch(e) { remoteData = raw; }
-            } else {
-                remoteData = raw;
+        let res, remoteData;
+        if (isFirebase) {
+            const baseUrl = cloud.binId.replace(/\/$/, "");
+            const url = `${baseUrl}/${cloud.apiKey}/${storageKey}.json`;
+            res = await fetch(url);
+            if (res.ok) {
+                const json = await res.json();
+                if (json && json.d) remoteData = await decompressJSON(json.d);
+            }
+        } else {
+            const baseUrl = cloud.binId.replace(/\/$/, '').replace(/\/set\/.*$/, '').replace(/\/get\/.*$/, '');
+            res = await fetch(`${baseUrl}/get/${storageKey}`, { headers: { 'Authorization': `Bearer ${cloud.apiKey}` } });
+            if (res.ok) {
+                const json = await res.json();
+                if (json && json.result) {
+                    const raw = json.result;
+                    try {
+                        remoteData = (typeof raw === 'string' && !raw.includes('{')) ? await decompressJSON(raw) : JSON.parse(raw);
+                    } catch(e) { remoteData = JSON.parse(raw); }
+                }
             }
         }
-        
+
         if (remoteData) {
-            // 合併資料到 state
             Object.assign(state, remoteData);
-            
-            // 強制重新渲染 UI 與儲存到 LocalStorage
             localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
             alert("資料下載成功，頁面將自動重新整理。");
             location.reload();
         } else {
-            alert("無法解析雲端資料格式或內容為空");
+            throw new Error("無法取得雲端資料或資料格式錯誤");
         }
-    } catch(e) { 
-        alert("下載錯誤: " + e.message); 
-        console.error(e);
-    }
+    } catch(e) { alert("下載錯誤: " + e.message); }
 };
 
 

@@ -201,7 +201,7 @@
                     <p class="step-title">建立新的 Firebase 專案</p>
                     <ul class="sub-list">
                         <li>點選「建立新的 Firebase 專案」或「如要開始使用，請設定 Firebase 專案」</li>
-                        <li><strong>[專案名稱]</strong> 隨便取 -> 一直按「繼續」</li>
+                        <li><strong>[專案名稱]</strong> 隨便取(或 classkudox) -> 一直按「繼續」</li>
                         <li>選擇帳面帳號後按「建立專案」</li>
                     </ul>
                 </div>
@@ -213,8 +213,7 @@
                     <p class="step-title">啟用 Realtime Database</p>
                     <ul class="sub-list">
                         <li>在側邊欄選擇「資料庫和儲存空間」 -> <strong>[Realtime Database]</strong></li>
-                        <li>點選「建立資料庫」 -> 選擇「美國」 (下一步)</li>
-                        <li>選擇<strong>「以測試模式啟動」</strong>並按「啟用」</li>
+                        <li>點選「建立資料庫」 -> 選擇「美國」 (下一步) -> 「啟用」</li>
                         <li>★ 得到資料庫 URL：<code>https://你的專案名稱-default-rtdb.firebaseio.com/</code></li>
                     </ul>
                 </div>
@@ -223,19 +222,20 @@
             <div class="step-row">
                 <div class="step-num firebase-num">4</div>
                 <div class="step-content">
-                    <p class="step-title">規則設定與取得 Key ID</p>
+                    <p class="step-title">規則設定 與 自訂 Key ID</p>
                     <ul class="sub-list">
-                        <li>點選上方「規則」，將原有內容取代為：</li>
+                        <li>點選上方「規則」，將原有內容取代為(★請務必將 my_pwd_123 更換其他字串！)：</li>
                         <div class="code-block" style="color: #68d391; padding: 10px 20px;">
 {
   "rules": {
-    ".read": true,
-    ".write": true
+    "my_pwd_123": {
+      ".read": true,
+      ".write": true
+    }
   }
-}
-                        </div>
+}                       </div>
                         <li>按<strong>「發布」</strong></li>
-                        <li>★ 到「設定」(齒輪圖示) -> 「一般」下可得到 <strong>[專案編號]</strong> (即為設定所需的 Key ID)</li>
+                        <li>★ 上面的 my_pwd_123 (請不要用這個！) 即為設定所需的 Key ID</li>
                     </ul>
                 </div>
             </div>

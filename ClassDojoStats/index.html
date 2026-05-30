@@ -19,6 +19,8 @@
         <div class="header-right">
             <button class="nav-btn" onclick="cloudAction('upload')">雲端上傳</button>
             <button class="nav-btn" onclick="cloudAction('download')">雲端下載</button>
+            <button class="nav-btn" onclick="exportData()">匯出備份</button>
+            <button class="nav-btn" onclick="triggerImport()">匯入備份</button>
             <button class="nav-btn" onclick="clearResults()">清除結果</button>
             <button class="nav-btn" onclick="toggleModal('settingsModal', true)">設定</button>
         </div>
@@ -86,13 +88,14 @@
                 </div>
                 <div class="settings-col">
                     <h3 class="col-title">☁️ 雲端同步 (<a href="https://w1798.github.io/web/JsonCloudGuide" target="_blank" style="color: var(--primary); font-size: 0.85em; text-decoration: underline;">申請說明</a>)</h3>
+                    <p style="font-size: 0.8em; color: #666; margin-bottom: 10px;">支援 Upstash / Firebase。上傳時會自動排除您的金鑰資訊以保護隱私。</p>
                     <div class="form-row">
-                        <label>URL / ID</label>
-                        <div class="input-with-btn"><input type="text" id="setBinId" autocomplete="off" placeholder="URL or JSONBinID"><button onclick="clearField('setBinId')">×</button></div>
+                        <label>資料庫 URL</label>
+                        <div class="input-with-btn"><input type="text" id="setBinId" autocomplete="off" placeholder="Upstash: https://xxx.upstash.io / Firebase: https://xxx.firebaseio.com"><button onclick="clearField('setBinId')">×</button></div>
                     </div>
                     <div class="form-row">
-                        <label>Key / Token</label>
-                        <div class="input-with-btn"><input type="text" id="setApiKey" autocomplete="off" placeholder="Token or X-Access-Key"><button onclick="clearField('setApiKey')">×</button></div>
+                        <label>Key ID</label>
+                        <div class="input-with-btn"><input type="text" id="setApiKey" autocomplete="off" placeholder="Token / 自設 rules pwd"><button onclick="clearField('setApiKey')">×</button></div>
                     </div>
                 </div>
             </div>
@@ -118,6 +121,7 @@
     </div>
 
 
+    <input type="file" id="importFile" style="display:none;" accept=".json.gz,.gz" onchange="handleImport(event)">
 
 </style>
 </body>

@@ -74,26 +74,31 @@ const SettingsPage = () => {
         if (!config.binUrl || !config.apiKey) return alert('請先綁定雲端！');
         if (!confirm('確定要將完整的本地資料上傳覆蓋至雲端備份庫嗎？')) return;
         try {
+            const isFirebase = config.binUrl.includes('firebaseio.com');
             const isUpstash = config.binUrl.includes('upstash.io');
-            let endpoint = config.binUrl.startsWith('http') ? config.binUrl : `https://api.jsonbin.io/v3/b/${config.binUrl}`;
-            
-            const headers = isUpstash 
-                ? { "Authorization": `Bearer ${config.apiKey}`, "Content-Type": "application/json" }
-                : { "X-Access-Key": config.apiKey, "Content-Type": "application/json" };
-            
+            if (!isFirebase && !isUpstash) throw new Error('目前僅支援 Firebase 或 Upstash！');
+
             const payloadStr = JSON.stringify(getSnapshot());
             const compressed = await gzip(payloadStr);
             let binaryString = '';
             for (let i=0; i<compressed.length; i++) binaryString += String.fromCharCode(compressed[i]);
             const base64Str = btoa(binaryString);
-            
-            // Upstash 需要 Redis 命令格式 ["SET", key, value]
-            const body = isUpstash 
-                ? JSON.stringify(["SET", "gut_backup", base64Str]) 
-                : JSON.stringify({ payload: base64Str });
 
-            const res = await fetch(endpoint, { method: isUpstash ? 'POST' : 'PUT', headers, body });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            let res;
+            if (isFirebase) {
+                const baseUrl = config.binUrl.replace(/\/$/, "");
+                const url = `${baseUrl}/${config.apiKey}/gut_backup.json`;
+                res = await fetch(url, { method: 'PUT', body: JSON.stringify({ d: base64Str }) });
+            } else {
+                const baseUrl = config.binUrl.replace(/\/$/, '').replace(/\/set\/.*$/, '').replace(/\/get\/.*$/, '');
+                res = await fetch(`${baseUrl}/set/gut_backup`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${config.apiKey}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(base64Str)
+                });
+            }
+
+            if (!res || !res.ok) throw new Error(`HTTP ${res?.status}`);
             alert('✅ 雲端備份成功！');
             setShowSaveMenu(false);
         } catch(e) { alert('上傳失敗：' + e.message); }
@@ -103,36 +108,36 @@ const SettingsPage = () => {
         if (!config.binUrl || !config.apiKey) return alert('請先綁定雲端！');
         if (!confirm('⚠️ 危險：這會從雲端下載並【覆寫】本地同日的紀錄，確定執行嗎？')) return;
         try {
+            const isFirebase = config.binUrl.includes('firebaseio.com');
             const isUpstash = config.binUrl.includes('upstash.io');
-            let endpoint = config.binUrl.startsWith('http') ? config.binUrl : `https://api.jsonbin.io/v3/b/${config.binUrl}/latest`;
-            
-            if (isUpstash) {
-                // 如果是 Upstash，自動補上 /get/gut_backup 命令
-                endpoint = endpoint.replace(/\/$/, '') + '/get/gut_backup';
+            if (!isFirebase && !isUpstash) throw new Error('目前僅支援 Firebase 或 Upstash！');
+
+            let res, base64Str;
+            if (isFirebase) {
+                const baseUrl = config.binUrl.replace(/\/$/, "");
+                const url = `${baseUrl}/${config.apiKey}/gut_backup.json`;
+                res = await fetch(url);
+                if (res.ok) { const json = await res.json(); if (json && json.d) base64Str = json.d; }
+            } else {
+                const baseUrl = config.binUrl.replace(/\/$/, '').replace(/\/set\/.*$/, '').replace(/\/get\/.*$/, '');
+                res = await fetch(`${baseUrl}/get/gut_backup`, { headers: { 'Authorization': `Bearer ${config.apiKey}` } });
+                if (res.ok) { const json = await res.json(); base64Str = json.result; }
             }
 
-            const headers = isUpstash 
-                ? { "Authorization": `Bearer ${config.apiKey}` }
-                : { "X-Access-Key": config.apiKey };
-            
-            const res = await fetch(endpoint, { headers });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
-            
-            const base64Str = isUpstash ? data.result : (data.record ? data.record.payload : data.payload);
-            if (!base64Str) throw new Error("雲端目前沒有備份資料");
+            if (!res || !res.ok) throw new Error(`HTTP ${res?.status}`);
+            if (!base64Str) throw new Error('雲端目前沒有備份資料');
 
             const binaryStr = atob(base64Str);
             const charArray = new Uint8Array(binaryStr.length);
             for(let i=0; i<binaryStr.length; i++) charArray[i] = binaryStr.charCodeAt(i);
             const decompressed = await ungzip(charArray);
-            
+
             const parsed = JSON.parse(decompressed);
             if (parsed.config) {
                 const newCfg = { ...config, ...parsed.config, binUrl: config.binUrl, apiKey: config.apiKey };
                 updateConfig(newCfg);
             }
-            await importData(new File([new Blob([decompressed])], "cloud.json"));
+            await importData(new File([new Blob([decompressed])], 'cloud.json'));
         } catch(e) { alert('下載失敗：' + e.message); }
     };
 
@@ -191,7 +196,7 @@ const SettingsPage = () => {
                 <ConfigTextarea label="調理方式" value={cookText} onChange={e => setCookText(e.target.value)} placeholder="炸" />
                 <ConfigTextarea label="排便量選項" value={bowelAmountText} onChange={e => setBowelAmountText(e.target.value)} placeholder="多" />
                 <ConfigTextarea label="排便狀況選項" value={bowelText} onChange={e => setBowelText(e.target.value)} placeholder="正常" />
-                
+
                 <div className="mb-4 pt-3 border-t border-gray-100 dark:border-slate-600">
                     <label className="text-sm font-bold text-gray-600 dark:text-gray-300 mb-2 flex justify-between">
                         <span>全域字體大小</span>
@@ -206,11 +211,12 @@ const SettingsPage = () => {
                         <span className="flex items-center gap-2">☁️ 雲端備份綁定</span>
                         <a href="https://w1798.github.io/web/JsonCloudGuide" target="_blank" className="text-xs text-indigo-500 font-bold hover:underline">申請說明🡕</a>
                     </label>
+                    <p className="text-[10px] text-gray-400 mb-2">支援 Upstash / Firebase。上傳時會自動排除您的金鑰資訊以保護隱私。</p>
                     <div className="space-y-2 mb-2">
-                        <input type="text" value={binUrl} onChange={e => setBinUrl(e.target.value)} placeholder="URL or JSONBin ID" 
+                        <input type="text" value={binUrl} onChange={e => setBinUrl(e.target.value)} placeholder="Upstash: https://xxx.upstash.io / Firebase: https://xxx.firebaseio.com"
                             className="w-full bg-gray-100 dark:bg-slate-700 border-none rounded-xl p-2.5 text-sm dark:text-gray-200 focus:outline-none" />
                         <div className="flex gap-2">
-                            <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Token or X-Access-Key" 
+                            <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Token / 自設 rules pwd"
                                 className="flex-1 bg-gray-100 dark:bg-slate-700 border-none rounded-xl p-2.5 text-sm dark:text-gray-200 focus:outline-none" />
                             <button onClick={() => { setBinUrl(''); setApiKey(''); }} className="px-3 rounded-xl bg-gray-200 dark:bg-slate-600 text-sm font-bold text-gray-600 dark:text-gray-300 shrink-0">重置</button>
                         </div>
@@ -251,7 +257,7 @@ const SettingsPage = () => {
                     <p className="text-xs text-gray-400 leading-relaxed">GutTracker 專為關心腸道健康的人士設計，透過簡易的圖像化紀錄，找出飲食與身體反應的規律。</p>
                 </div>
             </section>
-            
+
         </div>
     );
 };
