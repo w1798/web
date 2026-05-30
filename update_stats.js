@@ -130,7 +130,9 @@ async function run() {
             }
         });
 
-        const firebaseUpdate = axios.put(`https://${FIREBASE_PROJECT}.firebaseio.com/${FIREBASE_KEY}/vercount_v1.json`, uploadPayload);
+        // 確保移除變數結尾可能存在的斜線，再乾淨地拼上路徑
+        const fbBaseUrl = FIREBASE_PROJECT.endsWith('/') ? FIREBASE_PROJECT.slice(0, -1) : FIREBASE_PROJECT;
+        const firebaseUpdate = axios.put(`${fbBaseUrl}/${FIREBASE_KEY}/vercount_v1.json`, uploadPayload);
 
         // 使用 Promise.all 同時發送，速度更快
         await Promise.all([upstashUpdate, firebaseUpdate]);
