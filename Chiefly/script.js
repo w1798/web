@@ -137,6 +137,16 @@ function App() {
         input.click();
     };
 
+    const handleGenerateWord = () => {
+        const blob = ChieflyLogic.generateWordDoc(currentSheet);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `各司其職_${currentSheet.name}.doc`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
     // --- 分配邏輯 ---
     const handleApplySettings = () => {
         const newJobs = ChieflyLogic.parseJobs(currentSheet.settings.jobsText);
@@ -264,8 +274,7 @@ function App() {
                 <div className="sidebar-toggle" onClick={() => setSidebarOpen(!isSidebarOpen)}>{isSidebarOpen ? '❮' : '❯'}</div>
                 <div style={{ display: isSidebarOpen ? 'flex' : 'none', flexDirection: 'column', gap: '0.75rem', height: '100%' }}>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button className="btn btn-danger" style={{ flex: 1, fontSize: '0.9rem' }} onClick={() => { if(confirm("確定重置整個系統？")) ChieflyLogic.resetStorage(); }}>系統重置</button>
-                        <button className="btn btn-primary" style={{ flex: 1.4, fontSize: '1.2rem' }} onClick={() => setSettingsOpen(true)}>⚙️ 系統設定</button>
+                        <button className="btn btn-primary" style={{ flex: 1, fontSize: '1.2rem', padding: '0.6rem' }} onClick={() => setSettingsOpen(true)}>⚙️ 系統設定</button>
                     </div>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                         <button className="btn btn-secondary" style={{ flex: 1, fontSize: '1rem', padding: '0.6rem' }} onClick={handleClearAssignments}>🔄 清空分配</button>
@@ -294,7 +303,11 @@ function App() {
                 <header style={{ marginBottom: '1rem', display: 'flex', alignItems: 'baseline', gap: '1.5rem', paddingLeft: '1rem' }}>
                     <h1 style={{ fontSize: '1.75rem', fontWeight: 800 }}>各司其職 分配系統</h1>
                     <span style={{ color: 'var(--text-muted)', fontSize: '1.25rem', fontWeight: 600 }}>
-                        正在管理：<strong style={{ color: 'var(--primary)' }}>{currentSheet.name}</strong> {!currentSheet.isMultiSelect && <span style={{fontSize: '0.9rem', background: '#ef4444', color: 'white', padding: '2px 8px', borderRadius: '4px', marginLeft: '10px'}}>單選模式</span>}
+                        正在管理：<strong style={{ color: 'var(--primary)' }}>{currentSheet.name}</strong> 
+                    {currentSheet.isMultiSelect 
+                        ? <span style={{fontSize: '0.9rem', background: '#10b981', color: 'white', padding: '2px 8px', borderRadius: '4px', marginLeft: '10px'}}>多選模式</span>
+                        : <span style={{fontSize: '0.9rem', background: '#ef4444', color: 'white', padding: '2px 8px', borderRadius: '4px', marginLeft: '10px'}}>單選模式</span>
+                    }
                     </span>
                 </header>
                 <div className="job-grid" style={{ gridTemplateColumns: `repeat(${currentSheet.gridCols || 6}, 1fr)` }}>
@@ -321,10 +334,11 @@ function App() {
                             <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>🛠 系統設定 - {currentSheet.name}</h2>
                             <div style={{ display: 'flex', gap: '0.5rem' }}>
 
-                                <button className="btn btn-secondary" style={{ padding: '4px 12px', fontSize: '1.2rem' }} onClick={handleExport}>📤 匯出</button>
-                                <button className="btn btn-secondary" style={{ padding: '4px 12px', fontSize: '1.2rem' }} onClick={handleImport}>📥 匯入</button>
-                                <button className="btn btn-primary" style={{ padding: '4px 20px', fontSize: '1.2rem' }} onClick={handleApplySettings}>💾 套用職務</button>
-                                <button className="btn btn-secondary" style={{ padding: '4px 20px', fontSize: '1.2rem'}} onClick={() => setSettingsOpen(false)}>💾 套用其他設定</button>
+                                <button className="btn btn-secondary" style={{ padding: '4px 12px', fontSize: '1rem' }} onClick={handleExport}>📤 匯出</button>
+                                <button className="btn btn-secondary" style={{ padding: '4px 12px', fontSize: '1rem' }} onClick={handleImport}>📥 匯入</button>
+                                <button className="btn btn-secondary" style={{ padding: '4px 12px', fontSize: '1rem' }} onClick={handleGenerateWord}>📝 Word 檔</button>
+                                <button className="btn btn-primary" style={{ padding: '4px 20px', fontSize: '1rem' }} onClick={handleApplySettings}>💾 套用職務</button>
+                                <button className="btn btn-secondary" style={{ padding: '4px 20px', fontSize: '1rem'}} onClick={() => setSettingsOpen(false)}>關閉</button>
                             </div>
                         </div>
                         
@@ -350,8 +364,9 @@ function App() {
                                     </div>
                                 </div>
                                 {/* 提示區域填充下方剩餘空間 */}
-                                <div style={{ flex: 0.34, padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', fontSize: '1, 2rem', color: 'var(--text-muted)' }}>
-                                    💡 編輯完成後請記得儲存並套用設定。職務名可加上數字定義名額給隨機分配使用(用,分開)。
+                                <div style={{ flex: 0.34, padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', fontSize: '1rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                                    <div>💡 編輯完成後請記得儲存並套用設定。職務名可加上數字定義名額給隨機分配使用(用,分開)。</div>
+                                    <button className="btn btn-danger" style={{ marginTop: '1rem', fontSize: '1rem', width: 'fit-content', padding: '6px 15px' }} onClick={() => { if(confirm("確定重置整個系統？")) ChieflyLogic.resetStorage(); }}>🧹 系統重置</button>
                                 </div>
                             </div>
 

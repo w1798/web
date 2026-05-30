@@ -104,7 +104,7 @@ const getCloudRequest = (method = 'PUT') => {
     }
     return { url, headers, provider };
 };
-const performCloudUpload = async () => {
+const performCloudUpload = async (manual = false) => {
     if (!cloudBinId || !cloudApiKey) return;
     if (typeof updateSyncStatus === 'function') updateSyncStatus(); 
     try {
@@ -133,13 +133,18 @@ const performCloudUpload = async () => {
             }
             localStorage.setItem('sVer', localSyncVersion);
             saveData(true); 
-            setDirty(3); 
+            setDirty(3);
+            if (manual) alert('已成功上傳至雲端');
         } else {
             L(`[CloudSync] 同步上傳失敗，保留本地 Ops 等待重試。`);
             localSyncVersion = oldVer;
             throw new Error('雲端寫入失敗');
         }
-    } catch(e) { LE('[CloudSync] 上傳錯誤:', e); setDirty(2); }
+    } catch(e) {
+        LE('[CloudSync] 上傳錯誤:', e);
+        setDirty(2);
+        if (manual) alert('上傳失敗: ' + e.message);
+    }
 };
 
 const performCloudDownload = async (manual = false) => {

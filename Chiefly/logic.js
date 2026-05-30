@@ -259,6 +259,65 @@ const ChieflyLogic = {
         });
 
         return assignments;
+    },
+
+    /**
+     * 產生 Word 檔 (利用 HTML 轉換技巧)
+     */
+    generateWordDoc(sheet) {
+        const jobs = sheet.activeJobs.filter(j => !sheet.hiddenJobIds.includes(j.id));
+        const gridCols = sheet.gridCols || 6;
+        
+        let html = `
+            <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+            <head><meta charset='utf-8'><title>${sheet.name}</title>
+            <style>
+                table { border-collapse: collapse; width: 100%; border: 1px solid black; table-layout: fixed; }
+                th, td { border: 1px solid black; padding: 10px; text-align: center; vertical-align: top; word-wrap: break-word; }
+                .job-name { font-weight: bold; background-color: #f2f2f2; font-size: 14pt; }
+                .students { font-size: 12pt; }
+                h1 { text-align: center; font-family: "Microsoft JhengHei", "PMingLiU", sans-serif; }
+            </style>
+            </head>
+            <body>
+                <h1>各司其職 分配表 - ${sheet.name}</h1>
+                <table>
+        `;
+
+        // 依照網格列數分組
+        for (let i = 0; i < jobs.length; i += gridCols) {
+            const rowJobs = jobs.slice(i, i + gridCols);
+            
+            // 第一排：職稱
+            html += "<tr>";
+            rowJobs.forEach(job => {
+                html += `<td class="job-name">${job.name}</td>`;
+            });
+            // 補齊剩餘空格
+            for (let j = rowJobs.length; j < gridCols; j++) html += "<td></td>";
+            html += "</tr>";
+
+            // 第二排：分配學生
+            html += "<tr>";
+            rowJobs.forEach(job => {
+                const students = (sheet.assignments[job.id] || []).join(", ");
+                html += `<td class="students">${students}</td>`;
+            });
+            for (let j = rowJobs.length; j < gridCols; j++) html += "<td></td>";
+            html += "</tr>";
+            
+            // 空行分隔感
+            html += "<tr style='height: 15px;'><td colspan='" + gridCols + "' style='border:none;'></td></tr>";
+        }
+
+        html += `
+                </table>
+            </body>
+            </html>
+        `;
+
+        const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+        return blob;
     }
 };
 
