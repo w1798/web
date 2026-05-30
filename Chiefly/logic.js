@@ -1,51 +1,76 @@
-/**
- * Chiefly - 核心邏輯層 (Logic Layer)
- * 負責數據處理、隨機分配演算法與持久化儲存。
- */
-
 const STORAGE_KEY = 'everyone_is_leader_data';
 
-// 預設範本
-const DEFAULT_STATE = {
+// 單一工作表預設內容範本
+const DEFAULT_SHEET_CONTENT = {
     settings: {
-        jobsText: "班長, 2\n副班長: 2\n冷氣長* 3\n風紀股長\n衛生股長\n學藝股長\n體育股長\n資訊長\n環保檢查員\n圖書管理員",
+        jobsText: "班長\n副班長\n冷氣長\n風紀股長,2\n衛生股長\n學藝股長\n體育股長\n資訊長\n環保檢查員\n圖書管理員",
         studentsText: Array.from({ length: 30 }, (_, i) => (i + 1).toString().padStart(2, '0')).join('\n')
     },
-    activeJobs: [], // 解析後的職位列表 { id, name, maxQuota }
-    assignments: {} // 職位分配結果 { jobId: [studentName, ...] }
+    activeJobs: [], 
+    assignments: {},
+    hiddenJobIds: [],
+    gridCols: 6,
+    // 字體大小與模式設定
+    jobTitleSize: 1.2,
+    tagSize: 1.25,
+    assignmentTagSize: 0.85,
+    isMultiSelect: true
 };
 
 const ChieflyLogic = {
+    STORAGE_KEY,
     /**
-     * 初始化資料：讀取儲存空間或載入範本
+     * 初始化資料：支援舊版資料遷移 (Rule #7)
      */
     initState() {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (!saved) {
-            const state = { ...DEFAULT_STATE };
-            state.activeJobs = this.parseJobs(state.settings.jobsText);
-            state.assignments = state.activeJobs.reduce((acc, job) => ({ ...acc, [job.id]: [] }), {});
-            return state;
+            const firstSheet = { ...DEFAULT_SHEET_CONTENT, id: 'sheet_' + Date.now(), name: '預設工作表' };
+            firstSheet.activeJobs = this.parseJobs(firstSheet.settings.jobsText);
+            return {
+                currentSheetId: firstSheet.id,
+                sheets: [firstSheet]
+            };
         }
         
         try {
             const parsed = JSON.parse(saved);
-            // 規則 #7: 確保與預設範本合併，保持向後相容
-            const state = {
-                ...DEFAULT_STATE,
-                ...parsed,
-                settings: { ...DEFAULT_STATE.settings, ...parsed.settings }
-            };
-            // 如果 activeJobs 為空但有文字設定，則自動補上（針對首次載入優化）
-            if ((!state.activeJobs || state.activeJobs.length === 0) && state.settings.jobsText) {
-                state.activeJobs = this.parseJobs(state.settings.jobsText);
+            
+            // 判斷是否為舊版單表格式
+            if (parsed.settings && !parsed.sheets) {
+                const migratedSheet = {
+                    ...DEFAULT_SHEET_CONTENT,
+                    ...parsed,
+                    id: 'sheet_migrated',
+                    name: '舊版工作表'
+                };
+                return {
+                    currentSheetId: migratedSheet.id,
+                    sheets: [migratedSheet]
+                };
             }
+
+            // 新版多表格式
+            const state = {
+                currentSheetId: parsed.currentSheetId || '',
+                sheets: parsed.sheets || []
+            };
+
+            // 安全性檢查：確保至少有一個工作表
+            if (state.sheets.length === 0) {
+                const firstSheet = { ...DEFAULT_SHEET_CONTENT, id: 'sheet_' + Date.now(), name: '預設工作表' };
+                firstSheet.activeJobs = this.parseJobs(firstSheet.settings.jobsText);
+                state.sheets.push(firstSheet);
+                state.currentSheetId = firstSheet.id;
+            } else if (!state.currentSheetId || !state.sheets.find(s => s.id === state.currentSheetId)) {
+                state.currentSheetId = state.sheets[0].id;
+            }
+
             return state;
         } catch (e) {
             console.error("Failed to parse saved data", e);
-            const state = { ...DEFAULT_STATE };
-            state.activeJobs = this.parseJobs(state.settings.jobsText);
-            return state;
+            const firstSheet = { ...DEFAULT_SHEET_CONTENT, id: 'sheet_err_' + Date.now(), name: '修復後工作表' };
+            return { currentSheetId: firstSheet.id, sheets: [firstSheet] };
         }
     },
 
@@ -65,15 +90,86 @@ const ChieflyLogic = {
     },
 
     /**
+     * 壓縮並匯出資料 (支援 GZIP)
+     */
+    async exportData(state) {
+        const jsonString = JSON.stringify(state, null, 4); // 易閱讀縮排
+        try {
+            // 優先嘗試使用原生 CompressionStream
+            if (typeof CompressionStream !== 'undefined') {
+                const stream = new Blob([jsonString]).stream().pipeThrough(new CompressionStream('gzip'));
+                const response = new Response(stream);
+                return await response.arrayBuffer();
+            } else if (window.pako) {
+                // 退而求其次使用 pako
+                const compressed = window.pako.gzip(jsonString);
+                return compressed.buffer;
+            }
+        } catch (err) {
+            console.error("Export failed", err);
+            // 降級處理：若失敗則回傳字串的 ArrayBuffer
+            return new TextEncoder().encode(jsonString).buffer;
+        }
+    },
+
+    /**
+     * 解析匯入資料 (支援 GZIP ArrayBuffer 或 Base64)
+     */
+    async importData(input) {
+        let buffer;
+        if (typeof input === 'string') {
+            buffer = this.fromBase64(input);
+        } else {
+            buffer = input;
+        }
+
+        const uint8 = new Uint8Array(buffer);
+        const isGzip = uint8[0] === 0x1f && uint8[1] === 0x8b;
+        
+        let jsonString = "";
+        if (isGzip) {
+            if (typeof DecompressionStream !== 'undefined') {
+                const stream = new Blob([buffer]).stream().pipeThrough(new DecompressionStream('gzip'));
+                jsonString = await new Response(stream).text();
+            } else if (window.pako) {
+                jsonString = window.pako.ungzip(uint8, { to: 'string' });
+            } else {
+                throw new Error("此環境不支援 GZIP，請使用現代瀏覽器");
+            }
+        } else {
+            jsonString = new TextDecoder().decode(uint8);
+        }
+
+        try {
+            return JSON.parse(jsonString);
+        } catch (err) {
+            throw new Error("JSON 解析失敗: " + err.message);
+        }
+    },
+
+    toBase64(buffer) {
+        let binary = '';
+        const bytes = new Uint8Array(buffer);
+        for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+        return btoa(binary);
+    },
+
+    fromBase64(base64) {
+        const binary = atob(base64);
+        const len = binary.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+        return bytes.buffer;
+    },
+
+    /**
      * 解析職務文字
-     * 支援: 班長, 2 | 副班長: 2 | 冷氣長* 3
      */
     parseJobs(text) {
         return text.split('\n')
             .map(line => line.trim())
             .filter(line => line.length > 0)
             .map((line, index) => {
-                // 使用正則表達式解析名稱與數字
                 const match = line.match(/^(.+?)(?:[,:*]\s*(\d+))?$/);
                 if (match) {
                     return {
@@ -95,9 +191,6 @@ const ChieflyLogic = {
             .filter(line => line.length > 0);
     },
 
-    /**
-     * Fisher-Yates 洗牌演算法
-     */
     shuffle(array) {
         const newArr = [...array];
         for (let i = newArr.length - 1; i > 0; i--) {
@@ -108,40 +201,58 @@ const ChieflyLogic = {
     },
 
     /**
-     * 智慧隨機分配
+     * 智慧隨機分配 (支援保留現有分配)
+     * @param {Array} jobs - 職位清單
+ * @param {Array} students - 所有學生的名單
+ * @param {Object} currentAssignments - 目前已有的分配 { jobId: [studentName, ...] }
      */
-    smartAllocate(jobs, students) {
-        let shuffledStudents = this.shuffle(students);
-        let assignments = {};
-        jobs.forEach(job => assignments[job.id] = []);
-
-        // 計算總名額
-        let totalQuota = jobs.reduce((sum, job) => sum + job.maxQuota, 0);
+    smartAllocate(jobs, students, currentAssignments = {}) {
+        // 1. 找出尚未分配的學生
+        const allAssigned = Object.values(currentAssignments).flat();
+        const unassignedStudents = students.filter(s => !allAssigned.includes(s));
         
-        // 如果名額不足且學生還有多，平均增加名額 (規則需求)
-        let tempJobs = JSON.parse(JSON.stringify(jobs));
-        if (tempJobs.length === 0) return assignments; // 防錯處理
+        let shuffledUnassigned = this.shuffle(unassignedStudents);
+        let assignments = JSON.parse(JSON.stringify(currentAssignments));
+        
+        // 確保每個職位在結果中都有 key
+        jobs.forEach(job => {
+            if (!assignments[job.id]) assignments[job.id] = [];
+        });
 
-        if (totalQuota < students.length) {
-            let diff = students.length - totalQuota;
+        // 2. 計算剩餘名額
+        // 先計算總剩餘名額
+        let totalRemainingQuota = jobs.reduce((sum, job) => {
+            const assignedCount = (assignments[job.id] || []).length;
+            return sum + Math.max(0, job.maxQuota - assignedCount);
+        }, 0);
+        
+        // 3. 如果剩餘名額不足以容納未分配學生，則擴展剩餘名額
+        let tempJobs = jobs.map(job => {
+            const assignedCount = (assignments[job.id] || []).length;
+            return { ...job, remaining: Math.max(0, job.maxQuota - assignedCount) };
+        });
+
+        if (totalRemainingQuota < shuffledUnassigned.length) {
+            let diff = shuffledUnassigned.length - totalRemainingQuota;
+            // 優先擴展可見職位的名額
             for (let i = 0; i < diff; i++) {
-                tempJobs[i % tempJobs.length].maxQuota += 1;
+                tempJobs[i % tempJobs.length].remaining += 1;
             }
         }
 
-        // 建立分配池
+        // 4. 建立名額池
         let pool = [];
         tempJobs.forEach(job => {
-            for (let i = 0; i < job.maxQuota; i++) {
+            for (let i = 0; i < job.remaining; i++) {
                 pool.push(job.id);
             }
         });
 
-        // 洗牌名額池以增加隨機性
+        // 洗牌池子
         pool = this.shuffle(pool);
 
-        // 分配
-        shuffledStudents.forEach((student, index) => {
+        // 5. 分配未分配學生
+        shuffledUnassigned.forEach((student, index) => {
             if (pool[index]) {
                 assignments[pool[index]].push(student);
             }
