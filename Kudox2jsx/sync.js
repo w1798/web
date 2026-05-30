@@ -95,8 +95,8 @@ const getCloudRequest = (method = 'PUT') => {
     let headers = { 'Content-Type': 'application/json' };
     if (provider === 'firebase') {
         let baseUrl = cloudBinId.split('?')[0].replace(/\/$/,'');
-        if (!baseUrl.endsWith('.json')) baseUrl += '/classKudox_backup.json';
-        url = baseUrl + (cloudApiKey ? `?auth=${cloudApiKey}` : '');
+        if (!baseUrl.endsWith('.json')) baseUrl += '/' + cloudApiKey + '/classKudox_backup.json';
+        url = baseUrl;
     } else {
         const suffix = method === 'PUT' ? 'SET' : 'GET';
         url = `${cloudBinId.replace(/\/$/,'')}/${suffix}/classKudox_backup`;
@@ -123,8 +123,8 @@ const performCloudUpload = async () => {
             if (req.provider === 'firebase') {
                 try {
                     let baseUrl = cloudBinId.split('?')[0].replace(/\/$/,'');
-                    if (!baseUrl.endsWith('.json')) baseUrl += '/classKudox_ver.json';
-                    const verUrl = baseUrl + (cloudApiKey ? `?auth=${cloudApiKey}` : '');
+                    if (!baseUrl.endsWith('.json')) baseUrl += '/' + cloudApiKey + '/classKudox_ver.json';
+                    const verUrl = baseUrl;
                     await fetch(verUrl, { method:'PUT', body:JSON.stringify({ ver: localSyncVersion }) });
                     L(`[CloudSync] Firebase 版本節點已更新：${localSyncVersion}`);
                 } catch(verErr) {
@@ -220,8 +220,8 @@ const checkCloudSyncState = async () => {
     if (getCloudProvider() === 'firebase') {
         try {
             let baseUrl = cloudBinId.split('?')[0].replace(/\/$/,'');
-            if (!baseUrl.endsWith('.json')) baseUrl += '/classKudox_ver.json';
-            const verUrl = baseUrl + (cloudApiKey ? `?auth=${cloudApiKey}` : '');
+            if (!baseUrl.endsWith('.json')) baseUrl += '/' + cloudApiKey + '/classKudox_ver.json';
+            const verUrl = baseUrl;
             const verResp = await fetch(verUrl);
             if (verResp.ok) {
                 const text = await verResp.text();

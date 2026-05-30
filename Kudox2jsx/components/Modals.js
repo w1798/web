@@ -35,6 +35,7 @@ function Modals() {
     const cIds = awardContext.ids || [];
     const cId = cIds.length === 1 ? cIds[0] : (ctxProfileId || null);
     const hasGroupContext = !!(awardContext.groupId);
+    const groupMembers = hasGroupContext ? cIds.map(sid => students.find(s => s && s.id === sid)).filter(Boolean) : [];
 
     // UI States
     const [activeProfileTab, setActiveProfileTab] = React.useState('award');
@@ -155,6 +156,21 @@ function Modals() {
             }
         }
     }, [modals.manageGroup, editingGroupId]);
+
+    // 當編輯群組關閉後，若學生獎勵視窗仍開啟且有群組情境，更新 awardContext.ids
+    const prevManageGroup = React.useRef(modals.manageGroup);
+    React.useEffect(() => {
+        const wasOpen = prevManageGroup.current;
+        const nowOpen = modals.manageGroup;
+        if (wasOpen && !nowOpen && modals.studentProfile && hasGroupContext && awardContext.groupId) {
+            const g = (window.groups || []).find(x => x.id === awardContext.groupId);
+            if (g && g.sIds) {
+                window.awardContextIds = [...g.sIds];
+                setModal('studentProfile', true, { awardContext: { ...awardContext, ids: [...g.sIds] } });
+            }
+        }
+        prevManageGroup.current = nowOpen;
+    }, [modals.manageGroup]);
 
     // Edit Point Item State
     const [editItemCat, setEditItemCat] = React.useState(null);
@@ -459,7 +475,7 @@ function Modals() {
             </div>
 
             {/* MANAGE GROUP MODAL */}
-            <div id="manageGroupModal" className={`modal-overlay ${modals.manageGroup ? '' : 'hidden'}`}>
+            <div id="manageGroupModal" className={`modal-overlay ${modals.manageGroup ? '' : 'hidden'}`} style={{ zIndex: 2300 }}>
                 <div className="modal-content group-modal-content">
                     <div className="modal-header">
                         <h2 id="groupModalTitle">{editingGroupId ? '編輯群組' : '新增群組'}</h2>
@@ -547,12 +563,19 @@ function Modals() {
                                 >✏️</button>
                             )}
                             {hasGroupContext && (
-                                <button id="editGroupProfileBtn" className="icon-btn edit-profile-btn" title="編輯群組">✏️</button>
+                                <button id="editGroupProfileBtn" className="icon-btn edit-profile-btn" title="編輯群組" onClick={() => window.openManageGroupModal(awardContext.groupId)}>✏️</button>
                             )}
                         </h2>
                         <button className="close-modal-btn" onClick={() => close('studentProfile')}>×</button>
                     </div>
-                    <div id="groupAwardMembersPeek" className="hidden" style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem', margin: '0 1.5rem', borderBottom: '1px solid #eee' }}></div>
+                    {hasGroupContext && (
+                        <div className="group-award-members-list" style={{ display: 'flex', gap: '0.5rem', padding: '0.5rem 1.5rem', margin: '0', borderBottom: '1px solid #eee', alignItems: 'center', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '1rem', color: '#888', whiteSpace: 'nowrap', fontWeight: 500 }}>群組成員：</span>
+                            {groupMembers.map(s => (
+                                <span key={s.id} className="group-award-member-tag" style={{ fontSize: '1rem', color: '#333', background: '#e8f0fe', padding: '3px 10px', borderRadius: '5px', whiteSpace: 'nowrap', fontWeight: 500 }}>{s.id}</span>
+                            ))}
+                        </div>
+                    )}
                     
                     <div className="modal-body">
                         <div className="tabs main-tabs">
