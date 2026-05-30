@@ -96,7 +96,18 @@ async function run() {
 
         let masterData;
         try {
-            masterData = await decompressJSON(res.data.result);
+            let raw = res.data.result;
+            let base64Str = raw;
+            
+            // 嘗試解析是否為 { d: "..." } 格式
+            try {
+                const parsed = JSON.parse(raw);
+                if (parsed && parsed.d) base64Str = parsed.d;
+            } catch (e) {
+                // 不是 JSON 格式，維持原樣
+            }
+
+            masterData = await decompressJSON(base64Str);
             console.log("✅ 成功從 Upstash 取得並解壓縮權威名單。");
         } catch (e) {
             console.log("⚠️ 解壓縮失敗，嘗試以純 JSON 解析 (可能是舊格式)。");
@@ -112,7 +123,7 @@ async function run() {
         const compressedData = await compressJSON(updatedData);
         const uploadPayload = { d: compressedData };
 
-        const upstashUpdate = axios.post(`${UPSTASH_URL}/set/vercount_v1`, JSON.stringify(compressedData), {
+        const upstashUpdate = axios.post(`${UPSTASH_URL}/set/vercount_v1`, JSON.stringify(uploadPayload), {
             headers: { 
                 Authorization: `Bearer ${UPSTASH_TOKEN}`,
                 'Content-Type': 'application/json' 
