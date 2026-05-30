@@ -1,9 +1,9 @@
 var resources = {
     styles: [
-//            "style.css"
+        "style.css"
     ], 
     
     scripts: [   
-//        "script.js"
+        "script.js"
     ]
 };

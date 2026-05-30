@@ -7,119 +7,11 @@
 
 <script>
     document.documentElement.style.visibility = 'hidden';
-    const APP_VER = "1.00c";
+    const APP_VER = "1.00e";
 </script>
 
-<script src="../loader_engine.js?ver=1.00d"></script>
+<script src="../loader_engine.js?ver=1.00e"></script>
 
-    
-    <style>
-        /* 內建基本樣式設定 */
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        
-        body { 
-            font-family: "Microsoft JhengHei", "微軟正黑體", sans-serif; 
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); 
-            min-height: 100vh; 
-            font-size: 1.2rem; 
-            line-height: 1.6;
-            color: #333;
-            padding: 50px 20px;
-        }
-
-        .container { 
-            max-width: 1000px; 
-            margin: 0 auto; 
-        }
-
-        /* 標題與提醒區 */
-        header { text-align: center; margin-bottom: 40px; }
-        h1 { font-size: 2.5rem; margin-bottom: 20px; color: #2d3748; }
-        
-        .alert-box {
-            background-color: #fff5f5;
-            border-left: 8px solid #f56565;
-            padding: 25px;
-            border-radius: 0 12px 12px 0;
-            text-align: left;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            margin-bottom: 40px;
-        }
-        .alert-text { color: #c53030; font-weight: bold; font-size: 1.3rem; }
-
-        /* 卡片共用樣式 */
-        .glass-card { 
-            background: rgba(255, 255, 255, 0.9); 
-            border-radius: 24px; 
-            padding: 40px; 
-            margin-bottom: 40px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            border: 1px solid rgba(255,255,255,0.5);
-        }
-
-        .card-header { 
-            display: flex; 
-            align-items: center; 
-            border-bottom: 2px solid #edf2f7; 
-            padding-bottom: 20px; 
-            margin-bottom: 30px; 
-        }
-
-        .icon { width: 50px; height: 50px; border-radius: 12px; margin-right: 20px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.5rem; }
-        .icon-blue { background: #4299e1; }
-        .icon-red { background: #f56565; }
-        .icon-orange { background: #f6993f; }
-
-        .url-link { font-size: 2rem; font-weight: 800; text-decoration: none; color: inherit; transition: 0.3s; }
-        .url-link:hover { text-decoration: underline; opacity: 0.7; }
-        
-        .badge { font-size: 1rem; padding: 4px 12px; border-radius: 20px; margin-left: 15px; vertical-align: middle; }
-        .badge-blue { background: #ebf8ff; color: #2b6cb0; }
-        .badge-red { background: #fff5f5; color: #c53030; }
-        .badge-orange { background: #fffaf0; color: #dd6b20; }
-        .author-link {text-decoration: none;}
-        /* 步驟列表樣式 */
-        .step-row { display: flex; margin-bottom: 30px; }
-        .step-num { 
-            min-width: 45px; height: 45px; background: #4a5568; color: white; 
-            border-radius: 50%; display: flex; align-items: center; justify-content: center; 
-            font-weight: bold; margin-right: 20px; flex-shrink: 0;
-        }
-        .jsonbin-num { background: #4299e1; }
-        .upstash-num { background: #f56565; }
-        .firebase-num { background: #f6993f; }
-
-        .step-content { flex: 1; }
-        .step-title { font-size: 1.4rem; font-weight: bold; margin-bottom: 10px; color: #1a202c; }
-        
-        .sub-list { 
-            background: #f8fafc; 
-            border: 1px solid #e2e8f0; 
-            border-radius: 15px; 
-            padding: 20px 20px 20px 40px; 
-            list-style-type: disc;
-        }
-        .sub-list li { margin-bottom: 12px; }
-
-        /* 代碼區塊 */
-        code { background: #2d3748; color: #fbd38d; padding: 4px 10px; border-radius: 6px; font-family: Consolas, monospace; }
-        .code-block { 
-            background: #1a202c; color: #68d391; padding: 25px; border-radius: 15px; 
-            font-family: Consolas, monospace; margin-top: 15px; line-height: 1.8; font-size: 1.1rem;
-        }
-        .highlight-yellow { color: #f6e05e; }
-        .highlight-red { color: #fc8181; font-weight: bold; text-decoration: underline; }
-
-        footer { text-align: center; color: #718096; margin-top: 50px; padding-bottom: 30px; }
-
-        /* 手機版優化 */
-        @media (max-width: 768px) {
-            .card-header { flex-direction: column; align-items: flex-start; }
-            .icon { margin-bottom: 15px; }
-            .url-link { font-size: 1.4rem; }
-            .badge { margin-left: 0; margin-top: 10px; display: inline-block; }
-        }
-    </style>
 </head>
 <body>
 
@@ -224,29 +116,29 @@
                 <div class="step-content">
                     <p class="step-title">規則設定 與 自訂 Key ID</p>
                     <ul class="sub-list">
-                        <li>點選上方「規則」，將原有內容取代為(★請務必將 my_pwd_123 更換其他字串！)：</li>
-                        <div class="code-block" style="color: #68d391; padding: 10px 20px;">
-{
+                        <li>點選上方「規則」，將原有內容取代為 (★請務必將 <span class="highlight-red-text">YOUR_CUSTOM_KEY</span> 更換其他字串！)：</li>
+                        <div class="code-container">
+                            <pre class="code-block" id="firebase-rules">{
   "rules": {
-    "my_pwd_123": {
+    "<span class="highlight-red-text">YOUR_CUSTOM_KEY</span>": {
       ".read": true,
       ".write": true
     }
   }
-}                       </div>
+}</pre>
+                            <button class="copy-btn" onclick="copyRules()">📋 複製規則</button>
+                        </div>
                         <li>按<strong>「發布」</strong></li>
-                        <li>★ 上面的 my_pwd_123 (請不要用這個！) 即為設定所需的 Key ID</li>
+                        <li>★ 上面的 <span class="highlight-red-text">YOUR_CUSTOM_KEY</span> (<span class="highlight-red-text">請不要用這個！</span>) 即為設定所需的 Key ID</li>
                     </ul>
                 </div>
             </div>
         </section>
 
-
-
-        <footer></footer>
+        <footer>
+            <p>© 2026 Charles Nextime. All rights reserved.</p>
+        </footer>
     </div>
-
-
 
 </body>
 </html>

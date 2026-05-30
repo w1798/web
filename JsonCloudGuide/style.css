@@ -1,0 +1,163 @@
+/* 內建基本樣式設定 */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body { 
+    font-family: "Microsoft JhengHei", "微軟正黑體", sans-serif; 
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); 
+    min-height: 100vh; 
+    font-size: 1.2rem; 
+    line-height: 1.6;
+    color: #333;
+    padding: 50px 20px;
+}
+
+.container { 
+    max-width: 1000px; 
+    margin: 0 auto; 
+}
+
+/* 標題與提醒區 */
+header { text-align: center; margin-bottom: 40px; }
+h1 { font-size: 2.5rem; margin-bottom: 20px; color: #2d3748; }
+
+.alert-box {
+    background-color: #fff5f5;
+    border-left: 8px solid #f56565;
+    padding: 25px;
+    border-radius: 0 12px 12px 0;
+    text-align: left;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    margin-bottom: 40px;
+}
+.alert-text { color: #c53030; font-weight: bold; font-size: 1.3rem; }
+
+/* 卡片共用樣式 */
+.glass-card { 
+    background: rgba(255, 255, 255, 0.9); 
+    border-radius: 24px; 
+    padding: 40px; 
+    margin-bottom: 40px; 
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    border: 1px solid rgba(255,255,255,0.5);
+}
+
+.card-header { 
+    display: flex; 
+    align-items: center; 
+    border-bottom: 2px solid #edf2f7; 
+    padding-bottom: 20px; 
+    margin-bottom: 30px; 
+}
+
+.icon { width: 50px; height: 50px; border-radius: 12px; margin-right: 20px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.5rem; }
+.icon-blue { background: #4299e1; }
+.icon-red { background: #f56565; }
+.icon-orange { background: #f6993f; }
+
+.url-link { font-size: 2rem; font-weight: 800; text-decoration: none; color: inherit; transition: 0.3s; }
+.url-link:hover { text-decoration: underline; opacity: 0.7; }
+
+.badge { font-size: 1rem; padding: 4px 12px; border-radius: 20px; margin-left: 15px; vertical-align: middle; }
+.badge-blue { background: #ebf8ff; color: #2b6cb0; }
+.badge-red { background: #fff5f5; color: #c53030; }
+.badge-orange { background: #fffaf0; color: #dd6b20; }
+.author-link {text-decoration: none;}
+
+/* 步驟列表樣式 */
+.step-row { display: flex; margin-bottom: 30px; }
+.step-num { 
+    min-width: 45px; height: 45px; background: #4a5568; color: white; 
+    border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+    font-weight: bold; margin-right: 20px; flex-shrink: 0;
+}
+.jsonbin-num { background: #4299e1; }
+.upstash-num { background: #f56565; }
+.firebase-num { background: #f6993f; }
+
+.step-content { flex: 1; }
+.step-title { font-size: 1.4rem; font-weight: bold; margin-bottom: 10px; color: #1a202c; }
+
+.sub-list { 
+    background: #f8fafc; 
+    border: 1px solid #e2e8f0; 
+    border-radius: 15px; 
+    padding: 20px 20px 20px 40px; 
+    list-style-type: disc;
+}
+.sub-list li { margin-bottom: 12px; }
+
+/* 代碼區塊 */
+code { background: #2d3748; color: #fbd38d; padding: 4px 10px; border-radius: 6px; font-family: Consolas, monospace; }
+.code-block { 
+    background: #1a202c; color: #68d391; padding: 25px; border-radius: 15px; 
+    font-family: Consolas, monospace; margin-top: 15px; line-height: 1.8; font-size: 1.1rem;
+    white-space: pre-wrap;
+}
+.highlight-yellow { color: #f6e05e; }
+.highlight-red { color: #fc8181; font-weight: bold; text-decoration: underline; }
+.highlight-red-text { color: #ff4d4d; font-weight: bold; }
+
+/* 複製按鈕容器 */
+.code-container {
+    position: relative;
+    margin-top: 15px;
+}
+
+.copy-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #4a5568;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: 0.3s;
+    z-index: 10;
+}
+
+.copy-btn:hover {
+    background: #2d3748;
+}
+
+.copy-btn.copied {
+    background: #48bb78;
+}
+
+footer { text-align: center; color: #718096; margin-top: 50px; padding-bottom: 30px; }
+
+/* 回頂部按鈕 */
+#back-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 50px;
+    height: 50px;
+    background: #4a5568;
+    color: white;
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    z-index: 1000;
+    font-size: 1.5rem;
+    transition: 0.3s;
+}
+
+#back-to-top:hover {
+    background: #2d3748;
+    transform: translateY(-5px);
+}
+
+/* 手機版優化 */
+@media (max-width: 768px) {
+    .card-header { flex-direction: column; align-items: flex-start; }
+    .icon { margin-bottom: 15px; }
+    .url-link { font-size: 1.2rem; }
+    .badge { margin-left: 0; margin-top: 10px; display: inline-block; }
+    .copy-btn { padding: 5px 10px; font-size: 0.8rem; }
+}
