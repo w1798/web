@@ -2,8 +2,8 @@ const axios = require('axios');
 const zlib = require('zlib');
 const util = require('util');
 
-const JSONBIN_ID = process.env.JSONBIN_BIN_ID;
-const JSONBIN_KEY = process.env.JSONBIN_KEY;
+const FIREBASE_PROJECT = process.env.FIREBASE_PROJECT;
+const FIREBASE_KEY = process.env.FIREBASE_KEY;
 const UPSTASH_URL = process.env.UPSTASH_REST_URL;
 const UPSTASH_TOKEN = process.env.UPSTASH_REST_TOKEN;
 
@@ -107,9 +107,10 @@ async function run() {
         const updatedData = await updateDataRecord(masterData);
         console.log("✅ 數據更新處理完成。");
 
-        // 3. 同時更新回 Upstash 與 JSONBin
+        // 3. 同時更新回 Upstash 與 Firebase
         console.log("⏳ 正在壓縮資料並上傳...");
         const compressedData = await compressJSON(updatedData);
+        const uploadPayload = { d: compressedData };
 
         const upstashUpdate = axios.post(`${UPSTASH_URL}/set/vercount_v1`, JSON.stringify(compressedData), {
             headers: { 
@@ -118,17 +119,12 @@ async function run() {
             }
         });
 
-        const jsonbinUpdate = axios.put(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}`, { d: compressedData }, {
-            headers: { 
-                'Content-Type': 'application/json', 
-                'X-Access-Key': JSONBIN_KEY 
-            }
-        });
+        const firebaseUpdate = axios.put(`https://${FIREBASE_PROJECT}.firebaseio.com/${FIREBASE_KEY}/vercount_v1.json`, uploadPayload);
 
         // 使用 Promise.all 同時發送，速度更快
-        await Promise.all([upstashUpdate, jsonbinUpdate]);
+        await Promise.all([upstashUpdate, firebaseUpdate]);
 
-        console.log("🎉 所有平台同步成功！(Upstash & JSONBin)");
+        console.log("🎉 所有平台同步成功！(Upstash & Firebase)");
 
     } catch (err) {
         console.error("❌ 執行過程中發生錯誤:", err.message);
