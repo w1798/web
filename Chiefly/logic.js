@@ -15,7 +15,18 @@ const DEFAULT_SHEET_CONTENT = {
     tagSize: 1.25,
     assignmentTagSize: 0.85,
     isMultiSelect: true,
-    theme: 'theme-dark'
+    theme: 'theme-dark',
+    customColors: {
+        bgMain: '#0f172a',
+        sidebarBg: '#1e293b',
+        cardBg: '#1e293b',
+        cardHeaderBg: '#0f172a',
+        tagBg: 'rgba(255, 255, 255, 0.1)',
+        tagText: '#ffffff',
+        textMain: '#ffffff',
+        textMuted: '#e2e8f0',
+        primary: '#818cf8'
+    }
 };
 
 const ChieflyLogic = {
@@ -54,7 +65,11 @@ const ChieflyLogic = {
             // 新版多表格式
             const state = {
                 currentSheetId: parsed.currentSheetId || '',
-                sheets: parsed.sheets || []
+                sheets: (parsed.sheets || []).map(s => ({
+                    ...DEFAULT_SHEET_CONTENT,
+                    ...s,
+                    customColors: { ...DEFAULT_SHEET_CONTENT.customColors, ...(s.customColors || {}) }
+                }))
             };
 
             // 安全性檢查：確保至少有一個工作表

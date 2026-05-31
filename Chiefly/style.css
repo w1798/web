@@ -60,6 +60,20 @@
     --glass-border: rgba(255, 255, 255, 0.15);
 }
 
+/* 自訂主題 - 由 JS 動態注入變數值 */
+.app-container.theme-custom {
+    --bg-main: var(--c-bgMain);
+    --sidebar-bg: var(--c-sidebarBg);
+    --card-bg: var(--c-cardBg);
+    --card-header-bg: var(--c-cardHeaderBg);
+    --tag-bg: var(--c-tagBg);
+    --tag-text: var(--c-tagText);
+    --text-main: var(--c-textMain);
+    --text-muted: var(--c-textMuted);
+    --primary: var(--c-primary);
+    --glass-border: rgba(255, 255, 255, 0.15);
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {

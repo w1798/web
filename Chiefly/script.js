@@ -9,6 +9,7 @@ function App() {
     const [isSettingsOpen, setSettingsOpen] = useState(false);
     const [showBackToTop, setShowBackToTop] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState(null);
+    const [isCustomThemeOpen, setCustomThemeOpen] = useState(false);
 
     // 獲取當前工作表
     const currentSheet = useMemo(() => {
@@ -20,9 +21,37 @@ function App() {
             assignmentTagSize: 0.85,
             isMultiSelect: true,
             theme: 'theme-dark',
+            customColors: {
+                bgMain: '#0f172a',
+                sidebarBg: '#1e293b',
+                cardBg: '#1e293b',
+                cardHeaderBg: '#0f172a',
+                tagBg: 'rgba(255, 255, 255, 0.1)',
+                tagText: '#ffffff',
+                textMain: '#ffffff',
+                textMuted: '#e2e8f0',
+                primary: '#818cf8'
+            },
             ...sheet
         };
     }, [state.sheets, state.currentSheetId]);
+
+    // 自訂主題 CSS 變數注入
+    const customThemeStyles = useMemo(() => {
+        if (currentSheet.theme !== 'theme-custom') return {};
+        const c = currentSheet.customColors;
+        return {
+            '--c-bgMain': c.bgMain,
+            '--c-sidebarBg': c.sidebarBg,
+            '--c-cardBg': c.cardBg,
+            '--c-cardHeaderBg': c.cardHeaderBg,
+            '--c-tagBg': c.tagBg,
+            '--c-tagText': c.tagText,
+            '--c-textMain': c.textMain,
+            '--c-textMuted': c.textMuted,
+            '--c-primary': c.primary
+        };
+    }, [currentSheet.theme, currentSheet.customColors]);
 
     // 儲存狀態
     useEffect(() => {
@@ -261,11 +290,12 @@ function App() {
         { id: 'theme-dark', name: '經典深色', color: '#0f172a' },
         { id: 'theme-light', name: '舒適淺灰', color: '#e2e8f0' },
         { id: 'theme-ocean', name: '經典海洋藍', color: '#1e40af' },
-        { id: 'theme-forest', name: '清新薄荷', color: '#065f46' }
+        { id: 'theme-forest', name: '清新薄荷', color: '#065f46' },
+        { id: 'theme-custom', name: '🎨 自訂', color: 'linear-gradient(45deg, #ff0066, #44aa99)' }
     ];
 
     return (
-        <div className={`app-container ${currentSheet.theme}`}>
+        <div className={`app-container ${currentSheet.theme}`} style={customThemeStyles}>
             <aside className={`sidebar ${isSidebarOpen ? '' : 'collapsed'}`}>
                 <div className="sidebar-toggle" onClick={() => setSidebarOpen(!isSidebarOpen)}>{isSidebarOpen ? '❮' : '❯'}</div>
                 <div style={{ display: isSidebarOpen ? 'flex' : 'none', flexDirection: 'column', gap: '0.75rem', height: '100%' }}>
@@ -399,21 +429,69 @@ function App() {
 
                                 <div className="sheet-manager" style={{ margin: 0, padding: '0.6rem' }}>
                                     <h4 style={{ marginBottom: '0.6rem', fontSize: '1.2rem', color: 'var(--text-muted)' }}>🎨 介面風格</h4>
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.4rem' }}>
                                         {themes.map(t => (
                                             <button 
                                                 key={t.id} 
                                                 className={`tab-btn ${currentSheet.theme === t.id ? 'active' : ''}`}
-                                                style={{ padding: '8px 4px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', overflow: 'hidden' }}
-                                                onClick={() => updateCurrentSheet(s => ({ ...s, theme: t.id }))}
+                                                style={{ padding: '8px 2px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', overflow: 'hidden' }}
+                                                onClick={() => {
+                                                    updateCurrentSheet(s => ({ ...s, theme: t.id }));
+                                                    if (t.id === 'theme-custom') setCustomThemeOpen(true);
+                                                }}
                                             >
-                                                <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: t.color, border: '1px solid rgba(255,255,255,0.2)' }}></span>
-                                                {t.name}
+                                                <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: t.color, border: '1px solid rgba(255,255,255,0.2)', flexShrink: 0 }}></span>
+                                                {t.name === '🎨 自訂' ? '自訂' : t.name}
                                             </button>
                                         ))}
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isCustomThemeOpen && (
+                <div className="modal-overlay" style={{ zIndex: 3000 }} onClick={() => setCustomThemeOpen(false)}>
+                    <div className="modal-container" style={{ maxWidth: '500px', height: 'auto' }} onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2 style={{ fontSize: '1.4rem' }}>🎨 自訂配色方案</h2>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', padding: '0.5rem' }}>
+                            {[
+                                { l: '底層背景', k: 'bgMain' },
+                                { l: '側邊欄', k: 'sidebarBg' },
+                                { l: '職務卡底', k: 'cardBg' },
+                                { l: '標題區塊', k: 'cardHeaderBg' },
+                                { l: '標籤背景', k: 'tagBg' },
+                                { l: '標籤文字', k: 'tagText' },
+                                { l: '主要文字', k: 'textMain' },
+                                { l: '次要文字', k: 'textMuted' },
+                                { l: '品牌主色', k: 'primary' }
+                            ].map(item => (
+                                <div key={item.k} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                    <label style={{ fontSize: '0.9rem' }}>{item.l}</label>
+                                    <div style={{ display: 'flex', gap: '4px' }}>
+                                        {(() => {
+                                            const val = (currentSheet.customColors && currentSheet.customColors[item.k]) || '#888888';
+                                            return (
+                                                <input type="color" value={val.startsWith('rgba') ? '#ffffff' : val} 
+                                                    onChange={(e) => updateCurrentSheet(s => ({ ...s, customColors: { ...(s.customColors || {}), [item.k]: e.target.value } }))}
+                                                    style={{ width: '32px', height: '32px', padding: 0, border: 'none', cursor: 'pointer' }}
+                                                />
+                                            );
+                                        })()}
+                                        <input type="text" value={currentSheet.customColors ? currentSheet.customColors[item.k] : ''} 
+                                            onChange={(e) => updateCurrentSheet(s => ({ ...s, customColors: { ...(s.customColors || {}), [item.k]: e.target.value } }))}
+                                            style={{ flex: 1, fontSize: '0.8rem', padding: '4px' }}
+                                        />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+                            <button className="btn btn-primary" style={{ padding: '8px 30px' }} onClick={() => setCustomThemeOpen(false)}>儲存並關閉</button>
                         </div>
                     </div>
                 </div>
