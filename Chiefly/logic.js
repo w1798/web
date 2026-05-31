@@ -14,7 +14,8 @@ const DEFAULT_SHEET_CONTENT = {
     jobTitleSize: 1.2,
     tagSize: 1.25,
     assignmentTagSize: 0.85,
-    isMultiSelect: true
+    isMultiSelect: true,
+    theme: 'theme-dark'
 };
 
 const ChieflyLogic = {

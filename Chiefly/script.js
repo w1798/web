@@ -13,11 +13,13 @@ function App() {
     // 獲取當前工作表
     const currentSheet = useMemo(() => {
         const sheet = state.sheets.find(s => s.id === state.currentSheetId) || state.sheets[0];
+        // 確保新欄位存在
         return {
             jobTitleSize: 1.2,
             tagSize: 1.25,
             assignmentTagSize: 0.85,
             isMultiSelect: true,
+            theme: 'theme-dark',
             ...sheet
         };
     }, [state.sheets, state.currentSheetId]);
@@ -108,9 +110,7 @@ function App() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         const now = new Date();
-        const dateStr = now.getFullYear() + 
-            String(now.getMonth() + 1).padStart(2, '0') + 
-            String(now.getDate()).padStart(2, '0');
+        const dateStr = now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0');
         a.href = url;
         a.download = `各司其職_備份_${dateStr}.json.gz`;
         a.click();
@@ -189,9 +189,7 @@ function App() {
         if (hidden && !confirm("確定要隱藏此職位卡嗎？")) return;
         updateCurrentSheet(s => ({
             ...s,
-            hiddenJobIds: hidden 
-                ? [...s.hiddenJobIds, jobId]
-                : s.hiddenJobIds.filter(id => id !== jobId)
+            hiddenJobIds: hidden ? [...s.hiddenJobIds, jobId] : s.hiddenJobIds.filter(id => id !== jobId)
         }));
     };
 
@@ -219,10 +217,7 @@ function App() {
             if (targetJobAssignments.includes(studentName)) return { ...s, assignments: currentAssignments };
             return {
                 ...s,
-                assignments: {
-                    ...currentAssignments,
-                    [jobId]: [...targetJobAssignments, studentName]
-                }
+                assignments: { ...currentAssignments, [jobId]: [...targetJobAssignments, studentName] }
             };
         });
     };
@@ -236,22 +231,14 @@ function App() {
                 e.dataTransfer.setData("studentName", name);
                 e.dataTransfer.setData("fromJobId", jobId || "");
             }}
-            onClick={() => {
-                if (!jobId) setSelectedStudent(selectedStudent === name ? null : name);
-            }}
+            onClick={() => { if (!jobId) setSelectedStudent(selectedStudent === name ? null : name); }}
             style={{ 
                 fontSize: `${jobId ? currentSheet.assignmentTagSize : currentSheet.tagSize}rem`,
                 fontWeight: 'bold',
-                border: selectedStudent === name ? '2px solid var(--primary)' : '1px solid rgba(255,255,255,0.1)',
-                background: selectedStudent === name ? 'var(--primary)' : '#0f172a',
-                color: selectedStudent === name ? 'white' : '#f1f5f9',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '2px 4px',
-                minWidth: '32px',
-                minHeight: '32px',
-                borderRadius: '4px'
+                border: selectedStudent === name ? '2px solid var(--primary)' : '1px solid var(--glass-border)',
+                background: selectedStudent === name ? 'var(--primary)' : 'var(--card-bg)',
+                color: selectedStudent === name ? 'white' : 'var(--text-main)',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '2px 4px', minWidth: '32px', minHeight: '32px', borderRadius: '4px'
             }}
         >
             {name}
@@ -268,8 +255,15 @@ function App() {
         return all.filter(name => !assignedNames.has(name));
     }, [currentSheet.settings.studentsText, currentSheet.assignments, currentSheet.isMultiSelect]);
 
+    const themes = [
+        { id: 'theme-dark', name: '經典深色', color: '#0f172a' },
+        { id: 'theme-light', name: '舒適淺灰', color: '#e2e8f0' },
+        { id: 'theme-ocean', name: '經典海洋藍', color: '#1e40af' },
+        { id: 'theme-forest', name: '鼠尾草綠', color: '#4b635c' }
+    ];
+
     return (
-        <div className="app-container">
+        <div className={`app-container ${currentSheet.theme}`}>
             <aside className={`sidebar ${isSidebarOpen ? '' : 'collapsed'}`}>
                 <div className="sidebar-toggle" onClick={() => setSidebarOpen(!isSidebarOpen)}>{isSidebarOpen ? '❮' : '❯'}</div>
                 <div style={{ display: isSidebarOpen ? 'flex' : 'none', flexDirection: 'column', gap: '0.75rem', height: '100%' }}>
@@ -304,17 +298,16 @@ function App() {
                     <h1 style={{ fontSize: '1.75rem', fontWeight: 800 }}>各司其職 分配系統</h1>
                     <span style={{ color: 'var(--text-muted)', fontSize: '1.25rem', fontWeight: 600 }}>
                         正在管理：<strong style={{ color: 'var(--primary)' }}>{currentSheet.name}</strong> 
-                    {currentSheet.isMultiSelect 
-                        ? <span style={{fontSize: '0.9rem', background: '#10b981', color: 'white', padding: '2px 8px', borderRadius: '4px', marginLeft: '10px'}}>學生可兼任</span>
-                        : <span style={{fontSize: '0.9rem', background: '#ef4444', color: 'white', padding: '2px 8px', borderRadius: '4px', marginLeft: '10px'}}>學生一職一任</span>
-                    }
+                        {currentSheet.isMultiSelect 
+                            ? <span style={{fontSize: '0.9rem', background: '#10b981', color: 'white', padding: '2px 8px', borderRadius: '4px', marginLeft: '10px'}}>學生可兼任</span>
+                            : <span style={{fontSize: '0.9rem', background: '#ef4444', color: 'white', padding: '2px 8px', borderRadius: '4px', marginLeft: '10px'}}>學生一職一任</span>
+                        }
                     </span>
                 </header>
                 <div className="job-grid" style={{ gridTemplateColumns: `repeat(${currentSheet.gridCols || 6}, 1fr)` }}>
                     {currentSheet.activeJobs.filter(j => !currentSheet.hiddenJobIds.includes(j.id)).map(job => (
                         <JobCard 
-                            key={job.id} job={job} 
-                            jobTitleSize={currentSheet.jobTitleSize}
+                            key={job.id} job={job} jobTitleSize={currentSheet.jobTitleSize}
                             assignedStudents={currentSheet.assignments[job.id] || []}
                             onDrop={(n, f) => onDropToJob(job.id, n, f)}
                             onClick={() => { if (selectedStudent) { onDropToJob(job.id, selectedStudent); setSelectedStudent(null); } }}
@@ -326,14 +319,12 @@ function App() {
                 </div>
             </main>
 
-            {/* 設定視窗 Modal */}
             {isSettingsOpen && (
                 <div className="modal-overlay" onClick={() => setSettingsOpen(false)}>
                     <div className="modal-container" style={{ maxWidth: '1000px', height: 'auto', maxHeight: '98vh', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
                             <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>🛠 系統設定 - {currentSheet.name}</h2>
                             <div style={{ display: 'flex', gap: '0.5rem' }}>
-
                                 <button className="btn btn-secondary" style={{ padding: '4px 12px', fontSize: '1rem' }} onClick={handleExport}>📤 匯出</button>
                                 <button className="btn btn-secondary" style={{ padding: '4px 12px', fontSize: '1rem' }} onClick={handleImport}>📥 匯入</button>
                                 <button className="btn btn-secondary" style={{ padding: '4px 12px', fontSize: '1rem' }} onClick={handleGenerateWord}>📝 Word 檔</button>
@@ -343,44 +334,30 @@ function App() {
                         </div>
                         
                         <div style={{ display: 'flex', gap: '1.2rem', height: '520px' }}>
-                            {/* 左半部：文字區域收窄 (佔 1/2)，高度縮為 2/3 */}
                             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                                 <div style={{ flex: 0.66, display: 'flex', gap: '0.75rem' }}>
                                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                                         <label style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '0.2rem' }}>職務設定(名稱, 名額)</label>
-                                        <textarea 
-                                            style={{ flex: 1, fontSize: '1.05rem', backgroundColor: '#0f172a', padding: '0.4rem' }}
-                                            value={currentSheet.settings.jobsText}
-                                            onChange={(e) => updateCurrentSheet(s => ({ ...s, settings: { ...s.settings, jobsText: e.target.value } }))}
-                                        />
+                                        <textarea style={{ flex: 1, fontSize: '1.05rem', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--glass-border)', padding: '0.4rem' }}
+                                            value={currentSheet.settings.jobsText} onChange={(e) => updateCurrentSheet(s => ({ ...s, settings: { ...s.settings, jobsText: e.target.value } }))} />
                                     </div>
                                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                                         <label style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '0.2rem' }}>學生名單</label>
-                                        <textarea 
-                                            style={{ flex: 1, fontSize: '1.05rem', backgroundColor: '#0f172a', padding: '0.4rem' }}
-                                            value={currentSheet.settings.studentsText}
-                                            onChange={(e) => updateCurrentSheet(s => ({ ...s, settings: { ...s.settings, studentsText: e.target.value } }))}
-                                        />
+                                        <textarea style={{ flex: 1, fontSize: '1.05rem', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--glass-border)', padding: '0.4rem' }}
+                                            value={currentSheet.settings.studentsText} onChange={(e) => updateCurrentSheet(s => ({ ...s, settings: { ...s.settings, studentsText: e.target.value } }))} />
                                     </div>
                                 </div>
-                                {/* 提示區域填充下方剩餘空間 */}
                                 <div style={{ flex: 0.34, padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', fontSize: '1rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                                     <div>💡 編輯完成後請記得儲存並套用設定。職務名可加上數字定義名額給隨機分配使用(用,分開)。</div>
                                     <button className="btn btn-danger" style={{ marginTop: '1rem', fontSize: '1rem', width: 'fit-content', padding: '6px 15px' }} onClick={() => { if(confirm("確定重置整個系統？")) ChieflyLogic.resetStorage(); }}>🧹 系統重置</button>
                                 </div>
                             </div>
 
-                            {/* 右半部：管理區塊垂直壓縮 */}
                             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                                {/* 工作表管理 - 緊湊排列 */}
                                 <div className="sheet-manager" style={{ margin: 0, padding: '0.5rem' }}>
                                     <h4 style={{ marginBottom: '0.4rem', fontSize: '1.2rem', color: 'var(--text-muted)' }}>📂 工作表管理</h4>
                                     <div style={{ display: 'flex', gap: '6px' }}>
-                                        <select 
-                                            className="tab-btn" style={{ flex: 1, padding: '6px' }}
-                                            value={state.currentSheetId}
-                                            onChange={(e) => handleSwitchSheet(e.target.value)}
-                                        >
+                                        <select className="tab-btn" style={{ flex: 1, padding: '6px' }} value={state.currentSheetId} onChange={(e) => handleSwitchSheet(e.target.value)}>
                                             {state.sheets.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                         </select>
                                         <button className="btn btn-primary" style={{ padding: '0 12px', fontSize: '0.85rem' }} onClick={handleAddSheet}>+新增</button>
@@ -389,7 +366,6 @@ function App() {
                                     </div>
                                 </div>
 
-                                {/* 模式與排版 - 合併於緊湊區域 */}
                                 <div className="sheet-manager" style={{ margin: 0, padding: '0.5rem' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <h4 style={{ fontSize: '1.2rem', color: 'var(--text-muted)' }}>⚙️ 模式設定</h4>
@@ -409,16 +385,31 @@ function App() {
                                     </div>
                                 </div>
 
-                                {/* 字體大小 - 垂直整合 */}
-                                <div className="sheet-manager" style={{ margin: 0, padding: '0.6rem', flex: 1 }}>
+                                <div className="sheet-manager" style={{ margin: 0, padding: '0.6rem' }}>
                                     <h4 style={{ marginBottom: '0.6rem', fontSize: '1.2rem', color: 'var(--text-muted)' }}>🔠 字體大小 (rem)</h4>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                         {[{l:'職位標題', v:currentSheet.jobTitleSize, k:'jobTitleSize', m:0.8, x:2.5}, {l:'標籤欄位', v:currentSheet.tagSize, k:'tagSize', m:0.8, x:2.5}, {l:'職內學生', v:currentSheet.assignmentTagSize, k:'assignmentTagSize', m:0.5, x:2}].map(f => (
                                             <div key={f.k} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                                 <span style={{ fontSize: '1.2rem' }}>{f.l} ({f.v})</span>
-                                                <input type="range" min={f.m} max={f.x} step="0.05" value={f.v} style={{ width: '120px' }}
-                                                    onChange={(e) => updateCurrentSheet(s => ({ ...s, [f.k]: parseFloat(e.target.value) }))} />
+                                                <input type="range" min={f.m} max={f.x} step="0.05" value={f.v} style={{ width: '120px' }} onChange={(e) => updateCurrentSheet(s => ({ ...s, [f.k]: parseFloat(e.target.value) }))} />
                                             </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="sheet-manager" style={{ margin: 0, padding: '0.6rem' }}>
+                                    <h4 style={{ marginBottom: '0.6rem', fontSize: '1.2rem', color: 'var(--text-muted)' }}>🎨 介面風格</h4>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem' }}>
+                                        {themes.map(t => (
+                                            <button 
+                                                key={t.id} 
+                                                className={`tab-btn ${currentSheet.theme === t.id ? 'active' : ''}`}
+                                                style={{ padding: '8px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}
+                                                onClick={() => updateCurrentSheet(s => ({ ...s, theme: t.id }))}
+                                            >
+                                                <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: t.color, border: '1px solid rgba(255,255,255,0.2)' }}></span>
+                                                {t.name}
+                                            </button>
                                         ))}
                                     </div>
                                 </div>
@@ -437,7 +428,7 @@ function JobCard({ job, jobTitleSize, assignedStudents, onDrop, onClick, onRemov
     return (
         <div className={`job-card ${isDragOver ? 'dragover' : ''} ${highlight ? 'highlight-pulse' : ''}`} onClick={onClick} onDragOver={(e) => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)}
             onDrop={(e) => { e.preventDefault(); setDragOver(false); const name = e.dataTransfer.getData("studentName"); const fromId = e.dataTransfer.getData("fromJobId") || null; if (name) onDrop(name, fromId); }}
-            style={{ border: highlight ? '2px dashed var(--primary)' : '1px solid var(--glass-border)' }}>
+            style={{ border: highlight ? '2px dashed var(--primary)' : '1px solid var(--glass-border)', background: 'var(--card-bg)' }}>
             <div className="job-header">
                 <span className="job-title" style={{ fontSize: `${jobTitleSize}rem`, fontWeight: 800 }}>{job.name}</span>
                 <span className="tag-remove" style={{ fontSize: '1.2rem' }} onClick={(e) => { e.stopPropagation(); onRemove(); }}>×</span>
