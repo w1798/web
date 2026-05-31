@@ -222,31 +222,33 @@ function App() {
         });
     };
 
-    const renderStudentTag = (name, jobId = null) => (
-        <div 
-            key={`${jobId}-${name}`}
-            className="student-tag"
-            draggable
-            onDragStart={(e) => {
-                e.dataTransfer.setData("studentName", name);
-                e.dataTransfer.setData("fromJobId", jobId || "");
-            }}
-            onClick={() => { if (!jobId) setSelectedStudent(selectedStudent === name ? null : name); }}
-            style={{ 
-                fontSize: `${jobId ? currentSheet.assignmentTagSize : currentSheet.tagSize}rem`,
-                fontWeight: 'bold',
-                border: selectedStudent === name ? '2px solid var(--primary)' : '1px solid var(--glass-border)',
-                background: selectedStudent === name ? 'var(--primary)' : 'var(--card-bg)',
-                color: selectedStudent === name ? 'white' : 'var(--text-main)',
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '2px 4px', minWidth: '32px', minHeight: '32px', borderRadius: '4px'
-            }}
-        >
-            {name}
-            {jobId && (
-                <span className="tag-remove" style={{ fontSize: '0.8em', marginLeft: '2px' }} onClick={(e) => { e.stopPropagation(); removeAssignment(jobId, name); }}>×</span>
-            )}
-        </div>
-    );
+    const renderStudentTag = (name, jobId = null) => {
+        const isSelected = selectedStudent === name;
+        return (
+            <div 
+                key={`${jobId}-${name}`}
+                className={`student-tag ${isSelected ? 'selected' : ''}`}
+                draggable
+                onDragStart={(e) => {
+                    e.dataTransfer.setData("studentName", name);
+                    e.dataTransfer.setData("fromJobId", jobId || "");
+                }}
+                onClick={() => { if (!jobId) setSelectedStudent(isSelected ? null : name); }}
+                style={{ 
+                    fontSize: `${jobId ? currentSheet.assignmentTagSize : currentSheet.tagSize}rem`,
+                    fontWeight: 'bold',
+                    background: isSelected ? 'var(--primary)' : 'var(--tag-bg)',
+                    color: isSelected ? 'white' : 'var(--text-main)',
+                    border: isSelected ? '2px solid var(--primary)' : '1px solid var(--glass-border)'
+                }}
+            >
+                {name}
+                {jobId && (
+                    <span className="tag-remove" onClick={(e) => { e.stopPropagation(); removeAssignment(jobId, name); }}>×</span>
+                )}
+            </div>
+        );
+    };
 
     const libraryStudents = useMemo(() => {
         const all = ChieflyLogic.parseStudents(currentSheet.settings.studentsText);

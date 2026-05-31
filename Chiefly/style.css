@@ -6,41 +6,49 @@
     --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
 }
 
-/* 預設深色主題 - 強化字體亮度 */
+/* 預設深色主題 */
 .app-container.theme-dark {
     --bg-main: #0f172a;
     --sidebar-bg: #1e293b;
-    --card-bg: #1e293b;
-    --text-main: #ffffff; /* 純白最顯眼 */
+    --card-bg: #1e293b; 
+    --card-header-bg: #0f172a;
+    --tag-bg: rgba(255, 255, 255, 0.05);
+    --text-main: #ffffff;
     --text-muted: #cbd5e1;
     --glass-border: rgba(255, 255, 255, 0.15);
 }
 
-/* 淺色主題 - 改為更深一些的淺灰色，徹底告別刺眼白 */
+/* 淺色主題 */
 .app-container.theme-light {
-    --bg-main: #e2e8f0; /* 明確的淺灰色 */
+    --bg-main: #e2e8f0;
     --sidebar-bg: #cbd5e1;
-    --card-bg: #f8fafc;
+    --card-bg: #ffffff;
+    --card-header-bg: #f1f5f9;
+    --tag-bg: #f1f5f9;
     --text-main: #1e293b;
     --text-muted: #475569;
     --glass-border: rgba(0, 0, 0, 0.1);
 }
 
-/* 海洋藍主題 - 恢復原本明亮的藍色 */
+/* 海洋藍主題 */
 .app-container.theme-ocean {
     --bg-main: #1e40af; 
     --sidebar-bg: #1e3a8a;
-    --card-bg: #1d4ed8;
+    --card-bg: #3b82f6;
+    --card-header-bg: #1e3a8a;
+    --tag-bg: rgba(255, 255, 255, 0.1);
     --text-main: #ffffff;
     --text-muted: #bfdbfe;
     --glass-border: rgba(255, 255, 255, 0.2);
 }
 
-/* 森林綠主題 - 鼠尾草綠調校 */
+/* 森林綠主題 */
 .app-container.theme-forest {
-    --bg-main: #4b635c; /* 較顯眼的鼠尾草綠背景 */
+    --bg-main: #4b635c;
     --sidebar-bg: #32433f;
-    --card-bg: #63857b;
+    --card-bg: #839b94;
+    --card-header-bg: #32433f;
+    --tag-bg: rgba(255, 255, 255, 0.1);
     --text-main: #ffffff;
     --text-muted: #d1d8d6;
     --glass-border: rgba(255, 255, 255, 0.15);
@@ -133,33 +141,34 @@ body {
     background: var(--card-bg);
     border: 1px solid var(--glass-border);
     border-radius: 8px;
-    padding: 8px;
+    padding: 0;
     box-shadow: var(--shadow-sm);
     transition: all 0.2s ease;
     min-height: 80px;
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    overflow: hidden;
 }
 
-.job-card:hover, .job-card.dragover {
-    background: #475569;
+.job-card:hover {
     border-color: var(--primary);
-    z-index: 10;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
 }
 
 .job-card.dragover {
-    background: rgba(99, 102, 241, 0.05);
+    background: var(--card-header-bg);
+    border-color: var(--primary);
 }
 
 .job-header {
+    background: var(--card-header-bg);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 4px;
-    padding-bottom: 2px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--glass-border);
 }
 
 .job-title {
@@ -183,19 +192,25 @@ body {
 .tags-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 1px; /* 極致縮小間距 */
+    gap: 4px;
+}
+
+.job-card .tags-container {
+    padding: 8px;
+    flex: 1;
 }
 
 .student-tag {
     font-size: 0.85rem;
-    padding: 0px 2px; /* 水平內距縮小 */
-    background: #1e293b;
-    border: 1px solid rgba(255,255,255,0.1);
+    padding: 2px 6px;
+    background: var(--tag-bg);
+    border: 1px solid var(--glass-border);
     border-radius: 4px;
     display: inline-flex;
     align-items: center;
-    gap: 1px; /* 座號與×的間距縮小 */
-    color: #e2e8f0;
+    gap: 4px;
+    color: var(--text-main);
+    transition: all 0.2s;
 }
 
 .student-tag:hover {
