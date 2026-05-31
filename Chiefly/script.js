@@ -238,7 +238,7 @@ function App() {
                     fontSize: `${jobId ? currentSheet.assignmentTagSize : currentSheet.tagSize}rem`,
                     fontWeight: 'bold',
                     background: isSelected ? 'var(--primary)' : 'var(--tag-bg)',
-                    color: isSelected ? 'white' : 'var(--text-main)',
+                    color: isSelected ? 'white' : 'var(--tag-text)',
                     border: isSelected ? '2px solid var(--primary)' : '1px solid var(--glass-border)'
                 }}
             >
@@ -261,7 +261,7 @@ function App() {
         { id: 'theme-dark', name: '經典深色', color: '#0f172a' },
         { id: 'theme-light', name: '舒適淺灰', color: '#e2e8f0' },
         { id: 'theme-ocean', name: '經典海洋藍', color: '#1e40af' },
-        { id: 'theme-forest', name: '鼠尾草綠', color: '#4b635c' }
+        { id: 'theme-forest', name: '清新薄荷', color: '#065f46' }
     ];
 
     return (
@@ -296,15 +296,13 @@ function App() {
             </aside>
 
             <main className="main-content">
-                <header style={{ marginBottom: '1rem', display: 'flex', alignItems: 'baseline', gap: '1.5rem', paddingLeft: '1rem' }}>
+                <header style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '1rem', paddingLeft: '1rem' }}>
                     <h1 style={{ fontSize: '1.75rem', fontWeight: 800 }}>各司其職 分配系統</h1>
-                    <span style={{ color: 'var(--text-muted)', fontSize: '1.25rem', fontWeight: 600 }}>
-                        正在管理：<strong style={{ color: 'var(--primary)' }}>{currentSheet.name}</strong> 
-                        {currentSheet.isMultiSelect 
-                            ? <span style={{fontSize: '0.9rem', background: '#10b981', color: 'white', padding: '2px 8px', borderRadius: '4px', marginLeft: '10px'}}>學生可兼任</span>
-                            : <span style={{fontSize: '0.9rem', background: '#ef4444', color: 'white', padding: '2px 8px', borderRadius: '4px', marginLeft: '10px'}}>學生一職一任</span>
-                        }
-                    </span>
+                    <div style={{ marginLeft: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--tag-text)', background: 'var(--card-bg)', padding: '2px 10px', borderRadius: '4px', border: '1px solid var(--glass-border)' }}>正在管理</span>
+                        <span style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--primary)', marginRight: '10px' }}>{currentSheet.name}</span>
+                        <span className="badge" style={{ fontSize: '0.9rem', background: '#10b981', color: 'white' }}>{currentSheet.isMultiSelect ? '多選模式' : '單選模式'}</span>
+                    </div>
                 </header>
                 <div className="job-grid" style={{ gridTemplateColumns: `repeat(${currentSheet.gridCols || 6}, 1fr)` }}>
                     {currentSheet.activeJobs.filter(j => !currentSheet.hiddenJobIds.includes(j.id)).map(job => (
@@ -335,9 +333,9 @@ function App() {
                             </div>
                         </div>
                         
-                        <div style={{ display: 'flex', gap: '1.2rem', height: '520px' }}>
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                <div style={{ flex: 0.66, display: 'flex', gap: '0.75rem' }}>
+                        <div style={{ display: 'flex', gap: '1.2rem', flex: 1, minHeight: 0 }}>
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.75rem', minHeight: 0 }}>
+                                <div style={{ flex: 1, display: 'flex', gap: '0.75rem', minHeight: 0 }}>
                                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                                         <label style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '0.2rem' }}>職務設定(名稱, 名額)</label>
                                         <textarea style={{ flex: 1, fontSize: '1.05rem', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--glass-border)', padding: '0.4rem' }}
@@ -355,7 +353,7 @@ function App() {
                                 </div>
                             </div>
 
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.6rem', overflowY: 'auto', paddingRight: '8px' }}>
                                 <div className="sheet-manager" style={{ margin: 0, padding: '0.5rem' }}>
                                     <h4 style={{ marginBottom: '0.4rem', fontSize: '1.2rem', color: 'var(--text-muted)' }}>📂 工作表管理</h4>
                                     <div style={{ display: 'flex', gap: '6px' }}>
@@ -401,12 +399,12 @@ function App() {
 
                                 <div className="sheet-manager" style={{ margin: 0, padding: '0.6rem' }}>
                                     <h4 style={{ marginBottom: '0.6rem', fontSize: '1.2rem', color: 'var(--text-muted)' }}>🎨 介面風格</h4>
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
                                         {themes.map(t => (
                                             <button 
                                                 key={t.id} 
                                                 className={`tab-btn ${currentSheet.theme === t.id ? 'active' : ''}`}
-                                                style={{ padding: '8px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}
+                                                style={{ padding: '8px 4px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', overflow: 'hidden' }}
                                                 onClick={() => updateCurrentSheet(s => ({ ...s, theme: t.id }))}
                                             >
                                                 <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: t.color, border: '1px solid rgba(255,255,255,0.2)' }}></span>
