@@ -305,8 +305,8 @@ function App() {
                     <span style={{ color: 'var(--text-muted)', fontSize: '1.25rem', fontWeight: 600 }}>
                         正在管理：<strong style={{ color: 'var(--primary)' }}>{currentSheet.name}</strong> 
                     {currentSheet.isMultiSelect 
-                        ? <span style={{fontSize: '0.9rem', background: '#10b981', color: 'white', padding: '2px 8px', borderRadius: '4px', marginLeft: '10px'}}>多選模式</span>
-                        : <span style={{fontSize: '0.9rem', background: '#ef4444', color: 'white', padding: '2px 8px', borderRadius: '4px', marginLeft: '10px'}}>單選模式</span>
+                        ? <span style={{fontSize: '0.9rem', background: '#10b981', color: 'white', padding: '2px 8px', borderRadius: '4px', marginLeft: '10px'}}>學生可兼任</span>
+                        : <span style={{fontSize: '0.9rem', background: '#ef4444', color: 'white', padding: '2px 8px', borderRadius: '4px', marginLeft: '10px'}}>學生一職一任</span>
                     }
                     </span>
                 </header>
