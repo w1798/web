@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dojo2Kudox 資料轉換</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<script>
+    document.documentElement.style.visibility = 'hidden';
+    const APP_VER = "1.00c";
+</script>
+
+<script src="../loader_engine.js?ver=1.00d"></script>
+
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>ClassKudox搬家助手</h1>
+            <p>無痛將 ClassDojo 資料轉化為 ClassKudox 格式</p>
+        </header>
+
+        <section class="config-section">
+            <div class="input-group">
+                <label for="className">匯入班級名稱</label>
+                <input type="text" id="className" placeholder="例如：六年甲班" value="我的班級">
+            </div>
+        </section>
+
+        <section class="data-section">
+            <div class="input-card">
+                <label for="studentsData">A. 學生資料<br>請在「學生頁面」全選 -> 複製，然後在下面貼上</label>
+                <textarea id="studentsData" placeholder="請貼上學生資料... (包含姓名與點數)"></textarea>
+            </div>
+            <div class="input-card">
+                <label for="posSkillsData">B. 加分項目<br>請在「加點頁面」全選 -> 複製，然後在下面貼上</label>
+                <textarea id="posSkillsData" placeholder="請貼上加分技能資料... (包含技能名稱與 + 分)"></textarea>
+            </div>
+            <div class="input-card">
+                <label for="negSkillsData">C. 扣分項目<br>請在「扣點頁面」全選 -> 複製，然後在下面貼上</label>
+                <textarea id="negSkillsData" placeholder="請貼上待加強技能資料... (包含技能名稱與 - 分)"></textarea>
+            </div>
+        </section>
+
+        <div class="actions">
+            <button id="convertBtn" class="primary-btn">解析並轉換下載</button>
+        </div>
+        
+        <div id="statusMsg" class="status"></div>
+    </div>
+    
+    <footer></footer>
+
+</body>
+</html>

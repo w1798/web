@@ -3,54 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dojo2Kudox 資料轉換</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>班級榮譽星</title>
+    <!-- Web Icons -->
+    <link rel="icon" type="image/png" href="icon/ClassKudox.png">
+    <link rel="apple-touch-icon" href="icon/ClassKudox.png">
+    <!-- Modern Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-<script>
+    <script>
+    var APP_VER = '1.06k';
+    var APP_JSX = 'es';
+    try {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', 'version.json?t=' + Date.now(), false);
+        xhr.send();
+        if (xhr.status === 200) APP_VER = JSON.parse(xhr.responseText).ver;
+    } catch(e) {}
     document.documentElement.style.visibility = 'hidden';
-    const APP_VER = "1.00c";
-</script>
-
-<script src="../loader_engine.js?ver=1.00d"></script>
+    </script>
+    
+    <script src="../loader_engine.js?v=1.06g"></script>
 
 </head>
-<body>
-    <div class="container">
-        <header>
-            <h1>ClassKudox搬家助手</h1>
-            <p>無痛將 ClassDojo 資料轉化為 ClassKudox 格式</p>
-        </header>
+<body data-font-size="medium">
 
-        <section class="config-section">
-            <div class="input-group">
-                <label for="className">匯入班級名稱</label>
-                <input type="text" id="className" placeholder="例如：六年甲班" value="我的班級">
-            </div>
-        </section>
-
-        <section class="data-section">
-            <div class="input-card">
-                <label for="studentsData">A. 學生資料<br>請在「學生頁面」全選 -> 複製，然後在下面貼上</label>
-                <textarea id="studentsData" placeholder="請貼上學生資料... (包含姓名與點數)"></textarea>
-            </div>
-            <div class="input-card">
-                <label for="posSkillsData">B. 加分項目<br>請在「加點頁面」全選 -> 複製，然後在下面貼上</label>
-                <textarea id="posSkillsData" placeholder="請貼上加分技能資料... (包含技能名稱與 + 分)"></textarea>
-            </div>
-            <div class="input-card">
-                <label for="negSkillsData">C. 扣分項目<br>請在「扣點頁面」全選 -> 複製，然後在下面貼上</label>
-                <textarea id="negSkillsData" placeholder="請貼上待加強技能資料... (包含技能名稱與 - 分)"></textarea>
-            </div>
-        </section>
-
-        <div class="actions">
-            <button id="convertBtn" class="primary-btn">解析並轉換下載</button>
-        </div>
-        
-        <div id="statusMsg" class="status"></div>
+<!-- Loading Screen -->
+<div id="loading-screen" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#f8fafc; color:#1e293b; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; transition: opacity 0.5s ease; font-family: 'Outfit', sans-serif;">
+    <div style="width: 200px; height: 4px; background: #e2e8f0; border-radius: 10px; overflow: hidden; margin-bottom: 12px;">
+        <div id="loading-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #3b82f6, #8b5cf6); transition: width 0.3s ease;"></div>
     </div>
-    
-    <footer></footer>
+    <div style="font-size: 24px; font-weight: 800; margin-bottom: 4px;" id="loading-text">0%</div>
+    <div style="font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;" id="loading-status">系統啟動中</div>
+</div>
+
+<div id="root"></div>
+
+<footer></footer>
 
 </body>
 </html>
