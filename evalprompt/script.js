@@ -249,7 +249,7 @@ function generatePrompts() {
         lines.forEach(line => {
             const trimmed = line.trim();
             if (trimmed.endsWith("類")) {
-                currentCat = trimmed.replace("類", "");
+                currentCat = trimmed.replace("類", "類具有");
             } else if (trimmed && currentCat) {
                 traitToCatMap[trimmed] = currentCat;
             }
