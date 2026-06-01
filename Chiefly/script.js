@@ -454,44 +454,67 @@ function App() {
 
             {isCustomThemeOpen && (
                 <div className="modal-overlay" style={{ zIndex: 3000 }} onClick={() => setCustomThemeOpen(false)}>
-                    <div className="modal-container" style={{ maxWidth: '500px', height: 'auto' }} onClick={e => e.stopPropagation()}>
+                    <div className="modal-container" style={{ maxWidth: '560px', height: 'auto' }} onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h2 style={{ fontSize: '1.4rem' }}>🎨 自訂配色方案</h2>
+                            <h2 style={{ fontSize: '1.4rem' }}>🎨 自訂配色調整</h2>
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', padding: '0.5rem' }}>
+                        
+                        <div style={{ background: 'rgba(255,255,255,0.05)', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <span style={{ fontSize: '1rem', whiteSpace: 'nowrap' }}>快速複製範本：</span>
+                            <select id="presetSelect" style={{ flex: 1, padding: '6px', borderRadius: '4px', background: '#334155', color: 'white', border: '1px solid var(--glass-border)' }}>
+                                <option value="theme-dark">經典深色</option>
+                                <option value="theme-light">舒適淺灰</option>
+                                <option value="theme-ocean">經典海洋藍</option>
+                                <option value="theme-forest">清新薄荷</option>
+                            </select>
+                            <button className="btn btn-primary" style={{ padding: '6px 15px', fontSize: '0.9rem' }} onClick={() => {
+                                const presetId = document.getElementById('presetSelect').value;
+                                const presets = {
+                                    'theme-dark': { bgMain: '#0f172a', sidebarBg: '#1e293b', cardBg: '#1e293b', cardHeaderBg: '#0f172a', tagBg: 'rgba(255, 255, 255, 0.1)', tagText: '#ffffff', textMain: '#ffffff', textMuted: '#e2e8f0', primary: '#818cf8' },
+                                    'theme-light': { bgMain: '#e2e8f0', sidebarBg: '#cbd5e1', cardBg: '#ffffff', cardHeaderBg: '#f1f5f9', tagBg: '#f1f5f9', tagText: '#000000', textMain: '#1e293b', textMuted: '#475569', primary: '#6366f1' },
+                                    'theme-ocean': { bgMain: '#1e40af', sidebarBg: '#1e3a8a', cardBg: '#dbeafe', cardHeaderBg: '#1e3a8a', tagBg: '#ffffff', tagText: '#000000', textMain: '#ffffff', textMuted: '#e0f2fe', primary: '#3b82f6' },
+                                    'theme-forest': { bgMain: '#065f46', sidebarBg: '#064e3b', cardBg: '#d1fae5', cardHeaderBg: '#064e3b', tagBg: '#ffffff', tagText: '#000000', textMain: '#ffffff', textMuted: '#d1fae5', primary: '#10b981' }
+                                };
+                                updateCurrentSheet(s => ({ ...s, customColors: presets[presetId] }));
+                            }}>確定複製</button>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem 1.2rem', padding: '0.5rem' }}>
                             {[
-                                { l: '底層背景', k: 'bgMain' },
-                                { l: '側邊欄', k: 'sidebarBg' },
-                                { l: '職務卡底', k: 'cardBg' },
-                                { l: '標題區塊', k: 'cardHeaderBg' },
-                                { l: '標籤背景', k: 'tagBg' },
-                                { l: '標籤文字', k: 'tagText' },
-                                { l: '主要文字', k: 'textMain' },
-                                { l: '次要文字', k: 'textMuted' },
-                                { l: '品牌主色', k: 'primary' }
+                                { l: '主要標題(職務)文字', k: 'textMain' },
+                                { l: '學生標籤文字', k: 'tagText' },
+                                { l: '職務卡上面底色', k: 'cardHeaderBg' },
+                                { l: '職務卡下面底色', k: 'cardBg' },
+                                { l: '學生標籤背景', k: 'tagBg' },
+                                { l: '側邊欄和設定窗背景', k: 'sidebarBg' },
+                                { l: '設定欄位背景', k: 'bgMain' },
+                                { l: '品牌按鍵主色', k: 'primary' },
+                                { l: '學生標籤文字和其他文字', k: 'textMuted' }
                             ].map(item => (
-                                <div key={item.k} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                    <label style={{ fontSize: '0.9rem' }}>{item.l}</label>
-                                    <div style={{ display: 'flex', gap: '4px' }}>
+                                <div key={item.k} style={{ display: 'flex', flexDirection: 'column', gap: '4px', gridColumn: item.k === 'textMuted' ? 'span 2' : 'auto' }}>
+                                    <label style={{ fontSize: '1rem', fontWeight: 600 }}>{item.l}</label>
+                                    <div style={{ display: 'flex', gap: '6px' }}>
                                         {(() => {
                                             const val = (currentSheet.customColors && currentSheet.customColors[item.k]) || '#888888';
+                                            const isRgba = val.startsWith('rgba');
                                             return (
-                                                <input type="color" value={val.startsWith('rgba') ? '#ffffff' : val} 
+                                                <input type="color" value={isRgba ? '#ffffff' : val} 
                                                     onChange={(e) => updateCurrentSheet(s => ({ ...s, customColors: { ...(s.customColors || {}), [item.k]: e.target.value } }))}
-                                                    style={{ width: '32px', height: '32px', padding: 0, border: 'none', cursor: 'pointer' }}
+                                                    style={{ width: '36px', height: '36px', padding: 0, border: 'none', cursor: 'pointer', borderRadius: '4px' }}
                                                 />
                                             );
                                         })()}
                                         <input type="text" value={currentSheet.customColors ? currentSheet.customColors[item.k] : ''} 
                                             onChange={(e) => updateCurrentSheet(s => ({ ...s, customColors: { ...(s.customColors || {}), [item.k]: e.target.value } }))}
-                                            style={{ flex: 1, fontSize: '0.8rem', padding: '4px' }}
+                                            style={{ flex: 1, fontSize: '0.9rem', padding: '6px', borderRadius: '4px', border: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.2)', color: 'white' }}
                                         />
                                     </div>
                                 </div>
                             ))}
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-                            <button className="btn btn-primary" style={{ padding: '8px 30px' }} onClick={() => setCustomThemeOpen(false)}>儲存並關閉</button>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.2rem', gap: '10px' }}>
+                            <button className="btn btn-secondary" onClick={() => setCustomThemeOpen(false)}>取消</button>
+                            <button className="btn btn-primary" style={{ padding: '8px 35px' }} onClick={() => setCustomThemeOpen(false)}>儲存並結束</button>
                         </div>
                     </div>
                 </div>
