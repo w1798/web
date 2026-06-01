@@ -331,7 +331,7 @@ function App() {
                     <div style={{ marginLeft: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--tag-text)', background: 'var(--card-bg)', padding: '2px 10px', borderRadius: '4px', border: '1px solid var(--glass-border)' }}>正在管理</span>
                         <span style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--primary)', marginRight: '10px' }}>{currentSheet.name}</span>
-                        <span className="badge" style={{ fontSize: '0.9rem', background: '#10b981', color: 'white' }}>{currentSheet.isMultiSelect ? '多選模式' : '單選模式'}</span>
+                        <span className="badge" style={{ fontSize: '0.9rem', background: '#10b981', color: 'white' }}>{currentSheet.isMultiSelect ? '學生可兼任' : '學生一任一職'}</span>
                     </div>
                 </header>
                 <div className="job-grid" style={{ gridTemplateColumns: `repeat(${currentSheet.gridCols || 6}, 1fr)` }}>
