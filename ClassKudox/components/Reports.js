@@ -9,44 +9,73 @@ const Reports = React.memo(function Reports() {
     const [currentPage, setCurrentPage] = React.useState(1);
     const [selectedStudent, setSelectedStudent] = React.useState('');
     const [timeFilter, setTimeFilter] = React.useState('today');
+    const [customStart, setCustomStart] = React.useState('');
+    const [customEnd, setCustomEnd] = React.useState('');
     const pageSize = 50;
+    const scrollLogsToTop = () => {
+        const el = document.getElementById('reportActivityList');
+        if (el) el.scrollTop = 0;
+    };
 
     const timeRange = React.useMemo(() => {
         if (timeFilter === 'all') return null;
-        let s = new Date(), e = new Date();
-        s.setHours(0, 0, 0, 0);
-        e.setHours(23, 59, 59, 999);
-        if (timeFilter === 'today') return { start: s.getTime(), end: e.getTime() };
-        if (timeFilter === 'week') { s.setDate(s.getDate() - (s.getDay() || 7) + 1); e.setDate(s.getDate() + 6); return { start: s.getTime(), end: e.getTime() }; }
-        if (timeFilter === 'lastWeek') { s.setDate(s.getDate() - (s.getDay() || 7) + 1 - 7); e.setDate(s.getDate() + 6); return { start: s.getTime(), end: e.getTime() }; }
-        if (timeFilter === 'month') { s.setDate(1); let skip = new Date(s); skip.setMonth(skip.getMonth() + 1); skip.setDate(0); skip.setHours(23, 59, 59, 999); return { start: s.getTime(), end: skip.getTime() }; }
+        const now = new Date();
+        if (timeFilter === 'today') {
+            const s = new Date(now); s.setHours(0, 0, 0, 0);
+            const e = new Date(now); e.setHours(23, 59, 59, 999);
+            return { start: s.getTime(), end: e.getTime() };
+        }
+        if (timeFilter === 'week') {
+            const wd = now.getDay();
+            const s = new Date(now); s.setHours(0, 0, 0, 0); s.setDate(s.getDate() - wd);
+            const e = new Date(s); e.setDate(e.getDate() + 6); e.setHours(23, 59, 59, 999);
+            return { start: s.getTime(), end: e.getTime() };
+        }
+        if (timeFilter === 'lastWeek') {
+            const wd = now.getDay();
+            const s = new Date(now); s.setHours(0, 0, 0, 0); s.setDate(s.getDate() - wd - 7);
+            const e = new Date(s); e.setDate(e.getDate() + 6); e.setHours(23, 59, 59, 999);
+            return { start: s.getTime(), end: e.getTime() };
+        }
+        if (timeFilter === 'month') {
+            const s = new Date(now); s.setHours(0, 0, 0, 0); s.setDate(1);
+            let skip = new Date(s); skip.setMonth(skip.getMonth() + 1); skip.setDate(0); skip.setHours(23, 59, 59, 999);
+            return { start: s.getTime(), end: skip.getTime() };
+        }
         if (timeFilter === 'custom') {
-            const sval = document.getElementById('startDateFilter')?.value;
-            const evalStr = document.getElementById('endDateFilter')?.value;
-            if (sval && evalStr) {
-                let sd = new Date(sval); sd.setHours(0, 0, 0, 0);
-                let ed = new Date(evalStr); ed.setHours(23, 59, 59, 999);
+            if (customStart && customEnd) {
+                let sd = new Date(customStart); sd.setHours(0, 0, 0, 0);
+                let ed = new Date(customEnd); ed.setHours(23, 59, 59, 999);
                 return { start: sd.getTime(), end: ed.getTime() };
             }
         }
         return null;
-    }, [timeFilter]);
+    }, [timeFilter, customStart, customEnd]);
 
     const filteredLogs = React.useMemo(() => {
         return logs.filter(l => {
-            if (selectedStudent && l.sID !== selectedStudent) return false;
             const ts = (typeof l.TS === 'number') ? l.TS : (window.StampTool ? window.StampTool.decode(l.TS)?.getTime() : 0);
             if (timeRange && (ts < timeRange.start || ts > timeRange.end)) return false;
             return true;
         });
-    }, [logs, selectedStudent, timeRange]);
+    }, [logs, timeRange]);
+
+    const studentFilteredLogs = React.useMemo(() => {
+        if (!selectedStudent) return filteredLogs;
+        return filteredLogs.filter(l => l.sID === selectedStudent);
+    }, [filteredLogs, selectedStudent]);
 
     const pointsData = React.useMemo(() => {
         if (reportView === 'treasure') {
             if (!treasureDefs.length) return [];
             let data = students.map(s => {
-                const totalTr = treasureDefs.reduce((sum, td) => sum + ((s.tr && s.tr[td.id]) || 0), 0);
-                return { ...s, reportValue: totalTr };
+                const trValues = {};
+                let totalTr = 0;
+                filteredLogs.filter(l => l.sID === s.id && l.trId).forEach(l => {
+                    trValues[l.trId] = (trValues[l.trId] || 0) + (l.trQty || 0);
+                    totalTr += l.trQty || 0;
+                });
+                return { ...s, reportValue: totalTr, trValues };
             });
             if (sortBy === 'name') data.sort((a, b) => a.id.localeCompare(b.id, 'zh-TW'));
             else data.sort((a, b) => b.reportValue - a.reportValue);
@@ -62,9 +91,13 @@ const Reports = React.memo(function Reports() {
     }, [students, filteredLogs, reportView, sortBy, treasureDefs]);
 
     const pagedActivityLogs = React.useMemo(() => {
-        const f = filteredLogs.map((log, index) => ({ log, index }))
+        const viewFiltered = reportView === 'treasure'
+            ? studentFilteredLogs.filter(l => l.trId)
+            : studentFilteredLogs;
+        const f = viewFiltered.map((log, index) => ({ log, index }))
             .sort((a, b) => {
-                const tsDiff = (typeof b.log.TS === 'number' ? b.log.TS : 0) - (typeof a.log.TS === 'number' ? a.log.TS : 0);
+                const getTSCode = (log) => window.getTS ? window.getTS(log.TS) : 0;
+                const tsDiff = getTSCode(b.log) - getTSCode(a.log);
                 if (tsDiff !== 0) return tsDiff;
                 return b.index - a.index;
             })
@@ -73,7 +106,7 @@ const Reports = React.memo(function Reports() {
         const pg = Math.min(currentPage, totalPages);
         const start = (pg - 1) * pageSize;
         return { logs: f.slice(start, start + pageSize), totalPages, page: pg };
-    }, [filteredLogs, currentPage]);
+    }, [studentFilteredLogs, currentPage, reportView]);
 
     const handleStudentClick = (sid) => {
         setSelectedStudent(sid);
@@ -112,27 +145,50 @@ const Reports = React.memo(function Reports() {
             setSortBy('score');
             setCurrentPage(1);
             setSelectedStudent('');
+            setCustomStart('');
+            setCustomEnd('');
             const filter = document.getElementById('timeRangeFilter');
             if (filter) filter.value = 'today';
             const layout = document.querySelector('.reports-body-layout');
             if (layout) { layout.classList.remove('mobile-show-left'); layout.classList.add('mobile-show-right'); }
+            scrollLogsToTop();
         }
     }, [modals.reports]);
 
-    // 切換到「自訂日期」時自動填入結束日期
+    // 切換到「自訂日期」時填入預設值（僅首次）並同步 state
     React.useEffect(() => {
         if (timeFilter === 'custom') {
+            const sD = document.getElementById('startDateFilter');
             const eD = document.getElementById('endDateFilter');
-            if (eD && !eD.value) eD.value = new Date().toISOString().slice(0, 10);
+            if (sD) {
+                if (!sD.value) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - 8);
+                    sD.value = d.toISOString().slice(0, 10);
+                }
+                setCustomStart(sD.value);
+            }
+            if (eD) {
+                if (!eD.value) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - 1);
+                    eD.value = d.toISOString().slice(0, 10);
+                }
+                setCustomEnd(eD.value);
+            }
         }
     }, [timeFilter]);
 
+    React.useEffect(() => {
+        scrollLogsToTop();
+    }, [currentPage]);
+
     // Pie chart
     const pieData = React.useMemo(() => {
-        if (!filteredLogs.length) return null;
+        if (!studentFilteredLogs.length) return null;
         const stats = {};
         let total = 0;
-        filteredLogs.forEach(l => { stats[l.lb] = (stats[l.lb] || 0) + 1; total++; });
+        studentFilteredLogs.forEach(l => { stats[l.lb] = (stats[l.lb] || 0) + 1; total++; });
         const labels = Object.keys(stats).sort((a, b) => stats[b] - stats[a]);
         const colors = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#8b5cf6'];
         let cum = 0;
@@ -144,7 +200,7 @@ const Reports = React.memo(function Reports() {
             return { label: l, count: stats[l], color: c, percent: p };
         });
         return parts;
-    }, [filteredLogs]);
+    }, [studentFilteredLogs]);
 
     const activeLabel = selectedStudent || '全班';
 
@@ -203,7 +259,7 @@ const Reports = React.memo(function Reports() {
                                         {reportView === 'treasure' ? (
                                             <div className="report-item-right" style={{ fontSize: '0.9em' }}>
                                                 {[...treasureDefs].sort(window.sortItems).map(td => {
-                                                    const qty = (s.tr && s.tr[td.id]) || 0;
+                                                    const qty = (s.trValues && s.trValues[td.id]) || 0;
                                                     return qty !== 0 ? `${td.ic}${qty} ` : '';
                                                 }).filter(Boolean).join('') || <span style={{ color: 'var(--text-secondary)', fontSize: '0.85em' }}>無寶物</span>}
                                             </div>
@@ -221,7 +277,7 @@ const Reports = React.memo(function Reports() {
                             <div id="reportFilters" className="report-filters-inline">
                                 <div className="input-group">
                                     <label>時間範圍</label>
-                                    <select id="timeRangeFilter" className="filter-select" value={timeFilter} onChange={e => { setTimeFilter(e.target.value); setCurrentPage(1); }}>
+                                    <select id="timeRangeFilter" className="filter-select" value={timeFilter} onChange={e => { setTimeFilter(e.target.value); setCurrentPage(1); scrollLogsToTop(); }}>
                                         <option value="all">系統總點數 (所有紀錄)</option>
                                         <option value="today">今天</option>
                                         <option value="week">本週</option>
@@ -231,9 +287,9 @@ const Reports = React.memo(function Reports() {
                                     </select>
                                 </div>
                                 <div id="customDateContainer" className={`custom-date-container ${timeFilter === 'custom' ? '' : 'hidden'}`} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexWrap: 'wrap' }}>
-                                    <input type="date" id="startDateFilter" onChange={() => setCurrentPage(1)} />
+                                    <input type="date" id="startDateFilter" onChange={e => { setCustomStart(e.target.value); setCurrentPage(1); }} />
                                     <span>至</span>
-                                    <input type="date" id="endDateFilter" onChange={() => setCurrentPage(1)} />
+                                    <input type="date" id="endDateFilter" onChange={e => { setCustomEnd(e.target.value); setCurrentPage(1); }} />
                                 </div>
                                 <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
                                     <button id="resetReportFilterBtnAside" className={`small-btn secondary-btn ${!selectedStudent ? 'hidden' : ''}`} onClick={resetFilter}>全班</button>

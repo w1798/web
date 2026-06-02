@@ -55,6 +55,7 @@ const awardTreasure = (treasureId, qty, silent = false) => {
         pushOp(ACT.STU_AWD, { s: sid, lb: logLabel, p: 0, l: logId, is: 1, ti: treasureId, tq: qty });
     });
     saveData();
+    if(isMultiSelectMode && typeof toggleMultiSelectMode === 'function') toggleMultiSelectMode();
     if (!silent) {
         if (window.refreshProxy) window.refreshProxy();
         if (typeof createPointAnimation === 'function') createPointAnimation(qty, awardContextIds.length);

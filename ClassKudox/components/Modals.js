@@ -57,10 +57,7 @@ function Modals() {
         setTimeout(() => { awardingRef.current = false; }, 500);
     };
     const doAwardTreasure = (tid, qty, silent) => {
-        if (awardingRef.current) return [];
-        awardingRef.current = true;
         const result = awardTreasure(tid, qty, silent);
-        setTimeout(() => { awardingRef.current = false; }, 500);
         return result;
     };
     const getAvatar = (sid, style) => window.getAvatarUrl ? window.getAvatarUrl(sid, style) : '';
@@ -215,7 +212,7 @@ function Modals() {
             const style = document.getElementById('editStudentAvatarStyle')?.value || 'fe';
             setAvatarPickerStyle(style);
             const seeds = [];
-            for (let i = 0; i < 30; i++) seeds.push('s' + i);
+            for (let i = 0; i < 90; i++) seeds.push('s' + i);
             setAvatarPickerSeeds(seeds);
         }
     }, [modals.avatarPicker]);
