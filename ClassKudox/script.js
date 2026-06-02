@@ -23,6 +23,7 @@ function App() {
 const startApp = () => {
     if (window.isAppStarted) return;
     window.isAppStarted = true;
+    console.log(`%c ClassKudox v${APP_VER} `, 'background:#222;color:#0f0;font-weight:bold;font-size:14px;padding:2px 6px;border-radius:3px;');
 
     try {
         const rootEl = document.getElementById('root');
