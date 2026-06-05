@@ -612,7 +612,13 @@ const startApp = () => {
             a.download = `ClassKudox_${dateStr}.json.gz`; 
             a.click(); 
         });
-        wire('importJsonBtn', () => document.getElementById('importJsonFile')?.click());
+        wire('importJsonBtn', () => {
+            if (window.autoSyncInterval > 0) {
+                alert('要匯入資料，請先到「雲端同步」將「異動同步頻率」改為「無」，匯入後，再按「上傳至雲端」更新雲端的資料，最後才更動「異動同步頻率」的時間。');
+                return;
+            }
+            document.getElementById('importJsonFile')?.click();
+        });
         const iFile = document.getElementById('importJsonFile'); 
         if(iFile) {
             iFile.onchange = (e) => { 

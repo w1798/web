@@ -370,7 +370,7 @@ function Settings() {
                                         <option value="60">1 分鐘一次</option>
                                     </select>
                                 </div>
-                                <div className="small-text" style={{ marginTop: '0.4rem', color: '#ef4444', fontWeight: 500 }}>如有設定同步時間，會「優先從雲端下載覆蓋本地的資料」，然後補做已更動的加扣點！</div>
+                                <div className="small-text" style={{ marginTop: '0.4rem', color: '#ef4444', fontWeight: 500 }}>匯入資料後，請先按「上傳到雲端」。如有設定同步時間，會「優先從雲端下載覆蓋本地的資料」，然後補做已更動的加扣點！</div>
                             </div>
 
                             <div className="input-group">
