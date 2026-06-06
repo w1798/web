@@ -82,8 +82,8 @@ main { padding: 15px; max-width: 1600px; margin: auto; }
     font-weight: 500;
 }
 .student-card.selected {
-//    background: var(--accent-color);
-background: color-mix(in srgb, var(--accent-color), transparent 50%);
+    /* background: var(--accent-color); */
+    background: color-mix(in srgb, var(--accent-color), transparent 50%);
     color: white !important;
     font-weight: bold;
     transform: scale(1.05);
@@ -375,7 +375,8 @@ select, input { font-size: 1rem; padding: 5px; border-radius: 6px; border: 1px s
     cursor: move;
 }
 
-.v-cat-title { font-weight: bold; }
+.v-cat-title { font-weight: bold; cursor: pointer; transition: opacity 0.2s; }
+.v-cat-title:hover { opacity: 0.8; text-decoration: underline; }
 
 /* 特質清單區 - 獨立滾動 */
 .v-item-list {
@@ -396,7 +397,17 @@ select, input { font-size: 1rem; padding: 5px; border-radius: 6px; border: 1px s
     border: 1px solid #e2e8f0;
     border-radius: 6px;
     font-size: 0.95rem;
-    cursor: move;
+}
+
+.v-trait-item span:first-child {
+    cursor: pointer;
+    flex: 1;
+    transition: color 0.2s;
+}
+
+.v-trait-item span:first-child:hover {
+    color: var(--accent-color);
+    text-decoration: underline;
 }
 
 .v-trait-item:hover { border-color: var(--accent-color); }
