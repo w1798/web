@@ -86,7 +86,7 @@ function Settings() {
         <div id="settingsModal" className={`modal-overlay ${modals.settings ? '' : 'hidden'}`}>
             <div className="modal-content settings-modal-content">
                 <div className="modal-header">
-                    <h2>⚙️ 系統設定</h2>
+                    <h2>⚙️ 系統設定 <span style={{ fontSize: '0.6em', fontWeight: 400, color: '#888', marginLeft: '0.5rem' }}>{APP_VER}</span></h2>
                     <button className="close-modal-btn" onClick={close}>&times;</button>
                 </div>
                 <div className="modal-body settings-body" style={{ display: 'flex', flexDirection: 'column', gap: 0, overflow: 'hidden' }}>
