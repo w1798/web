@@ -20,12 +20,12 @@ function StudentGrid() {
     if (students.length === 0) {
         return (
             <main className="student-grid" id="studentGrid">
-                <div style={{ textAlign: 'center', width: '100%', gridColumn: '1 / -1', padding: '30px', color: '#64748b' }}>
-                    <p style={{ marginBottom: '15px' }}>目前沒有學生資料。</p>
-                    <button className="primary-btn" onClick={() => setModal('addStudent', true)}>新增學生</button>
-                    或
-                    <button className="primary-btn" onClick={() => document.getElementById('importJsonFile')?.click()} style={{ marginLeft: '10px', background: 'var(--secondary)' }}>
-                        匯入 JSON / GZ
+                <div style={{ textAlign: 'center', width: '100%', gridColumn: '1 / -1', padding: '30px', color: '#64748b', fontSize: '1.2rem' }}>
+                    <p style={{ marginBottom: '15px', fontSize: '1.1rem' }}>目前沒有學生資料。</p>
+                    <button className="primary-btn" style={{ fontSize: '1.2rem' }} onClick={() => setModal('addStudent', true)}>新增學生</button> 
+                    {' 或 '}
+                    <button className="primary-btn" style={{ fontSize: '1.2rem' }} onClick={() => document.getElementById('importJsonFile')?.click()}>
+                        匯入 Json.gz
                     </button>
                 </div>
             </main>
