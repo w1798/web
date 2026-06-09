@@ -460,7 +460,7 @@ const startApp = () => {
             renderStudents(); renderPointItems(); renderClassSelector(); nInp.value = ''; closeModal(document.getElementById('manageClassesModal'));
         });
         
-        wire('syncStatus', () => performCloudUpload(true));
+        wire('syncStatus', () => checkCloudSyncState());
         wire('cloudUploadBtn', () => { if(confirm('會以上傳的本地資料覆蓋雲端，確定？')) performCloudUpload(true); });
         wire('cloudDownloadBtn', () => { if(confirm('會覆蓋本地資料，確定？')) performCloudDownload(true); });
         
