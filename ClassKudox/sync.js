@@ -2,6 +2,17 @@
  * ClassKudox - Cloud Synchronization Logic
  */
 
+const _upstashResp = async (cmdArr) => {
+    const baseUrl = cloudBinId.replace(/\/$/,'');
+    const resp = await fetch(baseUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${cloudApiKey}` },
+        body: JSON.stringify(cmdArr)
+    });
+    try { const j = await resp.json(); return j; }
+    catch(e) { return { error: 'parse_failed', status: resp.status }; }
+};
+
 const pushOp = (action, data, isGlobal = false) => {
     const o = { t: StampTool.encode(), a: action, d: data };
     if (isGlobal) {
@@ -105,45 +116,147 @@ const getCloudRequest = (method = 'PUT') => {
     return { url, headers, provider };
 };
 const performCloudUpload = async (manual = false) => {
-    if (!cloudBinId || !cloudApiKey) return;
-    if (typeof updateSyncStatus === 'function') updateSyncStatus(); 
+    if (!cloudBinId || !cloudApiKey) return false;
+    if (typeof updateSyncStatus === 'function') updateSyncStatus();
+
+    const provider = getCloudProvider();
+    if (!provider) return false;
+
+    // === CAS Phase 1: 讀取雲端版本 ===
+    let cloudVer = null, etag = null, backupEtag = null;
+    if (provider === 'firebase') {
+        let baseUrl = cloudBinId.split('?')[0].replace(/\/$/,'');
+        if (!baseUrl.endsWith('.json')) baseUrl += '/' + cloudApiKey;
+        const backupUrl = baseUrl + '/classKudox_backup.json';
+        const verUrl = baseUrl + '/classKudox_ver.json';
+        try {
+            const [backupResp, verResp] = await Promise.all([
+                fetch(backupUrl, { headers: { 'X-Firebase-ETag': 'true' } }),
+                fetch(verUrl, { headers: { 'X-Firebase-ETag': 'true' } })
+            ]);
+            if (backupResp.ok) backupEtag = backupResp.headers.get('ETag');
+            if (verResp.ok) { etag = verResp.headers.get('ETag'); const d = await verResp.json(); cloudVer = d?.ver || null; }
+        } catch(e) {}
+    } else if (provider === 'upstash') {
+        try {
+            const gr = getCloudRequest('GET');
+            if (gr) {
+                const resp = await fetch(gr.url, { headers: gr.headers });
+                if (resp.ok) {
+                    const r = await resp.json();
+                    // URL path GET 回傳原始 JSON 字串，需解析
+                    const p = (r.result && typeof r.result === 'object') ? r.result : (r.result ? JSON.parse(r.result) : {});
+                    cloudVer = p.ver || null;
+                }
+            }
+        } catch(e) {}
+    }
+
+    if (cloudVer && cloudVer !== localSyncVersion) {
+        L(`[CloudSync CAS] 衝突: 雲端 v${cloudVer} ≠ 本地 v${localSyncVersion}，拒絕上傳`);
+        setDirty(2);
+        if (manual) alert('上傳衝突：雲端資料已被更新，請稍後再試');
+        return false;
+    }
+
     try {
-        const req = getCloudRequest('PUT');
-        if (!req) throw new Error('不支援的雲端服務');
         const newVer = StampTool.encode();
         const oldVer = localSyncVersion;
         localSyncVersion = newVer;
-        L(`[CloudSync連線] 準備同步上傳新版本: ${newVer}，本地舊版本: ${oldVer}`);
+        L(`[CloudSync連線] CAS 準備上傳 v${oldVer}→v${newVer} (${provider})`);
         const toPush = getFullBackupData(false);
         const compressed = await compressJSON(toPush);
-        const resp = await fetch(req.url, { method:'PUT', headers:req.headers, body:JSON.stringify({ d: compressed }) });
-        if (resp.ok) { 
-            L(`[CloudSync] 同步成功，最新版本：${localSyncVersion}`);
-            // Firebase 額外上傳版本節點，供下次快速比對
-            if (req.provider === 'firebase') {
-                try {
-                    let baseUrl = cloudBinId.split('?')[0].replace(/\/$/,'');
-                    if (!baseUrl.endsWith('.json')) baseUrl += '/' + cloudApiKey + '/classKudox_ver.json';
-                    const verUrl = baseUrl;
-                    await fetch(verUrl, { method:'PUT', body:JSON.stringify({ ver: localSyncVersion }) });
-                    L(`[CloudSync] Firebase 版本節點已更新：${localSyncVersion}`);
-                } catch(verErr) {
-                    LE('[CloudSync] 版本節點寫入失敗（不影響主備份）:', verErr);
-                }
+
+        if (provider === 'firebase') {
+            const req = getCloudRequest('PUT');
+            if (!req) throw new Error('不支援的雲端服務');
+
+            let baseUrl = cloudBinId.split('?')[0].replace(/\/$/,'');
+            if (!baseUrl.endsWith('.json')) baseUrl += '/' + cloudApiKey;
+            const verUrl = baseUrl + '/classKudox_ver.json';
+
+            // Step 1: 寫入備份資料 (If-Match 條件寫入，防止 backup 被汙染)
+            const backupHeaders = { 'Content-Type': 'application/json' };
+            if (backupEtag) backupHeaders['If-Match'] = backupEtag;
+            const backResp = await fetch(req.url, {
+                method: 'PUT',
+                headers: backupHeaders,
+                body: JSON.stringify({ d: compressed })
+            });
+            if (!backResp.ok) {
+                L(`[CloudSync] ⚠️ backup 衝突 (狀態 ${backResp.status}) — 雲端備份已被其他裝置更新`);
+                localSyncVersion = oldVer;
+                setDirty(2);
+                if (manual) alert('上傳衝突：備份資料已被其他裝置修改');
+                return false;
             }
+
+            // Step 2: CAS 寫入版本節點 (If-Match)
+            const verHeaders = { 'Content-Type': 'application/json' };
+            if (etag) verHeaders['If-Match'] = etag;
+            const casResp = await fetch(verUrl, {
+                method: 'PUT',
+                headers: verHeaders,
+                body: JSON.stringify({ ver: newVer })
+            });
+
+            if (!casResp.ok) {
+                L(`[CloudSync] ⚠️ CAS 衝突 (Firebase ver 狀態 ${casResp.status})`);
+                localSyncVersion = oldVer;
+                setDirty(2);
+                if (manual) alert('上傳衝突：雲端資料已被更新，請稍後再試');
+                return false;
+            }
+
+            L(`[CloudSync] ✅ 同步成功 v${localSyncVersion}`);
             localStorage.setItem('sVer', localSyncVersion);
-            saveData(true); 
-            setDirty(3);
+            saveData(true); setDirty(3);
             if (manual) alert('已成功上傳至雲端');
+            return true;
         } else {
-            L(`[CloudSync] 同步上傳失敗，保留本地 Ops 等待重試。`);
-            localSyncVersion = oldVer;
-            throw new Error('雲端寫入失敗');
+            // Upstash: Lock + 原子寫入 (SET NX 鎖 + 單 key 含 ver)
+            const lockId = Math.random().toString(36).slice(2) + Date.now().toString(36);
+            let lockHeld = false;
+
+            try {
+                const lk = await _upstashResp(['SET', 'classKudox_lock', lockId, 'NX', 'EX', '10']);
+                if (lk.result !== 'OK') {
+                    L('[CloudSync] ⚠️ 鎖競爭，稍後重試');
+                    localSyncVersion = oldVer;
+                    setDirty(2);
+                    if (manual) alert('上傳衝突：其他裝置正在同步，請稍後再試');
+                    return false;
+                }
+                lockHeld = true;
+
+                // 二次確認版本（鎖內重讀）
+                const re = await _upstashResp(['GET', 'classKudox_backup']);
+                const reParsed = (re.result && typeof re.result === 'object') ? re.result : (re.result ? JSON.parse(re.result) : {});
+                if (reParsed.ver && reParsed.ver !== cloudVer) {
+                    L(`[CloudSync] ⚠️ CAS 衝突 (cloud=${reParsed.ver}, expected=${cloudVer})`);
+                    localSyncVersion = oldVer; setDirty(2);
+                    if (manual) alert('上傳衝突：雲端資料已被更新，請稍後再試');
+                    return false;
+                }
+
+                const wd = await _upstashResp(['SET', 'classKudox_backup', JSON.stringify({ d: compressed, ver: newVer })]);
+                if (wd.result !== 'OK') throw new Error('Upstash 寫入失敗');
+
+                L(`[CloudSync] ✅ CAS 同步成功 v${localSyncVersion}`);
+                localStorage.setItem('sVer', localSyncVersion);
+                saveData(true); setDirty(3);
+                if (manual) alert('已成功上傳至雲端');
+                return true;
+
+            } finally {
+                if (lockHeld) await _upstashResp(['DEL', 'classKudox_lock']);
+            }
         }
     } catch(e) {
         LE('[CloudSync] 上傳錯誤:', e);
         setDirty(2);
         if (manual) alert('上傳失敗: ' + e.message);
+        return false;
     }
 };
 
@@ -210,14 +323,20 @@ const parseCloudData = async (raw) => {
     return data;
 };
 
+let _syncDepth = 0;
+
 const checkCloudSyncState = async () => {
     if (isSyncing || !cloudBinId || !cloudApiKey) return;
+    _syncDepth++;
+    if (_syncDepth > 2) { _syncDepth--; return; }
+    try {
     const hadChanges = (isDirty === 1);
     isSyncing = true; setDirty(4); 
 
     let cloudVer = '000000000000';
     let cloudData = null;
     let skipDownload = false;
+    let verNodeValue = null;
 
     L(`[CloudSync連線] Step 1 開始預檢及下載雲端版本...`);
 
@@ -234,6 +353,7 @@ const checkCloudSyncState = async () => {
                 L(`[CloudSync] Firebase _ver 回應大小: ${verSize} bytes`);
                 const verData = text && text !== 'null' ? JSON.parse(text) : null;
                 if (verData && verData.ver) {
+                    verNodeValue = verData.ver;
                     L(`[CloudSync] Firebase 版本節點: ${verData.ver}`);
                     if (verData.ver === localSyncVersion) {
                         if (!hadChanges && ops.length === 0 && sysOps.length === 0) {
@@ -285,6 +405,11 @@ const checkCloudSyncState = async () => {
                 }
 
                 cloudVer = cloudData ? (cloudData.sVer || '000000000000') : '000000000000';
+                if (verNodeValue && cloudVer !== verNodeValue) {
+                    L(`[CloudSync] ⚠️ backup sVer (${cloudVer}) ≠ ver node (${verNodeValue})，信任 ver node`);
+                    cloudVer = verNodeValue;
+                    if (cloudData) cloudData.sVer = cloudVer;
+                }
                 L(`[CloudSync] Step 2b 取得雲端版本: ${cloudVer}`);
             } else throw new Error('預檢連線失敗');
         } catch (e) { 
@@ -353,13 +478,17 @@ const checkCloudSyncState = async () => {
         }
 
         const oldClassId = currentClassId;
-        const oldOps = [...ops]; 
+        const oldOps = [...ops];
+        const oldSysOps = [...sysOps];
         
         restoreFromBackup(cloudData, false);
-        localSyncVersion = cloudVer; 
+        localSyncVersion = cloudVer;
+
+        L(`[CloudSync] Merge restore 完成: cloudVer=${cloudVer}, oldOps=${oldOps.length}筆`);
+        ops = oldOps;
+        sysOps = oldSysOps;
 
         if (currentClassId === oldClassId) {
-            ops = oldOps;
             if (sysOps.length > 0 || ops.length > 0) {
                 sysOps.forEach(o => {
                     if (o.a === ACT.CLS_REN) { const c = classes.find(x => x.id === o.d.old); if (c) c.id = o.d.new; }
@@ -428,25 +557,28 @@ const checkCloudSyncState = async () => {
             } else {
                 localStorage.setItem(`CD_${currentClassId}_Ops`, '[]');
             }
-        } else if (oldOps.length > 0) {
-            localStorage.setItem(`CD_${oldClassId}_Ops`, JSON.stringify(oldOps));
+        } else {
+            L(`[CloudSync] ⚠️ cCId 從 ${oldClassId} 變為 ${currentClassId}，跳過 Ops 套用`);
+            if (oldOps.length > 0) {
+                localStorage.setItem(`CD_${oldClassId}_Ops`, JSON.stringify(oldOps));
+            }
         }
 
         if (modified) {
-            await performCloudUpload();
+            if (!await performCloudUpload()) { isSyncing = false; await checkCloudSyncState(); return; }
         } else {
             if (isDirty === 4) setDirty(3); 
         }
     } else if (hadChanges || vComp > 0 || sysOps.length > 0) {
         L(`[CloudSync] Step 4 版本相同，但資料變動或系統變動，執行上傳...`);
-        await performCloudUpload();
+        if (!await performCloudUpload()) { isSyncing = false; await checkCloudSyncState(); return; }
     } else if (ops.length > 0) {
         // 如果版本相同 (vComp=0) 且僅有班級 Ops
         // 必須確認這些 Ops 的時間戳確實比目前雲端版本還要新才上傳
         const hasNewerOps = ops.some(o => o.t > localSyncVersion);
         if (hasNewerOps) {
             L(`[CloudSync] Step 5 檢測到 ${ops.length} 筆新產生的 Ops，執行上傳...`);
-            await performCloudUpload();
+            if (!await performCloudUpload()) { isSyncing = false; await checkCloudSyncState(); return; }
         } else {
             L(`[CloudSync] Step 5 剩餘 ${ops.length} 筆 Ops 已包含在版本 ${localSyncVersion} 中，不予重複上傳。`);
             setDirty(3);
@@ -457,6 +589,7 @@ const checkCloudSyncState = async () => {
     }
 
     isSyncing = false;
+    } finally { _syncDepth--; }
 };
 
 window.pushOp = pushOp;
