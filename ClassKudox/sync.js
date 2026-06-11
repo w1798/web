@@ -152,10 +152,10 @@ const performCloudUpload = async (manual = false) => {
         } catch(e) {}
     }
 
-    if (cloudVer && cloudVer !== localSyncVersion) {
+    if (!manual && cloudVer && cloudVer !== localSyncVersion) {
         L(`[CloudSync CAS] 衝突: 雲端 v${cloudVer} ≠ 本地 v${localSyncVersion}，拒絕上傳`);
         setDirty(2);
-        if (manual) alert('上傳衝突：雲端資料已被更新，請稍後再試');
+        alert('上傳衝突：雲端資料已被更新，請稍後再試');
         return false;
     }
 
@@ -175,9 +175,9 @@ const performCloudUpload = async (manual = false) => {
             if (!baseUrl.endsWith('.json')) baseUrl += '/' + cloudApiKey;
             const verUrl = baseUrl + '/classKudox_ver.json';
 
-            // Step 1: 寫入備份資料 (If-Match 條件寫入，防止 backup 被汙染)
+            // Step 1: 寫入備份資料 (If-Match 條件寫入，防止 backup 被汙染；手動模式 blind write)
             const backupHeaders = { 'Content-Type': 'application/json' };
-            if (backupEtag) backupHeaders['If-Match'] = backupEtag;
+            if (!manual && backupEtag) backupHeaders['If-Match'] = backupEtag;
             const backResp = await fetch(req.url, {
                 method: 'PUT',
                 headers: backupHeaders,
@@ -191,9 +191,9 @@ const performCloudUpload = async (manual = false) => {
                 return false;
             }
 
-            // Step 2: CAS 寫入版本節點 (If-Match)
+            // Step 2: CAS 寫入版本節點 (If-Match；手動模式 blind write)
             const verHeaders = { 'Content-Type': 'application/json' };
-            if (etag) verHeaders['If-Match'] = etag;
+            if (!manual && etag) verHeaders['If-Match'] = etag;
             const casResp = await fetch(verUrl, {
                 method: 'PUT',
                 headers: verHeaders,
@@ -214,7 +214,17 @@ const performCloudUpload = async (manual = false) => {
             if (manual) alert('已成功上傳至雲端');
             return true;
         } else {
-            // Upstash: Lock + 原子寫入 (SET NX 鎖 + 單 key 含 ver)
+            // Upstash: Lock + 原子寫入 (手動模式跳過 CAS 直接寫)
+            if (manual) {
+                const wd = await _upstashResp(['SET', 'classKudox_backup', JSON.stringify({ d: compressed, ver: newVer })]);
+                if (wd.result !== 'OK') throw new Error('Upstash 寫入失敗');
+                L(`[CloudSync] ✅ 手動同步成功 v${localSyncVersion}`);
+                localStorage.setItem('sVer', localSyncVersion);
+                saveData(true); setDirty(3);
+                if (manual) alert('已成功上傳至雲端');
+                return true;
+            }
+
             const lockId = Math.random().toString(36).slice(2) + Date.now().toString(36);
             let lockHeld = false;
 
