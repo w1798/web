@@ -23,7 +23,9 @@ function App() {
 const startApp = () => {
     if (window.isAppStarted) return;
     window.isAppStarted = true;
-    L(` ClassKudox v${APP_VER} `);
+    console.log(`%c ClassKudox v${APP_VER} `, 'background:#222;color:#0f0;font-weight:bold;font-size:14px;padding:2px 6px;border-radius:3px;');
+    window._LOGS.push({ t: Date.now(), l: 'L', m: ` ClassKudox v${APP_VER} ` });
+    if (window._LOGS.length > 1000) window._LOGS.shift();
 
     try {
         const rootEl = document.getElementById('root');
