@@ -5,7 +5,7 @@
 // --- 全局 Log 系統 (最早初始化，供所有後續模組使用) ---
 window._LOGS = [];
 (function() {
-    const MAX_LOG = 1000;
+    const MAX_LOG = 200;
     const fmtTS = () => new Date().toLocaleTimeString('zh-TW', { hour12: false });
     const msg = (args) => args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
 
@@ -33,7 +33,16 @@ window._loadPako = () => {
         const s = document.createElement('script');
         s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js';
         s.onload = resolve;
-        s.onerror = () => reject(new Error('pako 載入失敗'));
+        s.onerror = () => {
+            const isRoot = typeof APP_ROOT !== 'undefined' && APP_ROOT === 1;
+            const prefix = isRoot ? 'libs/' : '../libs/';
+            const fb = document.createElement('script');
+            fb.src = prefix + 'pako.min.js';
+            fb.async = false;
+            fb.onload = resolve;
+            fb.onerror = () => reject(new Error('pako 載入失敗（CDN + 本地均無法讀取）'));
+            document.head.appendChild(fb);
+        };
         document.head.appendChild(s);
     });
 };
