@@ -3,6 +3,7 @@
  */
  
 (function() {
+    const L = window.L, LE = window.LE;
     // --- 核心 UI 分發器 ---
     window.updateLoading = function(percent, status) {
         const bar = document.getElementById('loading-bar');
@@ -60,7 +61,7 @@
                 clearInterval(babelTimer);
                 window.updateLoading(90, '正在編譯分析組件...');
                 setTimeout(() => {
-                    console.log("[Loader] 開始執行 Babel 轉換...");
+                    L('[Loader] 開始執行 Babel 轉換...');
                     Babel.transformScriptTags();
                     window.updateLoading(100, '引擎啟動完成');
                 }, 50);
@@ -106,7 +107,7 @@
         const done = () => {
             if (isDone) return;
             isDone = true;
-            console.log(`%c[Loader] 已載入 ${type.toUpperCase()}: ${url.split('/').pop()}`, "color: #00b894");
+            L(`[Loader] 已載入 ${type.toUpperCase()}: ${url.split('/').pop()}`);
             if (onComplete) onComplete();
         };
 
@@ -125,10 +126,10 @@
     }
 
     function loadApp() {
-        console.log(`%c[Loader] 開始初始化資源`, "color: #3498db; font-weight: bold;");
+        L('[Loader] 開始初始化資源');
 
         if (typeof resources === 'undefined') {
-            console.error('[Loader] 找不到 resources 配置');
+            LE('[Loader] 找不到 resources 配置');
             window.updateLoading(100, '讀取配置失敗');
             if (typeof reveal === 'function') reveal();
             return;
@@ -166,7 +167,7 @@
 
         const handleComplete = () => {
             window.loaderFinished = true;
-            console.log("%c[Loader] 所有資源確認完成", "color: #9b59b6; font-weight: bold;");
+            L('[Loader] 所有資源確認完成');
             startBabelOrFinish();
             if (typeof reveal === 'function') reveal();
         };

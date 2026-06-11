@@ -4,7 +4,7 @@
  */
 
 function initSelectOptions() {
-    console.log('[Init-UI] 開始初始化下拉選單選項...');
+    window.L('[Init-UI] 開始初始化下拉選單選項...');
     
     // 1. 每列顯示學生數 (2-15)
     populateRange('gridColsSelect', 2, 15, 1, ' 人');
@@ -35,7 +35,7 @@ function initSelectOptions() {
     populateRange('itemGapVSelect', 0, 60, 5, 'px');
     populateRange('itemGapHSelect', 0, 60, 5, 'px');
     
-    console.log('[Init-UI] 下拉選單初始化完成。');
+    window.L('[Init-UI] 下拉選單初始化完成。');
 }
 
 /**

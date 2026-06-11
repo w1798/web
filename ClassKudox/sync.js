@@ -166,6 +166,11 @@ const performCloudUpload = async (manual = false) => {
         L(`[CloudSync連線] CAS 準備上傳 v${oldVer}→v${newVer} (${provider})`);
         const toPush = getFullBackupData(false);
         const compressed = await compressJSON(toPush);
+        if (!compressed) {
+            LE('[CloudSync] 壓縮失敗，中止上傳');
+            localSyncVersion = oldVer;
+            return false;
+        }
 
         if (provider === 'firebase') {
             const req = getCloudRequest('PUT');
@@ -457,7 +462,7 @@ const checkCloudSyncState = async () => {
     const vComp = localSyncVersion.localeCompare(cloudVer);
     let modified = false;
 
-    if (vComp !== 0 && cloudData) {
+    if (vComp !== 0 && (cloudData || cloudVer !== '000000000000')) {
         // 資料版本不同時，先偵測程式碼是否也有更新
         try {
             const vRes = await fetch('version.json?t=' + Date.now());

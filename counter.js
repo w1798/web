@@ -1,35 +1,7 @@
 /**
  * Charles Nextime - 全局計數器組件
- * 支援功能：自動 Footer 生成、30分鐘冷卻、Vercount 統計、全局 Log 系統
+ * 支援功能：自動 Footer 生成、30分鐘冷卻、Vercount 統計、Log Viewer
  */
-
-// === [0] 全局 Log 系統 (在任何程式碼之前初始化) ===
-window._LOGS = [];
-const _MAX_LOG = 1000;
-
-const _fmtTS = () => new Date().toLocaleTimeString('zh-TW', { hour12: false });
-
-const _logMsg = (args) => args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
-
-if (!window.L) {
-    window.L = (...args) => {
-        const ts = _fmtTS();
-        const msg = _logMsg(args);
-        window._LOGS.push({ t: Date.now(), l: 'L', m: msg });
-        if (window._LOGS.length > _MAX_LOG) window._LOGS.shift();
-        console.log(`[${ts}]`, ...args);
-    };
-}
-
-if (!window.LE) {
-    window.LE = (...args) => {
-        const ts = _fmtTS();
-        const msg = _logMsg(args);
-        window._LOGS.push({ t: Date.now(), l: 'E', m: msg });
-        if (window._LOGS.length > _MAX_LOG) window._LOGS.shift();
-        console.error(`[${ts}]`, ...args);
-    };
-}
 
 (function() {
     // === 1. 樣式注入 ===

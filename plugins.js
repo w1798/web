@@ -3,6 +3,8 @@
  */
 
 (function() {
+    const L = window.L;
+
     function initLibraries(isLazy = false) {
         let libraries = (typeof resources !== 'undefined' && resources.libs) ? [...resources.libs] : [];
 
@@ -56,7 +58,7 @@
             if (isLazy !== isItemLazy) return;
 
             if (!shouldLoad) {
-                console.log(`%c[plugins] [略過]: ${fileName} (環境已支援)`, 'color: #9E9E9E;');
+                L(`[plugins] [略過]: ${fileName} (環境已支援)`);
                 return;
             }
 
@@ -65,7 +67,7 @@
             // 關鍵修復：即使是延遲載入，也必須設為 async = false 以保證依賴順序 (React -> ReactDOM)
             script.async = false; 
 
-            script.onload = () => console.log(`%c[plugins] [成功] ${isLazy ? '背景' : '核心'}庫已載入: ${fileName}`, 'color: #4CAF50;');
+            script.onload = () => L(`[plugins] [成功] ${isLazy ? '背景' : '核心'}庫已載入: ${fileName}`);
             script.onerror = function() {
                 const isRoot = (typeof APP_ROOT !== 'undefined' && APP_ROOT === 1);
                 const defaultPrefix = isRoot ? "libs/" : "../libs/";
@@ -85,7 +87,7 @@
 
     // 提供介面讓外部揭開第二階段
     window.startLazyLoading = function() {
-        console.log("%c[plugins] 啟動背景資源載入...", "color: #9b59b6; font-weight: bold;");
+        L('[plugins] 啟動背景資源載入...');
         initLibraries(true);
     };
 })();

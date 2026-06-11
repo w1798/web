@@ -23,7 +23,7 @@ function App() {
 const startApp = () => {
     if (window.isAppStarted) return;
     window.isAppStarted = true;
-    console.log(`%c ClassKudox v${APP_VER} `, 'background:#222;color:#0f0;font-weight:bold;font-size:14px;padding:2px 6px;border-radius:3px;');
+    L(` ClassKudox v${APP_VER} `);
 
     try {
         const rootEl = document.getElementById('root');
@@ -36,7 +36,7 @@ const startApp = () => {
             );
         }
     } catch (e) {
-        console.error("React render failed", e);
+        LE("React render failed", e);
     }
 
     const fallbackSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23e2e8f0"/><circle cx="50" cy="45" r="20" fill="%2394a3b8"/><path d="M20 100 C 20 60, 80 60, 80 100" fill="%2394a3b8"/></svg>`;

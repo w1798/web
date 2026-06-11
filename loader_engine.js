@@ -2,6 +2,30 @@
  * Charles Nextime - 資源載入引擎 (Engine.js)
  */
 
+// --- 全局 Log 系統 (最早初始化，供所有後續模組使用) ---
+window._LOGS = [];
+(function() {
+    const MAX_LOG = 1000;
+    const fmtTS = () => new Date().toLocaleTimeString('zh-TW', { hour12: false });
+    const msg = (args) => args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+
+    window.L = (...args) => {
+        const ts = fmtTS();
+        const m = msg(args);
+        window._LOGS.push({ t: Date.now(), l: 'L', m });
+        if (window._LOGS.length > MAX_LOG) window._LOGS.shift();
+        console.log(`[${ts}]`, ...args);
+    };
+
+    window.LE = (...args) => {
+        const ts = fmtTS();
+        const m = msg(args);
+        window._LOGS.push({ t: Date.now(), l: 'E', m });
+        if (window._LOGS.length > MAX_LOG) window._LOGS.shift();
+        console.error(`[${ts}]`, ...args);
+    };
+})();
+
 // --- 集中系統狀態 ---
 window.APP_ENV = (function() {
     const rawMode = typeof APP_JSX !== 'undefined' ? String(APP_JSX).toLowerCase() : 'vanilla';
@@ -32,8 +56,7 @@ function reveal(isTimeout) {
         console.warn("[Engine] 載入資源超時，已強行顯示頁面。");
         if (statusEl) statusEl.innerHTML = "<span style='color:red; font-weight:bold;'>[Engine] 系統載入稍慢，部分功能可能尚未就緒。</span>";
     } else if (typeof window.loaderFinished === 'undefined') {
-        // 只有在還沒標記為完成、卻被 catch 觸發時才報異常
-        console.warn("[Engine] 偵測到載入異常，提前開放介面。");
+        L("[Engine] 偵測到載入異常，提前開放介面。");
         if (statusEl) statusEl.innerHTML = "";
     } else {
         // 正常路徑：完全沈默
@@ -106,8 +129,8 @@ async function startLoading() {
         }
 
     } catch (error) {
-        console.error("[Engine] 載入過程中發生關鍵錯誤:", error);
-        reveal(false); // 發生錯誤時，提前解鎖 UI，但傳入 false 表示不是「超時」而是「異常」
+        LE("[Engine] 載入過程中發生關鍵錯誤:", error);
+        reveal(false);
     }
 }
 
