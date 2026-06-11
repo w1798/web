@@ -26,6 +26,18 @@ window._LOGS = [];
     };
 })();
 
+// --- 壓縮降級輔助 (原生失敗時動態載入 pako) ---
+window._loadPako = () => {
+    if (typeof pako !== 'undefined') return Promise.resolve();
+    return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js';
+        s.onload = resolve;
+        s.onerror = () => reject(new Error('pako 載入失敗'));
+        document.head.appendChild(s);
+    });
+};
+
 // --- 集中系統狀態 ---
 window.APP_ENV = (function() {
     const rawMode = typeof APP_JSX !== 'undefined' ? String(APP_JSX).toLowerCase() : 'vanilla';

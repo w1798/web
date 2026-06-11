@@ -54,21 +54,26 @@ const sortItems = (a, b) => {
 const compressJSON = async (obj, formatted = false) => {
     try {
         const str = formatted ? JSON.stringify(obj, null, 2) : JSON.stringify(obj);
-        if (typeof pako !== 'undefined') {
+        // 1. 先試原生 CompressionStream
+        try {
+            const stream = new Blob([str]).stream().pipeThrough(new CompressionStream('gzip'));
+            const resp = new Response(stream);
+            const buf = await resp.arrayBuffer();
+            return btoa(String.fromCharCode(...new Uint8Array(buf)));
+        } catch (nativeErr) {
+            console.warn('[Compress] 原生壓縮失敗，嘗試 pako:', nativeErr.message);
+            // 2. 確保 pako 已載入
+            if (typeof pako === 'undefined') await window._loadPako();
+            // 3. pako.gzip
             const compressed = pako.gzip(str);
             let binaryStr = '';
-            const chunkSize = 32768; // 32KB chunks
+            const chunkSize = 32768;
             for (let i = 0; i < compressed.length; i += chunkSize) {
                 binaryStr += String.fromCharCode.apply(null, compressed.subarray(i, i + chunkSize));
             }
             return btoa(binaryStr);
         }
-        // Fallback
-        const stream = new Blob([str]).stream().pipeThrough(new CompressionStream('gzip'));
-        const resp = new Response(stream);
-        const buf = await resp.arrayBuffer();
-        return btoa(String.fromCharCode(...new Uint8Array(buf)));
-    } catch(e) { console.error('壓縮失敗', e); return null; }
+    } catch(e) { console.error('壓縮徹底失敗', e); return null; }
 };
 
 const decompressJSON = async (base64) => {
@@ -76,30 +81,39 @@ const decompressJSON = async (base64) => {
         const bin = atob(base64);
         const buf = new Uint8Array(bin.length);
         for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
-        
-        if (typeof pako !== 'undefined') {
+        // 1. 先試原生 DecompressionStream
+        try {
+            const stream = new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'));
+            const resp = new Response(stream);
+            return await resp.json();
+        } catch (nativeErr) {
+            console.warn('[Decompress] 原生解壓失敗，嘗試 pako:', nativeErr.message);
+            // 2. 載入 pako
+            if (typeof pako === 'undefined') await window._loadPako();
+            // 3. pako.ungzip
             const jsonString = pako.ungzip(buf, { to: 'string' });
             return JSON.parse(jsonString);
         }
-        // Fallback
-        const stream = new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'));
-        const resp = new Response(stream);
-        return await resp.json();
-    } catch(e) { console.error('解壓失敗', e); return null; }
+    } catch(e) { console.error('解壓徹底失敗', e); return null; }
 };
 
 const decompressBinary = async (arrayBuffer) => {
     try {
-        if (typeof pako !== 'undefined') {
-            const buf = new Uint8Array(arrayBuffer);
+        const buf = new Uint8Array(arrayBuffer);
+        // 1. 先試原生 DecompressionStream
+        try {
+            const stream = new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'));
+            const resp = new Response(stream);
+            return await resp.json();
+        } catch (nativeErr) {
+            console.warn('[DecompressBin] 原生解壓失敗，嘗試 pako:', nativeErr.message);
+            // 2. 載入 pako
+            if (typeof pako === 'undefined') await window._loadPako();
+            // 3. pako.ungzip
             const jsonString = pako.ungzip(buf, { to: 'string' });
             return JSON.parse(jsonString);
         }
-        // Fallback
-        const stream = new Blob([arrayBuffer]).stream().pipeThrough(new DecompressionStream('gzip'));
-        const resp = new Response(stream);
-        return await resp.json();
-    } catch(e) { console.error('解壓縮二進位失敗', e); return null; }
+    } catch(e) { console.error('解壓縮二進位徹底失敗', e); return null; }
 };
 
 const AS_MAP = { 

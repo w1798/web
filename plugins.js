@@ -12,7 +12,7 @@
         const baseLibs = [
             { 
                 url: "https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js", 
-//                condition: typeof DecompressionStream === "undefined" 
+                condition: typeof DecompressionStream === "undefined" 
             }
         ];
         // 預置基礎庫
