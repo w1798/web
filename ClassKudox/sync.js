@@ -393,6 +393,15 @@ const checkCloudSyncState = async () => {
                 } else {
                     const r = await resp.json();
                     raw = r.result;
+                    // 擷取外層 wrapper ver (Upstash 存的是 { d, ver })
+                    if (raw) {
+                        try {
+                            const wrapper = typeof raw === 'string' ? JSON.parse(raw) : raw;
+                            if (wrapper && wrapper.ver) {
+                                if (!verNodeValue) verNodeValue = wrapper.ver;
+                            }
+                        } catch(_) {}
+                    }
                 }
                 
                 L(`[CloudSync] Step 2a 準備解析雲端數據...`);
@@ -438,7 +447,7 @@ const checkCloudSyncState = async () => {
     const vComp = localSyncVersion.localeCompare(cloudVer);
     let modified = false;
 
-    if (vComp !== 0 && cloudVer !== '000000000000') {
+    if (vComp !== 0 && cloudData) {
         // 資料版本不同時，先偵測程式碼是否也有更新
         try {
             const vRes = await fetch('version.json?t=' + Date.now());

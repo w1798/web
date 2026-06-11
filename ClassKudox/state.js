@@ -120,8 +120,8 @@ const getSmartSyncInterval = () => {
 };
 
 // --- Global Helpers ---
-const L = (...args) => console.log(`[${new Date().toLocaleTimeString('zh-TW', {hour12:false})}]`, ...args);
-const LE = (...args) => console.error(`[${new Date().toLocaleTimeString('zh-TW', {hour12:false})}]`, ...args);
+const L = window.L;
+const LE = window.LE;
 
 const setDirty = (v) => {
     const old = isDirty;

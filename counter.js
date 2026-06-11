@@ -1,10 +1,38 @@
 /**
  * Charles Nextime - 全局計數器組件
- * 支援功能：自動 Footer 生成、30分鐘冷卻、Vercount 統計
+ * 支援功能：自動 Footer 生成、30分鐘冷卻、Vercount 統計、全局 Log 系統
  */
 
+// === [0] 全局 Log 系統 (在任何程式碼之前初始化) ===
+window._LOGS = [];
+const _MAX_LOG = 1000;
+
+const _fmtTS = () => new Date().toLocaleTimeString('zh-TW', { hour12: false });
+
+const _logMsg = (args) => args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+
+if (!window.L) {
+    window.L = (...args) => {
+        const ts = _fmtTS();
+        const msg = _logMsg(args);
+        window._LOGS.push({ t: Date.now(), l: 'L', m: msg });
+        if (window._LOGS.length > _MAX_LOG) window._LOGS.shift();
+        console.log(`[${ts}]`, ...args);
+    };
+}
+
+if (!window.LE) {
+    window.LE = (...args) => {
+        const ts = _fmtTS();
+        const msg = _logMsg(args);
+        window._LOGS.push({ t: Date.now(), l: 'E', m: msg });
+        if (window._LOGS.length > _MAX_LOG) window._LOGS.shift();
+        console.error(`[${ts}]`, ...args);
+    };
+}
+
 (function() {
-    // === 1. 樣式注入 (在這裡自定義顏色) ===
+    // === 1. 樣式注入 ===
     const style = document.createElement('style');
     style.textContent = `
         .auto-footer {
@@ -31,30 +59,144 @@
 
         #busuanzi_container_page_pv {
             display: none;
+            cursor: pointer;
         }
+
+        /* Log Viewer Overlay */
+        #clog-viewer {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 99999;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            font: 0.85rem/1.4 'Courier New', monospace;
+        }
+
+        #clog-viewer > div {
+            max-width: 800px;
+            width: 100%;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh;
+        }
+
+        #clog-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            border-bottom: 1px solid #333;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        #clog-header button {
+            background: #333;
+            color: #d4d4d4;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            margin-left: 6px;
+        }
+
+        #clog-header button:hover { background: #555; }
+
+        #clog-body {
+            padding: 8px 14px;
+            overflow-y: auto;
+            flex: 1;
+            min-height: 200px;
+        }
+
+        #clog-body > div {
+            padding: 1px 0;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .clog-ts { color: #6a9955; }
+        .clog-lv  { font-weight: bold; }
+        .clog-err .clog-lv { color: #f44747; }
+        .clog-log .clog-lv { color: #569cd6; }
+        .clog-err { background: rgba(244,71,71,0.08); }
     `;
-    
+
     document.head.appendChild(style);
+
+    const _escape = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    // === Log Viewer 控制 ===
+    let _logVisible = false;
+    let _logEl = null;
+
+    const _renderLogs = () => {
+        const body = document.getElementById('clog-body');
+        if (!body) return;
+        body.innerHTML = window._LOGS.map(e => {
+            const ts = new Date(e.t).toLocaleTimeString('zh-TW', { hour12: false });
+            const cls = e.l === 'E' ? 'clog-err' : 'clog-log';
+            return `<div class="${cls}"><span class="clog-ts">[${ts}]</span> <span class="clog-lv">[${e.l}]</span> ${_escape(e.m)}</div>`;
+        }).join('');
+        body.scrollTop = body.scrollHeight;
+        const hdr = document.querySelector('#clog-header span');
+        if (hdr) hdr.textContent = `📋 Logs (${window._LOGS.length})`;
+    };
+
+    const _createLogViewer = () => {
+        _logEl = document.createElement('div');
+        _logEl.id = 'clog-viewer';
+        _logEl.innerHTML = `
+            <div>
+                <div id="clog-header">
+                    <span>📋 Logs (${window._LOGS.length})</span>
+                    <div>
+                        <button id="clog-clear">Clear</button>
+                        <button id="clog-close">✕</button>
+                    </div>
+                </div>
+                <div id="clog-body"></div>
+            </div>
+        `;
+        document.body.appendChild(_logEl);
+
+        _logEl.addEventListener('click', e => { if (e.target === _logEl) _toggleLog(); });
+        document.getElementById('clog-close').addEventListener('click', _toggleLog);
+        document.getElementById('clog-clear').addEventListener('click', () => {
+            window._LOGS = [];
+            _renderLogs();
+        });
+    };
+
+    const _toggleLog = () => {
+        if (!_logEl) _createLogViewer();
+        _logVisible = !_logVisible;
+        _logEl.style.display = _logVisible ? 'flex' : 'none';
+        if (_logVisible) _renderLogs();
+    };
 
     const init = () => {
         // --- 2. 處理 Footer 結構 ---
         let footer = document.querySelector('footer');
-        
-        // 如果 HTML 裡完全沒寫 <footer>，就自動生一個並掛在 body 最後
+
         if (!footer) {
             footer = document.createElement('footer');
             document.body.appendChild(footer);
         }
 
-        // 強制套用樣式類名
         footer.classList.add('auto-footer');
-        
-        // 計算年份邏輯
+
         const startYear = 2026;
         const currentYear = new Date().getFullYear();
         const yearStr = currentYear > startYear ? `${startYear}-${currentYear}` : startYear;
 
-        // 注入內容 (無論原本 footer 裡有什麼都會被覆蓋成標準格式)
         footer.innerHTML = `
             <a href="https://w1798.github.io/web/" target="_blank">&copy;${yearStr} Charles Nextime</a>,
             <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">GPLv3</a>
@@ -68,26 +210,22 @@
         const pvContainer = document.getElementById('busuanzi_container_page_pv');
         if (!pvSpan) return;
 
-        // 路徑識別 (確保不同程式路徑的冷卻時間獨立)
         const path = window.location.pathname.replace(/^\/|\/$/g, "").replace(/\//g, "-") || "home";
         const TIME_KEY = `COUNT_TIME_${path}`;
         const VAL_KEY = `COUNT_VAL_${path}`;
-        
+
         const lastVisit = localStorage.getItem(TIME_KEY);
         const lastVal = localStorage.getItem(VAL_KEY);
 
-        // 檢查 30 分鐘冷卻 (1800000 ms)
         if (lastVisit && (Date.now() - lastVisit < 1800000)) {
             pvSpan.innerText = lastVal || "--";
             pvContainer.style.display = "inline";
-            console.log(`[Counter] ${path} 冷卻中，顯示快取數據。`);
+            L(`[Counter] ${path} 冷卻中，顯示快取數據。`);
         } else {
-            // 超過冷卻期，從伺服器更新
             const script = document.createElement('script');
             script.src = "https://events.vercount.one/js";
             script.async = true;
 
-            // 使用 MutationObserver 監控數據填入
             const observer = new MutationObserver(() => {
                 const newVal = pvSpan.innerText;
                 if (newVal && newVal !== "--" && newVal !== "") {
@@ -101,9 +239,13 @@
             observer.observe(pvSpan, { childList: true, characterData: true, subtree: true });
             document.head.appendChild(script);
         }
+
+        // --- 4. Log Viewer 掛勾 (點 👁️ 開啟) ---
+        if (pvContainer) {
+            pvContainer.addEventListener('click', _toggleLog);
+        }
     };
 
-    // 確保在 DOM 準備好後才執行
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
