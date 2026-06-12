@@ -126,11 +126,13 @@ const Reports = React.memo(function Reports() {
 
     const handleViewChange = (v) => {
         setReportView(v);
+        window._reportView = v;
         setCurrentPage(1);
     };
 
     const handleSortChange = (s) => {
         setSortBy(s);
+        window.currentSort = s;
         setCurrentPage(1);
     };
 

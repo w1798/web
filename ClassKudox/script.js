@@ -543,32 +543,52 @@ const startApp = () => {
 
         wire('copyPointsBtn', () => {
              const range = getReportsTimeRange();
+             const isTreasure = window._reportView === 'treasure';
              let data = students.map(s => {
-                 let pts = logs.filter(l => l.sID === s.id).reduce((sum, l) => {
-                     const ts = getTS(l.TS);
-                     if (range && (ts < range.start || ts > range.end)) return sum;
-                     return sum + (l.iSum === 1 ? 0 : l.pt);
-                 }, 0);
-                 return { name: s.id, pts };
+                 let val;
+                 if (isTreasure) {
+                     val = logs.filter(l => l.sID === s.id && l.trId).reduce((sum, l) => {
+                         const ts = getTS(l.TS);
+                         if (range && (ts < range.start || ts > range.end)) return sum;
+                         return sum + (l.trQty || 0);
+                     }, 0);
+                 } else {
+                     val = logs.filter(l => l.sID === s.id).reduce((sum, l) => {
+                         const ts = getTS(l.TS);
+                         if (range && (ts < range.start || ts > range.end)) return sum;
+                         return sum + (l.iSum === 1 ? 0 : l.pt);
+                     }, 0);
+                 }
+                 return { name: s.id, val };
              });
-             if (currentSort === 'name') data.sort((a,b) => a.name.localeCompare(b.name, 'zh-TW')); 
-             else data.sort((a,b) => b.pts - a.pts);
-             const text = data.map(d => `${d.pts}`).join('\n');
+             if (window.currentSort === 'name') data.sort((a,b) => a.name.localeCompare(b.name, 'zh-TW'));
+             else data.sort((a,b) => b.val - a.val);
+             const text = data.map(d => `${d.val}`).join('\n');
              copyTextToClipboard(text, '已按目前排序複製點數');
         });
 
         wire('copyNamesBtn', () => {
              const range = getReportsTimeRange();
+             const isTreasure = window._reportView === 'treasure';
              let data = students.map(s => {
-                 let pts = logs.filter(l => l.sID === s.id).reduce((sum, l) => {
-                     const ts = getTS(l.TS);
-                     if (range && (ts < range.start || ts > range.end)) return sum;
-                     return sum + (l.iSum === 1 ? 0 : l.pt);
-                 }, 0);
-                 return { name: s.id, pts };
+                 let val;
+                 if (isTreasure) {
+                     val = logs.filter(l => l.sID === s.id && l.trId).reduce((sum, l) => {
+                         const ts = getTS(l.TS);
+                         if (range && (ts < range.start || ts > range.end)) return sum;
+                         return sum + (l.trQty || 0);
+                     }, 0);
+                 } else {
+                     val = logs.filter(l => l.sID === s.id).reduce((sum, l) => {
+                         const ts = getTS(l.TS);
+                         if (range && (ts < range.start || ts > range.end)) return sum;
+                         return sum + (l.iSum === 1 ? 0 : l.pt);
+                     }, 0);
+                 }
+                 return { name: s.id, val };
              });
-             if (currentSort === 'name') data.sort((a,b) => a.name.localeCompare(b.name, 'zh-TW')); 
-             else data.sort((a,b) => b.pts - a.pts);
+             if (window.currentSort === 'name') data.sort((a,b) => a.name.localeCompare(b.name, 'zh-TW'));
+             else data.sort((a,b) => b.val - a.val);
              const text = data.map(d => `${d.name}`).join('\n');
              copyTextToClipboard(text, '已按目前排序複製姓名');
         });
