@@ -268,7 +268,46 @@ window.renderGroups();  // → refreshProxy → _refreshReact
 
 ## 時間戳系統（StampTool）
 
-ClassKudox 使用自訂 Base62 編碼壓縮時間戳來節省 Firebase 備份空間：
+Base62 編碼（0-9 A-Z a-z），7 位元可容納 62^7 ≈ 3.5 兆個唯一值，精度 100ms。字串可直接用 `localeCompare` 排序，無須解碼。
+
+```js
+StampTool.encode(Date.now())   // → "0UabcX"
+StampTool.decode("0UabcX")     // → Date object
+```
+
+## 全局 Log 系統（L / LE）
+
+定義在 `../loader_engine.js`（最早執行的腳本），所有後續模組均可直接用 `L(...)` / `LE(...)`。
+
+### 行為
+
+- `L(...)` = 記錄到 `window._LOGS` + `console.log`（含時間戳）
+- `LE(...)` = 記錄到 `window._LOGS` + `console.error`（含時間戳）
+- 容量上限 1000 筆，超出時自動 shift 最舊
+- Log Viewer overlay 掛在 `counter.js` 的 👁️ 上，點擊開啟全螢幕 log 面板
+
+### 載入順序
+
+```
+loader_engine.js  (定義 window.L / window.LE / window._LOGS / window._loadPako)
+  └→ config.js
+  └→ counter.js   (Log Viewer overlay + 頁尾計數器)
+  └→ plugins.js   (內部 const L = window.L)
+  └→ loadapp.js   (內部 const L = window.L, LE = window.LE)
+       └→ vanilla.js  (init-ui 用 L(), state.js 用 const L = window.L)
+       └→ script.js   (用 L() / LE() + 版本號 styled console.log)
+```
+
+### 寫入規範
+
+- **來源檔全部用 `L()` / `LE()` 取代原來的 `console.log` / `console.error`**（F12 與 Log Viewer 一致）
+- 唯一例外：版本號 badge（保留 `%c` 樣式同時手動 push `_LOGS`）
+- `plugins.js` / `loadapp.js` 為獨立 IIFE，內部宣告 `const L = window.L` 後使用
+- `state.js` 做 `const L = window.L; const LE = window.LE;` 供整個 bundle 使用
+- 不需要 `window.L = window.L || ...` fallback，因為 `loader_engine.js` 保證最早執行
+
+## 相關檔案
+
 
 | 屬性 | 值 |
 |---|---|

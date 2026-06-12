@@ -31,6 +31,9 @@
 
         #busuanzi_container_page_pv {
             display: none;
+        }
+
+        .clog-eye {
             cursor: pointer;
         }
 
@@ -130,6 +133,7 @@
                 <div id="clog-header">
                     <span>📋 Logs (${window._LOGS.length})</span>
                     <div>
+                        <button id="clog-copy">Copy All</button>
                         <button id="clog-clear">Clear</button>
                         <button id="clog-close">✕</button>
                     </div>
@@ -144,6 +148,13 @@
         document.getElementById('clog-clear').addEventListener('click', () => {
             window._LOGS = [];
             _renderLogs();
+        });
+        document.getElementById('clog-copy').addEventListener('click', () => {
+            const text = window._LOGS.map(e => {
+                const ts = new Date(e.t).toLocaleTimeString('zh-TW', { hour12: false });
+                return `[${ts}] [${e.l}] ${e.m}`;
+            }).join('\n');
+            navigator.clipboard.writeText(text).catch(() => {});
         });
     };
 
@@ -172,8 +183,9 @@
         footer.innerHTML = `
             <a href="https://w1798.github.io/web/" target="_blank">&copy;${yearStr} Charles Nextime</a>,
             <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">GPLv3</a>
+            <span class="clog-eye">👁️</span>
             <span id="busuanzi_container_page_pv">
-                👁️<span id="busuanzi_value_page_pv">--</span>
+                <span id="busuanzi_value_page_pv">--</span>
             </span>
         `;
 
@@ -213,8 +225,9 @@
         }
 
         // --- 4. Log Viewer 掛勾 (點 👁️ 開啟) ---
-        if (pvContainer) {
-            pvContainer.addEventListener('click', _toggleLog);
+        const eyeEl = document.querySelector('.clog-eye');
+        if (eyeEl) {
+            eyeEl.addEventListener('click', _toggleLog);
         }
     };
 
