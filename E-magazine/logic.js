@@ -18,7 +18,8 @@ const DefaultData = {
     modeB_Count: 10,
     sortOrder: 'time_asc',  // time_asc, time_desc, name_asc, name_desc
     manualInput: '',
-    nameTemplate: '{class}-{no}-{student}-{work}-指導老師-{teacher}'
+    nameTemplate: '{class}-{no}-{student}-{work}-指導老師-{teacher}',
+    authorSpaces: 60
 };
 
 const Logic = {
@@ -158,36 +159,36 @@ const Logic = {
         const UNDO = 'undo_還原.bat';
 
         let batContent = `@echo off\r\n`;
-        batContent += `@chcp 65001 >nul\r\n`;
-        batContent += `@setlocal enabledelayedexpansion\r\n`;
-        batContent += `@set "UNDO=${UNDO}"\r\n`;
-        batContent += `@echo @echo off > !UNDO!\r\n`;
-        batContent += `@echo chcp 65001 ^>nul >> !UNDO!\r\n`;
+        batContent += `chcp 65001 >nul\r\n`;
+        batContent += `setlocal enabledelayedexpansion\r\n`;
+        batContent += `set "UNDO=${UNDO}"\r\n`;
+        batContent += `echo @echo off > !UNDO!\r\n`;
+        batContent += `echo chcp 65001 ^>nul >> !UNDO!\r\n`;
 
         lines.forEach((name, index) => {
             let safeName = name.replace(/([&|<>^])/g, '^$1');
-            batContent += `@set "name_${index + 1}=${safeName}"\r\n`;
+            batContent += `set "name_${index + 1}=${safeName}"\r\n`;
         });
 
-        batContent += `@set "idx=1"\r\n`;
-        batContent += `@for /f "delims=" %%F in ('dir /b ${dirOrder} *.*') do (\r\n`;
-        batContent += `@if /i "%%~xF" NEQ ".bat" (\r\n`;
-        batContent += `@set "current_idx=!idx!"\r\n`;
-        batContent += `@for /f "delims=" %%A in ("!current_idx!") do (\r\n`;
-        batContent += `@if defined name_%%A (\r\n`;
-        batContent += `@set "newname=!name_%%A!"\r\n`;
-        batContent += `@echo [%%F] 已變更為 [!newname!%%~xF]\r\n`;
-        batContent += `@echo ren "!newname!%%~xF" "%%~nxF" ^>nul >> !UNDO!\r\n`;
-        batContent += `@ren "%%F" "!newname!%%~xF"\r\n`;
-        batContent += `@set /a idx+=1\r\n`;
+        batContent += `set "idx=1"\r\n`;
+        batContent += `for /f "delims=" %%F in ('dir /b ${dirOrder} *.*') do (\r\n`;
+        batContent += `if /i "%%~xF" NEQ ".bat" (\r\n`;
+        batContent += `set "current_idx=!idx!"\r\n`;
+        batContent += `for /f "delims=" %%A in ("!current_idx!") do (\r\n`;
+        batContent += `if defined name_%%A (\r\n`;
+        batContent += `set "newname=!name_%%A!"\r\n`;
+        batContent += `echo [%%F] 已變更為 [!newname!%%~xF]\r\n`;
+        batContent += `echo ren "!newname!%%~xF" "%%~nxF" ^>nul >> !UNDO!\r\n`;
+        batContent += `ren "%%F" "!newname!%%~xF"\r\n`;
+        batContent += `set /a idx+=1\r\n`;
         batContent += `)\r\n)\r\n)\r\n)\r\n`;
 
-        batContent += `@echo echo. >> !UNDO!\r\n`;
-        batContent += `@echo echo 還原完畢。按任意鍵結束... >> !UNDO!\r\n`;
-        batContent += `@echo pause ^>nul >> !UNDO!\r\n`;
-        batContent += `@echo.\r\n`;
-        batContent += `@echo 修改完畢。按任意鍵結束...\r\n`;
-        batContent += `@pause >nul\r\n`;
+        batContent += `echo echo. >> !UNDO!\r\n`;
+        batContent += `echo echo 還原完畢。按任意鍵結束... >> !UNDO!\r\n`;
+        batContent += `echo pause ^>nul >> !UNDO!\r\n`;
+        batContent += `echo.\r\n`;
+        batContent += `echo 修改完畢。按任意鍵結束...\r\n`;
+        batContent += `pause >nul\r\n`;
 
         // 依模式決定檔名
         let batFilename = 'run_rename.bat';
@@ -204,7 +205,7 @@ const Logic = {
     },
 
     // 童詩 Word 格式化處理 - 移植自 a.html
-    generatePoetryWord(rawText, defaultTeacher = '', originalFilename = '') {
+    generatePoetryWord(rawText, defaultTeacher = '', originalFilename = '', spaceCount = 60) {
         if (!rawText.trim()) return;
 
         const { Document, Packer, Paragraph, TextRun, AlignmentType } = docx;
@@ -212,7 +213,7 @@ const Logic = {
         const FONT_SIZE = 24;      
         const LINE_SPACING = 360;  
         const MARGIN_2CM = 1134;   
-        const space_r = " ".repeat(60);
+        const space_r = " ".repeat(Math.max(0, spaceCount));
 
         const originalLines = rawText.split('\n').map(line => line.trim());
         const isClassNumber = (s) => /^\d+$/.test(s); 

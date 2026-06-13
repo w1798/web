@@ -88,7 +88,57 @@ const App = () => {
         }).then(() => alert('已複製！'));
     };
 
-    const handleReset = () => { if (confirm('確定要重置？')) setConfig(window.EMagLogic.resetData()); };
+    // 1. 重置基礎資訊 (僅影響左側班級/老師/名單)
+    const handleBaseInfoReset = () => {
+        if (window.confirm('確定要清空「班級資訊與學生名單」嗎？')) {
+            setConfig(prev => ({
+                ...prev,
+                classInfo: '305',
+                teacherName: '許美麗',
+                studentNames: ''
+            }));
+        }
+    };
+
+    // 2. 重置特定模式設定 (僅影響右側該模式欄位)
+    const handleModeReset = () => {
+        const modeNames = { A: '全手動', B: '流水號', C: '格式化' };
+        if (window.confirm(`確定要清空「${modeNames[config.modeOption]}」模式的所有設定嗎？`)) {
+            if (config.modeOption === 'A') {
+                set('manualInput', '');
+            } else if (config.modeOption === 'B') {
+                setConfig(prev => ({ 
+                    ...prev, 
+                    modeB_Prefix: '生活花絮', 
+                    modeB_Count: 10, 
+                    modeB_Digits: 3 
+                }));
+            } else if (config.modeOption === 'C') {
+                setConfig(prev => ({ 
+                    ...prev, 
+                    batchNos: '', 
+                    workTitles: '' 
+                }));
+            }
+        }
+    };
+
+    // 3. 文章頁面重置
+    const handlePoetryReset = () => {
+        if (window.confirm('確定要重置「文章」的內容與排版設定嗎？')) {
+            setPoetryContent(''); 
+            setStatus(''); 
+            set('authorSpaces', 60);
+            set('poetryTeacher', '指導 許美麗 師');
+        }
+    };
+
+    // 4. 重置命名格式
+    const handleTemplateReset = () => {
+        if (window.confirm('確定要恢復預設命名格式嗎？')) {
+            set('nameTemplate', '{class}-{no}-{student}-{work}-指導老師-{teacher}');
+        }
+    };
 
     // === 各模式渲染 ===
     const renderMode = () => {
@@ -103,7 +153,7 @@ const App = () => {
                         <textarea
                             value={config.manualInput}
                             onChange={(e) => set('manualInput', e.target.value)}
-                            placeholder={`範例：\n生活花絮001\n生活花絮002`}
+                            placeholder={`生活花絮001\n生活花絮002`}
                             style={{ flex: 1 }}
                         />
                     </div>
@@ -183,25 +233,68 @@ const App = () => {
         <div id="root">
             <header className="header" style={{ padding: '0.75rem 2rem 0.5rem' }}>
                 <h1 style={{ fontSize: '2rem' }}>電子校刊作品管理</h1>
-                <p style={{ fontSize: '1.2rem' }}>快速處理作文內容與批次檔名格式化<span style={{ color: 'var(--accent)', marginLeft: '0.5rem' }}>(下載.bat後，放到改檔名目錄執行)</span></p>
+                <p style={{ fontSize: '1.2rem' }}>快速處理文選作者格式 與 批次檔名格式化<span style={{ color: 'var(--accent)', marginLeft: '0.5rem' }}>(下載.bat後，放到要改檔名的目錄裡執行即可)</span></p>
             </header>
 
             <div className="main-layout">
-                <nav className="sidebar">
-                    <button className={`tab-btn ${activeTab === 'poetry' ? 'active' : ''}`} onClick={() => setActiveTab('poetry')}>
-                        📝 作文/童詩內容處理
-                    </button>
-                    <button className={`tab-btn ${activeTab === 'rename' ? 'active' : ''}`} onClick={() => setActiveTab('rename')}>
-                        🏷️ 批次檔名更改
-                    </button>
+                <nav className="sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '0', height: '100%', overflow: 'hidden' }}>
+                    {/* 上區：固定切換按鈕 (不受捲動影響) */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', paddingBottom: '1.25rem', flexShrink: 0, borderBottom: '1px solid var(--glass-border)', marginBottom: '0.5rem' }}>
+                        <button className={`tab-btn ${activeTab === 'poetry' ? 'active' : ''}`} onClick={() => setActiveTab('poetry')}>
+                            📝 文選作者格式化
+                        </button>
+                        <button className={`tab-btn ${activeTab === 'rename' ? 'active' : ''}`} onClick={() => setActiveTab('rename')}>
+                            🏷️ 批次檔名更改
+                        </button>
+                    </div>
+
+                    {/* 下區：班級資訊內容區域 (可捲動) */}
+                    <div style={{ flex: 1, overflowY: 'auto', paddingRight: '4px' }}>
+                        {activeTab === 'rename' && (
+                            <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '0.75rem', border: '1px solid var(--glass-border)' }}>
+                                <div className="input-group">
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <label style={{ margin: 0, fontSize: '0.9rem' }}>班級</label>
+                                        <button className="btn btn-ghost" style={{ padding: '0.1rem 0.3rem', fontSize: '0.75rem', color: '#f43f5e' }} onClick={handleBaseInfoReset}>🔄 重置</button>
+                                    </div>
+                                    <input type="text" value={config.classInfo} onChange={(e) => set('classInfo', e.target.value)} style={{ height: '2.2rem' }} />
+                                </div>
+                                <div className="input-group">
+                                    <label style={{ fontSize: '0.9rem' }}>指導老師</label>
+                                    <input type="text" value={config.teacherName} onChange={(e) => set('teacherName', e.target.value)} style={{ height: '2.2rem' }} />
+                                </div>
+                                <div className="input-group" style={{ height: '400px' }}>
+                                    <label style={{ fontSize: '0.9rem' }}>學生姓名 (一行一姓名)</label>
+                                    <textarea 
+                                        value={config.studentNames} 
+                                        onChange={(e) => set('studentNames', e.target.value)} 
+                                        placeholder={`王小明\n陳小東\n\n汪小川`} 
+                                        style={{ flex: 1, fontSize: '0.9rem' }} 
+                                    />
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </nav>
 
                 <main className="content-area">
-
                     {/* === 童詩頁面 === */}
                     {activeTab === 'poetry' && (
                         <div className="glass-card" style={{ flex: 1, minHeight: 0, gap: '1rem' }}>
-                            <h2 className="section-title">作文/童詩精準格式轉換器</h2>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>
+                                <h2 className="section-title" style={{ marginBottom: 0 }}>文選精準格式轉換器</h2>
+                                <div style={{ fontSize: '0.9rem', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <span>題目會置中，後三行作者資訊會靠右</span>
+                                    <input 
+                                        type="number" 
+                                        value={config.authorSpaces} 
+                                        onChange={(e) => set('authorSpaces', parseInt(e.target.value) || 0)} 
+                                        min="0"
+                                        style={{ width: '60px', height: '1.8rem', padding: '0 0.3rem', textAlign: 'center', background: 'rgba(255,255,255,0.05)' }}
+                                    />
+                                    <span>個空白對齊</span>
+                                </div>
+                            </div>
                             <div style={{ display: 'flex', gap: '1.5rem', flex: 1, minHeight: 0 }}>
                                 {/* 左區 1x：格式說明 */}
                                 <div style={{ flex: 1, minWidth: 0, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--glass-border)', borderRadius: '0.75rem', padding: '1.25rem', fontSize: '1rem', lineHeight: 2, overflowY: 'auto' }}>
@@ -238,16 +331,19 @@ const App = () => {
                                             onChange={handleWordUpload} 
                                         />
                                     </div>
-                                    <button className="btn btn-primary" onClick={() => window.EMagLogic.generatePoetryWord(poetryContent, config.poetryTeacher, uploadedFileName)} style={{ justifyContent: 'center' }}>
+                                    <button className="btn btn-primary" onClick={() => window.EMagLogic.generatePoetryWord(poetryContent, config.poetryTeacher, uploadedFileName, config.authorSpaces)} style={{ justifyContent: 'center' }}>
                                         3. 下載格式化 Word
                                     </button>
                                 </div>
                                 {/* 右區 2x：編輯內容 */}
                                 <div className="input-group" style={{ flex: 2, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                                    <label>
-                                        2. 編輯內容
-                                        {status && <span style={{ color: '#e67e22', marginLeft: '10px', fontWeight: 400 }}>{status}</span>}
-                                    </label>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                                        <label style={{ margin: 0 }}>
+                                            2. 編輯內容(再次點「選擇檔案」會自動清除內容)
+                                            {status && <span style={{ color: '#e67e22', marginLeft: '10px', fontWeight: 400 }}>{status}</span>}
+                                        </label>
+                                        <button className="btn btn-ghost" style={{ padding: '0.2rem 0.5rem', fontSize: '0.85rem', color: '#f43f5e' }} onClick={handlePoetryReset}>🔄 重置</button>
+                                    </div>
                                     <textarea
                                         value={poetryContent}
                                         onChange={(e) => setPoetryContent(e.target.value)}
@@ -261,25 +357,10 @@ const App = () => {
 
                     {/* === 改名頁面 === */}
                     {activeTab === 'rename' && (
-                        <div className="glass-card" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 3fr', gridTemplateRows: 'auto auto 1fr', gap: '0.5rem', flex: 1, minHeight: 0, paddingTop: '0.75rem' }}>
-                            {/* 1 區 (垂直佔滿三列) */}
-                            <div style={{ gridRow: '1 / 4', display: 'flex', flexDirection: 'column', gap: '0.4rem', minWidth: 0 }}>
-                                <div className="input-group">
-                                    <label>班級</label>
-                                    <input type="text" value={config.classInfo} onChange={(e) => set('classInfo', e.target.value)} />
-                                </div>
-                                <div className="input-group">
-                                    <label>指導老師</label>
-                                    <input type="text" value={config.teacherName} onChange={(e) => set('teacherName', e.target.value)} />
-                                </div>
-                                <div className="input-group" style={{ flex: 1, minHeight: 0 }}>
-                                    <label>學生姓名 (一行一姓名，跳號要空行)</label>
-                                    <textarea value={config.studentNames} onChange={(e) => set('studentNames', e.target.value)} placeholder={`王小明\n陳小東\n\n汪小川`} style={{ flex: 1 }} />
-                                </div>
-                            </div>
-
-                            {/* 第一列：標題與模式切換 (橫跨 2, 3, 4 區) */}
-                            <div style={{ gridColumn: '2 / 5', display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.4rem' }}>
+                        <div className="glass-card" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 3fr', gridTemplateRows: 'auto auto 1fr', gap: '1rem', flex: 1, minHeight: 0, paddingTop: '0.75rem' }}>
+                            
+                            {/* 第一列：標題與模式切換 (橫跨所有列) */}
+                            <div style={{ gridColumn: '1 / 4', display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.4rem' }}>
                                 <h2 className="section-title" style={{ marginBottom: 0 }}>檔案更名產生器</h2>
                                 <nav style={{ display: 'flex', gap: '0.5rem' }}>
                                     {[
@@ -294,7 +375,7 @@ const App = () => {
                                     ))}
                                 </nav>
                                 <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <label style={{ whiteSpace: 'nowrap', color: 'var(--text-dim)', margin: 0 }}>檔名排序</label>
+                                    <label style={{ whiteSpace: 'nowrap', color: 'var(--text-dim)', margin: 0 }}>原檔名排序方式：</label>
                                     <select value={config.sortOrder} onChange={(e) => set('sortOrder', e.target.value)} style={{ minWidth: '9rem' }}>
                                         <option value="time_asc">依時間舊到新</option>
                                         <option value="time_desc">依時間新到舊</option>
@@ -304,8 +385,8 @@ const App = () => {
                                 </div>
                             </div>
 
-                            {/* 第二列：命名格式 (橫跨 2, 3, 4 區，僅 C 模式顯示) */}
-                            <div style={{ gridColumn: '2 / 5', minHeight: config.modeOption === 'C' ? 'auto' : 0 }}>
+                            {/* 第二列：命名格式 (僅 C 模式顯示) */}
+                            <div style={{ gridColumn: '1 / 4', minHeight: config.modeOption === 'C' ? 'auto' : 0 }}>
                                 {config.modeOption === 'C' && (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.25rem 0' }}>
                                         <label style={{ whiteSpace: 'nowrap', color: 'var(--text-dim)', margin: 0 }}>命名格式：</label>
@@ -313,16 +394,17 @@ const App = () => {
                                             type="text" 
                                             value={config.nameTemplate} 
                                             onChange={(e) => set('nameTemplate', e.target.value)} 
-                                            placeholder="範本：{class}-{no}-{student}-{work}-指導老師-{teacher}"
+                                            placeholder="{class}-{no}-{student}-{work}-指導老師-{teacher}"
                                             style={{ background: 'rgba(255,255,255,0.05)', height: '2.5rem', flex: 1, maxWidth: '800px' }}
                                         />
+                                        <button className="btn btn-ghost" style={{ padding: '0.2rem 0.5rem', fontSize: '0.85rem', color: '#f43f5e' }} onClick={handleTemplateReset}>🔄 重置</button>
                                     </div>
                                 )}
                             </div>
 
                             {/* 第三列：各模式內容下半部 (2, 3, 4 區) */}
                             {(() => {
-                                const panelProps = { results, onCopy: handleCopy, onDownloadBat: () => window.EMagLogic.generateRenameBat(results, config.modeOption, config.classInfo, config.sortOrder), onReset: handleReset };
+                                const panelProps = { results, onCopy: handleCopy, onDownloadBat: () => window.EMagLogic.generateRenameBat(results, config.modeOption, config.classInfo, config.sortOrder), onReset: handleModeReset };
                                 
                                 if (config.modeOption === 'C') {
                                     return (
@@ -348,7 +430,7 @@ const App = () => {
                                 
                                 if (config.modeOption === 'A') {
                                     return (
-                                        <div style={{ gridColumn: '2 / 5', display: 'flex', gap: '1.25rem', minHeight: 0 }}>
+                                        <div style={{ gridColumn: '1 / 4', display: 'flex', gap: '1.25rem', minHeight: 0 }}>
                                             <div className="input-group" style={{ flex: 1 }}>
                                                 <label>A. 全手動操作 (一行一個檔名)</label>
                                                 <textarea 
@@ -357,7 +439,7 @@ const App = () => {
                                                         const val = e.target.value.replace(/[\\\\/:*?"<>|]/g, '');
                                                         set('manualInput', val);
                                                     }} 
-                                                    placeholder={`範例：\n生活花絮001\n生活花絮002`} 
+                                                    placeholder={`生活花絮001\n生活花絮002`} 
                                                     style={{ flex: 1 }} 
                                                 />
                                             </div>
@@ -370,7 +452,7 @@ const App = () => {
 
                                 if (config.modeOption === 'B') {
                                     return (
-                                        <div style={{ gridColumn: '2 / 5', display: 'flex', gap: '1.25rem', minHeight: 0 }}>
+                                        <div style={{ gridColumn: '1 / 4', display: 'flex', gap: '1.25rem', minHeight: 0 }}>
                                             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                                 <div className="input-group">
                                                     <label>B. 生活花絮 - 檔名前綴</label>
