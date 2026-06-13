@@ -15,6 +15,8 @@ const DefaultData = {
     modeOption: 'C',   // A, B, C
     modeB_Prefix: '生活花絮',
     modeB_Digits: 3,
+    modeB_Count: 10,
+    sortOrder: 'time_asc',  // time_asc, time_desc, name_asc, name_desc
     manualInput: ''
 };
 
@@ -125,67 +127,70 @@ const Logic = {
         document.body.removeChild(element);
     },
 
-    // 產生改名批次檔 (.bat) - 移植自 b.html
-    generateRenameBat(lines) {
+    // 產生改名批次檔 (.bat)
+    generateRenameBat(lines, mode, classInfo, sortOrder = 'time_asc') {
         if (lines.length === 0) return;
 
-        let batContent = `@echo off\r\n`;
-        batContent += `:: 重新用乾淨模式呼叫自身，斬斷迴圈雜訊\r\n`;
-        batContent += `if "%~1"==":main" goto :main\r\n`;
-        batContent += `cmd /c "%~f0" :main\r\n`;
-        batContent += `pause >nul\r\n`;
-        batContent += `goto :eof\r\n\r\n`;
+        // 排序方式對應 dir /o 參數
+        const dirOrderMap = {
+            time_asc:  '/o:d',
+            time_desc: '/o:-d',
+            name_asc:  '/o:n',
+            name_desc: '/o:-n',
+        };
+        const dirOrder = dirOrderMap[sortOrder] || '/o:d';
 
-        batContent += `:main\r\n`;
-        batContent += `chcp 65001 >nul\r\n`;
-        batContent += `setlocal enabledelayedexpansion\r\n\r\n`;
-        
-        batContent += `echo @echo off > undo_rename.bat\r\n`;
-        batContent += `echo if "%%~1"==":main" goto :main >> undo_rename.bat\r\n`;
-        batContent += `echo cmd /c "%%~f0" :main >> undo_rename.bat\r\n`;
-        batContent += `echo pause ^>nul >> undo_rename.bat\r\n`;
-        batContent += `echo goto :eof >> undo_rename.bat\r\n\r\n`;
-        batContent += `echo :main >> undo_rename.bat\r\n`;
-        batContent += `echo chcp 65001 ^>nul >> undo_rename.bat\r\n\r\n`;
+        // undo 檔名只在這裡定義一次
+        const UNDO = 'undo_還原.bat';
+
+        let batContent = `@echo off\r\n`;
+        batContent += `@chcp 65001 >nul\r\n`;
+        batContent += `@setlocal enabledelayedexpansion\r\n`;
+        batContent += `@set "UNDO=${UNDO}"\r\n`;
+        batContent += `@echo @echo off > !UNDO!\r\n`;
+        batContent += `@echo chcp 65001 ^>nul >> !UNDO!\r\n`;
 
         lines.forEach((name, index) => {
             let safeName = name.replace(/([&|<>^])/g, '^$1');
-            batContent += `set "name_${index + 1}=${safeName}"\r\n`;
+            batContent += `@set "name_${index + 1}=${safeName}"\r\n`;
         });
 
-        batContent += `\r\nset "idx=1"\r\n`;
-        batContent += `for /f "delims=" %%F in ('dir /b /o:d *.*') do (\r\n`;
-        batContent += `    if /i "%%~xF" NEQ ".bat" (\r\n`;
-        batContent += `        set "current_idx=!idx!"\r\n`;
-        batContent += `        for /f "delims=" %%A in ("!current_idx!") do (\r\n`;
-        batContent += `            if defined name_%%A (\r\n`;
-        batContent += `                set "newname=!name_%%A!"\r\n`;
-        batContent += `                echo [%%F] 已變更為 [!newname!%%~xF]\r\n`;
-        batContent += `                echo echo [!newname!%%~xF] 已還原為 [%%~nxF] >> undo_rename.bat\r\n`;
-        batContent += `                echo ren "!newname!%%~xF" "%%~nxF" ^>nul 2^>^&1 >> undo_rename.bat\r\n`;
-        batContent += `                ren "%%F" "!newname!%%~xF"\r\n`;
-        batContent += `            )\r\n`;
-        batContent += `        )\r\n`;
-        batContent += `        set /a idx+=1\r\n`;
-        batContent += `    )\r\n`;
-        batContent += `)\r\n\r\n`;
+        batContent += `@set "idx=1"\r\n`;
+        batContent += `@for /f "delims=" %%F in ('dir /b ${dirOrder} *.*') do (\r\n`;
+        batContent += `@if /i "%%~xF" NEQ ".bat" (\r\n`;
+        batContent += `@set "current_idx=!idx!"\r\n`;
+        batContent += `@for /f "delims=" %%A in ("!current_idx!") do (\r\n`;
+        batContent += `@if defined name_%%A (\r\n`;
+        batContent += `@set "newname=!name_%%A!"\r\n`;
+        batContent += `@echo [%%F] 已變更為 [!newname!%%~xF]\r\n`;
+        batContent += `@echo ren "!newname!%%~xF" "%%~nxF" ^>nul >> !UNDO!\r\n`;
+        batContent += `@ren "%%F" "!newname!%%~xF"\r\n`;
+        batContent += `@set /a idx+=1\r\n`;
+        batContent += `)\r\n)\r\n)\r\n)\r\n`;
 
-        batContent += `echo echo.\r\n`;
-        batContent += `echo echo 修改完畢。按任意鍵結束...\r\n`;
-        batContent += `echo echo. >> undo_rename.bat\r\n`;
-        batContent += `echo echo 還原完畢。按任意鍵結束... >> undo_rename.bat\r\n`;
+        batContent += `@echo echo. >> !UNDO!\r\n`;
+        batContent += `@echo echo 還原完畢。按任意鍵結束... >> !UNDO!\r\n`;
+        batContent += `@echo pause ^>nul >> !UNDO!\r\n`;
+        batContent += `@echo.\r\n`;
+        batContent += `@echo 修改完畢。按任意鍵結束...\r\n`;
+        batContent += `@pause >nul\r\n`;
 
-        const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
-        const blob = new Blob([bom, batContent], { type: 'text/plain;charset=utf-8' });
+        // 依模式決定檔名
+        let batFilename = 'run_rename.bat';
+        if (mode === 'A') batFilename = 'run_rename_全手動.bat';
+        else if (mode === 'B') batFilename = 'run_rename_流水號.bat';
+        else if (mode === 'C') batFilename = `run_rename_${classInfo || ''}格式化.bat`;
+
+        const blob = new Blob([batContent], { type: 'text/plain;charset=utf-8' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = 'run_rename.bat';
+        link.download = batFilename;
         link.click();
         URL.revokeObjectURL(link.href);
     },
 
     // 童詩 Word 格式化處理 - 移植自 a.html
-    generatePoetryWord(rawText, defaultTeacher = '') {
+    generatePoetryWord(rawText, defaultTeacher = '', originalFilename = '') {
         if (!rawText.trim()) return;
 
         const { Document, Packer, Paragraph, TextRun, AlignmentType } = docx;
@@ -193,7 +198,7 @@ const Logic = {
         const FONT_SIZE = 24;      
         const LINE_SPACING = 360;  
         const MARGIN_2CM = 1134;   
-        const space65 = " ".repeat(65);
+        const space_r = " ".repeat(60);
 
         const originalLines = rawText.split('\n').map(line => line.trim());
         const isClassNumber = (s) => /^\d+$/.test(s); 
@@ -251,7 +256,7 @@ const Logic = {
                 if (infoText) {
                     docParagraphs.push(new Paragraph({
                         alignment: AlignmentType.LEFT,
-                        children: [new TextRun({ text: space65 + infoText, font: FONT_NAME, size: FONT_SIZE })]
+                        children: [new TextRun({ text: space_r + infoText, font: FONT_NAME, size: FONT_SIZE })]
                     }));
                 }
             });
@@ -279,7 +284,10 @@ const Logic = {
             }]
         });
 
-        Packer.toBlob(doc).then(blob => window.saveAs(blob, "精準規格排版_童詩合輯.docx"));
+        Packer.toBlob(doc).then(blob => {
+            const baseName = originalFilename ? originalFilename.replace(/\.docx$/i, '') : '童詩合輯';
+            window.saveAs(blob, `${baseName}_完成.docx`);
+        });
     }
 };
 
