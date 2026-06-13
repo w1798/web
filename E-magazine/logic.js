@@ -162,6 +162,21 @@ const Logic = {
         batContent += `chcp 65001 >nul\r\n`;
         batContent += `setlocal enabledelayedexpansion\r\n`;
         batContent += `set "UNDO=${UNDO}"\r\n`;
+        
+        // 安全檢查：改用 GOTO 避開 UTF-8 在括號內的解析問題
+        batContent += `if not exist "!UNDO!" goto :START_RENAME\r\n`;
+        batContent += `echo.\r\n`;
+        batContent += `echo [錯誤] 偵測到 "!UNDO!" 已存在！\r\n`;
+        batContent += `echo.\r\n`;
+        batContent += `echo 這代表您可能已經執行過改名，或此目錄已有改名記錄。\r\n`;
+        batContent += `echo.\r\n`;
+        batContent += `echo 為防範重複改名導致原始檔名遺失，請先執行 "!UNDO!" 或手動移除 "!UNDO!" 再繼續。\r\n`;
+        batContent += `echo.\r\n`;
+        batContent += `echo 按任意鍵結束...\r\n`;
+        batContent += `pause >nul\r\n`;
+        batContent += `exit /b\r\n`;
+        batContent += `:START_RENAME\r\n\r\n`;
+
         batContent += `echo @echo off > !UNDO!\r\n`;
         batContent += `echo chcp 65001 ^>nul >> !UNDO!\r\n`;
 

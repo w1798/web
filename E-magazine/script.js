@@ -233,7 +233,7 @@ const App = () => {
         <div id="root">
             <header className="header" style={{ padding: '0.75rem 2rem 0.5rem' }}>
                 <h1 style={{ fontSize: '2rem' }}>電子校刊作品管理</h1>
-                <p style={{ fontSize: '1.2rem' }}>快速處理文選作者格式 與 批次檔名格式化<span style={{ color: 'var(--accent)', marginLeft: '0.5rem' }}>(下載.bat後，放到要改檔名的目錄裡執行即可)</span></p>
+                <p style={{ fontSize: '1.2rem' }}>快速處理文選作者格式 與 批次檔名格式化<span style={{ color: '#F9F900', marginLeft: '0.5rem' }}>(下載.bat後，放到要改檔名的目錄裡執行即可)</span></p>
             </header>
 
             <div className="main-layout">
@@ -300,7 +300,7 @@ const App = () => {
                                 <div style={{ flex: 1, minWidth: 0, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--glass-border)', borderRadius: '0.75rem', padding: '1.25rem', fontSize: '1rem', lineHeight: 2, overflowY: 'auto' }}>
                                     <div style={{ color: 'var(--text-dim)', fontWeight: 700, marginBottom: '0.5rem' }}>💡 每篇開始的格式：</div>
                                     <div>第1行: 題目</div>
-                                    <div>第2行: 學號(一定要純數字)</div>
+                                    <div>第2行: 學號<span style={{ color: '#F9F900', fontWeight: 'bold' }}>(一定要，純數字)</span></div>
                                     <div>第3行: 學生姓名</div>
                                     <div>第4行: 指導老師(可省略)</div>
                                     <div style={{ color: 'var(--text-dim)', fontSize: '0.95rem' }}>&nbsp;&nbsp;&nbsp;&nbsp;(空一行)</div>
