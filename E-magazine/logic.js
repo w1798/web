@@ -8,16 +8,17 @@ const E_MAG_STORAGE_KEY = 'e_magazine_app_data';
 const DefaultData = {
     classInfo: '305',
     teacherName: '許美麗',
-    poetryTeacher: '', // 童詩版指導老師預設值
+    poetryTeacher: '指導 許美麗 師', // 作文/童詩版指導老師預設值
     studentNames: '', // 一行一位
-    batchSeats: '',   // 一行一個座號
+    batchNos: '',     // 一行一個座號
     workTitles: '',    // 一行一個或單一作品名稱
     modeOption: 'C',   // A, B, C
     modeB_Prefix: '生活花絮',
     modeB_Digits: 3,
     modeB_Count: 10,
     sortOrder: 'time_asc',  // time_asc, time_desc, name_asc, name_desc
-    manualInput: ''
+    manualInput: '',
+    nameTemplate: '{class}-{no}-{student}-{work}-指導老師-{teacher}'
 };
 
 const Logic = {
@@ -65,54 +66,67 @@ const Logic = {
         const lines = rawText.split('\n');
         const map = {};
         lines.forEach((name, index) => {
-            const seat = index + 1;
+            const rollNo = index + 1;
             const trimmedName = name.trim();
             if (trimmedName) {
-                map[seat] = trimmedName;
+                map[rollNo] = trimmedName;
             }
         });
         return map;
     },
 
-    // 產生最終檔名格式：<班級>-<座號1>_<座號2>-<姓名1>_<姓名2>-<作品名稱>-指導老師-<老師姓名>
+    // 套用命名範本
+    applyTemplate(template, vars) {
+        return template
+            .replace(/\{class\}/g,   vars.class || '')
+            .replace(/\{no\}/g,      vars.no || '')
+            .replace(/\{student\}/g, vars.student || '')
+            .replace(/\{work\}/g,    vars.work || '')
+            .replace(/\{teacher\}/g, vars.teacher || '');
+    },
+
+    // 產生最終檔名格式：使用自訂範本
     generateFinalFilenames(config) {
-        const { classInfo, teacherName, studentNames, workTitles, batchSeats } = config;
+        const { classInfo, teacherName, studentNames, workTitles, batchNos, nameTemplate } = config;
+        const template = nameTemplate || '{class}-{no}-{student}-{work}-指導老師-{teacher}';
         
         const studentMap = this.getStudentMap(studentNames);
-        // 分行處理，每一行代表一個作品（可能有多個學生）
-        const seatEntries = (batchSeats || '').split('\n').map(s => s.trim()).filter(s => s !== '');
+        const noEntries = (batchNos || '').split('\n').map(s => s.trim()).filter(s => s !== '');
         const titles = (workTitles || '').split('\n').map(t => t.trim()).filter(t => t !== '');
         
         // 如果座號列表為空，則改為處理所有學生（一人一個檔名）
-        if (seatEntries.length === 0) {
-            return Object.keys(studentMap).map((seatNum, index) => {
-                const seatPad = this.padNumber(seatNum, 2);
-                const name = studentMap[seatNum];
-                const title = titles.length === 1 ? titles[0] : (titles[index] || '未具名作品');
-                return `${classInfo}-${seatPad}-${name}-${title}-指導老師-${teacherName}`;
+        if (noEntries.length === 0) {
+            return Object.keys(studentMap).map((noNum, index) => {
+                return this.applyTemplate(template, {
+                    class: classInfo,
+                    no: this.padNumber(noNum, 2),
+                    student: studentMap[noNum],
+                    work: titles.length === 1 ? titles[0] : (titles[index] || '未具名作品'),
+                    teacher: teacherName
+                });
             });
         }
 
-        return seatEntries.map((line, index) => {
-            // 解析一行內的多部座號，支援逗號、空格或底線分隔
-            const seatsInLine = line.split(/[,\s_]+/).map(s => s.trim()).filter(s => s !== '');
-            
-            const seatPads = [];
+        return noEntries.map((line, index) => {
+            const nosInLine = line.split(/[,\s_]+/).map(s => s.trim()).filter(s => s !== '');
+            const noPads = [];
             const names = [];
             
-            seatsInLine.forEach(s => {
-                const seatNum = parseInt(s);
-                if (!isNaN(seatNum)) {
-                    seatPads.push(this.padNumber(seatNum, 2));
-                    names.push(studentMap[seatNum] || '未知姓名');
+            nosInLine.forEach(s => {
+                const noNum = parseInt(s);
+                if (!isNaN(noNum)) {
+                    noPads.push(this.padNumber(noNum, 2));
+                    names.push(studentMap[noNum] || '未知姓名');
                 }
             });
 
-            const combinedSeats = seatPads.join('_');
-            const combinedNames = names.join('_');
-            const title = titles.length === 1 ? titles[0] : (titles[index] || '未具名作品');
-            
-            return `${classInfo}-${combinedSeats}-${combinedNames}-${title}-指導老師-${teacherName}`;
+            return this.applyTemplate(template, {
+                class: classInfo,
+                no: noPads.join('_'),
+                student: names.join('_'),
+                work: titles.length === 1 ? titles[0] : (titles[index] || '未具名作品'),
+                teacher: teacherName
+            });
         });
     },
 
@@ -242,7 +256,7 @@ const Logic = {
             
             // 補充預設指導老師
             if (!poem.teacher && defaultTeacher) {
-                poem.teacher = `指導 ${defaultTeacher} 老師`;
+                poem.teacher = `${defaultTeacher}`;
             }
 
             if (poem.title) {
