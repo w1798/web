@@ -135,12 +135,13 @@
             return;
         }
 
-        const cssList = resources.styles || [];
+        let cssList = resources.styles || [];
         let scriptList = resources.scripts || [];
 
-        // 動態路徑注入：pro 模式下自動為腳本加上 dist/ 前綴
+        // 動態路徑注入：pro 模式下自動為腳本與樣式加上 dist/ 前綴
         const isProMode = window.APP_ENV.isEsbuild;
         if (isProMode) {
+            cssList = cssList.map(url => url.startsWith('dist/') ? url : 'dist/' + url);
             scriptList = scriptList.map(item => {
                 // 1. 拆解出 url 與 type
                 const isString = typeof item === 'string';

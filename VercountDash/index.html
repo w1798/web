@@ -198,15 +198,22 @@
         let isUrlEmpty = !appData.settings.urls || appData.settings.urls.length === 0;
 
         if (appData.settings.binId && appData.settings.apiKey) {
-            if (isPushPending) {
+            if (isPushPending && !isUrlEmpty) {
                 console.log("[VercountDash] 偵測到「儲存並同步」，以本地端資料為主更新雲端...");
                 updateStatusUI('cache'); 
             } else {
-                console.log("[VercountDash] 網頁載入，從雲端下載最新資料...");
-                await loadFromCloud();
-                
-                // 重新判斷網址是否為空（可能從雲端抓下來了）
-                isUrlEmpty = !appData.settings.urls || appData.settings.urls.length === 0;
+                // 如果網址為空，或者超過了雲端緩衝時間，則下載資料
+                const cloudCD = appData.settings.cloudCD || 60;
+                if (isUrlEmpty || !lastCloud || (Date.now() - lastCloud > cloudCD * 60000)) {
+                    console.log("[VercountDash] 網頁載入，從雲端下載最新資料...");
+                    await loadFromCloud();
+                    
+                    // 重新判斷網址是否為空（可能從雲端抓下來了）
+                    isUrlEmpty = !appData.settings.urls || appData.settings.urls.length === 0;
+                } else {
+                    console.log("[VercountDash] 未達雲端下載緩衝時間，使用本地緩存資料...");
+                    updateStatusUI('online');
+                }
             }
         } else {
             updateStatusUI('offline');
@@ -271,10 +278,21 @@
                 if (res.ok) {
                     const data = await res.json();
                     if (data.result) {
-                        const raw = data.result;
-                        try {
-                            cloudRecord = (typeof raw === 'string' && !raw.includes('{')) ? await decompressJSON(raw) : JSON.parse(raw);
-                        } catch(e) { cloudRecord = JSON.parse(raw); }
+                        let raw = data.result;
+                        // 有時 Upstash 會傳回字串，有時是物件。嘗試統一處理
+                        if (typeof raw === 'string') {
+                            try {
+                                raw = JSON.parse(raw);
+                            } catch(e) { } // 若不是合法 JSON，就維持原字串（可能就是 base64）
+                        }
+                        
+                        if (typeof raw === 'object' && raw !== null && raw.d) {
+                            cloudRecord = await decompressJSON(raw.d);
+                        } else if (typeof raw === 'string') {
+                            cloudRecord = await decompressJSON(raw);
+                        } else {
+                            cloudRecord = raw;
+                        }
                     }
                 }
             }

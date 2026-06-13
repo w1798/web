@@ -42,6 +42,9 @@ echo [7/7] script.js
 %ESBUILD% script.js %F1% %F2% %F3% %F4% %F5% --outfile=dist\script.js
 if errorlevel 1 goto :error
 
+%ESBUILD% style.css --minify --charset=utf8 --outfile=dist\style.css
+if errorlevel 1 goto :error
+
 echo.
 echo ======================================
 echo   Done!

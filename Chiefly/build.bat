@@ -9,6 +9,9 @@ if errorlevel 1 goto :error
 %ESBUILD% script.js --minify --outfile=dist/script.js --platform=browser --loader:.js=jsx
 if errorlevel 1 goto :error
 
+%ESBUILD% style.css --minify --charset=utf8 --outfile=dist\style.css
+if errorlevel 1 goto :error
+
 echo.
 echo ======================================
 echo   Done!

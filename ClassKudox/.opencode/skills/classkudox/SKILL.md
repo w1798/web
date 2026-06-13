@@ -306,6 +306,56 @@ loader_engine.js  (定義 window.L / window.LE / window._LOGS / window._loadPako
 - `state.js` 做 `const L = window.L; const LE = window.LE;` 供整個 bundle 使用
 - 不需要 `window.L = window.L || ...` fallback，因為 `loader_engine.js` 保證最早執行
 
+## 壓縮系統（壓縮失敗動態載入 pako）
+
+`compressJSON` / `decompressJSON` / `decompressBinary` 採用三級降級，定義在 `utils.js`。
+
+### 降級流程
+
+```
+try CompressionStream / DecompressionStream (原生)
+  ├─ success → 回傳 base64 / obj
+  └─ 失敗 → console.warn 原因
+            → window._loadPako() (定義在 loader_engine.js)
+              ├─ CDN pako.min.js → 成功 → pako 壓縮
+              └─ CDN 失敗 → ../libs/pako.min.js (本地備份)
+                            ├─ 成功 → pako 壓縮
+                            └─ 失敗 → return null
+```
+
+### 設計原則
+
+- **原生優先**：不預載 pako，只在瀏覽器不支援或執行拋錯時才動態載入
+- **雙重備援**：CDN 失敗後自動降級到專案目錄的 `libs/pako.min.js`
+- **一次載入永久有效**：載入後 `typeof pako !== 'undefined'` 全域可用
+- **plugins.js 獨立判定**：若瀏覽器完全不支援 `DecompressionStream`，`plugins.js` 的 condition 會提前載入 pako，與動態降級不衝突
+
+### `_loadPako()` 定義位置
+
+`../loader_engine.js`（最早腳本），所有專案共用：
+
+```js
+window._loadPako = () => {
+    if (typeof pako !== 'undefined') return Promise.resolve();
+    return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js';
+        s.onload = resolve;
+        s.onerror = () => {
+            const isRoot = typeof APP_ROOT !== 'undefined' && APP_ROOT === 1;
+            const prefix = isRoot ? 'libs/' : '../libs/';
+            const fb = document.createElement('script');
+            fb.src = prefix + 'pako.min.js';
+            fb.async = false;
+            fb.onload = resolve;
+            fb.onerror = () => reject(new Error('pako 載入失敗（CDN + 本地均無法讀取）'));
+            document.head.appendChild(fb);
+        };
+        document.head.appendChild(s);
+    });
+};
+```
+
 ## 相關檔案
 
 
