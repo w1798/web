@@ -179,6 +179,15 @@ function App() {
     // --- 分配邏輯 ---
     const handleApplySettings = () => {
         const newJobs = ChieflyLogic.parseJobs(currentSheet.settings.jobsText);
+        
+        // 檢查重複職務名稱 (Rule: 不能同名)
+        const jobNames = newJobs.map(j => j.name);
+        const duplicates = jobNames.filter((name, index) => jobNames.indexOf(name) !== index);
+        if (duplicates.length > 0) {
+            alert(`職務設定中存有重複名稱，請修正後再套用：\n${[...new Set(duplicates)].join(', ')}`);
+            return;
+        }
+
         const oldJobs = currentSheet.activeJobs;
         const oldByName = {};
         oldJobs.forEach(j => { oldByName[j.name] = j; });
