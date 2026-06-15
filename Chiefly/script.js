@@ -10,6 +10,8 @@ function App() {
     const [showBackToTop, setShowBackToTop] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [isCustomThemeOpen, setCustomThemeOpen] = useState(false);
+    const [tempJobsText, setTempJobsText] = useState('');
+    const [tempStudentsText, setTempStudentsText] = useState('');
 
     // 獲取當前工作表
     const currentSheet = useMemo(() => {
@@ -75,6 +77,14 @@ function App() {
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
+
+    // 當開啟設定視窗或切換工作表時，同步職務與名單到臨時狀態
+    useEffect(() => {
+        if (isSettingsOpen) {
+            setTempJobsText(currentSheet.settings.jobsText);
+            setTempStudentsText(currentSheet.settings.studentsText);
+        }
+    }, [isSettingsOpen, state.currentSheetId]);
 
     // 內部輔助：更新當前工作表
     const updateCurrentSheet = (updater) => {
@@ -178,7 +188,7 @@ function App() {
 
     // --- 分配邏輯 ---
     const handleApplySettings = () => {
-        const newJobs = ChieflyLogic.parseJobs(currentSheet.settings.jobsText);
+        const newJobs = ChieflyLogic.parseJobs(tempJobsText);
         
         // 檢查重複職務名稱 (Rule: 不能同名)
         const jobNames = newJobs.map(j => j.name);
@@ -203,6 +213,7 @@ function App() {
         const filteredHidden = currentSheet.hiddenJobIds.filter(id => newIdSet.has(id));
         updateCurrentSheet(s => ({
             ...s,
+            settings: { ...s.settings, jobsText: tempJobsText, studentsText: tempStudentsText },
             activeJobs: mergedJobs,
             assignments: filteredAssignments,
             hiddenJobIds: filteredHidden
@@ -378,12 +389,12 @@ function App() {
                                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                                         <label style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '0.2rem' }}>職務設定(名稱, 名額)</label>
                                         <textarea style={{ flex: 1, fontSize: '1.05rem', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--glass-border)', padding: '0.4rem' }}
-                                            value={currentSheet.settings.jobsText} onChange={(e) => updateCurrentSheet(s => ({ ...s, settings: { ...s.settings, jobsText: e.target.value } }))} />
+                                            value={tempJobsText} onChange={(e) => setTempJobsText(e.target.value)} />
                                     </div>
                                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                                         <label style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '0.2rem' }}>學生名單</label>
                                         <textarea style={{ flex: 1, fontSize: '1.05rem', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--glass-border)', padding: '0.4rem' }}
-                                            value={currentSheet.settings.studentsText} onChange={(e) => updateCurrentSheet(s => ({ ...s, settings: { ...s.settings, studentsText: e.target.value } }))} />
+                                            value={tempStudentsText} onChange={(e) => setTempStudentsText(e.target.value)} />
                                     </div>
                                 </div>
                                 <div style={{ flex: 0.34, padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', fontSize: '1rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
