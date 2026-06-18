@@ -341,7 +341,7 @@ function Settings() {
 
                     <div className={`settings-tab-content ${activeTab === 'cloud' ? 'active' : ''}`} id="settingsCloudTab">
                         <div className="settings-section">
-                            <h3>☁️ 雲端同步設定</h3>
+                            <h3>☁️ 雲端同步設定 (<a href="https://w1798.github.io/web/JsonCloudGuide" target="_blank" style={{ color: '#ff0000', fontSize: '1em' }}>申請說明</a>)</h3>
                             <p className="small-text" style={{ marginBottom: '1rem', color: 'var(--text-secondary)' }}>支援 Upstash / Firebase。上傳時會自動排除您的金鑰資訊以保護隱私。</p>
                             
                             <div className="settings-sync-item">
