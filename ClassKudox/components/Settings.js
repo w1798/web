@@ -223,24 +223,12 @@ function Settings() {
                     <div className={`settings-tab-content ${activeTab === 'positive' ? 'active' : ''}`} id="settingsPositiveTab">
                         <div className="settings-section">
                             <div className="add-item-form-container">
-                                <h4>✨ 新增項目</h4>
+                                <h4>✨ 新增項目 <label className="add-item-inline-check"><input type="checkbox" id="newPositiveIgnore" />不列入排名</label></h4>
                                 <div className="add-item-form">
-                                    <div className="add-item-input-group">
-                                        <label className="mobile-only-label">項目</label>
-                                        <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
-                                            <button className="icon-select-btn" id="newPositiveIconBtn">⭐</button>
-                                            <input type="text" id="newPositiveLabel" placeholder="項目：例如 團隊合作" style={{ flex: 1 }} />
-                                        </div>
-                                    </div>
-                                    <div className="add-item-input-group">
-                                        <label className="mobile-only-label">點數</label>
-                                        <input type="number" id="newPositiveValue" placeholder="點數" defaultValue="1" min="0" />
-                                    </div>
-                                    <div className="checkbox-group">
-                                        <input type="checkbox" id="newPositiveIgnore" />
-                                        <label htmlFor="newPositiveIgnore" className="small-text">不列入排名</label>
-                                    </div>
-                                    <button className="btn add-item-btn" id="addPositiveBtn" style={{ whiteSpace: 'nowrap', padding: '0 1rem', flexShrink: 0, minWidth: 'max-content' }}>+增加</button>
+                                    <button className="icon-select-btn" id="newPositiveIconBtn">⭐</button>
+                                    <input type="text" id="newPositiveLabel" placeholder="項目：例如 團隊合作" className="add-item-text-input" />
+                                    <input type="number" id="newPositiveValue" placeholder="點數" defaultValue="1" min="0" className="add-item-num-input" />
+                                    <button className="btn add-item-btn" id="addPositiveBtn">+增加</button>
                                 </div>
                             </div>
                             <div className="settings-point-grid" style={{ marginTop: '1rem' }}>
@@ -260,24 +248,12 @@ function Settings() {
                     <div className={`settings-tab-content ${activeTab === 'negative' ? 'active' : ''}`} id="settingsNegativeTab">
                         <div className="settings-section">
                             <div className="add-item-form-container">
-                                <h4>✨ 新增項目</h4>
+                                <h4>✨ 新增項目 <label className="add-item-inline-check"><input type="checkbox" id="newNeedsWorkIgnore" />不列入排名</label></h4>
                                 <div className="add-item-form">
-                                    <div className="add-item-input-group">
-                                        <label className="mobile-only-label">項目</label>
-                                        <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
-                                            <button className="icon-select-btn" id="newNeedsWorkIconBtn">🚩</button>
-                                            <input type="text" id="newNeedsWorkLabel" placeholder="項目：例如 上課講話" style={{ flex: 1 }} />
-                                        </div>
-                                    </div>
-                                    <div className="add-item-input-group">
-                                        <label className="mobile-only-label">點數</label>
-                                        <input type="number" id="newNeedsWorkValue" placeholder="點數 (負數)" defaultValue="-1" max="0" />
-                                    </div>
-                                    <div className="checkbox-group">
-                                        <input type="checkbox" id="newNeedsWorkIgnore" />
-                                        <label htmlFor="newNeedsWorkIgnore" className="small-text">不列入排名</label>
-                                    </div>
-                                    <button className="btn add-item-btn" id="addNeedsWorkBtn" style={{ whiteSpace: 'nowrap', padding: '0 1rem', flexShrink: 0, minWidth: 'max-content' }}>+增加</button>
+                                    <button className="icon-select-btn" id="newNeedsWorkIconBtn">🚩</button>
+                                    <input type="text" id="newNeedsWorkLabel" placeholder="項目：例如 上課講話" className="add-item-text-input" />
+                                    <input type="number" id="newNeedsWorkValue" placeholder="點數 (負數)" defaultValue="-1" max="0" className="add-item-num-input" />
+                                    <button className="btn add-item-btn" id="addNeedsWorkBtn">+增加</button>
                                 </div>
                             </div>
                             <div className="settings-point-grid" style={{ marginTop: '1rem' }}>
