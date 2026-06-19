@@ -805,8 +805,8 @@ input:focus, textarea:focus { outline: none; border-color: var(--primary-color);
     display: flex; gap: 0.5rem; align-items: center;
     background: #f8fafc; padding: 0.5rem; border-radius: 12px;
 }
-input.add-item-text-input { width: 300px; flex: none; min-width: 0; }
-input.add-item-num-input { width: 120px; flex: none; text-align: center; }
+input.add-item-text-input { width: 240px; flex: none; min-width: 0; }
+input.add-item-num-input { width: 100px; flex: none; text-align: center; }
 .add-item-inline-check { font-size: 0.85em; font-weight: 400; color: var(--text-secondary); display: flex; align-items: center; gap: 0.3rem; cursor: pointer; white-space: nowrap; }
 .checkbox-group { display: flex; align-items: center; gap: 0.4rem; grid-column: span 2; }
 
