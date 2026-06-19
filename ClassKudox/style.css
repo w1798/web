@@ -1154,8 +1154,8 @@ footer a:hover {
         gap: 0.5rem !important;
         padding: 0.5rem !important;
     }
-    .add-item-text-input { width: 100% !important; flex: none !important; }
-    .add-item-num-input { width: 80px !important; flex: none !important; }
+    input.add-item-text-input { width: 60px !important; flex: none !important; }
+    input.add-item-num-input { width: 60px !important; flex: none !important; }
     .add-item-btn { flex: 0 0 auto !important; height: 40px !important; padding: 0 1rem !important; }
     .add-item-inline-check { margin-left: 0 !important; }
 
