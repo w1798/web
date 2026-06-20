@@ -39,6 +39,7 @@ const App = () => {
     const [poetryContent, setPoetryContent] = useState('');
     const [status, setStatus] = useState('');
     const [uploadedFileName, setUploadedFileName] = useState('');
+    const [showHelp, setShowHelp] = useState(false);
 
     useEffect(() => {
         window.EMagLogic.saveData(config);
@@ -51,27 +52,68 @@ const App = () => {
         setResults(r);
     }, [config]);
 
-    const handleWordUpload = (event) => {
-        const file = event.target.files[0];
+    // 統一檔案上傳處理
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
         if (!file) return;
+        
+        const fileName = file.name.toLowerCase();
         setUploadedFileName(file.name);
         setPoetryContent('');
-        setStatus("正在讀取...");
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            window.mammoth.extractRawText({ arrayBuffer: e.target.result })
-                .then((result) => {
-                    let text = result.value.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-                    text = text.replace(/\n\n\n/g, "\n\n");
-                    text = text.replace(/(.)\n\n(.)/g, "$1\n$2");
+        setStatus('');
+
+        if (fileName.endsWith('.docx')) {
+            // 處理 Word
+            setStatus("正在讀取 Word...");
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const result = await window.mammoth.extractRawText({ arrayBuffer: e.target.result });
+                
+                // 根據檔名判斷文類
+                let type = "未知";
+                const fname = file.name;
+                if (fname.includes("作文")) type = "作文";
+                else if (fname.includes("詩")) type = "童詩";
+                else if (fname.includes("心得") || fname.includes("讀後")) type = "心得";
+                
+                let text = result.value.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+                text = text.replace(/\n\n\n/g, "\n\n");
+                text = text.replace(/(.)\n\n(.)/g, "$1\n$2");
+                
+                const prefix = `[類型: ${type}]\n`;
+                setPoetryContent(prefix + text);
+                setStatus("✅ Word 讀取成功");
+            };
+            reader.readAsArrayBuffer(file);
+        } else if (fileName.endsWith('.zip') || fileName.endsWith('.csv')) {
+            // 處理 Google 表單 (ZIP 或單純 CSV)
+            setStatus("正在解析 Google 表單資料...");
+            try {
+                let text = "";
+                if (fileName.endsWith('.zip')) {
+                    text = await window.EMagLogic.processGoogleFormZip(file);
+                } else {
+                    const reader = new FileReader();
+                    text = await new Promise((resolve) => {
+                        reader.onload = (re) => resolve(window.EMagLogic.parseGoogleCsv(re.target.result));
+                        reader.readAsText(file);
+                    });
+                }
+                
+                if (text) {
                     setPoetryContent(text);
-                    setStatus("解讀成功！");
-                })
-                .catch((err) => { alert("讀取失敗：" + err); setStatus("讀取失敗。"); });
-        };
-        reader.readAsArrayBuffer(file);
-        // 重置 file input 以便重複選擇同一個檔案
-        event.target.value = '';
+                    setStatus("✅ 表單匯入成功");
+                }
+            } catch (err) {
+                console.error(err);
+                setStatus(`❌ 處理失敗: ${err.message}`);
+            }
+        } else {
+            alert("不支援的檔案格式！");
+        }
+        
+        // 重置以利重複選擇
+        e.target.value = '';
     };
 
     const set = (field, value) => setConfig(prev => ({ ...prev, [field]: value }));
@@ -123,13 +165,15 @@ const App = () => {
         }
     };
 
-    // 3. 文章頁面重置
+    // 3. 文章頁面重置 (使用 Logic 中定義的集中預設值)
     const handlePoetryReset = () => {
-        if (window.confirm('確定要重置「文章」的內容與排版設定嗎？')) {
-            setPoetryContent(''); 
-            setStatus(''); 
-            set('authorSpaces', 60);
-            set('poetryTeacher', '指導 許美麗 師');
+        if (window.confirm('確定要初始化「文選格式化」的所有設定嗎？(包含字體大小、行距等)')) {
+            setConfig(prev => ({
+                ...prev,
+                ...window.EMagLogic.PoetryDefaults
+            }));
+            setPoetryContent('');
+            setStatus('設定已恢復預設值');
         }
     };
 
@@ -143,7 +187,7 @@ const App = () => {
     // === 各模式渲染 ===
     const renderMode = () => {
         // 共用的預覽面板 props
-        const panelProps = { results, onCopy: handleCopy, onDownloadBat: () => window.EMagLogic.generateRenameBat(results, config.modeOption, config.classInfo, config.sortOrder), onReset: handleReset };
+        const panelProps = { results, onCopy: handleCopy, onDownloadBat: () => window.EMagLogic.generateRenameBat(results, config.modeOption, config.classInfo, config.sortOrder), onReset: handleModeReset };
 
         if (config.modeOption === 'A') {
             return (
@@ -280,69 +324,127 @@ const App = () => {
                 <main className="content-area">
                     {/* === 童詩頁面 === */}
                     {activeTab === 'poetry' && (
-                        <div className="glass-card" style={{ flex: 1, minHeight: 0, gap: '1rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>
-                                <h2 className="section-title" style={{ marginBottom: 0 }}>文選精準格式轉換器</h2>
-                                <div style={{ fontSize: '0.9rem', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <span>題目會置中，後三行作者資訊會靠右</span>
-                                    <input 
-                                        type="number" 
-                                        value={config.authorSpaces} 
-                                        onChange={(e) => set('authorSpaces', parseInt(e.target.value) || 0)} 
-                                        min="0"
-                                        style={{ width: '60px', height: '1.8rem', padding: '0 0.3rem', textAlign: 'center', background: 'rgba(255,255,255,0.05)' }}
-                                    />
-                                    <span>個空白對齊</span>
-                                </div>
-                            </div>
-                            <div style={{ display: 'flex', gap: '1.5rem', flex: 1, minHeight: 0 }}>
-                                {/* 左區 1x：格式說明 */}
-                                <div style={{ flex: 1, minWidth: 0, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--glass-border)', borderRadius: '0.75rem', padding: '1.25rem', fontSize: '1rem', lineHeight: 2, overflowY: 'auto' }}>
-                                    <div style={{ color: 'var(--text-dim)', fontWeight: 700, marginBottom: '0.5rem' }}>💡 每篇開始的格式：</div>
+                        <div className="glass-card" style={{ flex: 1, minHeight: 0, gap: '1rem', padding: '1rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 4fr) minmax(0, 6fr) minmax(0, 5fr) minmax(0, 5fr)', gap: '1rem', flex: 1, minHeight: 0, width: '100%' }}>
+                                {/* 第 1 區：格式說明 */}
+                                <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--glass-border)', borderRadius: '0.75rem', padding: '1rem', fontSize: '0.95rem', lineHeight: 1.8, overflowY: 'auto' }}>
+                                    <div style={{ color: 'var(--text-dim)', fontWeight: 700, marginBottom: '0.5rem' }}>💡 填寫格式指引：</div>
                                     <div>第1行: 題目</div>
-                                    <div>第2行: 學號<span style={{ color: '#F9F900', fontWeight: 'bold' }}>(一定要，純數字)</span></div>
+                                    <div style={{ color: '#F9F900' }}>第2行: 學號 (純數字)</div>
                                     <div>第3行: 學生姓名</div>
-                                    <div>第4行: 指導老師(可省略)</div>
-                                    <div style={{ color: 'var(--text-dim)', fontSize: '0.95rem' }}>&nbsp;&nbsp;&nbsp;&nbsp;(空一行)</div>
-                                    <div>作文/詩句內容...</div>
-                                    <div style={{ color: 'var(--text-dim)', fontSize: '0.95rem' }}>&nbsp;&nbsp;&nbsp;&nbsp;(每篇以空行隔開)</div>
+                                    <div>第4行: 指導老師(可略)</div>
+                                    <div style={{ color: 'var(--text-dim)', fontSize: '0.85rem' }}>&nbsp;&nbsp;&nbsp;&nbsp;(需空一行)</div>
+                                    <div>第5行: 文章內容...</div>
                                 </div>
-                                {/* 中區 1x：控制操作 */}
-                                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '1.25rem', overflowY: 'auto', paddingRight: '0.5rem' }}>
+
+                                {/* 第 2 區：排版設定 */}
+                                <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--glass-border)', borderRadius: '0.75rem', padding: '1rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: '1rem' }}>
+                                        <div style={{ color: 'var(--text-dim)', fontWeight: 700 }}>⚙️ 排版細節設定</div>
+                                        <button className="btn" onClick={handlePoetryReset} style={{ padding: '2px 10px', fontSize: '0.8rem', background: 'rgba(244,63,94,0.05)', border: '1px solid rgba(244,63,94,0.3)', color: '#f43f5e' }}>重置</button>
+                                    </div>
+                                    
+                                    <div style={{ marginBottom: '0.5rem', display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', gap: '10px' }}>
+                                        <label style={{ fontSize: '1em', width: '100px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>題目字體</label>
+                                        <input type="number" value={config.fontSizeTitle} onChange={(e) => set('fontSizeTitle', parseInt(e.target.value) || 1)} style={{ width: '70px', height: '30px', padding: '2px 6px' }} />
+                                    </div>
+                                    
+                                    <div style={{ marginBottom: '0.5rem', display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', gap: '10px' }}>
+                                        <label style={{ fontSize: '1em', width: '100px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>作者字體</label>
+                                        <input type="number" value={config.fontSizeAuthor} onChange={(e) => set('fontSizeAuthor', parseInt(e.target.value) || 1)} style={{ width: '70px', height: '30px', padding: '2px 6px' }} />
+                                    </div>
+
+                                    <div style={{ marginBottom: '0.5rem', display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', gap: '10px' }}>
+                                        <label style={{ fontSize: '1em', width: '100px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>內容字體</label>
+                                        <input type="number" value={config.fontSizeContent} onChange={(e) => set('fontSizeContent', parseInt(e.target.value) || 1)} style={{ width: '70px', height: '30px', padding: '2px 6px' }} />
+                                    </div>
+
+                                    <div style={{ marginBottom: '0.5rem', display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', gap: '10px' }}>
+                                        <label style={{ fontSize: '1em', width: '100px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>作者右移</label>
+                                        <input type="number" value={config.authorSpaces} onChange={(e) => set('authorSpaces', parseInt(e.target.value) || 0)} style={{ width: '70px', height: '30px', padding: '2px 6px' }} />
+                                    </div>
+
+                                    <div style={{ marginBottom: '0.5rem', display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', gap: '10px' }}>
+                                        <label style={{ fontSize: '1em', width: '100px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>每篇換頁</label>
+                                        <select value={config.enablePageBreak ? "true" : "false"} onChange={(e) => set('enablePageBreak', e.target.value === "true")} style={{ width: '70px', height: '30px', padding: '2px', background: 'rgba(0,0,0,0.3)', border: '1px solid #555', borderRadius: '4px', color: '#fff' }}>
+                                            <option value="false">否</option>
+                                            <option value="true">是</option>
+                                        </select>
+                                    </div>
+
+                                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.6rem', width: '100%' }}>
+                                        <div style={{ marginBottom: '0.4rem', display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', gap: '10px' }}>
+                                            <label style={{ fontSize: '1em', width: '100px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>作文行距</label>
+                                            <input type="number" step="0.1" value={config.spacingEssay} onChange={(e) => set('spacingEssay', parseFloat(e.target.value) || 1.5)} style={{ width: '70px', height: '30px', padding: '2px 6px' }} />倍
+                                        </div>
+                                        <div style={{ marginBottom: '0.4rem', display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', gap: '10px' }}>
+                                            <label style={{ fontSize: '1em', width: '100px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>童詩行距</label>
+                                            <input type="number" step="0.1" value={config.spacingPoetry} onChange={(e) => set('spacingPoetry', parseFloat(e.target.value) || 1.5)} style={{ width: '70px', height: '30px', padding: '2px 6px' }} />倍
+                                        </div>
+                                        <div style={{ marginBottom: '0.4rem', display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', gap: '10px' }}>
+                                            <label style={{ fontSize: '1em', width: '100px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>心得行距</label>
+                                            <input type="number" step="0.1" value={config.spacingReview} onChange={(e) => set('spacingReview', parseFloat(e.target.value) || 1.5)} style={{ width: '70px', height: '30px', padding: '2px 6px' }} />倍
+                                        </div>
+                                        <div style={{ marginBottom: '0.4rem', display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', gap: '10px' }}>
+                                            <label style={{ fontSize: '1em', width: '100px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>自然段空一列</label>
+                                            <select value={config.emptyLineBetweenParagraphs ? "true" : "false"} onChange={(e) => set('emptyLineBetweenParagraphs', e.target.value === "true")} style={{ width: '70px', height: '30px', padding: '2px', background: 'rgba(0,0,0,0.3)', border: '1px solid #555', borderRadius: '4px', color: '#fff' }}>
+                                                <option value="false">否</option>
+                                                <option value="true">是</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* 第 3 區：指導老師與動作 */}
+                                <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--glass-border)', borderRadius: '0.75rem', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    <div style={{ color: 'var(--text-dim)', fontWeight: 700 }}>✍️ 指導老師與檔案</div>
+                                    
                                     <div className="input-group">
-                                        <label>指導老師 (作品沒有指導老師那行時，會用此補上)</label>
+                                        <label>預設指導老師</label>
                                         <input 
                                             type="text" 
-                                            value={config.poetryTeacher || ''} 
+                                            value={config.poetryTeacher} 
                                             onChange={(e) => set('poetryTeacher', e.target.value)} 
-                                            placeholder="指導 許美麗 師"
+                                            placeholder="例：指導 某某某 師"
                                         />
                                     </div>
+
                                     <div className="input-group">
-                                        <label>1. 上傳 .docx 檔</label>
+                                        <label>1. 選擇檔案</label>
                                         <input 
                                             type="file" 
-                                            accept=".docx" 
-                                            onClick={(e) => {
-                                                e.target.value = ''; // 允許重複選同檔案
-                                                setPoetryContent(''); 
-                                                setStatus(''); 
-                                            }}
-                                            onChange={handleWordUpload} 
+                                            accept=".docx,.zip,.csv" 
+                                            onClick={(e) => { e.target.value = ''; setPoetryContent(''); setStatus('等待檔案...'); }}
+                                            onChange={handleFileUpload} 
                                         />
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginTop: '0.2rem' }}>
+                                            支援 .docx 和 <a href="https://docs.google.com/forms/d/1OsotRlfDINTbaQLN1yUY2LKjvtSIpg8jxh2pjmqI1AU/copy" target="_blank" style={{ color: '#F9F900' }}>Google 表單</a>下載的 .zip .csv 檔
+                                            <a href="#" onClick={(e) => { e.preventDefault(); setShowHelp(true); }} style={{ color: '#F9F900', marginLeft: '8px' }}>(說明)</a>
+                                        </div>
                                     </div>
-                                    <button className="btn btn-primary" onClick={() => window.EMagLogic.generatePoetryWord(poetryContent, config.poetryTeacher, uploadedFileName, config.authorSpaces)} style={{ justifyContent: 'center' }}>
+
+                                    <button className="btn btn-primary" onClick={() => window.EMagLogic.generatePoetryWord(poetryContent, config.poetryTeacher, uploadedFileName, config.authorSpaces, {
+                                        fontSizeTitle: config.fontSizeTitle,
+                                        fontSizeAuthor: config.fontSizeAuthor,
+                                        fontSizeContent: config.fontSizeContent,
+                                        enablePageBreak: config.enablePageBreak,
+                                        spacingEssay: config.spacingEssay,
+                                        spacingPoetry: config.spacingPoetry,
+                                        spacingReview: config.spacingReview,
+                                        emptyLineBetweenParagraphs: config.emptyLineBetweenParagraphs
+                                    })} style={{ justifyContent: 'center' }}>
                                         3. 下載格式化 Word
                                     </button>
                                 </div>
                                 {/* 右區 2x：編輯內容 */}
-                                <div className="input-group" style={{ flex: 2, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-                                        <label style={{ margin: 0 }}>
-                                            2. 編輯內容(再次點「選擇檔案」會自動清除內容)
-                                            {status && <span style={{ color: '#e67e22', marginLeft: '10px', fontWeight: 400 }}>{status}</span>}
-                                        </label>
-                                        <button className="btn btn-ghost" style={{ padding: '0.2rem 0.5rem', fontSize: '0.85rem', color: '#f43f5e' }} onClick={handlePoetryReset}>🔄 重置</button>
+                                {/* 第 4 區：編輯內容 */}
+                                <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--glass-border)', borderRadius: '0.75rem', padding: '1rem', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
+                                        <div style={{ color: 'var(--text-dim)', fontWeight: 700, fontSize: '0.9rem' }}>
+                                            2. 編輯與手動修正
+                                            {status && <span style={{ color: '#F9F900', marginLeft: '10px', fontSize: '0.8rem', fontWeight: 400 }}>[{status}]</span>}
+                                        </div>
+                                        <button className="btn" onClick={() => setPoetryContent('')} style={{ padding: '2px 8px', fontSize: '0.8rem' }}>清空</button>
                                     </div>
                                     <textarea
                                         value={poetryContent}
@@ -487,6 +589,49 @@ const App = () => {
                     )}
                 </main>
             </div>
+            {/* 說明彈窗 */}
+            {showHelp && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem' }}>
+                    <div className="glass-card" style={{ maxWidth: '600px', width: '100%', position: 'relative', border: '1px solid rgba(255,255,255,0.2)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
+                        <button 
+                            onClick={() => setShowHelp(false)}
+                            style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: '1.5rem' }}
+                        >✕</button>
+                        
+                        <h2 style={{ marginBottom: '1.5rem', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            📋 Google 表單格式
+                        </h2>
+                        <div style={{ lineHeight: 1.8, fontSize: '1.05rem' }}>
+                            <p style={{ marginBottom: '1rem', color: 'var(--text-dim)' }}>請在 Google 表單建立下列欄位（皆為必填）：</p>
+                            <ul style={{ listStyle: 'none', padding: 0 }}>
+                                <li style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '0.5rem' }}>
+                                    <strong style={{ color: '#fff' }}>類型</strong>：選擇 (選項：作文、童詩、心得)
+                                </li>
+                                <li style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '0.5rem' }}>
+                                    <strong style={{ color: '#fff' }}>題目</strong>：簡答
+                                </li>
+                                <li style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '0.5rem' }}>
+                                    <strong style={{ color: '#fff' }}>姓名</strong>：簡答
+                                </li>
+                                <li style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '0.5rem' }}>
+                                    <strong style={{ color: '#fff' }}>學號 (範例：5401)</strong>：簡答
+                                </li>
+                                <li style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '0.5rem' }}>
+                                    <strong style={{ color: '#fff' }}>內容</strong>：詳答
+                                </li>
+                            </ul>
+                            <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(244, 63, 94, 0.1)', borderRadius: '8px', borderLeft: '4px solid #f43f5e', fontSize: '0.9rem' }}>
+                                ⚠️ <strong>注意：</strong> 欄位名稱一定要有「類型、題目、姓名、學號、內容」，系統才能正確提取資料。
+                            </div>
+                        </div>
+                        <button 
+                            className="btn btn-primary" 
+                            onClick={() => setShowHelp(false)} 
+                            style={{ width: '100%', marginTop: '2rem', justifyContent: 'center' }}
+                        >我知道了</button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

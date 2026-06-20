@@ -1,46 +1,47 @@
-const E_MAG_STORAGE_KEY="e_magazine_app_data",DefaultData={classInfo:"305",teacherName:"許美麗",poetryTeacher:"指導 許美麗 師",studentNames:"",batchNos:"",workTitles:"",modeOption:"C",modeB_Prefix:"生活花絮",modeB_Digits:3,modeB_Count:10,sortOrder:"time_asc",manualInput:"",nameTemplate:"{class}-{no}-{student}-{work}-指導老師-{teacher}",authorSpaces:60},Logic={initData(){const a=localStorage.getItem(E_MAG_STORAGE_KEY);if(!a)return{...DefaultData};try{const n=JSON.parse(a);return{...DefaultData,...n}}catch{return{...DefaultData}}},saveData(a){localStorage.setItem(E_MAG_STORAGE_KEY,JSON.stringify(a))},resetData(){return localStorage.removeItem(E_MAG_STORAGE_KEY),{...DefaultData}},padNumber(a,n){let r=a+"";for(;r.length<n;)r="0"+r;return r},processModeB(a,n,r){const m=[];for(let f=1;f<=n;f++)m.push(`${a}${this.padNumber(f,r)}`);return m},getStudentMap(a){const n=a.split(`
-`),r={};return n.forEach((m,f)=>{const _=f+1,l=m.trim();l&&(r[_]=l)}),r},applyTemplate(a,n){return a.replace(/\{class\}/g,n.class||"").replace(/\{no\}/g,n.no||"").replace(/\{student\}/g,n.student||"").replace(/\{work\}/g,n.work||"").replace(/\{teacher\}/g,n.teacher||"")},generateFinalFilenames(a){const{classInfo:n,teacherName:r,studentNames:m,workTitles:f,batchNos:_,nameTemplate:l}=a,e=l||"{class}-{no}-{student}-{work}-指導老師-{teacher}",h=this.getStudentMap(m),N=(_||"").split(`
-`).map(s=>s.trim()).filter(s=>s!==""),c=(f||"").split(`
-`).map(s=>s.trim()).filter(s=>s!=="");return N.length===0?Object.keys(h).map((s,g)=>this.applyTemplate(e,{class:n,no:this.padNumber(s,2),student:h[s],work:c.length===1?c[0]:c[g]||"未具名作品",teacher:r})):N.map((s,g)=>{const x=s.split(/[,\s_]+/).map(d=>d.trim()).filter(d=>d!==""),u=[],O=[];return x.forEach(d=>{const b=parseInt(d);isNaN(b)||(u.push(this.padNumber(b,2)),O.push(h[b]||"未知姓名"))}),this.applyTemplate(e,{class:n,no:u.join("_"),student:O.join("_"),work:c.length===1?c[0]:c[g]||"未具名作品",teacher:r})})},downloadTxt(a,n){const r=document.createElement("a");r.setAttribute("href","data:text/plain;charset=utf-8,"+encodeURIComponent(n)),r.setAttribute("download",a),r.style.display="none",document.body.appendChild(r),r.click(),document.body.removeChild(r)},generateRenameBat(a,n,r,m="time_asc"){if(a.length===0)return;const _={time_asc:"/o:d",time_desc:"/o:-d",name_asc:"/o:n",name_desc:"/o:-n"}[m]||"/o:d",l="undo_還原.bat";let e=`@echo off\r
-`;e+=`chcp 65001 >nul\r
-`,e+=`setlocal enabledelayedexpansion\r
-`,e+=`set "UNDO=${l}"\r
-`,e+=`if not exist "!UNDO!" goto :START_RENAME\r
-`,e+=`echo.\r
-`,e+=`echo [錯誤] 偵測到 "!UNDO!" 已存在！\r
-`,e+=`echo.\r
-`,e+=`echo 這代表您可能已經執行過改名，或此目錄已有改名記錄。\r
-`,e+=`echo.\r
-`,e+=`echo 為防範重複改名導致原始檔名遺失，請先執行 "!UNDO!" 或手動移除 "!UNDO!" 再繼續。\r
-`,e+=`echo.\r
-`,e+=`echo 按任意鍵結束...\r
-`,e+=`pause >nul\r
-`,e+=`exit /b\r
-`,e+=`:START_RENAME\r
+const E_MAG_STORAGE_KEY="e_magazine_app_data",Logic={STORAGE_KEY:E_MAG_STORAGE_KEY,PoetryDefaults:{fontSizeTitle:18,fontSizeAuthor:12,fontSizeContent:16,authorSpaces:60,enablePageBreak:!0,emptyLineBetweenParagraphs:!0,spacingEssay:1.5,spacingPoetry:1.5,spacingReview:1.5,poetryTeacher:"指導 許美麗 師"},initData(){const a=localStorage.getItem(this.STORAGE_KEY),s={classInfo:"305",teacherName:"許美麗",studentNames:"",batchNos:"",workTitles:"",modeOption:"C",modeB_Prefix:"生活花絮",modeB_Digits:3,modeB_Count:10,sortOrder:"time_asc",manualInput:"",nameTemplate:"{class}-{no}-{student}-{work}-指導老師-{teacher}",...this.PoetryDefaults};if(!a)return s;try{const n=JSON.parse(a);return{...s,...n}}catch{return s}},saveData(a){localStorage.setItem(this.STORAGE_KEY,JSON.stringify(a))},resetData(){return localStorage.removeItem(this.STORAGE_KEY),this.initData()},padNumber(a,s){let n=a+"";for(;n.length<s;)n="0"+n;return n},processModeB(a,s,n){const o=[];for(let i=1;i<=s;i++)o.push(`${a}${this.padNumber(i,n)}`);return o},getStudentMap(a){const s=a.split(`
+`),n={};return s.forEach((o,i)=>{const t=i+1,N=o.trim();N&&(n[t]=N)}),n},applyTemplate(a,s){return a.replace(/\{class\}/g,s.class||"").replace(/\{no\}/g,s.no||"").replace(/\{student\}/g,s.student||"").replace(/\{work\}/g,s.work||"").replace(/\{teacher\}/g,s.teacher||"")},generateFinalFilenames(a){const{classInfo:s,teacherName:n,studentNames:o,workTitles:i,batchNos:t,nameTemplate:N}=a,h=N||"{class}-{no}-{student}-{work}-指導老師-{teacher}",d=this.getStudentMap(o),w=(t||"").split(`
+`).map(e=>e.trim()).filter(e=>e!==""),u=(i||"").split(`
+`).map(e=>e.trim()).filter(e=>e!=="");if(w.length===0)return Object.keys(d).map(e=>{const c=parseInt(e),E=d[c]||"未知",y=u.length===1?u[0]:u[c-1]||"作品";return this.applyTemplate(h,{class:s,no:this.padNumber(c,2),student:E,work:y,teacher:n})});const f=[];return w.forEach((e,c)=>{const E=(e||"").split(/[,,，]/).map(b=>b.trim()).filter(b=>b!==""),y=u.length===1?u[0]:u[c]||u[u.length-1]||"作品";E.forEach(b=>{const T=parseInt(b),x=d[T]||"未知";f.push(this.applyTemplate(h,{class:s,no:this.padNumber(T,2),student:x,work:y,teacher:n}))})}),f},generateRenameBat(a,s,n,o){const i="undo_還原.bat";let t=`@echo off\r
+`;t+=`chcp 65001 >nul\r
+`,t+=`setlocal enabledelayedexpansion\r
+`,t+=`set "UNDO=${i}"\r
+`,t+=`if not exist "!UNDO!" goto :START_RENAME\r
+`,t+=`echo.\r
+`,t+=`echo [錯誤] 偵測到 "!UNDO!" 已存在！\r
+`,t+=`echo.\r
+`,t+=`echo 按任意鍵結束...\r
+`,t+=`pause >nul\r
+`,t+=`exit /b\r
+`,t+=`:START_RENAME\r
 \r
-`,e+=`echo @echo off > !UNDO!\r
-`,e+=`echo chcp 65001 ^>nul >> !UNDO!\r
-`,a.forEach((s,g)=>{let x=s.replace(/([&|<>^])/g,"^$1");e+=`set "name_${g+1}=${x}"\r
-`}),e+=`set "idx=1"\r
-`,e+=`for /f "delims=" %%F in ('dir /b ${_} *.*') do (\r
-`,e+=`if /i "%%~xF" NEQ ".bat" (\r
-`,e+=`set "current_idx=!idx!"\r
-`,e+=`for /f "delims=" %%A in ("!current_idx!") do (\r
-`,e+=`if defined name_%%A (\r
-`,e+=`set "newname=!name_%%A!"\r
-`,e+=`echo [%%F] 已變更為 [!newname!%%~xF]\r
-`,e+=`echo ren "!newname!%%~xF" "%%~nxF" ^>nul >> !UNDO!\r
-`,e+=`ren "%%F" "!newname!%%~xF"\r
-`,e+=`set /a idx+=1\r
-`,e+=`)\r
-)\r
-)\r
-)\r
-`,e+=`echo echo. >> !UNDO!\r
-`,e+=`echo echo 還原完畢。按任意鍵結束... >> !UNDO!\r
-`,e+=`echo pause ^>nul >> !UNDO!\r
-`,e+=`echo.\r
-`,e+=`echo 修改完畢。按任意鍵結束...\r
-`,e+=`pause >nul\r
-`;let h="run_rename.bat";n==="A"?h="run_rename_全手動.bat":n==="B"?h="run_rename_流水號.bat":n==="C"&&(h=`run_rename_${r||""}格式化.bat`);const N=new Blob([e],{type:"text/plain;charset=utf-8"}),c=document.createElement("a");c.href=URL.createObjectURL(N),c.download=h,c.click(),URL.revokeObjectURL(c.href)},generatePoetryWord(a,n="",r="",m=60){if(!a.trim())return;const{Document:f,Packer:_,Paragraph:l,TextRun:e,AlignmentType:h}=docx,N="標楷體",c=24,s=360,g=1134,x=" ".repeat(Math.max(0,m)),u=a.split(`
-`).map(t=>t.trim()),O=t=>/^\d+$/.test(t),d=new Array(u.length).fill(0);for(let t=0;t<u.length;t++)if(O(u[t])){d[t]=2,t-1>=0&&(d[t-1]=1);let i=t+1;i<u.length&&u[i]!==""&&(d[i]=3);let o=t+2;o<u.length&&u[o]!==""&&(d[o]=4)}const b=[];let p=null;for(let t=0;t<u.length;t++){let i=u[t],o=d[t];if(o===1){p&&b.push(p),p={title:i,classNum:"",author:"",teacher:"",lines:[]};continue}p||(p={title:"",classNum:"",author:"",teacher:"",lines:[]}),o===2?p.classNum=i:o===3?p.author=i:o===4?p.teacher=i:p.lines.push(i)}p&&b.push(p);const w=[];b.forEach((t,i)=>{if(!t.title&&!t.classNum&&!t.author&&!t.teacher&&t.lines.length===0)return;!t.teacher&&n&&(t.teacher=`${n}`),t.title&&w.push(new l({alignment:h.CENTER,spacing:{line:s,before:i===0?120:480,after:120},children:[new e({text:t.title,font:N,size:c,bold:!0})]})),[t.classNum,t.author,t.teacher].forEach(E=>{E&&w.push(new l({alignment:h.LEFT,children:[new e({text:x+E,font:N,size:c})]}))}),w.push(new l({spacing:{line:s}}));let o=t.lines;for(;o.length>0&&o[0]==="";)o.shift();for(;o.length>0&&o[o.length-1]==="";)o.pop();o.forEach(E=>{E===""?w.push(new l({spacing:{line:s}})):w.push(new l({alignment:h.LEFT,spacing:{line:s,before:60,after:60},children:[new e({text:"  "+E.replace(/^[  ]+/,""),font:N,size:c})]}))})});const D=new f({sections:[{properties:{page:{margin:{top:g,bottom:g,left:g,right:g}}},children:w}]});_.toBlob(D).then(t=>{const i=r?r.replace(/\.docx$/i,""):"童詩合輯";window.saveAs(t,`${i}_完成.docx`)})}};window.EMagLogic=Logic;
+`,t+=`echo @echo off > !UNDO!\r
+`,t+=`echo chcp 65001 ^>nul >> !UNDO!\r
+`;const h=`dir /b ${{time_asc:"/od",time_desc:"/o-d",name_asc:"/on",name_desc:"/o-n"}[o]||"/od"}`;t+=`set "i=0"\r
+`,t+=`for /f "delims=" %%f in ('${h}') do (\r
+`,t+=`    set "skip=0"\r
+`,t+=`    if "%%f"=="run_rename.bat" set "skip=1"\r
+`,t+=`    if "%%f"=="!UNDO!" set "skip=1"\r
+`,t+=`    if "!skip!"=="0" (\r
+`,t+=`        set /a "i+=1"\r
+`,a.forEach((w,u)=>{t+=`        if "!i!"=="${u+1}" (\r
+`,t+=`            set "ext=%%~xf"\r
+`,t+=`            echo ren "${w}!ext!" "%%f" >> !UNDO!\r
+`,t+=`            ren "%%f" "${w}!ext!"\r
+`,t+=`        )\r
+`}),t+=`    )\r
+`,t+=`)\r
+`,t+=`echo.\r
+`,t+=`echo 改名完成！\r
+`,t+=`pause\r
+`;const d=new Blob([t],{type:"text/plain"});window.saveAs(d,"run_rename.bat")},generatePoetryWord(a,s,n,o,i){const t=Number(i.fontSizeTitle)||18,N=Number(i.fontSizeAuthor)||12,h=Number(i.fontSizeContent)||16,d=!!i.enablePageBreak,w=Number(i.spacingEssay)||1.5,u=Number(i.spacingPoetry)||1.5,f=Number(i.spacingReview)||1.5,e=i.emptyLineBetweenParagraphs!==void 0?!!i.emptyLineBetweenParagraphs:!0,{Document:c,Packer:E,Paragraph:y,TextRun:b,AlignmentType:T,PageBreak:x}=window.docx,O="標楷體",P={作文:1,童詩:2,心得:3},m=a.split(`
+`).map(r=>r.trim()),R=[];let $="作文";for(let r=0;r<m.length;r++){const g=m[r];if(g.startsWith("[類型:")){const p=g.match(/\[類型:\s*(.+?)\]/);p&&($=p[1]);continue}if(/^\d{4}$/.test(g)&&r>0){const p={type:$,title:m[r-1],id:g,name:m[r+1]||"",teacher:m[r+2]&&m[r+2]!==""?m[r+2]:s||"",contentLines:[]};let l=r+3;for(;l<m.length&&!(m[l+1]&&/^\d{4}$/.test(m[l+1]));)m[l]!==""&&!m[l].startsWith("[類型:")&&p.contentLines.push(m[l]),l++;R.push(p),r=l-1}}R.sort((r,g)=>{const p=P[r.type]||99,l=P[g.type]||99;return p!==l?p-l:parseInt(r.id)-parseInt(g.id)});const S=[];R.forEach((r,g)=>{g>0&&d&&S.push(new y({children:[new x]}));let p=r.type;const l=r.title;l.includes("詩")?p="童詩":l.includes("心得")||l.includes("讀後")?p="心得":l.includes("作文")&&(p="作文");let _=1.5;p==="作文"?_=w:p==="童詩"?_=u:p==="心得"&&(_=f);const A=Math.round(h*_*20);S.push(new y({alignment:T.CENTER,spacing:{before:400,after:400},children:[new b({text:r.title,size:t*2,bold:!0,font:O})]}));const L=" ".repeat(Math.max(0,o));[r.id,r.name,r.teacher].forEach(D=>{S.push(new y({alignment:T.LEFT,children:[new b({text:L+D,size:N*2,font:O})]}))}),S.push(new y({spacing:{line:A,lineRule:"exact"}})),r.contentLines.forEach((D,k)=>{const z=k===r.contentLines.length-1;S.push(new y({indent:{firstLine:480},spacing:{line:A,lineRule:"exact"},children:[new b({text:D,size:h*2,font:O})]})),e&&!z&&S.push(new y({spacing:{line:A,lineRule:"exact"}}))})});const B=new c({sections:[{children:S}]});E.toBlob(B).then(r=>{const g=n?n.replace(/\.[^/.]+$/,""):"文選合輯";window.saveAs(r,`${g}_排版完成.docx`)})},async processGoogleFormZip(a){if(!window.JSZip||!a)return null;const s=await window.JSZip.loadAsync(a),n=Object.values(s.files).find(i=>i.name.toLowerCase().endsWith(".csv"));if(!n)return null;const o=await n.async("string");return this.parseGoogleCsv(o)},parseGoogleCsv(a){const s=[];let n=[],o="",i=!1;for(let e=0;e<a.length;e++){const c=a[e],E=a[e+1];i?c==='"'&&E==='"'?(o+='"',e++):c==='"'?i=!1:o+=c:c==='"'?i=!0:c===","?(n.push(o),o=""):c===`
+`||c==="\r"?(c==="\r"&&E===`
+`&&e++,n.push(o),s.push(n),n=[],o=""):o+=c}if((o||n.length>0)&&(n.push(o),s.push(n)),s.length<2)return"";const t=s[0].map(e=>(e||"").trim()),N=s.slice(1),h=e=>t.findIndex(c=>(c||"").split(/[\s,，\(\（]/)[0]===e),d={type:h("類型"),title:h("題目"),name:h("姓名"),id:h("學號"),content:h("內容")},w={作文:1,童詩:2,心得:3},u=N.map(e=>({type:(e[d.type]||"作文").trim(),title:(e[d.title]||"").trim(),name:(e[d.name]||"").trim(),id:(e[d.id]||"").trim(),content:(e[d.content]||"").trim()})).filter(e=>e.content!==""||e.title!=="").sort((e,c)=>(w[e.type]||99)-(w[c.type]||99));let f="";return u.forEach(e=>{f+=`[類型: ${e.type}]
+`,f+=`${e.title||"無題目"}
+`,f+=`${e.id||"0000"}
+`,f+=`${e.name||"無姓名"}
+
+`,f+=`${e.content}
+
+
+`}),f}};window.EMagLogic=Logic;
