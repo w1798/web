@@ -328,13 +328,17 @@ const App = () => {
                             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 4fr) minmax(0, 6fr) minmax(0, 5fr) minmax(0, 5fr)', gap: '1rem', flex: 1, minHeight: 0, width: '100%' }}>
                                 {/* 第 1 區：格式說明 */}
                                 <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--glass-border)', borderRadius: '0.75rem', padding: '1rem', fontSize: '0.95rem', lineHeight: 1.8, overflowY: 'auto' }}>
-                                    <div style={{ color: 'var(--text-dim)', fontWeight: 700, marginBottom: '0.5rem' }}>💡 填寫格式指引：</div>
-                                    <div>第1行: 題目</div>
+                                    <div style={{ color: 'var(--text-dim)', fontWeight: 700, marginBottom: '0.5rem' }}>💡 .docx 格式：</div>
+                                    <div>第一篇的第1行: 題目</div>
                                     <div style={{ color: '#F9F900' }}>第2行: 學號 (純數字)</div>
                                     <div>第3行: 學生姓名</div>
                                     <div>第4行: 指導老師(可略)</div>
                                     <div style={{ color: 'var(--text-dim)', fontSize: '0.85rem' }}>&nbsp;&nbsp;&nbsp;&nbsp;(需空一行)</div>
-                                    <div>第5行: 文章內容...</div>
+                                    <div>最後: 文章內容...</div>
+                                                                        <div style={{ color: 'var(--text-dim)', fontSize: '0.85rem' }}>&nbsp;&nbsp;&nbsp;&nbsp;(需空一行)</div>       
+                                      <div>第二篇的第1行：題目</div>
+                                      <div style={{ color: '#F9F900' }}>第2行: 學號 (純數字)</div>
+                                      <div>重複上面的格式...</div>
                                 </div>
 
                                 {/* 第 2 區：排版設定 */}
@@ -410,7 +414,7 @@ const App = () => {
                                     </div>
 
                                     <div className="input-group">
-                                        <label>1. 選擇檔案</label>
+                                        <label style={{ color: '#F9F900', fontWeight: 'bold' }}>1. 上傳檔案</label>
                                         <input 
                                             type="file" 
                                             accept=".docx,.zip,.csv" 
@@ -423,16 +427,22 @@ const App = () => {
                                         </div>
                                     </div>
 
-                                    <button className="btn btn-primary" onClick={() => window.EMagLogic.generatePoetryWord(poetryContent, config.poetryTeacher, uploadedFileName, config.authorSpaces, {
-                                        fontSizeTitle: config.fontSizeTitle,
-                                        fontSizeAuthor: config.fontSizeAuthor,
-                                        fontSizeContent: config.fontSizeContent,
-                                        enablePageBreak: config.enablePageBreak,
-                                        spacingEssay: config.spacingEssay,
-                                        spacingPoetry: config.spacingPoetry,
-                                        spacingReview: config.spacingReview,
-                                        emptyLineBetweenParagraphs: config.emptyLineBetweenParagraphs
-                                    })} style={{ justifyContent: 'center' }}>
+                                    <button className="btn btn-primary" onClick={() => {
+                                        if (!poetryContent.trim()) {
+                                            alert('請先選擇檔案或貼上文選資料');
+                                            return;
+                                        }
+                                        window.EMagLogic.generatePoetryWord(poetryContent, config.poetryTeacher, uploadedFileName, config.authorSpaces, {
+                                            fontSizeTitle: config.fontSizeTitle,
+                                            fontSizeAuthor: config.fontSizeAuthor,
+                                            fontSizeContent: config.fontSizeContent,
+                                            enablePageBreak: config.enablePageBreak,
+                                            spacingEssay: config.spacingEssay,
+                                            spacingPoetry: config.spacingPoetry,
+                                            spacingReview: config.spacingReview,
+                                            emptyLineBetweenParagraphs: config.emptyLineBetweenParagraphs
+                                        });
+                                    }} style={{ justifyContent: 'center' }}>
                                         3. 下載格式化 Word
                                     </button>
                                 </div>
@@ -440,7 +450,7 @@ const App = () => {
                                 {/* 第 4 區：編輯內容 */}
                                 <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--glass-border)', borderRadius: '0.75rem', padding: '1rem', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
-                                        <div style={{ color: 'var(--text-dim)', fontWeight: 700, fontSize: '0.9rem' }}>
+                                        <div style={{ color: '#F9F900', fontWeight: 700, fontSize: '0.9rem' }}>
                                             2. 編輯與手動修正
                                             {status && <span style={{ color: '#F9F900', marginLeft: '10px', fontSize: '0.8rem', fontWeight: 400 }}>[{status}]</span>}
                                         </div>
