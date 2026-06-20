@@ -112,7 +112,7 @@ const Logic = {
             const work = titles.length === 1 ? titles[0] : (titles[index] || (titles[titles.length-1] || '作品'));
             multiNos.forEach(noNum => {
                 const no = parseInt(noNum);
-                const student = studentMap[no] || '未知';
+                const student = studentMap[no] || '請在最左邊「學生姓名」輸入資料';
                 finalResults.push(this.applyTemplate(template, { class: classInfo, no: this.padNumber(no, 2), student, work, teacher: teacherName }));
             });
         });

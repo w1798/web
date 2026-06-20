@@ -277,7 +277,7 @@ const App = () => {
         <div id="root">
             <header className="header" style={{ padding: '0.75rem 2rem 0.5rem' }}>
                 <h1 style={{ fontSize: '2rem' }}>電子校刊作品管理</h1>
-                <p style={{ fontSize: '1.2rem' }}>快速處理文選作者格式 與 批次檔名格式化<span style={{ color: '#F9F900', marginLeft: '0.5rem' }}>(下載.bat後，放到要改檔名的目錄裡執行即可)</span></p>
+                <p style={{ fontSize: '1.2rem' }}>快速處理文選作者格式 與 批次檔名格式化<span style={{ color: '#F9F900', marginLeft: '0.5rem' }}>(下載.bat後，放到 要改檔名的目錄裡「點兩下執行」即可)</span></p>
             </header>
 
             <div className="main-layout">
@@ -345,28 +345,28 @@ const App = () => {
                                     </div>
                                     
                                     <div style={{ marginBottom: '0.5rem', display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', gap: '10px' }}>
-                                        <label style={{ fontSize: '1em', width: '100px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>題目字體</label>
+                                        <label style={{ fontSize: '1em', width: '120px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>題目字體</label>
                                         <input type="number" value={config.fontSizeTitle} onChange={(e) => set('fontSizeTitle', parseInt(e.target.value) || 1)} style={{ width: '70px', height: '30px', padding: '2px 6px' }} />
                                     </div>
                                     
                                     <div style={{ marginBottom: '0.5rem', display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', gap: '10px' }}>
-                                        <label style={{ fontSize: '1em', width: '100px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>作者字體</label>
+                                        <label style={{ fontSize: '1em', width: '120px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>作者字體</label>
                                         <input type="number" value={config.fontSizeAuthor} onChange={(e) => set('fontSizeAuthor', parseInt(e.target.value) || 1)} style={{ width: '70px', height: '30px', padding: '2px 6px' }} />
                                     </div>
 
                                     <div style={{ marginBottom: '0.5rem', display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', gap: '10px' }}>
-                                        <label style={{ fontSize: '1em', width: '100px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>內容字體</label>
+                                        <label style={{ fontSize: '1em', width: '120px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>內容字體</label>
                                         <input type="number" value={config.fontSizeContent} onChange={(e) => set('fontSizeContent', parseInt(e.target.value) || 1)} style={{ width: '70px', height: '30px', padding: '2px 6px' }} />
                                     </div>
 
                                     <div style={{ marginBottom: '0.5rem', display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', gap: '10px' }}>
-                                        <label style={{ fontSize: '1em', width: '100px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>作者右移</label>
+                                        <label style={{ fontSize: '1em', width: '120px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>作者右移</label>
                                         <input type="number" value={config.authorSpaces} onChange={(e) => set('authorSpaces', parseInt(e.target.value) || 0)} style={{ width: '70px', height: '30px', padding: '2px 6px' }} />
                                     </div>
 
                                     <div style={{ marginBottom: '0.5rem', display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', gap: '10px' }}>
-                                        <label style={{ fontSize: '1em', width: '100px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>每篇換頁</label>
-                                        <select value={config.enablePageBreak ? "true" : "false"} onChange={(e) => set('enablePageBreak', e.target.value === "true")} style={{ width: '70px', height: '30px', padding: '2px', background: 'rgba(0,0,0,0.3)', border: '1px solid #555', borderRadius: '4px', color: '#fff' }}>
+                                        <label style={{ fontSize: '1em', width: '120px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>每篇換頁</label>
+                                        <select value={config.enablePageBreak ? "true" : "false"} onChange={(e) => set('enablePageBreak', e.target.value === "true")} style={{ width: '70px', height: '30px', padding: '2px', background: '#1a1a1a', border: '1px solid #444', borderRadius: '4px', color: '#fff' }}>
                                             <option value="true">是</option>
                                             <option value="false">否</option>
                                         </select>
@@ -374,20 +374,20 @@ const App = () => {
 
                                     <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.6rem', width: '100%' }}>
                                         <div style={{ marginBottom: '0.4rem', display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', gap: '10px' }}>
-                                            <label style={{ fontSize: '1em', width: '100px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>作文行距</label>
+                                            <label style={{ fontSize: '1em', width: '120px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>作文行距</label>
                                             <input type="number" step="0.1" value={config.spacingEssay} onChange={(e) => set('spacingEssay', parseFloat(e.target.value) || 1.5)} style={{ width: '70px', height: '30px', padding: '2px 6px' }} />倍
                                         </div>
                                         <div style={{ marginBottom: '0.4rem', display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', gap: '10px' }}>
-                                            <label style={{ fontSize: '1em', width: '100px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>童詩行距</label>
+                                            <label style={{ fontSize: '1em', width: '120px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>童詩行距</label>
                                             <input type="number" step="0.1" value={config.spacingPoetry} onChange={(e) => set('spacingPoetry', parseFloat(e.target.value) || 1.5)} style={{ width: '70px', height: '30px', padding: '2px 6px' }} />倍
                                         </div>
                                         <div style={{ marginBottom: '0.4rem', display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', gap: '10px' }}>
-                                            <label style={{ fontSize: '1em', width: '100px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>心得行距</label>
+                                            <label style={{ fontSize: '1em', width: '120px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>心得行距</label>
                                             <input type="number" step="0.1" value={config.spacingReview} onChange={(e) => set('spacingReview', parseFloat(e.target.value) || 1.5)} style={{ width: '70px', height: '30px', padding: '2px 6px' }} />倍
                                         </div>
                                         <div style={{ marginBottom: '0.4rem', display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', gap: '10px' }}>
-                                            <label style={{ fontSize: '1em', width: '100px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>自然段空一列</label>
-                                            <select value={config.emptyLineBetweenParagraphs ? "true" : "false"} onChange={(e) => set('emptyLineBetweenParagraphs', e.target.value === "true")} style={{ width: '70px', height: '30px', padding: '2px', background: 'rgba(0,0,0,0.3)', border: '1px solid #555', borderRadius: '4px', color: '#fff' }}>
+                                            <label style={{ fontSize: '1em', width: '120px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>自然段空一行</label>
+                                            <select value={config.emptyLineBetweenParagraphs ? "true" : "false"} onChange={(e) => set('emptyLineBetweenParagraphs', e.target.value === "true")} style={{ width: '70px', height: '30px', padding: '2px', background: '#1a1a1a', border: '1px solid #444', borderRadius: '4px', color: '#fff' }}>
                                                 <option value="true">是</option>
                                                 <option value="false">否</option>
                                             </select>
