@@ -367,8 +367,8 @@ const App = () => {
                                     <div style={{ marginBottom: '0.5rem', display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', gap: '10px' }}>
                                         <label style={{ fontSize: '1em', width: '100px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>每篇換頁</label>
                                         <select value={config.enablePageBreak ? "true" : "false"} onChange={(e) => set('enablePageBreak', e.target.value === "true")} style={{ width: '70px', height: '30px', padding: '2px', background: 'rgba(0,0,0,0.3)', border: '1px solid #555', borderRadius: '4px', color: '#fff' }}>
-                                            <option value="false">否</option>
                                             <option value="true">是</option>
+                                            <option value="false">否</option>
                                         </select>
                                     </div>
 
@@ -388,8 +388,8 @@ const App = () => {
                                         <div style={{ marginBottom: '0.4rem', display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', gap: '10px' }}>
                                             <label style={{ fontSize: '1em', width: '100px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>自然段空一列</label>
                                             <select value={config.emptyLineBetweenParagraphs ? "true" : "false"} onChange={(e) => set('emptyLineBetweenParagraphs', e.target.value === "true")} style={{ width: '70px', height: '30px', padding: '2px', background: 'rgba(0,0,0,0.3)', border: '1px solid #555', borderRadius: '4px', color: '#fff' }}>
-                                                <option value="false">否</option>
                                                 <option value="true">是</option>
+                                                <option value="false">否</option>
                                             </select>
                                         </div>
                                     </div>
