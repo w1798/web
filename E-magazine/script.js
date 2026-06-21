@@ -278,7 +278,12 @@ const App = () => {
         <div id="root">
             <header className="header" style={{ padding: '0.75rem 2rem 0.5rem' }}>
                 <h1 style={{ fontSize: '2rem' }}>電子校刊作品管理</h1>
-                <p style={{ fontSize: '1.2rem' }}>快速處理文選作者格式 與 批次檔名格式化<span style={{ color: '#F9F900', marginLeft: '0.5rem' }}>(下載.bat後，放到 要改檔名的目錄裡「點兩下執行」即可)</span></p>
+                <p style={{ fontSize: '1.2rem' }}>
+                    {activeTab === 'poetry'
+                        ? <span>將學生作文/童詩/心得等的 Word 檔或 Google 表單下載檔解析後，自動排版成格式化文件</span>
+                        : <span>依班級名單、流水號或手動清單產生改名批次檔<span style={{ color: '#F9F900', marginLeft: '0.5rem' }}>(下載.bat後，放到 要改檔名的目錄裡「點兩下執行」即可)</span></span>
+                    }
+                </p>
             </header>
 
             <div className="main-layout">
