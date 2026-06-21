@@ -33,13 +33,14 @@ const ResultPanel = ({ results, onCopy, onDownloadBat, onReset }) => {
 };
 
 const App = () => {
-    const [activeTab, setActiveTab] = useState('rename');
+    const [activeTab, setActiveTab] = useState('poetry');
     const [config, setConfig] = useState(window.EMagLogic.initData());
     const [results, setResults] = useState([]);
     const [poetryContent, setPoetryContent] = useState('');
     const [status, setStatus] = useState('');
     const [uploadedFileName, setUploadedFileName] = useState('');
     const [showHelp, setShowHelp] = useState(false);
+    const [showDocxHelp, setShowDocxHelp] = useState(false);
 
     useEffect(() => {
         window.EMagLogic.saveData(config);
@@ -323,36 +324,42 @@ const App = () => {
 
                 <main className="content-area">
                     {/* === 童詩頁面 === */}
+                    {/* .docx 說明 Modal */}
+                    {showDocxHelp && (
+                        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowDocxHelp(false)}>
+                            <div style={{ background: '#1e1e2e', border: '1px solid var(--glass-border)', borderRadius: '1rem', padding: '2rem', maxWidth: '480px', width: '90%', fontSize: '0.95rem', lineHeight: 2.0 }} onClick={e => e.stopPropagation()}>
+                                <div style={{ color: 'var(--text-dim)', fontWeight: 700, marginBottom: '0.75rem', fontSize: '1.1rem' }}>💡 .docx 格式說明</div>
+                                <div>第一篇的第 1 行：題目</div>
+                                <div style={{ color: '#F9F900' }}>第 2 行：學號（純數字，如 5401）</div>
+                                <div>第 3 行：學生姓名</div>
+                                <div>第 4 行：指導老師（可略，空白則採預設老師）</div>
+                                <div style={{ color: 'var(--text-dim)', fontSize: '0.85rem', marginLeft: '1rem' }}>這要空一行，再接文章內容</div>
+                                <div>文章內容...</div>
+                                <div style={{ color: 'var(--text-dim)', marginTop: '0.5rem', fontSize: '0.85rem', marginLeft: '1rem' }}>第二篇前空一行</div>
+                                <div>第二篇的第 1 行：題目</div>
+                                <div style={{ color: '#F9F900' }}>第 2 行：學號（純數字）</div>
+                                <div>重複上面的格式...</div>
+                                <button className="btn btn-primary" style={{ marginTop: '1.5rem', width: '100%', justifyContent: 'center' }} onClick={() => setShowDocxHelp(false)}>關閉</button>
+                            </div>
+                        </div>
+                    )}
+
                     {activeTab === 'poetry' && (
                         <div className="glass-card" style={{ flex: 1, minHeight: 0, gap: '1rem', padding: '1rem' }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 4fr) minmax(0, 6fr) minmax(0, 5fr) minmax(0, 5fr)', gap: '1rem', flex: 1, minHeight: 0, width: '100%' }}>
-                                {/* 第 1 區：格式說明 */}
-                                <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--glass-border)', borderRadius: '0.75rem', padding: '1rem', fontSize: '0.95rem', lineHeight: 1.8, overflowY: 'auto' }}>
-                                    <div style={{ color: 'var(--text-dim)', fontWeight: 700, marginBottom: '0.5rem' }}>💡 .docx 格式：</div>
-                                    <div>第一篇的第1行: 題目</div>
-                                    <div style={{ color: '#F9F900' }}>第2行: 學號 (純數字)</div>
-                                    <div>第3行: 學生姓名</div>
-                                    <div>第4行: 指導老師(可略)</div>
-                                    <div style={{ color: 'var(--text-dim)', fontSize: '0.85rem' }}>&nbsp;&nbsp;&nbsp;&nbsp;(需空一行)</div>
-                                    <div>最後: 文章內容...</div>
-                                                                        <div style={{ color: 'var(--text-dim)', fontSize: '0.85rem' }}>&nbsp;&nbsp;&nbsp;&nbsp;(需空一行)</div>       
-                                      <div>第二篇的第1行：題目</div>
-                                      <div style={{ color: '#F9F900' }}>第2行: 學號 (純數字)</div>
-                                      <div>重複上面的格式...</div>
-                                </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 3fr) minmax(0, 3fr) minmax(0, 4fr)', gap: '1rem', flex: 1, minHeight: 0, width: '100%' }}>
 
-                                {/* 第 2 區：排版設定 */}
+                                {/* 第 1 區：排版設定 */}
                                 <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--glass-border)', borderRadius: '0.75rem', padding: '1rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: '1rem' }}>
                                         <div style={{ color: 'var(--text-dim)', fontWeight: 700 }}>⚙️ 排版細節設定</div>
                                         <button className="btn" onClick={handlePoetryReset} style={{ padding: '2px 10px', fontSize: '0.8rem', background: 'rgba(244,63,94,0.05)', border: '1px solid rgba(244,63,94,0.3)', color: '#f43f5e' }}>重置</button>
                                     </div>
-                                    
+
                                     <div style={{ marginBottom: '0.5rem', display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', gap: '10px' }}>
                                         <label style={{ fontSize: '1em', width: '120px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>題目字體</label>
                                         <input type="number" value={config.fontSizeTitle} onChange={(e) => set('fontSizeTitle', parseInt(e.target.value) || 1)} style={{ width: '70px', height: '30px', padding: '2px 6px' }} />
                                     </div>
-                                    
+
                                     <div style={{ marginBottom: '0.5rem', display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', gap: '10px' }}>
                                         <label style={{ fontSize: '1em', width: '120px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>作者字體</label>
                                         <input type="number" value={config.fontSizeAuthor} onChange={(e) => set('fontSizeAuthor', parseInt(e.target.value) || 1)} style={{ width: '70px', height: '30px', padding: '2px 6px' }} />
@@ -399,31 +406,35 @@ const App = () => {
                                     </div>
                                 </div>
 
-                                {/* 第 3 區：指導老師與動作 */}
+                                {/* 第 2 區：指導老師與動作 */}
                                 <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--glass-border)', borderRadius: '0.75rem', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                     <div style={{ color: 'var(--text-dim)', fontWeight: 700 }}>✍️ 指導老師與檔案</div>
-                                    
+
                                     <div className="input-group">
                                         <label>預設指導老師</label>
-                                        <input 
-                                            type="text" 
-                                            value={config.poetryTeacher} 
-                                            onChange={(e) => set('poetryTeacher', e.target.value)} 
+                                        <input
+                                            type="text"
+                                            value={config.poetryTeacher}
+                                            onChange={(e) => set('poetryTeacher', e.target.value)}
                                             placeholder="例：指導 某某某 師"
                                         />
                                     </div>
 
                                     <div className="input-group">
                                         <label style={{ color: '#F9F900', fontWeight: 'bold' }}>1. 上傳檔案</label>
-                                        <input 
-                                            type="file" 
-                                            accept=".docx,.zip,.csv" 
+                                        <input
+                                            type="file"
+                                            accept=".docx,.zip,.csv"
                                             onClick={(e) => { e.target.value = ''; setPoetryContent(''); setStatus('等待檔案...'); }}
-                                            onChange={handleFileUpload} 
+                                            onChange={handleFileUpload}
                                         />
-                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginTop: '0.2rem' }}>
-                                            支援 .docx 和 <a href="https://docs.google.com/forms/d/1OsotRlfDINTbaQLN1yUY2LKjvtSIpg8jxh2pjmqI1AU/copy" target="_blank" style={{ color: '#F9F900' }}>Google 表單</a>下載的 .zip .csv 檔
-                                            <a href="#" onClick={(e) => { e.preventDefault(); setShowHelp(true); }} style={{ color: '#F9F900', marginLeft: '8px' }}>(說明)</a>
+                                        <div style={{ fontSize: '1rem', color: 'var(--text-dim)', marginTop: '0.2rem', lineHeight: 1.8 }}>
+                                            支援 .docx
+                                            <a href="#" onClick={(e) => { e.preventDefault(); setShowDocxHelp(true); }} style={{ color: '#F9F900', marginLeft: '4px' }}>(說明)</a>
+                                            &nbsp;和&nbsp;
+                                            <a href="https://docs.google.com/forms/d/1OsotRlfDINTbaQLN1yUY2LKjvtSIpg8jxh2pjmqI1AU/copy" target="_blank" style={{ color: '#F9F900' }}>Google 表單</a>
+                                            &nbsp;下載的 .zip(.csv) 檔
+                                            <a href="#" onClick={(e) => { e.preventDefault(); setShowHelp(true); }} style={{ color: '#F9F900', marginLeft: '4px' }}>(說明)</a>
                                         </div>
                                     </div>
 
@@ -446,11 +457,11 @@ const App = () => {
                                         3. 下載格式化 Word
                                     </button>
                                 </div>
-                                {/* 右區 2x：編輯內容 */}
-                                {/* 第 4 區：編輯內容 */}
+
+                                {/* 第 3 區：編輯內容 */}
                                 <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--glass-border)', borderRadius: '0.75rem', padding: '1rem', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
-                                        <div style={{ color: '#F9F900', fontWeight: 700, fontSize: '0.9rem' }}>
+                                        <div style={{ color: '#F9F900', fontWeight: 700, fontSize: '1rem' }}>
                                             2. 編輯與手動修正
                                             {status && <span style={{ color: '#F9F900', marginLeft: '10px', fontSize: '0.8rem', fontWeight: 400 }}>[{status}]</span>}
                                         </div>
@@ -612,7 +623,7 @@ const App = () => {
                             📋 Google 表單格式
                         </h2>
                         <div style={{ lineHeight: 1.8, fontSize: '1.05rem' }}>
-                            <p style={{ marginBottom: '1rem', color: 'var(--text-dim)' }}>請在 Google 表單建立下列欄位（皆為必填）：</p>
+                            <p style={{ marginBottom: '1rem', color: 'var(--text-dim)' }}>請 <a href="https://docs.google.com/forms/d/1OsotRlfDINTbaQLN1yUY2LKjvtSIpg8jxh2pjmqI1AU/copy" target="_blank" style={{ color: '#F9F900' }}>點我複製 Google 表單</a> 或 自行建立 下列欄位（皆為必填）：</p>
                             <ul style={{ listStyle: 'none', padding: 0 }}>
                                 <li style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '0.5rem' }}>
                                     <strong style={{ color: '#fff' }}>類型</strong>：選擇 (選項：作文、童詩、心得)
