@@ -356,23 +356,23 @@ const App = () => {
                                     </div>
 
                                     <div style={{ marginBottom: '0.5rem', display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', gap: '10px' }}>
-                                        <label style={{ fontSize: '1em', width: '120px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>題目字體</label>
+                                        <label style={{ fontSize: '1em', width: '120px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>題目字體大小</label>
                                         <input type="number" value={config.fontSizeTitle} onChange={(e) => set('fontSizeTitle', parseInt(e.target.value) || 1)} style={{ width: '70px', height: '30px', padding: '2px 6px' }} />
                                     </div>
 
                                     <div style={{ marginBottom: '0.5rem', display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', gap: '10px' }}>
-                                        <label style={{ fontSize: '1em', width: '120px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>作者字體</label>
+                                        <label style={{ fontSize: '1em', width: '120px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>作者字體大小</label>
                                         <input type="number" value={config.fontSizeAuthor} onChange={(e) => set('fontSizeAuthor', parseInt(e.target.value) || 1)} style={{ width: '70px', height: '30px', padding: '2px 6px' }} />
                                     </div>
 
                                     <div style={{ marginBottom: '0.5rem', display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', gap: '10px' }}>
-                                        <label style={{ fontSize: '1em', width: '120px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>內容字體</label>
+                                        <label style={{ fontSize: '1em', width: '120px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>內容字體大小</label>
                                         <input type="number" value={config.fontSizeContent} onChange={(e) => set('fontSizeContent', parseInt(e.target.value) || 1)} style={{ width: '70px', height: '30px', padding: '2px 6px' }} />
                                     </div>
 
                                     <div style={{ marginBottom: '0.5rem', display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', gap: '10px' }}>
-                                        <label style={{ fontSize: '1em', width: '120px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>作者右移</label>
-                                        <input type="number" value={config.authorSpaces} onChange={(e) => set('authorSpaces', parseInt(e.target.value) || 0)} style={{ width: '70px', height: '30px', padding: '2px 6px' }} />
+                                        <label style={{ fontSize: '1em', width: '120px', flexShrink: 0, whiteSpace: 'nowrap', marginBottom: 0 }}>作者右移空白</label>
+                                        <input type="number" value={config.authorSpaces} onChange={(e) => set('authorSpaces', parseInt(e.target.value) || 0)} style={{ width: '70px', height: '30px', padding: '2px 6px' }} />個
                                     </div>
 
                                     <div style={{ marginBottom: '0.5rem', display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', gap: '10px' }}>
