@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>學生學籍查詢系統</title>
+    <!-- 基礎 Meta -->
+    <meta name="description" content="專業的學生學籍資料解析與管理工具，支援 Excel 自動辨識與智慧搜尋。">
+    
+    <script>
+        // Charles Nextime 系統定義
+        var APP_VER = '1.0.0';
+        var APP_JSX = 'esbuild'; // 使用 esbuild 模式讀取 dist/
+    </script>
+        <!-- 載入引擎 -->
+    <script src="../loader_engine.js?ver=1.0.0"></script>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Outfit', 'Noto Sans TC', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen">
+    <!-- Loading Screen (Engine 會處理其顯示與隱藏) -->
+    <div id="loading-screen" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white transition-opacity duration-500">
+        <div class="w-64">
+            <div class="flex justify-between mb-2">
+                <span id="loading-text" class="text-sm font-medium text-primary-600">0%</span>
+                <span id="loading-status" class="text-sm text-slate-500">初始化系統...</span>
+            </div>
+            <div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                <div id="loading-bar" class="bg-primary-500 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+        </div>
+        <div id="status" class="mt-4 text-xs text-slate-400"></div>
+    </div>
+
+    <!-- 應用程式根節點 -->
+    <div id="root" style="visibility: hidden;">
+        <!-- React 將渲染於此 -->
+    </div>
+
+    <!-- 回頂按鈕 (由 script.js 動態控制或 CSS 控制) -->
+    <button id="back-to-top" class="fixed bottom-8 right-8 p-3 bg-white border border-slate-200 rounded-full shadow-lg opacity-0 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 z-50 pointer-events-none">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary-600"><path d="m18 15-6-6-6 6"/></svg>
+    </button>
+</body>
+</html>

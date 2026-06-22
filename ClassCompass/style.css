@@ -1,0 +1,70 @@
+/* ClassCompass 專屬樣式 */
+
+:root {
+    --primary-color: #0ea5e9;
+    --primary-glow: rgba(14, 165, 233, 0.15);
+}
+
+body {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* 現代化滾動條 */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f8fafc;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #cbd5e1;
+}
+
+/* 微動畫 */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-in {
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* 文字漸變 */
+.bg-clip-text {
+    -webkit-background-clip: text;
+    background-clip: text;
+}
+
+/* 輸入框焦點外框 */
+input:focus {
+    box-shadow: 0 0 0 4px var(--primary-glow);
+}
+
+/* 表格懸停效果 */
+tr:hover td {
+    color: #0f172a;
+}
+
+/* 班級卡片光澤效果 */
+.group:hover {
+    transform: translateY(-2px);
+}
+
+/* 針對行動版優化 */
+@media (max-width: 640px) {
+    .max-w-7xl {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}

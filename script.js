@@ -9,6 +9,7 @@ const links = [
     { id: "examboard", category: "stage", title: "數位考場看板", desc: "　這是一套整合式智慧監考系統，透過即時考試進度管理、聽力播放控制與客製化試場設定，協助監考老師精準掌控測驗節奏與秩序。", url: "examboard" },      
     { id: "evalprompt", category: "stage", title: "評語提詞自造佳", desc: "　自訂模組，造視操作，佳句生成！提供高自由度，讓您「視覺化」自定義類別與特質，並透過簡單操作輕鬆完成評語提詞，是追求效率與流暢美學者的最佳選擇。", url: "evalprompt" },
     { id: "E-magazine", category: "stage", title: "電子校刊作品管理", desc: "　整合兩大行政流程：一是將學生作文或童詩的 Word 檔解析後，自動排版並匯出格式化文件；二是依班級名單、流水號或手動清單產生改名批次檔（.bat），支援排序模式與一鍵還原，大幅提升校刊編輯的處理效率。", url: "E-magazine" },
+    { id: "ClassCompass", category: "stage", title: "學生學籍查詢系統", desc: "　是現代化管理工具，支援 Excel 自動辨識姓名與班級座號。具備班級名冊、同名查詢與智慧搜尋，提供一鍵複製欄位、自訂字體大小與 Email 網域設定，打造高效直覺的行政作業體驗。", url: "ClassCompass" },
     { id: "URL2StickPro", category: "stage", title: "QR碼 專業標籤產生器", desc: "　本工具提供彈性的版面配置，支援圖文上下或左右並排，並內建實線、虛線及無外框等。使用者能自定 QR 碼尺寸、字體大小、行高與紙張邊距，確保排版精確無誤，適配各種規格的預切標籤紙。", url: "URL2StickPro" },
     { id: "SpeTeacher", category: "stage", title: "專注追蹤器", desc: "　專為教育工作者設計的數位化評估工具，協助使用者即時記錄學生的行為頻率（如分心、離座等），不僅能減少手動記錄的負擔，更可將觀察數據轉化成統計報表，是落實行為分析與優化教學策略的專業利器。", url: "SpeTeacher" },
     { id: "GuardianContacts", category: "stage", title: "家長通訊錄轉換器", desc: "　專為導師設計，能將學務系統匯出的繁雜 Excel 轉化為 Google/iCloud 聯絡人格式。根據「監護人優先」原則自動標註星號與詳細備註，自動去除重複資料，確保您的手機通訊錄簡潔且資訊完整，一鍵輕鬆完成親師聯繫管道的數位化建置。", url: "GuardianContacts" },            
