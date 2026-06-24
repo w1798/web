@@ -3,10 +3,9 @@ body {
     background: #f0f2f5;
     font-size: 14px;
     margin: 0;
-    padding: 10px; /* 縮小網頁四周邊距 */
-    height: 100vh;
+    padding: 10px;
     box-sizing: border-box;
-    overflow: hidden; /* 若內容不多，強制隱藏捲軸 */
+    min-height: 100vh;
 }
 
 .container {
@@ -16,7 +15,7 @@ body {
     padding: 25px;
     border-radius: 12px;
     box-shadow: 0 5px 20px rgba(0,0,0,0.15);
-    height: 100%; /* 使用視窗高度 */
+    min-height: calc(100vh - 20px);
 }
 
 .header-row {
@@ -39,27 +38,16 @@ body {
     border-radius: 4px;
     border: 1px solid #ddd;
     background: #fff;
+    white-space: nowrap;
 }
 
 .btn-reset { color: #d93025; border-color: #d93025; }
 
-/* 調整主佈局，讓它不要過度膨脹 */
 .main-layout {
     display: flex;
-    gap: 15px;
-    flex: 1; /* 自動分配剩餘空間 */
-    min-height: 0; /* 關鍵：允許內容縮小而不撐開 */
+    gap: 20px;
 }
 
-/* 讓 textarea 回歸設定的高度 */
-#subject {
-    height: auto; /* 重置可能存在的 flex 影響 */
-    min-height: 100px; /* 約 5 行的高度 */
-    max-height: 220px; /* 限制最大高度，防止撐開 */
-    flex: none; /* 確保它不會被 flex-grow 撐大 */
-}
-
-/* 左側設定區總合比例 9 */
 .settings-group {
     flex: 9;
     display: flex;
@@ -69,13 +57,12 @@ body {
 .sub-section {
     flex: 1;
     background: #f8f9fa;
-    padding: 10px;
+    padding: 15px 12px;
     margin-bottom: 10px;
     border-radius: 8px;
     border: 1px solid #e0e0e0;
 }
 
-/* 右側文字內容區比例 11 */
 .content-area {
     flex: 11;
     display: flex;
@@ -118,7 +105,10 @@ input, select, textarea {
     font-size: 14px;
 }
 
-textarea { flex-grow: 1; min-height: 200px; resize: none; }
+textarea { 
+    min-height: 180px; 
+    resize: vertical; 
+}
 
 button#generate {
     background: #1a73e8;
@@ -131,33 +121,98 @@ button#generate {
     cursor: pointer;
     font-weight: bold;
     margin-top: 15px;
+    box-shadow: 0 4px 6px rgba(26, 115, 232, 0.2);
+    transition: all 0.2s;
 }
 
-button#generate:hover { background: #1557b0; }
+button#generate:hover { 
+    background: #1557b0; 
+    transform: translateY(-1px);
+    box-shadow: 0 6px 8px rgba(26, 115, 232, 0.3);
+}
 
 #status {
     text-align: center;
     margin-top: 10px;
     color: #d93025;
     font-weight: bold;
+    min-height: 20px;
 }
 
-/* Footer 置中 */
 footer {
     text-align: center;
-    padding: 10px 0;
+    padding: 20px 0;
     font-size: 13px;
     color: #666;
-    border-top: 1px solid #ddd;
-    margin-top: 60px;
+    border-top: 1px solid #eee;
+    margin-top: 30px;
 }
 
-footer a {
-    color: #1a73e8;
-    text-decoration: none;
+/* 回頂按鈕 */
+#back-to-top {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    width: 45px;
+    height: 45px;
+    background: #1a73e8;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s;
+    z-index: 1000;
+    border: none;
 }
 
-/* 縮小各個間距以節省空間 */
-.sub-section { margin-bottom: 8px; padding: 15px 12px; }
-.field-item { margin-bottom: 8px; }
+#back-to-top.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* 手機版適配 */
+@media (max-width: 992px) {
+    .settings-group {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 5px;
+    }
+    
+    .container {
+        padding: 15px;
+    }
+
+    .header-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .main-layout {
+        flex-direction: column;
+    }
+
+    .settings-group, .content-area {
+        flex: none;
+        width: 100%;
+    }
+
+    button#generate {
+        position: sticky;
+        bottom: 10px;
+        z-index: 100;
+        margin-bottom: 20px;
+    }
+}
+
 

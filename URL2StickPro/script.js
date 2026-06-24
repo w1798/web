@@ -66,12 +66,15 @@ function initApp() {
 }
 
 // --- 核心修正：判斷載入時機 ---
-if (document.readyState === 'loading') {
-    // 如果還在載入中，監聽事件
-    document.addEventListener('DOMContentLoaded', initApp);
-} else {
-    // 如果 loadapp.js 載入完畢時 DOM 已經好了，直接執行
+function start() {
     initApp();
+    setupBackToTop();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start);
+} else {
+    start();
 }
 
 
@@ -317,3 +320,25 @@ async function mainProcess() {
         console.error(err);
     }
 }
+
+// 監聽轉到頂部按鈕
+function setupBackToTop() {
+    let btn = document.getElementById('back-to-top');
+    if (!btn) {
+        btn = document.createElement('button');
+        btn.id = 'back-to-top';
+        btn.innerHTML = '↑';
+        btn.title = '回頂部';
+        document.body.appendChild(btn);
+        btn.onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    window.addEventListener('scroll', () => {
+        if (window.scrollY > 200) {
+            btn.classList.add('show');
+        } else {
+            btn.classList.remove('show');
+        }
+    });
+}
+
