@@ -562,6 +562,9 @@ function Modals() {
                             {hasGroupContext && (
                                 <button id="editGroupProfileBtn" className="icon-btn edit-profile-btn" title="編輯群組" onClick={() => window.openManageGroupModal(awardContext.groupId)}>✏️</button>
                             )}
+                            {hasGroupContext && awardContext.groupId && (
+                                <span style={{ fontSize: '1em', fontWeight: 400, color: '#000000', marginLeft: '0.15rem' }}>{awardContext.groupId}</span>
+                            )}
                         </h2>
                         <button className="close-modal-btn" onClick={() => close('studentProfile')}>×</button>
                     </div>
