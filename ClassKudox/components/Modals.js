@@ -806,7 +806,7 @@ function Modals() {
             <div id="manageClassesModal" className={`modal-overlay ${modals.manageClasses ? '' : 'hidden'}`}>
                 <div className="modal-content manage-classes-modal-content" style={{ maxWidth: '1100px', width: '95%' }}>
                     <div className="modal-header"><h2>🏫 班級管理</h2><button className="close-modal-btn" onClick={() => close('manageClasses')}>&times;</button></div>
-                    <div className="modal-body settings-body classes-modal-body">
+                    <div className="modal-body classes-modal-body">
                         <div className="classes-left classes-tab-content active" id="classesTabList">
                             <div className="settings-section"><h3>我的班級</h3><ul id="classList" className="settings-list"></ul></div>
                         </div>

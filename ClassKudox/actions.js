@@ -173,6 +173,13 @@ window.deleteLog = (id) => {
                 else s.cP = (s.cP || 0) - l.pt;
             }
         }
+        delLogs.push({
+            id: Math.random().toString(36).substring(2, 8),
+            sID: l.sID, lb: l.lb, pt: l.pt,
+            originalTS: l.TS, deletedAt: StampTool.encode(),
+            trId: l.trId, trQty: l.trQty, iSum: l.iSum
+        });
+        cleanupDelLogs();
     }
     logs = logs.filter(x => x.id != id); 
     pushOp(ACT.STU_AWD_REV, id);
@@ -396,22 +403,52 @@ const syncBehaviors = (srcClass) => {
     }
 };
 
-const resetAllClassesPoints = () => {
+const clearCurrentClassRecords = () => {
+    logs = []; delLogs = []; delLogRestored = []; delLogResData = {}; students.forEach(s => { s.tr = {}; });
+    pushOp(16, null);
+    saveData();
+};
+
+const clearAllClassesRecords = () => {
     classes.forEach(c => {
         localStorage.setItem(`CD_${c.id}_Ls`, '[]');
+        localStorage.setItem(`CD_${c.id}_DLs`, '[]');
+        localStorage.setItem(`CD_${c.id}_DL_Res`, '[]');
+        localStorage.setItem(`CD_${c.id}_DL_ResData`, '{}');
         const stus = JSON.parse(localStorage.getItem(`CD_${c.id}_Stus`) || '[]');
-        stus.forEach(s => { s.cP = 0; s.iP = 0; s.tr = {}; });
+        stus.forEach(s => { s.tr = {}; });
         localStorage.setItem(`CD_${c.id}_Stus`, JSON.stringify(stus));
     });
-    logs = []; students.forEach(s => { s.cP = 0; s.iP = 0; s.tr = {}; });
+    logs = []; delLogs = []; delLogRestored = []; delLogResData = {}; students.forEach(s => { s.tr = {}; });
     pushOp(18, null, true);
     saveData();
 };
 
-const resetCurrentClassPoints = () => {
-    logs = []; students.forEach(s => { s.cP = 0; s.iP = 0; s.tr = {}; });
-    pushOp(16, null);
+window.restoreDelLog = (id) => {
+    const idx = delLogs.findIndex(x => x.id === id);
+    if (idx === -1) return alert('找不到該筆刪除紀錄');
+    const dl = delLogs[idx];
+    const s = students.find(x => x.id === dl.sID);
+    if (!s) return alert(`學生「${dl.sID}」已不存在於目前班級，無法還原`);
+    if (!confirm(`還原此筆？\n學生：${dl.sID}\n項目：${dl.lb}${dl.pt ? (dl.pt > 0 ? '+' : '') + dl.pt : ''}${dl.trQty ? ' ×' + dl.trQty : ''}\n原時間：${StampTool.decode(dl.originalTS).toLocaleString()}`)) return;
+    if (dl.trId && dl.trQty) {
+        if (s.tr) s.tr[dl.trId] = (s.tr[dl.trId] || 0) + dl.trQty;
+        else s.tr = { [dl.trId]: dl.trQty };
+    } else {
+        if (dl.iSum === 1) s.iP = (s.iP || 0) + dl.pt;
+        else s.cP = (s.cP || 0) + dl.pt;
+    }
+    const logEntry = { id: Math.random().toString(36).substring(2, 8), sID: dl.sID, lb: dl.lb, pt: dl.pt, TS: dl.originalTS };
+    if (dl.iSum) logEntry.iSum = 1;
+    if (dl.trId) { logEntry.trId = dl.trId; logEntry.trQty = dl.trQty; logEntry.iSum = 1; }
+    logs.push(logEntry);
+    delLogs.splice(idx, 1);
+    if (!delLogRestored.includes(id)) {
+        delLogRestored.push(id);
+        delLogResData[id] = { sID: dl.sID, lb: dl.lb, pt: dl.pt, trId: dl.trId, trQty: dl.trQty, iSum: dl.iSum, originalTS: dl.originalTS };
+    }
     saveData();
+    if (window.refreshProxy) window.refreshProxy();
 };
 
 window.toggleGroupSelection = (id) => {
@@ -450,5 +487,5 @@ window.updateStudentAvatar = updateStudentAvatar;
 window.createClass = createClass;
 window.classSetStudents = classSetStudents;
 window.syncBehaviors = syncBehaviors;
-window.resetAllClassesPoints = resetAllClassesPoints;
-window.resetCurrentClassPoints = resetCurrentClassPoints;
+window.clearCurrentClassRecords = clearCurrentClassRecords;
+window.clearAllClassesRecords = clearAllClassesRecords;

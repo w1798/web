@@ -37,7 +37,7 @@ const getFullBackupData = (includeOps = false) => {
         const k = localStorage.key(i); 
         if (!k.startsWith('CD_') && k !== 'aSyn' && k !== 'drty') continue; 
         
-        const match = k.match(/^CD_(.+)_(Stus|Gs|Ls|itm|cItm|tDef|set|Ops|meta|cPref|gSet)$/);
+        const match = k.match(/^CD_(.+)_(Stus|Gs|Ls|DLs|DL_Res|DL_ResData|itm|cItm|tDef|set|Ops|meta|cPref|gSet)$/);
         if (match) {
             const cid = match[1];
             if (!validClassIds.has(cid)) {
@@ -47,8 +47,8 @@ const getFullBackupData = (includeOps = false) => {
             }
         }
 
-        // 排除雲端不參與同步的項目：金鑰、Ops、以及「顯示與聲音」設定 (_set) 與 同步頻率 (aSyn)
-        const isCloudExclusion = (!includeOps && (k === 'BId' || k === 'Key' || k === 'aSyn' || k === 'drty' || k.endsWith('_Ops') || k.endsWith('_set')));
+        // 排除雲端不參與同步的項目：金鑰、Ops、設定、同步頻率、本機還原資料
+        const isCloudExclusion = (!includeOps && (k === 'BId' || k === 'Key' || k === 'aSyn' || k === 'drty' || k.endsWith('_Ops') || k.endsWith('_set') || k.endsWith('_DL_ResData')));
         if (!isCloudExclusion) { 
             try { b[k] = JSON.parse(localStorage.getItem(k)); } catch(e) { b[k] = localStorage.getItem(k); } 
         } 
@@ -504,6 +504,28 @@ const checkCloudSyncState = async () => {
         const oldClassId = currentClassId;
         const oldOps = [...ops];
         const oldSysOps = [...sysOps];
+        let mergeChanged = false;
+        
+        // 儲存本地 delLogs 與 delLogRestored（所有班級），避免被 restoreFromBackup 覆蓋
+        const savedDelLogs = {};
+        const savedDelLogRestored = {};
+        const savedResData = {};
+        if (currentClassId) {
+            savedDelLogs[currentClassId] = [...delLogs];
+            savedDelLogRestored[currentClassId] = [...delLogRestored];
+            savedResData[currentClassId] = { ...delLogResData };
+        }
+        classes.forEach(c => {
+            if (!savedDelLogs[c.id]) {
+                try { const raw = localStorage.getItem(`CD_${c.id}_DLs`); if (raw) savedDelLogs[c.id] = JSON.parse(raw); } catch(e) {}
+            }
+            if (!savedDelLogRestored[c.id]) {
+                try { const raw = localStorage.getItem(`CD_${c.id}_DL_Res`); if (raw) savedDelLogRestored[c.id] = JSON.parse(raw); } catch(e) {}
+            }
+            if (!savedResData[c.id]) {
+                try { const raw = localStorage.getItem(`CD_${c.id}_DL_ResData`); if (raw) savedResData[c.id] = JSON.parse(raw); } catch(e) {}
+            }
+        });
         
         restoreFromBackup(cloudData, false);
         localSyncVersion = cloudVer;
@@ -531,11 +553,14 @@ const checkCloudSyncState = async () => {
                     else if (o.a === ACT.SYS_RESET) { 
                         classes.forEach(c => {
                             localStorage.setItem(`CD_${c.id}_Ls`, '[]');
+                            localStorage.setItem(`CD_${c.id}_DLs`, '[]');
+                            localStorage.setItem(`CD_${c.id}_DL_Res`, '[]');
+                            localStorage.setItem(`CD_${c.id}_DL_ResData`, '{}');
                             const stus = JSON.parse(localStorage.getItem(`CD_${c.id}_Stus`) || '[]');
                             stus.forEach(s => { s.cP = 0; s.iP = 0; });
                             localStorage.setItem(`CD_${c.id}_Stus`, JSON.stringify(stus));
                         });
-                        logs = []; students.forEach(s => { s.cP = 0; s.iP = 0; });
+                        logs = []; delLogs = []; delLogRestored = []; delLogResData = {}; students.forEach(s => { s.cP = 0; s.iP = 0; });
                     }
                     else if (o.a === ACT.SET_CUSTOM_ITEMS) { customItems = o.d; }
                     modified = true;
@@ -567,19 +592,84 @@ const checkCloudSyncState = async () => {
                     else if (o.a === ACT.GRP_DEL) { groups = groups.filter(g => g.id !== o.d); modified = true; }
                     else if (o.a === ACT.TR_DEF_UPD) { const idx = treasureDefs.findIndex(i => i.id === o.d.id); if (idx > -1) treasureDefs[idx] = o.d; else treasureDefs.push(o.d); modified = true; }
                     else if (o.a === ACT.TR_DEF_DEL) { treasureDefs = treasureDefs.filter(i => i.id !== o.d); students.forEach(s => { if(s.tr) delete s.tr[o.d]; }); modified = true; }
-                    else if (o.a === ACT.LOG_CLR) { logs = []; students.forEach(s => { s.cP = 0; s.iP = 0; }); modified = true; }
+                    else if (o.a === ACT.LOG_CLR) {
+                        localStorage.setItem(`CD_${currentClassId}_DL_Res`, '[]');
+                        localStorage.setItem(`CD_${currentClassId}_DL_ResData`, '{}');
+                        logs = []; delLogs = []; delLogRestored = []; delLogResData = {}; students.forEach(s => { s.cP = 0; s.iP = 0; }); modified = true;
+                    }
                     else if (o.a === ACT.SET_PT_ITEMS) { pointItems = o.d; modified = true; }
                     else if (o.a === ACT.SET_AVATAR_STYLE) { students.forEach(s => s.aS = o.d); modified = true; }
                 });
-                
-                if (modified) {
-                    saveData(); 
-                    if (typeof window.refreshProxy === 'function') window.refreshProxy();
-                } else {
-                    localStorage.setItem(`CD_${currentClassId}_Ops`, JSON.stringify(ops));
-                }
             } else {
                 localStorage.setItem(`CD_${currentClassId}_Ops`, '[]');
+            }
+            
+            // 儲存合併前的雲端 DL_Res ID 集合（供重新套用判斷用）
+            const cloudResIdsByCid = {};
+            Object.keys(savedDelLogRestored).forEach(cid => {
+                const key = `CD_${cid}_DL_Res`;
+                try { const raw = localStorage.getItem(key); if (raw) cloudResIdsByCid[cid] = new Set(JSON.parse(raw)); } catch(e) {}
+                if (!cloudResIdsByCid[cid]) cloudResIdsByCid[cid] = new Set();
+            });
+            
+            // === 合併（不受有無 Ops 影響，確保 delLogRestored 跨裝置同步） ===
+            Object.keys(savedDelLogs).forEach(cid => {
+                const key = `CD_${cid}_DLs`;
+                let cloudDLs = [];
+                try { const raw = localStorage.getItem(key); if (raw) cloudDLs = JSON.parse(raw); } catch(e) {}
+                const existingIds = new Set(cloudDLs.map(dl => dl.id));
+                let merged = false;
+                savedDelLogs[cid].forEach(dl => {
+                    if (!existingIds.has(dl.id)) { cloudDLs.push(dl); existingIds.add(dl.id); merged = true; }
+                });
+                if (merged) { localStorage.setItem(key, JSON.stringify(cloudDLs)); mergeChanged = true; }
+            });
+            Object.keys(savedDelLogRestored).forEach(cid => {
+                const key = `CD_${cid}_DL_Res`;
+                let cloudRes = [];
+                try { const raw = localStorage.getItem(key); if (raw) cloudRes = JSON.parse(raw); } catch(e) {}
+                const existingIds = new Set(cloudRes);
+                let merged = false;
+                savedDelLogRestored[cid].forEach(id => {
+                    if (!existingIds.has(id)) { cloudRes.push(id); existingIds.add(id); merged = true; }
+                });
+                if (merged) { localStorage.setItem(key, JSON.stringify(cloudRes)); mergeChanged = true; }
+            });
+            try { const raw = localStorage.getItem(`CD_${currentClassId}_DL_Res`); if (raw) delLogRestored = JSON.parse(raw); } catch(e) {}
+            try { const raw = localStorage.getItem(`CD_${currentClassId}_DLs`); if (raw) delLogs = JSON.parse(raw); } catch(e) {}
+            delLogs = delLogs.filter(dl => !delLogRestored.includes(dl.id));
+            
+            // 重新套用本機還原（被 restoreFromBackup 覆蓋的點數與 log 條目）
+            Object.keys(savedDelLogRestored).forEach(cid => {
+                const cloudIds = cloudResIdsByCid[cid] || new Set();
+                const resData = savedResData[cid] || {};
+                savedDelLogRestored[cid].forEach(rid => {
+                    if (!cloudIds.has(rid) && resData[rid]) {
+                        const d = resData[rid];
+                        const s = students.find(x => x.id === d.sID);
+                        if (s) {
+                            if (d.trId && d.trQty) {
+                                if (s.tr) s.tr[d.trId] = (s.tr[d.trId] || 0) + d.trQty;
+                                else s.tr = { [d.trId]: d.trQty };
+                            } else {
+                                if (d.iSum === 1) s.iP = (s.iP || 0) + d.pt;
+                                else s.cP = (s.cP || 0) + d.pt;
+                            }
+                            const logEntry = { id: Math.random().toString(36).substring(2, 8), sID: d.sID, lb: d.lb, pt: d.pt, TS: d.originalTS };
+                            if (d.iSum) logEntry.iSum = 1;
+                            if (d.trId) { logEntry.trId = d.trId; logEntry.trQty = d.trQty; logEntry.iSum = 1; }
+                            logs.push(logEntry);
+                            delLogResData[rid] = d;
+                            mergeChanged = true;
+                        }
+                    }
+                });
+            });
+            if (modified || mergeChanged) {
+                saveData();
+                if (typeof window.refreshProxy === 'function') window.refreshProxy();
+            } else {
+                localStorage.setItem(`CD_${currentClassId}_Ops`, JSON.stringify(ops));
             }
         } else {
             L(`[CloudSync] ⚠️ cCId 從 ${oldClassId} 變為 ${currentClassId}，跳過 Ops 套用`);
@@ -588,7 +678,7 @@ const checkCloudSyncState = async () => {
             }
         }
 
-        if (modified) {
+        if (modified || mergeChanged) {
             if (!await performCloudUpload()) { isSyncing = false; await checkCloudSyncState(); return; }
         } else {
             if (isDirty === 4) setDirty(3); 

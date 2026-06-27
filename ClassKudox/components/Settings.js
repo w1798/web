@@ -10,6 +10,16 @@ function Settings() {
     } = React.useContext(AppContext);
 
     const [activeTab, setActiveTab] = React.useState('display');
+    const [showDelLogs, setShowDelLogs] = React.useState(false);
+    const [delLogVersion, setDelLogVersion] = React.useState(0);
+    const getDelLogList = () => {
+        const arr = window.delLogs || [];
+        return [...arr].sort((a, b) => {
+            const ta = typeof a.deletedAt === 'number' ? a.deletedAt : (window.StampTool ? window.StampTool.decode(a.deletedAt).getTime() : 0);
+            const tb = typeof b.deletedAt === 'number' ? b.deletedAt : (window.StampTool ? window.StampTool.decode(b.deletedAt).getTime() : 0);
+            return tb - ta;
+        });
+    };
 
     // 設定展關時，蟸發 Vanilla JS 填充選單選項與狀態
     React.useEffect(() => {
@@ -395,41 +405,67 @@ function Settings() {
                     <div className={`settings-tab-content ${activeTab === 'danger' ? 'active' : ''}`} id="settingsDangerTab">
                         <div className="settings-section">
                             <h3 style={{ color: '#ef4444' }}>⚠️ 危險區域</h3>
-                            <p className="small-text" style={{ marginBottom: '1rem', color: 'var(--text-secondary)' }}>您可以在這裡重設目前的資料設定。重設將無法復原，請先備份重要資料。<strong>※ 清除資料後，您可以 F5 原網頁使設定生效</strong></p>
-                            <div className="input-group" style={{ marginBottom: '0.8rem' }}>
-                                <label style={{ color: '#ef4444' }}>復原最近一筆已自動同步的刪單</label>
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                    <button className="btn secondary-btn" id="recoverDelRecordBtn" style={{ borderColor: '#ef4444', color: '#ef4444', flex: '1', padding: '0.5rem' }}>♻️ 啟動掃描並復原雲端紀錄資料</button>
-                                </div>
-                            </div>
-                            
+                            <p className="small-text" style={{ marginBottom: '1rem', color: 'var(--text-secondary)' }}>您可以在這裡重設目前的資料設定。重設將無法復原，<strong>請先備份重要資料。</strong></p>
+
                             <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: '1.5rem 0' }} />
 
                             <div className="input-group" style={{ marginBottom: '0.8rem' }}>
-                                <label style={{ color: '#ef4444' }}>保留目前班級架構，僅清除所有給點與寶物紀錄。適合新學期歸零使用。</label>
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                    <input type="text" id="deleteLogsConfirmInput" placeholder="請輸入『刪除紀錄』四個字" style={{ flex: '1 1 auto' }} />
-                                    <button className="btn negative-btn" id="deleteLogsBtn" style={{ flex: '0 0 auto', padding: '0 1.5rem' }}>清除紀錄與寶物</button>
-                                </div>
+                                <label style={{ color: '#ef4444' }}>清除「目前班級」學生的點數和寶物的紀錄(但保留  cP/iP 點數)</label>
+                                <button className="btn negative-btn" id="clearCurrentClassRecordsBtn" style={{ width: '100%' }}>清除目前班級點數紀錄</button>
+                            </div>
+
+                            <div className="input-group" style={{ marginBottom: '0.8rem' }}>
+                                <label style={{ color: '#ef4444' }}>清除「所有班級」學生的點數和寶物的紀錄(但保留  cP/iP 點數)</label>
+                                <button className="btn negative-btn" id="clearAllClassesRecordsBtn" style={{ width: '100%' }}>清除所有班級點數紀錄</button>
                             </div>
 
                             <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: '1.5rem 0' }} />
 
                             <div className="input-group" style={{ marginBottom: '0.8rem' }}>
-                                <label style={{ color: '#ef4444' }}>清除「目前班級」學生的點數、寶物與紀錄</label>
-                                <button className="btn negative-btn" id="resetCurrentClassPointsBtn" style={{ width: '100%' }}>重置目前班級點數</button>
-                            </div>
-
-                            <div className="input-group" style={{ marginBottom: '0.8rem' }}>
-                                <label style={{ color: '#ef4444' }}>清除「所有班級」學生的點數、寶物與紀錄</label>
-                                <button className="btn negative-btn" id="resetAllClassesPointsBtn" style={{ width: '100%' }}>重置所有班級點數</button>
-                            </div>
-
-                            <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: '1.5rem 0' }} />
-
-                            <div className="input-group">
                                 <label style={{ color: '#ef4444' }}>徹底清除此瀏覽器的所有資料，包含所有班級、點數、紀錄與設定。</label>
-                                <button className="btn negative-btn" id="resetSystemBtn" style={{ width: '100%', marginBottom: '1rem' }}>清除系統全部資料</button>
+                                <button className="btn negative-btn" id="resetSystemBtn" style={{ width: '100%' }}>清除系統全部資料</button>
+                            </div>
+
+                            <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: '1.5rem 0' }} />
+
+                            <div className="input-group" style={{ marginBottom: '0.8rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', marginBottom: '0.5rem' }} onClick={() => setShowDelLogs(!showDelLogs)}>
+                                    <span style={{ fontSize: '1.2rem', color: '#ef4444' }}>📋</span>
+                                    <span style={{ fontWeight: 600, color: '#ef4444', fontSize: '0.95em' }}>刪除寶物和點數的紀錄（{getDelLogList().length} 筆）</span>
+                                    <span style={{ marginLeft: 'auto', fontSize: '0.8em', color: '#94a3b8' }}>{showDelLogs ? '▲ 收合' : '▼ 展開'}</span>
+                                </div>
+                                {showDelLogs && (
+                                    <div style={{ maxHeight: '300px', overflowY: 'auto', background: '#f8fafc', borderRadius: '8px', border: '1px solid var(--border-color)', padding: '0.5rem' }}>
+                                        {getDelLogList().length === 0 ? (
+                                            <div style={{ textAlign: 'center', color: '#94a3b8', padding: '1rem', fontSize: '0.9em' }}>尚無刪除紀錄</div>
+                                        ) : (
+                                            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                                                {getDelLogList().map(dl => {
+                                                    const delTime = typeof dl.deletedAt === 'number' ? new Date(dl.deletedAt) : (window.StampTool ? window.StampTool.decode(dl.deletedAt) : new Date());
+                                                    const origTime = typeof dl.originalTS === 'number' ? new Date(dl.originalTS) : (window.StampTool ? window.StampTool.decode(dl.originalTS) : new Date());
+                                                    return (
+                                                        <li key={dl.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.5rem', borderBottom: '1px solid #e2e8f0', fontSize: '0.85em' }}>
+                                                            <span style={{ color: '#64748b', whiteSpace: 'nowrap', fontFamily: 'monospace' }}>
+                                                                {delTime.toLocaleDateString()} {delTime.toLocaleTimeString()}
+                                                            </span>
+                                                            <span style={{ color: '#ef4444', fontWeight: 600 }}>刪除</span>
+                                                            <span style={{ fontWeight: 600 }}>{dl.sID}</span>
+                                                            <span style={{ color: '#94a3b8' }}>→</span>
+                                                            <span style={{ color: '#64748b', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
+                                                                {origTime.toLocaleDateString()} {origTime.toLocaleTimeString()}
+                                                            </span>
+                                                            <span style={{ color: '#94a3b8' }}>給的</span>
+                                                            <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                {dl.lb}{!dl.trId && (dl.pt > 0 ? '+' : '')}{dl.pt}{dl.trQty ? ' ×' + dl.trQty : ''}
+                                                            </span>
+                                                            <button className="btn" style={{ flexShrink: 0, padding: '0.2rem 0.6rem', fontSize: '0.8em', background: '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }} onClick={() => { window.restoreDelLog && window.restoreDelLog(dl.id); setDelLogVersion(v => v + 1); }}>↩️ 還原</button>
+                                                        </li>
+                                                    );
+                                                })}
+                                            </ul>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                             <div className="settings-footer-spacer"></div>
                         </div>

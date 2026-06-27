@@ -660,31 +660,17 @@ const startApp = () => {
         
         // toggleMultiSelectBtn 已遷移至 React Header
 
-        wire('resetAllClassesPointsBtn', () => { 
-            if(confirm('重置「所有班級」學生的點數、寶物與紀錄？')) { 
-                window.resetAllClassesPoints();
-                renderStudents(); if(currentView === 'groups') renderGroups(); alert('已重置');
+        wire('clearCurrentClassRecordsBtn', () => { 
+            if(confirm(`清除目前班級「${currentClassId}」的點數紀錄與寶物？(保留 cP/iP 點數)`)) { 
+                window.clearCurrentClassRecords();
+                renderStudents(); if(currentView === 'groups') renderGroups(); alert('已清除');
             } 
         });
-        wire('resetCurrentClassPointsBtn', () => { 
-            if(confirm(`重置目前班級「${currentClassId}」學生的點數、寶物與紀錄？`)) { 
-                window.resetCurrentClassPoints();
-                renderStudents(); if(currentView === 'groups') renderGroups(); alert('已重置');
+        wire('clearAllClassesRecordsBtn', () => { 
+            if(confirm('清除所有班級的點數紀錄與寶物？(保留 cP/iP 點數)')) { 
+                window.clearAllClassesRecords();
+                renderStudents(); if(currentView === 'groups') renderGroups(); alert('已清除');
             } 
-        });
-        wire('deleteLogsBtn', () => { 
-            const inp = document.getElementById('deleteLogsConfirmInput');
-            if(!inp || inp.value.trim() !== '刪除紀錄') return alert('請輸入正確的確認文字');
-            if(confirm('確定要清除目前班級的所有紀錄與寶物？學生名單將會保留。')) { 
-                window.resetCurrentClassPoints();
-                renderStudents(); if(currentView === 'groups') renderGroups(); 
-                inp.value = '';
-                alert('已清除紀錄與寶物');
-            }
-        });
-        wire('recoverDelRecordBtn', () => {
-            if (typeof recoverDeletedOps === 'function') recoverDeletedOps();
-            else alert('復原功能需要雲端同步模組支援');
         });
         wire('resetSystemBtn', () => { if(confirm('重置系統？')) { 
             const keys = []; for (let i=0; i<localStorage.length; i++) { const k = localStorage.key(i); if (k && (k.startsWith('CD_') || ['BId', 'Key', 'aSyn', 'sVer'].includes(k))) keys.push(k); }

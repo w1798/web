@@ -50,7 +50,7 @@ let cloudApiKey = localStorage.getItem('Key') || '';
 let autoSyncInterval = parseInt(localStorage.getItem('aSyn')) || 0;
 let localSyncVersion = localStorage.getItem('sVer') || '000000';
 
-let students = [], groups = [], logs = [], pointItems = null, settings = null, ops = [], mSyn = 30;
+let students = [], groups = [], logs = [], delLogs = [], delLogRestored = [], delLogResData = {}, pointItems = null, settings = null, ops = [], mSyn = 30;
 let idleSeconds = 0;
 let customItems = [];
 let customPrefs = {};
@@ -83,6 +83,9 @@ const exposeToWindow = () => {
     window.students = students;
     window.groups = groups;
     window.logs = logs;
+    window.delLogs = delLogs;
+    window.delLogRestored = delLogRestored;
+    window.delLogResData = delLogResData;
     window.pointItems = pointItems;
     window.settings = settings;
     window.classes = classes;
@@ -163,6 +166,9 @@ const saveData = (skipDirty = false) => {
     localStorage.setItem(`CD_${currentClassId}_Stus`, JSON.stringify(students));
     localStorage.setItem(`CD_${currentClassId}_Gs`, JSON.stringify(groups));
     localStorage.setItem(`CD_${currentClassId}_Ls`, JSON.stringify(logs));
+    localStorage.setItem(`CD_${currentClassId}_DLs`, JSON.stringify(delLogs));
+    localStorage.setItem(`CD_${currentClassId}_DL_Res`, JSON.stringify(delLogRestored));
+    localStorage.setItem(`CD_${currentClassId}_DL_ResData`, JSON.stringify(delLogResData));
     localStorage.setItem(`CD_${currentClassId}_itm`, JSON.stringify(pointItems));
     localStorage.setItem(`CD_${currentClassId}_cItm`, JSON.stringify(customItems));
     
@@ -194,6 +200,10 @@ const loadClassData = () => {
     students = safeLoad(`CD_${currentClassId}_Stus`, []);
     groups = safeLoad(`CD_${currentClassId}_Gs`, []);
     logs = safeLoad(`CD_${currentClassId}_Ls`, []);
+    delLogs = safeLoad(`CD_${currentClassId}_DLs`, []);
+    delLogRestored = safeLoad(`CD_${currentClassId}_DL_Res`, []);
+    delLogResData = safeLoad(`CD_${currentClassId}_DL_ResData`, {});
+    delLogs = delLogs.filter(dl => !delLogRestored.includes(dl.id));
     pointItems = safeLoad(`CD_${currentClassId}_itm`, JSON.parse(JSON.stringify(defaultItems)));
     customItems = safeLoad(`CD_${currentClassId}_cItm`, []);
     customPrefs = safeLoad(`CD_${currentClassId}_cPref`, {});
@@ -210,7 +220,24 @@ const loadClassData = () => {
     }
 
     settings = safeLoad(`CD_${currentClassId}_set`, DEFAULT_SETTINGS);
+    cleanupDelLogs();
     exposeToWindow();
+};
+
+const cleanupDelLogs = () => {
+    const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    delLogs = delLogs.filter(e => {
+        const t = typeof e.deletedAt === 'number' ? e.deletedAt : StampTool.decode(e.deletedAt).getTime();
+        return t > cutoff;
+    });
+    if (delLogs.length > 100) {
+        delLogs.sort((a, b) => {
+            const ta = typeof a.deletedAt === 'number' ? a.deletedAt : StampTool.decode(a.deletedAt).getTime();
+            const tb = typeof b.deletedAt === 'number' ? b.deletedAt : StampTool.decode(b.deletedAt).getTime();
+            return tb - ta;
+        });
+        delLogs = delLogs.slice(0, 100);
+    }
 };
 
 const performLogRetention = () => {
@@ -398,6 +425,9 @@ const sanitizeAndCleanDatabase = () => {
 Object.defineProperty(window, 'students', { get: () => students });
 Object.defineProperty(window, 'groups', { get: () => groups });
 Object.defineProperty(window, 'logs', { get: () => logs });
+Object.defineProperty(window, 'delLogs', { get: () => delLogs });
+Object.defineProperty(window, 'delLogRestored', { get: () => delLogRestored });
+Object.defineProperty(window, 'delLogResData', { get: () => delLogResData });
 Object.defineProperty(window, 'pointItems', { get: () => pointItems });
 Object.defineProperty(window, 'settings', { get: () => settings });
 Object.defineProperty(window, 'classes', { get: () => classes });
