@@ -238,6 +238,9 @@ const cleanupDelLogs = () => {
         });
         delLogs = delLogs.slice(0, 100);
     }
+    const validIds = new Set(delLogs.map(dl => dl.id));
+    delLogRestored = delLogRestored.filter(id => validIds.has(id));
+    Object.keys(delLogResData).forEach(k => { if (!validIds.has(k)) delete delLogResData[k]; });
 };
 
 const performLogRetention = () => {
