@@ -51,28 +51,21 @@ function Header() {
 
                 <button 
                     id="manageClassesBtn" 
-                    className="btn icon-btn" 
-                    title="班級管理"
-                    onClick={() => setModal('manageClasses', true)}
-                >🏫</button>
-                
-                <button 
-                    id="addStudentBtn" 
                     className="btn primary-btn"
-                    onClick={() => setModal('addStudent', true)}
-                >+ 新增學生</button>
+                    onClick={() => setModal('manageClasses', true)}
+                >班級管理</button>
                 
                 <button 
                     id="reportsBtn" 
                     className="btn reports-btn"
                     onClick={() => setModal('reports', true)}
-                >📊 成長排名</button>
+                >成長排名</button>
                 
                 <button 
                     id="toggleMultiSelectBtn" 
                     className={`btn secondary-btn ${isMultiSelectMode ? 'active-mode' : ''}`}
                     onClick={toggleMultiSelectMode}
-                >{isMultiSelectMode ? '取消多選' : '☑️ 多選模式'}</button>
+                >{isMultiSelectMode ? '取消多選' : '多選模式'}</button>
                 
                 <button 
                     id="settingsBtn" 

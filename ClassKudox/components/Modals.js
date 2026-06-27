@@ -805,10 +805,20 @@ function Modals() {
             {/* KEEP VANILLA SHELLS for others that are deeply wired in script.js (ManageClasses, Settings etc) to not break existing DOM bindings until full refactor */}
             <div id="manageClassesModal" className={`modal-overlay ${modals.manageClasses ? '' : 'hidden'}`}>
                 <div className="modal-content manage-classes-modal-content" style={{ maxWidth: '1100px', width: '95%' }}>
-                    <div className="modal-header"><h2>🏫 班級管理</h2><button className="close-modal-btn" onClick={() => close('manageClasses')}>&times;</button></div>
+                    <div className="modal-header"><h2 style={{ whiteSpace: 'nowrap', fontSize: '1.2rem' }}>🏫 班級管理</h2><div className="classes-tabs-row" style={{ display: 'flex', gap: '0.25rem', flex: 1, justifyContent: 'center', padding: '0 0.5rem' }}><button className="classes-tab-btn active" data-class-tab="list">我的班級</button><button className="classes-tab-btn" data-class-tab="add">新增班級</button></div><button className="close-modal-btn" onClick={() => close('manageClasses')}>&times;</button></div>
                     <div className="modal-body classes-modal-body">
                         <div className="classes-left classes-tab-content active" id="classesTabList">
-                            <div className="settings-section"><h3>我的班級</h3><ul id="classList" className="settings-list"></ul></div>
+                            <div className="settings-section"><h3>我的班級</h3><button id="manageAddStudentBtn" className="btn primary-btn" style={{ width: '100%', marginBottom: '0.75rem' }} onClick={() => { close('manageClasses'); setTimeout(() => setModal('addStudent', true), 100); }}>+ 新增學生</button><ul id="classList" className="settings-list"></ul></div>
+                            <div className="settings-section" id="behaviorSyncSection">
+                                <h3>📂 複製行為項目設定</h3>
+                                <p style={{ fontSize: '0.8em', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>您可以將其他班級的行為點數設定（優點與待改進項目）覆蓋綁定至目前班級。</p>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <select id="syncFromClassSelect" className="filter-select" style={{ flex: 1 }}>
+                                        <option value="">請選擇來源班級...</option>
+                                    </select>
+                                    <button id="confirmSyncBehaviorsBtn" className="btn secondary-btn" style={{ whiteSpace: 'nowrap' }}>複製</button>
+                                </div>
+                            </div>
                         </div>
                         <div className="classes-right classes-tab-content" id="classesTabAdd">
                             <div className="settings-section">
@@ -822,17 +832,6 @@ function Modals() {
                                     <label><input type="checkbox" id="copyStudentsCheckbox" /> 複製學生與群組</label>
                                 </div>
                                 <button className="btn primary-btn" id="createClassBtn" style={{ width: '100%' }}>建立班級</button>
-                            </div>
-
-                            <div className="settings-section" id="behaviorSyncSection">
-                                <h3>📂 複製行為項目設定</h3>
-                                <p style={{ fontSize: '0.8em', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>您可以將其他班級的行為點數設定（優點與待改進項目）覆蓋綁定至目前班級。</p>
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                    <select id="syncFromClassSelect" className="filter-select" style={{ flex: 1 }}>
-                                        <option value="">請選擇來源班級...</option>
-                                    </select>
-                                    <button id="confirmSyncBehaviorsBtn" className="btn secondary-btn" style={{ whiteSpace: 'nowrap' }}>複製</button>
-                                </div>
                             </div>
                         </div>
                     </div>

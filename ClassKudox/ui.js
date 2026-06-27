@@ -208,22 +208,15 @@ const renderClassSelector = () => {
             saveData(); renderClassSelector(); 
         };
         li.querySelector('.del-class-btn').onclick = () => { 
-            if(confirm('刪除？')) { 
+            if(c.id === currentClassId) { alert('不能刪除當前班級'); return; }
+            if(confirm(`確定刪除班級「${c.id}」？\n將重新載入頁面。`)) { 
                 ['Stus','Gs','Ls','itm','cItm','tDef','set','Ops'].forEach(suffix => {
                     localStorage.removeItem(`CD_${c.id}_${suffix}`);
                 });
                 classes = classes.filter(x=>x.id!==c.id); 
-                if(currentClassId===c.id) { 
-                    currentClassId=classes[0]?.id || ''; 
-                    localStorage.setItem('CD_cCId', currentClassId); 
-                    loadClassData();
-                }
                 pushOp(12, { id: c.id }, true);
                 saveData(); 
-                renderClassSelector(); 
-                renderStudents();
-                renderPointItems();
-                if(currentView === 'groups') renderGroups();
+                location.reload();
             } 
         };
         l.appendChild(li);
