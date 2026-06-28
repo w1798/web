@@ -414,3 +414,38 @@ logs.sort((a, b) => a.TS.localeCompare(b.TS));  // ASC
 | `../plugins.js` | 外部套件載入引擎，管理 React、Babel、pako 等 CDN 資源，自動判斷環境支援度 |
 | `build.bat` | esbuild 編譯腳本 |
 | `index.html` | 進入點、`APP_JSX` + `APP_VER` + 載入畫面 |
+
+## 刪除還原機制（delLogs）
+
+### 資料結構
+- **`delLogs`**（`CD_${classId}_DLs`）：刪除紀錄陣列，每筆含 `id`（6 字元亂數）、`sID`、`lb`、`pt`、`originalTS`、`deletedAt`、`trId`/`trQty`/`iSum`。
+- **`delLogRestored`**（`CD_${classId}_DL_Res`）：已還原的 delLog ID 陣列，載入時過濾用（`delLogs.filter(dl => !delLogRestored.includes(dl.id))`）。
+- **`delLogResData`**（`CD_${classId}_DL_ResData`）：本機專用物件，儲存還原時 delLog 的完整資料（`sID`, `lb`, `pt`, `trId`, `trQty`, `iSum`, `originalTS`），sync 後用於重建點數/寶物與 log。**不上雲端**。
+
+### 上限與清理
+- `delLogs`：上限 1000 筆 / 30 天，任一條件達到即過濾（`cleanupDelLogs()`）。
+- `delLogRestored` / `delLogResData`：隨 `cleanupDelLogs()` 同步清理，移除已不在 `delLogs` 中的孤立 ID。
+- 觸發時機：`loadClassData()`（載入班級）與 `deleteLog()`（手動刪除 log）。
+
+### 還原流程（`restoreDelLog`）
+1. 依 ID 找到 delLog 與對應學生。
+2. 加回點數（`cP`/`iP`）或寶物（`tr`）。
+3. 用 `originalTS` 重建 logs 條目。
+4. 從 `delLogs` 移除該筆。
+5. 將 ID 存入 `delLogRestored`，完整資料存入 `delLogResData`。
+6. `saveData()` + `refreshProxy()`。
+7. **不 push Ops**（無合適的 ACT type）。
+
+### 跨裝置同步（`sync.js`）
+- Sync merge 時：
+  1. 預先讀取各班的雲端 `_DL_Res` 為 `cloudResIdsByCid`（比對基準）。
+  2. `delLogs` 與 `delLogRestored` 按 id 去重合併。
+  3. 重新載入並過濾 `delLogs`（排除已還原 ID）。
+  4. 重新套用本機有但雲端無的還原條目（透過 `delLogResData` 重建點數/寶物與 log）。
+  5. 用 `mergeChanged` 追蹤是否有變動，觸發 `saveData()` + `performCloudUpload()`。
+- `DL_Res` 隨 full backup 上傳雲端供其他裝置過濾。
+- `DL_ResData` 為本機專用 key，不上傳雲端。
+
+### 重置
+- `clearCurrentClassRecords` / `clearAllClassesRecords`：清空 `delLogs`、`delLogRestored`、`delLogResData` 及對應 localStorage keys。
+- Sync 重播 `SYS_RESET` / `LOG_CLR`：一併清除三變數。

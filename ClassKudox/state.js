@@ -230,13 +230,13 @@ const cleanupDelLogs = () => {
         const t = typeof e.deletedAt === 'number' ? e.deletedAt : StampTool.decode(e.deletedAt).getTime();
         return t > cutoff;
     });
-    if (delLogs.length > 100) {
+    if (delLogs.length > 1000) {
         delLogs.sort((a, b) => {
             const ta = typeof a.deletedAt === 'number' ? a.deletedAt : StampTool.decode(a.deletedAt).getTime();
             const tb = typeof b.deletedAt === 'number' ? b.deletedAt : StampTool.decode(b.deletedAt).getTime();
             return tb - ta;
         });
-        delLogs = delLogs.slice(0, 100);
+        delLogs = delLogs.slice(0, 1000);
     }
     const validIds = new Set(delLogs.map(dl => dl.id));
     delLogRestored = delLogRestored.filter(id => validIds.has(id));
