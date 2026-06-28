@@ -154,18 +154,16 @@ const renderHistory = () => {
     if (window.refreshProxy) window.refreshProxy();
 };
 
+const switchClass = (newId) => {
+    if (!newId || !classes.some(c => c.id === newId)) return;
+    if (isDirty === 1) {
+        isSyncing = true; updateSyncStatus();
+        performCloudUpload().catch(err => console.error('切換班級前同步失敗', err));
+    }
+    currentClassId = newId; localStorage.setItem('CD_cCId', currentClassId); location.reload();
+};
+
 const renderClassSelector = () => {
-    const classSelect = document.getElementById('classSelect'); if(!classSelect) return;
-    classSelect.innerHTML = '';
-    classes.filter(c => !c.arc || c.id === currentClassId).forEach(c => { const opt = document.createElement('option'); opt.value = c.id; opt.textContent = c.id + (c.arc ? ' (封存)' : ''); if(c.id === currentClassId) opt.selected = true; classSelect.appendChild(opt); });
-    classSelect.onchange = async (e) => { 
-        const newId = e.target.value;
-        if (isDirty === 1) {
-            isSyncing = true; updateSyncStatus();
-            try { await performCloudUpload(); } catch(err) { console.error('切換班級前同步失敗', err); }
-        }
-        currentClassId = newId; localStorage.setItem('CD_cCId', currentClassId); location.reload(); 
-    };
     const l = document.getElementById('classList'); if(l) { l.innerHTML = ''; classes.forEach(c => {
         const li = document.createElement('li'); 
         li.innerHTML = `
@@ -333,6 +331,7 @@ const showClassSummary = () => {
 const createPointAnimation = (pts, count) => { for(let i=0; i<Math.min(count, 5); i++) { const el = document.createElement('div'); el.className = 'point-animation'; el.textContent = `${pts>0?'+':''}${pts}`; el.style.color = pts>0?'var(--positive-color)':'var(--negative-color)'; el.style.left = (50+Math.random()*10-5)+'%'; el.style.top = (40+Math.random()*10-5)+'%'; document.body.appendChild(el); setTimeout(() => el.remove(), 1000); } };
 
 // --- Expose UI Functions to Window for React Components ---
+window.switchClass = switchClass;
 window.renderClassSelector = renderClassSelector;
 window.showClassSummary = showClassSummary;
 window.getAvatarUrl = getAvatarUrl;

@@ -1009,39 +1009,49 @@ footer a:hover {
 
 @media (max-width: 600px) {
     body { padding: 0.5rem; }
-    .app-header { padding: 1rem; flex-direction: row; align-items: flex-start; gap: 0.5rem; }
-    .header-left {
-        display: flex;
-        flex-direction: column;
+    .app-header {
+        display: grid;
+        grid-template-columns: repeat(42, 1fr);
+        gap: 0.4rem;
         align-items: center;
-        margin-right: 0.3rem;
+        padding: 0.75rem;
     }
-    .app-header h1 { 
-        font-size: 1.25rem; 
-        writing-mode: vertical-lr;
-        letter-spacing: 0.15rem;
-        margin-bottom: 0.5rem;
+    .header-left {
+        display: contents;
+    }
+    #rankingTitle {
+        font-size: 2rem;
+        writing-mode: horizontal-tb;
+        letter-spacing: normal;
+        margin-bottom: 0;
+        grid-column: 1 / 22;
+        grid-row: 1;
+        white-space: nowrap;
     }
     #syncStatus {
-        writing-mode: horizontal-tb;
-        font-size: 0.7em;
+        font-size: 0.9em;
         padding: 0.2rem;
+        grid-column: 22 / 36;
+        grid-row: 1;
+        justify-self: start;
+        align-self: center;
     }
     .header-actions {
-        display: grid;
-        grid-template-columns: 1fr 1fr auto;
-        gap: 0.4rem;
-        flex: 1;
-        justify-items: stretch;
+        display: contents;
     }
-    .header-actions .btn { padding: 0.4rem 0.5rem; font-size: 0.85em; width: 100%; }
-    .header-tab[data-view="students"] { grid-column: 1 / 2; grid-row: 1; }
-    .header-tab[data-view="groups"] { grid-column: 2 / 3; grid-row: 1; }
-    #classSelect { grid-column: 1 / 3; grid-row: 2; width: 100%; max-width: none !important; }
-    #manageClassesBtn { grid-column: 3 / 4; grid-row: 2; width: auto; }
-    #reportsBtn { grid-column: 1 / 2; grid-row: 3; }
-    #toggleMultiSelectBtn { grid-column: 2 / 3; grid-row: 3; }
-    #settingsBtn { grid-column: 3 / 4; grid-row: 3; width: auto; }
+    #settingsBtn {
+        grid-column: 36 / 43;
+        grid-row: 1;
+        width: auto;
+        justify-self: end;
+    }
+    .header-actions .btn, .view-tab-btn.header-tab { padding: 0.35rem 0.45rem; font-size: 1rem; width: 100%; }
+    .header-tab[data-view="students"] { grid-column: 1 / 12; grid-row: 2; }
+    .header-tab[data-view="groups"] { grid-column: 12 / 23; grid-row: 2; }
+    #classSelect { grid-column: 23 / 43; grid-row: 2; width: 100%; max-width: none !important; }
+    #manageClassesBtn { grid-column: 1 / 15; grid-row: 3; }
+    #reportsBtn { grid-column: 15 / 29; grid-row: 3; }
+    #toggleMultiSelectBtn { grid-column: 29 / 43; grid-row: 3; }
 
     /* Mobile: flexible columns based on user minmax */
     .student-grid {
