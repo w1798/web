@@ -2,6 +2,14 @@
  * ClassKudox - Utilities
  */
 
+const safeInt = (val, min = -999999, max = 999999) => {
+    const n = typeof val === 'number' ? Math.round(val) : parseInt(String(val), 10);
+    if (isNaN(n) || !isFinite(n)) return 0;
+    if (n < min) return min;
+    if (n > max) return max;
+    return n;
+};
+
 const initVercount = () => {
     const path = window.location.pathname.replace(/\/$/, "");
     const TIME_KEY = `VERCOUNT_TIME_${path}`;
@@ -161,6 +169,7 @@ const safeLoad = (key, template) => {
     }
 };
 
+window.safeInt = safeInt;
 window.sortItems = sortItems;
 window.StampTool = StampTool;
 window.getTS = getTS;

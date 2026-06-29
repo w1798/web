@@ -13,16 +13,17 @@ const awardPoints = (iID, lb, pt, forcedIgnore = null) => {
     const isIgnore = !!forcedIgnore;
     awardContextIds.forEach(sid => { 
         const logId = Math.random().toString(36).substring(2, 8); 
-        const logEntry = { id: logId, sID: sid, lb, pt: Number(pt), TS: tsHex };
+        const p = safeInt(pt);
+        const logEntry = { id: logId, sID: sid, lb, pt: p, TS: tsHex };
         if(isIgnore) logEntry.iSum = 1;
         logs.push(logEntry); 
         newIds.push(logId); 
         const s = students.find(x => x.id === sid);
         if(s) {
-            if(isIgnore) s.iP = (s.iP || 0) + Number(pt);
-            else s.cP = (s.cP || 0) + Number(pt);
+            if(isIgnore) s.iP = (s.iP || 0) + p;
+            else s.cP = (s.cP || 0) + p;
         }
-        const opData = { s: sid, lb, p: Number(pt), l: logId };
+        const opData = { s: sid, lb, p, l: logId };
         if(isIgnore) opData.is = 1;
         pushOp(ACT.STU_AWD, opData);
     });
@@ -38,21 +39,23 @@ const awardPoints = (iID, lb, pt, forcedIgnore = null) => {
 const awardTreasure = (treasureId, qty, silent = false) => {
     const td = treasureDefs.find(t => t.id === treasureId);
     if (!td) return [];
+    const q = safeInt(qty, -999999, 999999);
+    if (q === 0) return [];
     let newIds = [];
     awardContextIds.forEach(sid => {
         const s = students.find(x => x.id === sid);
         if (!s) return;
         if (!s.tr) s.tr = {};
-        s.tr[treasureId] = (s.tr[treasureId] || 0) + qty;
+        s.tr[treasureId] = (s.tr[treasureId] || 0) + q;
         
         const logId = Math.random().toString(36).substring(2, 8);
         const tsHex = StampTool.encode();
-        const qtyText = qty > 0 ? `+${qty}` : `${qty}`;
+        const qtyText = q > 0 ? `+${q}` : `${q}`;
         const logLabel = `${td.ic}${td.lb} ${qtyText}`;
-        const logEntry = { id: logId, sID: sid, lb: logLabel, pt: 0, TS: tsHex, iSum: 1, trId: treasureId, trQty: qty };
+        const logEntry = { id: logId, sID: sid, lb: logLabel, pt: 0, TS: tsHex, iSum: 1, trId: treasureId, trQty: q };
         logs.push(logEntry);
         newIds.push(logId);
-        pushOp(ACT.STU_AWD, { s: sid, lb: logLabel, p: 0, l: logId, is: 1, ti: treasureId, tq: qty });
+        pushOp(ACT.STU_AWD, { s: sid, lb: logLabel, p: 0, l: logId, is: 1, ti: treasureId, tq: q });
     });
     saveData();
     if(isMultiSelectMode && typeof toggleMultiSelectMode === 'function') toggleMultiSelectMode();
@@ -175,7 +178,7 @@ window.deleteLog = (id) => {
         }
         delLogs.push({
             id: Math.random().toString(36).substring(2, 8),
-            sID: l.sID, lb: l.lb, pt: l.pt,
+            sID: l.sID, lb: l.lb, pt: safeInt(l.pt),
             originalTS: l.TS, deletedAt: StampTool.encode(),
             trId: l.trId, trQty: l.trQty, iSum: l.iSum
         });
@@ -262,10 +265,13 @@ const deleteGroup = (id) => {
 };
 
 const processGift = (donorId, amount, recipients, interval, step, ign) => {
-    if (amount <= 0) return { success: false, error: '請輸入有效數量' };
     if (!recipients.length) return { success: false, error: '請選擇至少一個對象' };
-    const fee = (interval > 0 && step > 0) ? Math.ceil(amount / interval) * step : 0;
-    const totalPerRecipient = amount + fee;
+    const a = safeInt(amount, 1, 999999);
+    if (a <= 0) return { success: false, error: '請輸入有效數量' };
+    const i = safeInt(interval, 0, 999999);
+    const st = safeInt(step, 0, 999999);
+    const fee = (i > 0 && st > 0) ? Math.ceil(a / i) * st : 0;
+    const totalPerRecipient = a + fee;
     const totalDeduction = totalPerRecipient * recipients.length;
     const tsHex = StampTool.encode(Date.now());
     let donorLogId = null;
@@ -281,16 +287,16 @@ const processGift = (donorId, amount, recipients, interval, step, ign) => {
         const r = students.find(s => s.id === rid);
         if (r) {
             const logId = Math.random().toString(36).substring(2, 8);
-            r.cP += amount;
-            logs.push({ id: logId, sID: r.id, lb: '獲得點數', pt: amount, TS: tsHex, iSum: ign ? 1 : 0 });
-            pushOp(ACT.STU_AWD, { s: r.id, lb: '獲得點數', p: amount, l: logId, is: ign ? 1 : 0 });
+            r.cP += a;
+            logs.push({ id: logId, sID: r.id, lb: '獲得點數', pt: a, TS: tsHex, iSum: ign ? 1 : 0 });
+            pushOp(ACT.STU_AWD, { s: r.id, lb: '獲得點數', p: a, l: logId, is: ign ? 1 : 0 });
             currentIds.push(logId);
         }
     });
     if (donorLogId) currentIds.push(donorLogId);
     lastActionLogIds = currentIds;
     saveData();
-    return { success: true, amount, count: recipients.length };
+    return { success: true, amount: a, count: recipients.length };
 };
 
 const saveCustomItems = (items) => {
@@ -302,7 +308,7 @@ const saveCustomItems = (items) => {
 const addPointItem = (cat, label, value, icon, ignore) => {
     if (!label.trim()) return;
     const itemId = Math.random().toString(36).substring(2, 8);
-    const item = { id: itemId, lb: label.trim(), vl: value, ic: icon };
+    const item = { id: itemId, lb: label.trim(), vl: safeInt(value), ic: icon };
     if (ignore) item.iSum = 1;
     pointItems[cat].push(item);
     pushOp(3, { c: cat, i: item });
@@ -342,7 +348,7 @@ const saveEditItem = (cat, id, label, icon, value, ignore) => {
     } else {
         const item = pointItems[cat].find(i => i.id === id);
         if (item) {
-            item.lb = label; item.vl = value; item.ic = icon;
+            item.lb = label; item.vl = safeInt(value); item.ic = icon;
             if (ignore) item.iSum = 1; else delete item.iSum;
             pushOp(ACT.ITEM_UPD, { c: cat, i: item });
             saveData();
@@ -431,21 +437,23 @@ window.restoreDelLog = (id) => {
     const s = students.find(x => x.id === dl.sID);
     if (!s) return alert(`學生「${dl.sID}」已不存在於目前班級，無法還原`);
     if (!confirm(`還原此筆？\n學生：${dl.sID}\n項目：${dl.lb}${dl.pt ? (dl.pt > 0 ? '+' : '') + dl.pt : ''}${dl.trQty ? ' ×' + dl.trQty : ''}\n原時間：${StampTool.decode(dl.originalTS).toLocaleString()}`)) return;
+    const p = safeInt(dl.pt);
     if (dl.trId && dl.trQty) {
-        if (s.tr) s.tr[dl.trId] = (s.tr[dl.trId] || 0) + dl.trQty;
-        else s.tr = { [dl.trId]: dl.trQty };
+        const q = safeInt(dl.trQty, -999999, 999999);
+        if (s.tr) s.tr[dl.trId] = (s.tr[dl.trId] || 0) + q;
+        else s.tr = { [dl.trId]: q };
     } else {
-        if (dl.iSum === 1) s.iP = (s.iP || 0) + dl.pt;
-        else s.cP = (s.cP || 0) + dl.pt;
+        if (dl.iSum === 1) s.iP = (s.iP || 0) + p;
+        else s.cP = (s.cP || 0) + p;
     }
-    const logEntry = { id: Math.random().toString(36).substring(2, 8), sID: dl.sID, lb: dl.lb, pt: dl.pt, TS: dl.originalTS };
+    const logEntry = { id: Math.random().toString(36).substring(2, 8), sID: dl.sID, lb: dl.lb, pt: p, TS: dl.originalTS };
     if (dl.iSum) logEntry.iSum = 1;
-    if (dl.trId) { logEntry.trId = dl.trId; logEntry.trQty = dl.trQty; logEntry.iSum = 1; }
+    if (dl.trId) { logEntry.trId = dl.trId; logEntry.trQty = safeInt(dl.trQty, -999999, 999999); logEntry.iSum = 1; }
     logs.push(logEntry);
     delLogs.splice(idx, 1);
     if (!delLogRestored.includes(id)) {
         delLogRestored.push(id);
-        delLogResData[id] = { sID: dl.sID, lb: dl.lb, pt: dl.pt, trId: dl.trId, trQty: dl.trQty, iSum: dl.iSum, originalTS: dl.originalTS };
+        delLogResData[id] = { sID: dl.sID, lb: dl.lb, pt: p, trId: dl.trId, trQty: dl.trQty, iSum: dl.iSum, originalTS: dl.originalTS };
     }
     saveData();
     if (window.refreshProxy) window.refreshProxy();
@@ -481,7 +489,7 @@ window.saveCustomItems = saveCustomItems;
 window.addPointItem = addPointItem;
 window.addTreasureItem = addTreasureItem;
 window.saveEditItem = saveEditItem;
-window.saveGiftSettings = (s) => { if(s.gInt!==void 0) giftSettings.gInt=s.gInt; if(s.gStep!==void 0) giftSettings.gStep=s.gStep; if(s.gIgn!==void 0) giftSettings.gIgn=s.gIgn?1:0; saveData(); };
+window.saveGiftSettings = (s) => { if(s.gInt!==void 0) giftSettings.gInt=safeInt(s.gInt, 0, 999999); if(s.gStep!==void 0) giftSettings.gStep=safeInt(s.gStep, 0, 999999); if(s.gIgn!==void 0) giftSettings.gIgn=s.gIgn?1:0; saveData(); };
 window.addCustomItem = addCustomItem;
 window.updateStudentAvatar = updateStudentAvatar;
 window.createClass = createClass;
