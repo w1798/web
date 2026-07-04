@@ -12,7 +12,7 @@ const Logic = {
     PoetryDefaults: {
         fontSizeTitle: 18,
         fontSizeAuthor: 12,
-        fontSizeContent: 16,
+        fontSizeContent: 14,
         authorSpaces: 60,
         enablePageBreak: true,
         emptyLineBetweenParagraphs: true,
