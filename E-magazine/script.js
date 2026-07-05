@@ -41,6 +41,7 @@ const App = () => {
     const [uploadedFileName, setUploadedFileName] = useState('');
     const [showHelp, setShowHelp] = useState(false);
     const [showDocxHelp, setShowDocxHelp] = useState(false);
+    const [showManual, setShowManual] = useState(false);
 
     useEffect(() => {
         window.EMagLogic.saveData(config);
@@ -280,7 +281,7 @@ const App = () => {
                 <h1 style={{ fontSize: '2rem' }}>電子校刊作品管理</h1>
                 <p style={{ fontSize: '1.2rem' }}>
                     {activeTab === 'poetry'
-                        ? <span>將學生作文/童詩/心得等的 Word 檔或 Google 表單下載檔解析後，自動排版成格式化文件</span>
+                        ? <span>將學生作文/童詩/心得等的 Word 檔或 Google 表單下載檔解析後，自動排版成格式化文件<a href="#" onClick={(e) => { e.preventDefault(); setShowManual(true); }} style={{ color: '#F9F900', marginLeft: '4px' }}>(使用說明)</a></span>
                         : <span>依班級名單、流水號或手動清單產生改名批次檔<span style={{ color: '#F9F900', marginLeft: '0.5rem' }}>(下載.bat後，放到 要改檔名的目錄裡「點兩下執行」即可)</span></span>
                     }
                 </p>
@@ -653,6 +654,52 @@ const App = () => {
                         <button 
                             className="btn btn-primary" 
                             onClick={() => setShowHelp(false)} 
+                            style={{ width: '100%', marginTop: '2rem', justifyContent: 'center' }}
+                        >我知道了</button>
+                    </div>
+                </div>
+            )}
+            {/* 使用說明彈窗 */}
+            {showManual && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem' }}>
+                    <div className="glass-card" style={{ maxWidth: '800px', width: '100%', position: 'relative', border: '1px solid rgba(255,255,255,0.2)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', maxHeight: '90vh', overflowY: 'auto' }}>
+                        <button 
+                            onClick={() => setShowManual(false)}
+                            style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: '1.5rem' }}
+                        >✕</button>
+                        
+                        <h2 style={{ marginBottom: '1.5rem', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            📖 使用說明
+                        </h2>
+                        <div style={{ lineHeight: 1.8, fontSize: '1.05rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                            <div>
+                                <strong style={{ color: '#fff', fontSize: '1.1rem', display: 'block', marginBottom: '0.4rem' }}>一、Google 表單製作</strong>
+                                <ul style={{ listStyleType: 'disc', paddingLeft: '1.5rem', color: 'var(--text-dim)', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                    <li>1 點 <a href="https://docs.google.com/forms/d/1OsotRlfDINTbaQLN1yUY2LKjvtSIpg8jxh2pjmqI1AU/copy" target="_blank" style={{ color: '#F9F900' }}>Google 表單</a> 建立副本</li>
+                                    <li>2 適當修改後，按「發布」</li>
+                                    <li>3 複製作答者連結，可勾選「縮短網址」，按「複製」</li>
+                                    <li>4 將「複製作答者連結」放在班級網頁中 / 做成 QRcode / 傳在班級群組裡</li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <strong style={{ color: '#fff', fontSize: '1.1rem', display: 'block' }}>二、學生依 Google 表單填報作業</strong>
+                            </div>
+                            
+                            <div>
+                                <strong style={{ color: '#fff', fontSize: '1.1rem', display: 'block', marginBottom: '0.4rem' }}>三、產生 Word</strong>
+                                <ul style={{ listStyleType: 'disc', paddingLeft: '1.5rem', color: 'var(--text-dim)', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                    <li>1 填報完成後，到 Google 的雲端硬碟，找到「作文童詩上傳區 - 副本」打開</li>
+                                    <li>2 「回覆」右邊三點，選「下載回應(.csv)」</li>
+                                    <li>3 使用本程式的「上傳檔案」上傳剛才的 .zip(.csv)檔」</li>
+                                    <li>4 下載格式化 Word</li>
+                                    <li>5 確定都沒問題後，可以在「回覆」右邊三點那，選「刪除所有回應」，重新收集資料</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <button 
+                            className="btn btn-primary" 
+                            onClick={() => setShowManual(false)} 
                             style={{ width: '100%', marginTop: '2rem', justifyContent: 'center' }}
                         >我知道了</button>
                     </div>
