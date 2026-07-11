@@ -23,6 +23,7 @@ const links = [
     { id: "JsonCloudGuide", category: "doc", title: "JSON雲端備份申請", desc: "　跨平台同步，數據如影隨形申請說明，透過 Upstash 與 Firebase 雲端整合方案，您可以將本地 .json 設定檔透過雲端備份至雲端，輕鬆實現多裝置間的偏好設定共用，打造無縫接軌的數位體驗。", url: "JsonCloudGuide" },
 
 
+    { id: "Sanguo-TD", category: "game", title: "三國RPG塔防", desc: "　三國武將塔防遊戲，集結魏蜀吳群四國豪傑，六大兵種（刀槍弓騎法僧）各具攻防特色。招募養成英雄，晉升突破極限，搭配專屬武器系統強化攻防屬性，解鎖武將羈絆加成。戰術佈陣運用兵種克制抵禦敵軍，挑戰三國經典戰役，在亂世中成就霸主之業。", url: "Sanguo-TD" },
     { id: "MathPKPro", category: "game", title: "數學算術 PK 大賽", desc: "　這是一款專為觸屏或平板設計的雙人數學PK網頁。支援直向或面對面視角，結合 RPG 戰鬥機制：答對可發動攻擊、連續答對（Combo）與速答能強化傷害，但每秒會自動扣血，增加競技緊張感。內建多元題型與打地鼠模式，讓數學練習變得像對戰遊戲一樣刺激！", url: "MathPKPro" },
 
  

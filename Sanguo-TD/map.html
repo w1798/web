@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>地圖編輯器 - 三國 RPG 塔防</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#1a0a00; color:#e0d4c0; font-family:sans-serif; display:flex; flex-direction:column; align-items:center; min-height:100vh; padding:16px; }
+h1 { font-size:20px; margin:8px 0; color:#c09040; }
+.editor { display:flex; gap:24px; flex-wrap:wrap; justify-content:center; }
+
+/* 工具列 */
+.toolbar { display:flex; gap:8px; margin:8px 0; flex-wrap:wrap; justify-content:center; }
+.tool-btn { padding:6px 14px; border:1px solid #5a3a20; border-radius:6px; background:rgba(40,25,15,0.8); color:#a09080; font-size:13px; cursor:pointer; }
+.tool-btn.active { background:#8a5a2a; color:#fff; border-color:#c09040; }
+.tool-btn.danger { border-color:#8a2a1a; color:#c06050; }
+.tool-btn.danger.active { background:#8a2a1a; color:#fff; }
+.tool-btn.erase { border-color:#555; color:#999; }
+.tool-btn.erase.active { background:#555; color:#fff; }
+
+/* 網格 */
+.grid-wrap { position:relative; }
+.grid { display:grid; grid-template-columns:repeat(5,64px); gap:2px; background:#2d1810; padding:4px; border-radius:8px; border:2px solid #5a3a20; }
+.cell { width:64px; height:64px; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:bold; cursor:pointer; user-select:none; position:relative; transition:0.1s; border:2px solid transparent; }
+.cell:hover { filter:brightness(1.3); }
+.cell.path { background:#3a6a3a; border-color:#5a9a5a; color:#8ada8a; }
+.cell.path.start { background:#2a8a2a; border-color:#8ada8a; }
+.cell.path.end { background:#8a3a2a; border-color:#da6a4a; }
+.cell.predug { background:#6a5a2a; border-color:#9a8a4a; color:#dad09a; }
+.cell.empty { background:#2a1a10; border-color:#3a2a1a; color:#5a4a3a; }
+.cell .idx { position:absolute; bottom:1px; right:2px; font-size:9px; color:rgba(255,255,255,0.5); }
+.cell.adj-ok::before { content:''; position:absolute; bottom:-2px; left:50%; transform:translateX(-50%); width:6px; height:6px; border-radius:50%; background:#4a4; }
+.cell.adj-bad::before { content:''; position:absolute; bottom:-2px; left:50%; transform:translateX(-50%); width:6px; height:6px; border-radius:50%; background:#a44; }
+
+/* 資訊面板 */
+.info { width:280px; background:rgba(40,25,15,0.9); border:1px solid #5a3a20; border-radius:8px; padding:12px; font-size:13px; }
+.info h3 { color:#c09040; font-size:14px; margin-bottom:8px; }
+.info .row { display:flex; justify-content:space-between; padding:2px 0; }
+.info .pass { color:#6a6; }
+.info .fail { color:#c44; }
+.info .export { margin-top:12px; }
+.info textarea { width:100%; height:200px; background:#1a0a00; color:#8ada8a; border:1px solid #3a2a1a; border-radius:4px; padding:8px; font-size:11px; font-family:monospace; resize:vertical; }
+.info .copy-btn { margin-top:4px; padding:4px 12px; border:1px solid #5a3a20; border-radius:4px; background:#8a5a2a; color:#fff; cursor:pointer; font-size:12px; }
+
+/* 名稱欄 */
+.name-row { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+.name-row label { color:#a09080; }
+.name-row input { flex:1; background:#1a0a00; color:#e0d4c0; border:1px solid #3a2a1a; border-radius:4px; padding:4px 8px; font-size:13px; }
+</style>
+</head>
+<body>
+
+<h1>🗺️ 地圖編輯器</h1>
+
+<div class="toolbar">
+  <button class="tool-btn active" data-mode="path" onclick="setMode('path')">🟢 路徑</button>
+  <button class="tool-btn" data-mode="predug" onclick="setMode('predug')">🟡 預挖</button>
+  <button class="tool-btn erase" data-mode="erase" onclick="setMode('erase')">✕ 清除</button>
+  <button class="tool-btn danger" onclick="clearAll()">🗑️ 全部清除</button>
+  <button class="tool-btn" onclick="undoPath()">↩ 移除最後路徑</button>
+</div>
+
+<div class="editor">
+    <div class="grid-wrap">
+      <div class="grid" id="grid"></div>
+      <div style="text-align:center;margin-top:6px;font-size:12px;color:#8a7a60;">
+        <span style="color:#8ada8a;">🟢 路徑模式</span>：從起點開始，依序點選 ↓←→ 方向延伸，點到 y=5 即設為終點<br>
+        <span style="color:#dad09a;">🟡 預挖模式</span>：點選空格放置預挖 (0)<br>
+        <span style="color:#999;">✕ 清除模式</span>：點選移除任意格子 │ 右鍵移除路徑格
+      </div>
+    </div>
+
+  <div class="info">
+    <div class="name-row">
+      <label>地圖名稱：</label>
+      <input id="map-name" value="new_map" placeholder="英文_id">
+    </div>
+    <div class="name-row">
+      <label>起點列：</label>
+      <select id="start-col" onchange="updateStartEnd()">
+        <option value="0" selected>col 0</option>
+        <option value="1">col 1</option>
+        <option value="2">col 2</option>
+        <option value="3">col 3</option>
+        <option value="4">col 4</option>
+      </select>
+    </div>
+    <h3>✅ 規則檢查</h3>
+    <div id="rules">
+      <div class="row"><span>路徑起點在 y=0</span><span id="r-start" class="fail">✕</span></div>
+      <div class="row"><span>路徑終點在 y=5</span><span id="r-end" class="fail">✕</span></div>
+      <div class="row"><span>路徑只走 ↓ ← →</span><span id="r-dir" class="pass">✓</span></div>
+      <div class="row"><span>連續路徑（無斷點）</span><span id="r-cont" class="pass">✓</span></div>
+      <div class="row"><span>預挖 6 格</span><span id="r-count" class="fail">✕ 0/6</span></div>
+      <div class="row"><span>預挖僅在 y≥2</span><span id="r-y2" class="pass">✓</span></div>
+      <div class="row"><span>預挖未佔用路徑</span><span id="r-overlap" class="pass">✓</span></div>
+      <div class="row"><span>≥4 預挖鄰近路徑</span><span id="r-adj" class="fail">✕</span></div>
+      <div class="row"><span>預挖全部相連</span><span id="r-connected" class="fail">✕</span></div>
+    </div>
+    <div class="export">
+      <h3>📤 匯出</h3>
+      <textarea id="export-area" readonly></textarea>
+      <button class="copy-btn" onclick="copyExport()">📋 複製</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var COLS = 5, ROWS = 6;
+var state = []; // 'empty' | 'path' | 'predug'
+var pathOrder = []; // [{col,row}, ...]
+var currentMode = 'path';
+var startCol = 0;
+
+function init() {
+  for (var r = 0; r < ROWS; r++) {
+    state[r] = [];
+    for (var c = 0; c < COLS; c++) {
+      state[r][c] = 'empty';
+    }
+  }
+  pathOrder = [];
+  startCol = parseInt(document.getElementById('start-col').value);
+  state[0][startCol] = 'path';
+  pathOrder.push({ col: startCol, row: 0 });
+  render();
+}
+
+function render() {
+  var g = document.getElementById('grid');
+  g.innerHTML = '';
+  for (var r = 0; r < ROWS; r++) {
+    for (var c = 0; c < COLS; c++) {
+      var cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.col = c;
+      cell.dataset.row = r;
+      cell.onclick = function() { clickCell(parseInt(this.dataset.col), parseInt(this.dataset.row)); };
+      cell.oncontextmenu = function(e) { e.preventDefault(); rightClickCell(parseInt(this.dataset.col), parseInt(this.dataset.row)); };
+
+      var t = state[r][c];
+      if (t === 'path') {
+        cell.classList.add('path');
+        var idx = getPathIndex(c, r);
+        if (idx === 0) { cell.classList.add('start'); cell.textContent = '起'; }
+        else if (idx === pathOrder.length - 1) { cell.classList.add('end'); cell.textContent = '終'; }
+        else cell.textContent = '';
+        var span = document.createElement('span');
+        span.className = 'idx';
+        span.textContent = idx;
+        cell.appendChild(span);
+      } else if (t === 'predug') {
+        cell.classList.add('predug');
+        cell.textContent = '0';
+      } else {
+        cell.classList.add('empty');
+        cell.textContent = '.';
+      }
+      g.appendChild(cell);
+    }
+  }
+  validateAll();
+  updateExport();
+}
+
+function getPathIndex(col, row) {
+  for (var i = 0; i < pathOrder.length; i++) {
+    if (pathOrder[i].col === col && pathOrder[i].row === row) return i;
+  }
+  return -1;
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.tool-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.mode === mode);
+  });
+}
+
+/* 切換起點列 */
+function updateStartEnd() {
+  startCol = parseInt(document.getElementById('start-col').value);
+  if (pathOrder.length > 0) {
+    state[pathOrder[0].row][pathOrder[0].col] = 'empty';
+    pathOrder[0] = { col: startCol, row: 0 };
+    state[0][startCol] = 'path';
+  } else {
+    state[0][startCol] = 'path';
+    pathOrder.push({ col: startCol, row: 0 });
+  }
+  render();
+}
+
+function clickCell(col, row) {
+  if (currentMode === 'path') {
+    if (state[row][col] === 'path') return; /* 已在路徑中 */
+    addPathCell(col, row);
+  } else if (currentMode === 'predug') {
+    if (state[row][col] === 'path') return; /* 路徑上不能放預挖 */
+    if (state[row][col] === 'predug') { state[row][col] = 'empty'; }
+    else { state[row][col] = 'predug'; }
+    render();
+  } else if (currentMode === 'erase') {
+    if (state[row][col] === 'path') {
+      removePathCell(col, row);
+    } else {
+      state[row][col] = 'empty';
+      render();
+    }
+  }
+}
+
+function rightClickCell(col, row) {
+  if (state[row][col] === 'path') {
+    removePathCell(col, row);
+  }
+  render();
+}
+
+function addPathCell(col, row) {
+  /* 若已到達 y=5 則不能再加 */
+  var last = pathOrder[pathOrder.length - 1];
+  if (last && last.row === 5) { alert('路徑已到達終點 (y=5)，不能再延伸'); return; }
+
+  /* 檢查是否合法移動方向 */
+  if (pathOrder.length > 0) {
+    var prev = pathOrder[pathOrder.length - 1];
+    var dc = col - prev.col;
+    var dr = row - prev.row;
+    if (dc === 0 && dr === 1) { /* OK 向下 */ }
+    else if (dc === -1 && dr === 0) { /* OK 向左 */ }
+    else if (dc === 1 && dr === 0) { /* OK 向右 */ }
+    else { alert('路徑只能向下(↓)、向左(←)、向右(→)'); return; }
+  } else {
+    if (row !== 0) { alert('起點必須在 y=0'); return; }
+  }
+
+  if (state[row][col] === 'path') return;
+  state[row][col] = 'path';
+  pathOrder.push({ col: col, row: row });
+  render();
+}
+
+function removePathCell(col, row) {
+  var idx = getPathIndex(col, row);
+  if (idx === -1) return;
+  /* 不能移除起點或終點（除非只剩2點） */
+  if (pathOrder.length <= 2 && (idx === 0 || idx === pathOrder.length - 1)) {
+    alert('至少保留起點和終點'); return;
+  }
+  pathOrder.splice(idx, 1);
+  state[row][col] = 'empty';
+  rebuildStateFromPath();
+  render();
+}
+
+function undoPath() {
+  if (pathOrder.length <= 2) return;
+  var last = pathOrder.pop();
+  state[last.row][last.col] = 'empty';
+  render();
+}
+
+function rebuildStateFromPath() {
+  /* 清除舊路徑標記，再重新標記 */
+  for (var r = 0; r < ROWS; r++) {
+    for (var c = 0; c < COLS; c++) {
+      if (state[r][c] === 'path') state[r][c] = 'empty';
+    }
+  }
+  for (var i = 0; i < pathOrder.length; i++) {
+    state[pathOrder[i].row][pathOrder[i].col] = 'path';
+  }
+}
+
+function clearAll() {
+  if (!confirm('清除所有資料？')) return;
+  init();
+}
+
+/* ===== 驗證 ===== */
+function validateAll() {
+  var rStart = document.getElementById('r-start');
+  var rEnd = document.getElementById('r-end');
+  var rDir = document.getElementById('r-dir');
+  var rCont = document.getElementById('r-cont');
+  var rCount = document.getElementById('r-count');
+  var rY2 = document.getElementById('r-y2');
+  var rOverlap = document.getElementById('r-overlap');
+  var rAdj = document.getElementById('r-adj');
+  var rConnected = document.getElementById('r-connected');
+  var rStack = document.getElementById('r-stack');
+
+  var preDugCells = [];
+  for (var r = 0; r < ROWS; r++) {
+    for (var c = 0; c < COLS; c++) {
+      if (state[r][c] === 'predug') preDugCells.push({ col: c, row: r });
+    }
+  }
+
+  /* 起點 y=0 */
+  var startOk = pathOrder.length > 0 && pathOrder[0].row === 0;
+  setResult(rStart, startOk);
+
+  /* 終點 y=5 */
+  var endOk = pathOrder.length > 0 && pathOrder[pathOrder.length - 1].row === 5;
+  setResult(rEnd, endOk);
+
+  /* 方向 */
+  var dirOk = true;
+  for (var i = 1; i < pathOrder.length; i++) {
+    var dc = pathOrder[i].col - pathOrder[i-1].col;
+    var dr = pathOrder[i].row - pathOrder[i-1].row;
+    if (!(dc === 0 && dr === 1) && !(dc === -1 && dr === 0) && !(dc === 1 && dr === 0)) {
+      dirOk = false; break;
+    }
+  }
+  setResult(rDir, dirOk);
+
+  /* 連續 */
+  var contOk = pathOrder.length >= 2;
+  setResult(rCont, contOk);
+
+  /* 預挖數量 */
+  var countOk = preDugCells.length === 6;
+  rCount.textContent = countOk ? '✓ 6/6' : '✕ ' + preDugCells.length + '/6';
+  rCount.className = countOk ? 'pass' : 'fail';
+
+  /* 預挖 y≥2 */
+  var y2Ok = true;
+  for (var p = 0; p < preDugCells.length; p++) {
+    if (preDugCells[p].row < 2) { y2Ok = false; break; }
+  }
+  setResult(rY2, y2Ok);
+
+  /* 重疊 */
+  var overlapOk = true;
+  for (var p = 0; p < preDugCells.length; p++) {
+    if (getPathIndex(preDugCells[p].col, preDugCells[p].row) !== -1) {
+      overlapOk = false; break;
+    }
+  }
+  setResult(rOverlap, overlapOk);
+
+  /* ≥4 預挖鄰近路徑 */
+  var adjCount = 0;
+  for (var p = 0; p < preDugCells.length; p++) {
+    if (isAdjToPath(preDugCells[p].col, preDugCells[p].row)) adjCount++;
+  }
+  var adjOk = adjCount >= 4;
+  rAdj.textContent = adjOk ? '✓ ' + adjCount + '/4' : '✕ ' + adjCount + '/4';
+  rAdj.className = adjOk ? 'pass' : 'fail';
+
+  /* 預挖全部相連（每個預挖至少鄰近另一預挖或路徑） */
+  var connectedOk = true;
+  for (var p = 0; p < preDugCells.length; p++) {
+    if (!isAdjToAnything(preDugCells[p].col, preDugCells[p].row, preDugCells)) {
+      connectedOk = false; break;
+    }
+  }
+  setResult(rConnected, connectedOk);
+
+  /* 畫格子上標記 */
+  var cells = document.querySelectorAll('.cell');
+  cells.forEach(function(el) {
+    var cc = parseInt(el.dataset.col);
+    var rr = parseInt(el.dataset.row);
+    el.classList.remove('adj-ok', 'adj-bad');
+    if (state[rr][cc] === 'predug') {
+      el.classList.add(isAdjToPath(cc, rr) ? 'adj-ok' : 'adj-bad');
+    }
+  });
+}
+
+function setResult(el, ok) {
+  el.textContent = ok ? '✓' : '✕';
+  el.className = ok ? 'pass' : 'fail';
+}
+
+function isAdjToPath(col, row) {
+  var dirs = [[0,1],[0,-1],[1,0],[-1,0]];
+  for (var d = 0; d < dirs.length; d++) {
+    var nc = col + dirs[d][0], nr = row + dirs[d][1];
+    if (nc >= 0 && nc < COLS && nr >= 0 && nr < ROWS && state[nr][nc] === 'path') return true;
+  }
+  return false;
+}
+
+function isAdjToAnything(col, row, preDugCells) {
+  if (isAdjToPath(col, row)) return true;
+  var dirs = [[0,1],[0,-1],[1,0],[-1,0]];
+  for (var d = 0; d < dirs.length; d++) {
+    var nc = col + dirs[d][0], nr = row + dirs[d][1];
+    for (var p = 0; p < preDugCells.length; p++) {
+      if (preDugCells[p].col === nc && preDugCells[p].row === nr &&
+          !(preDugCells[p].col === col && preDugCells[p].row === row)) return true;
+    }
+  }
+  return false;
+}
+
+/* ===== 匯出 ===== */
+function updateExport() {
+  var name = document.getElementById('map-name').value.trim() || 'unnamed';
+  /* 合併相同方向的路徑為連續點 */
+  var pathStr = pathOrder.map(function(p) { return '      {col:' + p.col + ',row:' + p.row + '}'; }).join(',\n');
+
+  var preDugCells = [];
+  for (var r = 0; r < ROWS; r++) {
+    for (var c = 0; c < COLS; c++) {
+      if (state[r][c] === 'predug') preDugCells.push({ col: c, row: r });
+    }
+  }
+  var preDugStr = preDugCells.map(function(p) { return '      {col:' + p.col + ',row:' + p.row + '}'; }).join(',\n');
+
+  var out = '  ' + name + ': {\n' +
+    '    cols:5, rows:6,\n' +
+    '    path: [\n' + pathStr + '\n' +
+    '    ],\n' +
+    '    preDug:[\n' + (preDugStr ? preDugStr : '      /* 無 */') + '\n' +
+    '    ]\n' +
+    '  }';
+
+  document.getElementById('export-area').value = out;
+}
+
+function copyExport() {
+  var ta = document.getElementById('export-area');
+  ta.select();
+  document.execCommand('copy');
+}
+
+/* 初始化 */
+init();
+</script>
+</body>
+</html>

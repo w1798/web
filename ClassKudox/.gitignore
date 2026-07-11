@@ -1,0 +1,19 @@
+# Windows
+Thumbs.db
+Desktop.ini
+
+# IDE
+.vs/
+.vscode/
+*.swp
+*.swo
+
+# Temp
+*.tmp
+*.bak
+
+# Logs
+*.log
+
+# Build
+dist/

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="screen-orientation" content="portrait">
+<meta name="x5-orientation" content="portrait">
+<title>三國 RPG 塔防</title>
+<style>html{visibility:hidden}</style>
+<script>var APP_VER='1.7.1',APP_JSX='vanilla';</script>
+<script src="../loader_engine.js?ver=1.0.0"></script>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- 主選單 -->
+  <div id="screen-menu" class="screen active">
+    <div class="menu-bg"></div>
+    <div class="menu-content">
+      <h1 class="game-title">三國 <span class="title-sub">RPG 塔防</span></h1>
+      <p class="game-subtitle">亂世英雄，誰與爭鋒</p>
+      <div class="menu-btns">
+        <button class="btn btn-primary" onclick="UI.showCampaign()">⚔️ 征 戰</button>
+        <button class="btn btn-secondary" onclick="UI.showGacha()">招 募</button>
+        <button class="btn btn-secondary" onclick="UI.showHeroes()" style="background:linear-gradient(135deg,#2c3e50,#34495e)">🦸 武 將</button>
+        <button class="btn btn-secondary" onclick="UI.showWeapons()" style="background:linear-gradient(135deg,#5a2a3a,#7a3a4a)">🗡️ 武 器</button>
+        <button class="btn btn-small" onclick="UI.showSettings()">⚙️ 設 定</button>
+      </div>
+      <div class="menu-info">
+        <span id="menu-gold">黃金：0</span>
+        <span id="menu-heroes">武將：0</span>
+        <span id="menu-weapons">武器：0</span>
+      </div>
+      <footer class="menu-footer"></footer>
+    </div>
+  </div>
+
+  <!-- 征戰地圖 -->
+  <div id="screen-campaign" class="screen">
+    <div class="screen-header">
+      <button class="btn-back" onclick="UI.showMenu()">←</button>
+      <h2>征戰天下</h2>
+    </div>
+    <div class="campaign-info">
+      <span id="campaign-stamina">⚡ 體力 120/120</span>
+    </div>
+    <div id="difficulty-tabs" class="diff-tabs">
+      <button class="diff-btn active" data-diff="normal" onclick="UI.selectDifficulty('normal')">正常</button>
+      <button class="diff-btn" data-diff="hard" onclick="UI.selectDifficulty('hard')">困難</button>
+      <button class="diff-btn" data-diff="hell" onclick="UI.selectDifficulty('hell')">地獄</button>
+    </div>
+    <div id="campaign-list" class="campaign-list"></div>
+  </div>
+
+  <!-- 戰鬥畫面 -->
+  <div id="screen-battle" class="screen">
+    <div class="battle-hud" id="battle-hud">
+      <div class="hud-top">
+        <button class="btn-back" onclick="UI.exitBattle()">← 退出</button>
+        <button class="btn-pause" id="btn-pause" onclick="Game.togglePause()">⏸</button>
+        <div class="hud-item"><span id="hud-lives">❤️ 3</span></div>
+        <div class="hud-item"><span id="hud-food">🍖 0</span></div>
+        <div class="hud-item"><span id="hud-gold">💰 0</span></div>
+        <div class="hud-item" id="hud-wave">第 1 波</div>
+      </div>
+      <div class="hud-stage-name" id="hud-stage-name">關卡名稱</div>
+    </div>
+    <div id="battle-grid" class="battle-grid"></div>
+    <div id="waiting-area" class="waiting-area">
+      <div class="recycle-bin" id="recycle-bin" onclick="UI.recycleUnit()">🗑️<br><span style="font-size:10px;">回收+1🍖</span></div>
+    </div>
+    <div id="unit-actions" class="unit-actions" style="display:none;">
+      <button onclick="UI.sendUnitToWaiting()">⬆ 送回等待區</button>
+      <button onclick="UI.recycleBattleUnit()">🗑️ 回收+1🍖</button>
+    </div>
+    <div id="battle-bar" class="battle-bar">
+      <button class="recruit-btn" id="btn-recruit" onclick="UI.doRecruit()">征招 🍖<span id="recruit-cost">10</span></button>
+      <div class="bar-units" id="bar-units"></div>
+      <div class="speed-controls">
+        <button class="speed-btn active" data-speed="1" onclick="Game.setSpeed(1)">x1</button>
+        <button class="speed-btn" data-speed="2" onclick="Game.setSpeed(2)">x2</button>
+        <button class="speed-btn" data-speed="3" onclick="Game.setSpeed(3)">x3</button>
+      </div>
+    </div>
+    <div id="pause-overlay" class="pause-overlay" style="display:none;">
+      <div class="pause-text">⏸ 暫停中</div>
+      <button class="btn btn-primary" onclick="Game.togglePause()">▶ 繼續</button>
+    </div>
+  </div>
+
+  <!-- 戰鬥結果 -->
+  <div id="screen-result" class="screen">
+    <div class="result-overlay">
+      <div class="result-box" id="result-box">
+        <h2 id="result-title">勝 利</h2>
+        <div class="result-rewards" id="result-rewards"></div>
+        <div class="result-btns">
+          <button class="btn btn-primary" onclick="UI.afterResult()">繼 續</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 招募 -->
+  <div id="screen-gacha" class="screen">
+    <div class="screen-header">
+      <button class="btn-back" onclick="UI.showMenu()">←</button>
+      <h2>武將招募</h2>
+    </div>
+    <div class="gacha-content">
+      <div class="gacha-info">
+        <span>黃金：<span id="gacha-gold">0</span></span>
+      </div>
+      <div class="gacha-bottom-bar">
+        <button class="btn btn-primary" id="btn-gacha" onclick="UI.doGacha()">×1（10 金）</button>
+        <button class="btn btn-primary" id="btn-gacha10" onclick="UI.doGacha10()">×10（100 金）</button>
+        <button class="btn btn-primary" id="btn-gacha100" onclick="UI.doGacha100()">×100（1000 金）</button>
+      </div>
+      <div class="gacha-result" id="gacha-result"></div>
+      <div class="gacha-heroes" id="gacha-heroes"></div>
+    </div>
+  </div>
+
+  <!-- 武將管理 -->
+  <div id="screen-heroes" class="screen">
+    <div class="screen-header">
+      <button class="btn-back" onclick="UI.showMenu()">←</button>
+      <h2>武將管理</h2>
+      <button class="btn-synergy-help" onclick="UI.showSynergyHelp()">加乘說明</button>
+    </div>
+    <div class="heroes-list" id="heroes-list"></div>
+    <div id="synergy-help-modal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)UI.hideSynergyHelp()">
+      <div class="modal-box synergy-help-box">
+        <div class="modal-header">
+          <h3>加乘說明</h3>
+          <span class="modal-close" onclick="UI.hideSynergyHelp()">✕</span>
+        </div>
+        <div class="modal-body" id="synergy-help-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 武器管理 -->
+  <div id="screen-weapons" class="screen">
+    <div class="screen-header">
+      <button class="btn-back" onclick="UI.showMenu()">←</button>
+      <h2>武器管理</h2>
+    </div>
+    <div class="weapons-list" id="weapons-list"></div>
+  </div>
+
+  <!-- 設定 -->
+  <div id="screen-settings" class="screen">
+    <div class="screen-header">
+      <button class="btn-back" onclick="UI.showMenu()">←</button>
+      <h2>設 定</h2>
+    </div>
+    <div class="settings-content">
+      <div class="settings-item">
+        <span>音效</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="setting-sound" onchange="UI.toggleSound(this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="settings-item" id="setting-dev-item">
+        <span>🔧 開發模式</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="setting-dev" onchange="UI.toggleDevMode(this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <button class="btn btn-danger" onclick="UI.showResetConfirm()">重置所有資料</button>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

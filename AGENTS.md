@@ -18,3 +18,16 @@
 ## 標準化重置機制
 - 系統重置功能必須能將 appData 恢復至初始預設值並刷新內容。
 - 務必使用 `localStorage.removeItem('[Key的名稱]')` 來精確清除特定資料，嚴禁清空整個 localStorage 以免影響並存的其他工具。
+
+## Git 自動備份
+- 以下路徑已有 git 初始化的專案，每次修改後必須自動 commit：
+  - `D:\dl\src\Sanguo-TD`
+  - `D:\dl\src\ClassKudox`
+- 若未來有其他 `D:\dl\src/` 下的專案未列在此處，應先 `git init` 再加入此規則
+- 指令範本（替換 `[專案路徑]`）：
+  ```powershell
+  Set-Location -LiteralPath "D:\dl\src\[專案資料夾]"; & "D:\portable\Git\bin\git.exe" add .; & "D:\portable\Git\bin\git.exe" commit -m "簡述修改"
+  ```
+- 先用語法檢查確認無誤再 commit
+- commit message 用繁體中文，簡潔描述
+- 遇到尚未 git init 的專案，先執行 `git init` 再首次 commit
