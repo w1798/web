@@ -555,7 +555,7 @@ var Game = {
             for (var key in enemyData) scaledData[key] = enemyData[key];
             scaledData.hp = Math.round(enemyData.hp * mult.hp);
             scaledData.atk = Math.round(enemyData.atk * mult.atk);
-            scaledData.def = Math.round((enemyData.def || 0) * mult.atk * 0.5);
+            scaledData.def = Math.round((enemyData.def || 0) * mult.hp);
             var startPos = this.mapLayout.path[0];
             var enemy = new Enemy(scaledData, startPos.col, startPos.row);
             this.enemies.push(enemy);
@@ -565,6 +565,9 @@ var Game = {
         if (!this.waveActive) return;
         if (this.spawnedCount >= this.currentWaveEnemies.length && this.enemies.length === 0) {
           this.waveActive = false;
+          var waveMin = [12, 14, 16, 18, 20];
+          var minFood = (this.waveIndex <= waveMin.length) ? waveMin[this.waveIndex - 1] : 20;
+          if (this.waveIndex >= 1 && this.food < minFood) this.food = minFood;
           UI.updateHUD();
           this.autoWaveTimer = 3;
         }

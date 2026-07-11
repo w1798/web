@@ -324,16 +324,16 @@ var DEV_MODE = window.location.href.indexOf('file:///D:/dl/src/Sanguo-TD/') === 
 
 /* ===== 難度系統 ===== */
 var DIFFICULTY = {
-  normal: { label: '正常', mult: 1 },
-  hard:   { label: '困難', mult: 1.5 },
-  hell:   { label: '地獄', mult: 4 }
+  normal: { label: '正常', mult: 3 },
+  hard:   { label: '困難', mult: 7 },
+  hell:   { label: '地獄', mult: 12 }
 };
 function getEnemyMult(stageId, difficulty) {
-  var base = DIFFICULTY[difficulty] ? DIFFICULTY[difficulty].mult : 1;
+  var base = DIFFICULTY[difficulty] ? DIFFICULTY[difficulty].mult : 4;
   var idx = Math.max(0, getStageIndex(stageId));
   return {
-    atk: base + idx * 0.1,
-    hp:  base + idx * 0.2
+    atk: base + idx * 0.2,
+    hp:  base + idx * 0.3
   };
 }
 
