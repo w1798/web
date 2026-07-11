@@ -143,6 +143,29 @@ var STAGE_WEAPON_DROP = {
   hell: { white:0.40, blue:0.40, purple:0.15, yellow:0.05  }
 };
 
+function getDropRates(stageId, difficulty) {
+  var base = STAGE_WEAPON_DROP[stageId];
+  if (!base) return null;
+  var dm = difficulty === 'hard' ? 1.5 : (difficulty === 'hell' ? 2.0 : 1.0);
+  if (dm <= 1) return base;
+  var ry = base.yellow * dm;
+  var rp = base.purple * dm;
+  var rb = base.blue * dm;
+  var rw = base.white * dm;
+  var total = ry + rp + rb + rw;
+  if (total > 1.0) {
+    if (ry + rp + rb >= 1.0) {
+      rw = 0;
+      if (ry + rp >= 1.0) {
+        rb = 0;
+        if (ry >= 1.0) { rp = 0; ry = 1.0; }
+        else { rp = 1.0 - ry; }
+      } else { rb = 1.0 - ry - rp; }
+    } else { rw = 1.0 - ry - rp - rb; }
+  }
+  return { yellow: ry, purple: rp, blue: rb, white: rw };
+}
+
 /* ===== 小兵（刀槍弓騎僧法） ===== */
 var SOLDIER_TYPES = {
   sword: { name:'刀兵', emoji:'🗡️', attackType:'single', damageType:'physical', weaponType:'sword', range:1.5, atkSpeed:1.0, baseAtk:[18,28,46,73,110], baseHp:[33,49,82,131,196], baseDef:[3,5,7,11,16] },
@@ -324,16 +347,16 @@ var DEV_MODE = window.location.href.indexOf('file:///D:/dl/src/Sanguo-TD/') === 
 
 /* ===== 難度系統 ===== */
 var DIFFICULTY = {
-  normal: { label: '正常', mult: 3 },
-  hard:   { label: '困難', mult: 7 },
-  hell:   { label: '地獄', mult: 12 }
+  normal: { label: '正常', mult: 1 },
+  hard:   { label: '困難', mult: 2 },
+  hell:   { label: '地獄', mult: 3 }
 };
 function getEnemyMult(stageId, difficulty) {
-  var base = DIFFICULTY[difficulty] ? DIFFICULTY[difficulty].mult : 4;
+  var base = DIFFICULTY[difficulty] ? DIFFICULTY[difficulty].mult : 1;
   var idx = Math.max(0, getStageIndex(stageId));
   return {
-    atk: base + idx * 0.2,
-    hp:  base + idx * 0.3
+    atk: base * (1 + idx * 0.05),
+    hp:  base * (1 + idx * 0.05)
   };
 }
 

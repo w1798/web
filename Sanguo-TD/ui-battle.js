@@ -910,7 +910,7 @@ UI.renderWaitingArea = function() {
 
 UI.updateHUD = function() {
     var livesEl = document.getElementById('hud-lives');
-    if (livesEl) livesEl.textContent = '❤️ ' + Game.maxLives;
+    if (livesEl) livesEl.textContent = '❤️ ' + Game.lives;
     var foodEl = document.getElementById('hud-food');
     if (foodEl) foodEl.textContent = '🍖 ' + Game.food;
     var goldEl = document.getElementById('hud-gold');

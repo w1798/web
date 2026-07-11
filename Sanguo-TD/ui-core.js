@@ -313,7 +313,7 @@ var UI = {
           }
         }
         var clearStars = Service.getStageStars ? Service.getStageStars(s.id, Game.difficulty) : 0;
-        var rates = STAGE_WEAPON_DROP[s.id];
+        var rates = getDropRates(s.id, Game.difficulty);
         html += '<div class="campaign-stage' + (cleared ? ' cleared' : '') + (locked ? ' locked' : '') + '" onclick="' + (locked ? '' : 'UI.showBattle(\'' + s.id + '\')') + '">' +
           '<div class="stage-name">' + (cleared ? '✅ ' : '') + s.name + '</div>' +
           (clearStars ? '<div class="stage-stars">' + '⭐'.repeat(clearStars) + '</div>' : '');

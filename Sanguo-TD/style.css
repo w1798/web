@@ -1924,3 +1924,52 @@ html, body {
     padding-bottom: max(8px, env(safe-area-inset-bottom));
   }
 }
+
+/* ===== Mobile 手機 ===== */
+@media (max-width: 480px) {
+  .battle-grid {
+    min-height: 0;
+    max-height: 55vh;
+  }
+  .waiting-area {
+    padding: 4px 4px;
+    gap: 4px;
+  }
+  .waiting-card {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
+  .waiting-card .wc-emoji { font-size: 16px; }
+  .waiting-card .wc-name { font-size: 8px; }
+  .battle-bar {
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px;
+  }
+  .recruit-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  .bar-units {
+    gap: 4px;
+    min-height: 34px;
+  }
+  .unit-card {
+    width: 38px;
+    height: 38px;
+    font-size: 8px;
+  }
+  .unit-card .unit-emoji { font-size: 16px; }
+  .unit-card .unit-name { font-size: 7px; }
+  .speed-btn {
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+  .recycle-bin {
+    width: 44px;
+    height: 44px;
+    font-size: 9px;
+  }
+  .hud-item { font-size: 12px; }
+}

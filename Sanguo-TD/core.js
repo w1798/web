@@ -11,7 +11,6 @@ var Game = {
   gameEnded: false,
   paused: false,
   autoWaveTimer: 6,
-  wavePool: [],
   waitingUnits: [],
   recruitCount: 0,
   recruitCost: 10,
@@ -44,13 +43,11 @@ var Game = {
     this.paused = false;
     this.speed = 1;
     this.autoWaveTimer = 10;
-    this.wavePool = [];
     this.waitingUnits = [];
     this.recruitCount = 0;
     this.recruitCost = 10;
 
     this.buildGrid();
-    this.generateWavePool();
     UI.renderBattle();
     UI.updateHUD();
   },
@@ -214,18 +211,9 @@ var Game = {
     var cost = this.recruitCost;
     if (!DEV_MODE && this.food < cost) return null;
 
-    var heroChance = 0.1;
-
-    var heroPool = [];
-    var soldierPool = [];
-    for (var i = 0; i < this.wavePool.length; i++) {
-      var w = this.wavePool[i];
-      if (w.type === 'hero') {
-        heroPool.push({type:'hero', heroId:w.heroId, emoji:w.emoji, name:w.name});
-      } else {
-        soldierPool.push({type:w.type, soldierType:w.type, level:w.level, emoji: SOLDIER_TYPES[w.type] ? SOLDIER_TYPES[w.type].emoji : '🗡️', name: SOLDIER_TYPES[w.type] ? SOLDIER_TYPES[w.type].name : w.type});
-      }
-    }
+    var deployed = Service.getDeployedHeroes();
+    var guaranteedHeroes = deployed.length > 0 ? (this.difficulty === 'hell' ? 3 : (this.difficulty === 'hard' ? 2 : 1)) : 0;
+    var heroRate = this.difficulty === 'hell' ? 0.5 : (this.difficulty === 'hard' ? 0.3 : 0.1);
 
     var hasLocked = false;
     for (var r = 0; r < this.grid.length && !hasLocked; r++) {
@@ -233,43 +221,41 @@ var Game = {
         if (this.grid[r][c].isBuildable && !this.grid[r][c].isDug) hasLocked = true;
       }
     }
-    if (heroPool.length === 0 && soldierPool.length === 0 && !hasLocked) return null;
 
     this.waitingUnits = [];
-
-    /* shuffle heroPool/soldierPool 後依序輪取，避免重複 */
-    function shuffle(arr) {
-      for (var z = arr.length - 1; z > 0; z--) {
-        var zj = Math.floor(Math.random() * (z + 1));
-        var ztmp = arr[z]; arr[z] = arr[zj]; arr[zj] = ztmp;
-      }
-      return arr;
-    }
-    shuffle(heroPool);
-    shuffle(soldierPool);
-
-    var guaranteedHeroes = heroPool.length > 0 ? (this.difficulty === 'hell' ? 3 : (this.difficulty === 'hard' ? 2 : 1)) : 0;
-    var gIdx = 0, hIdx = 0, sIdx = 0;
+    var heroCount = 0;
     var shovelUsed = false;
-    for (var k = 0; k < 6; k++) {
-      if (guaranteedHeroes > 0 && gIdx < heroPool.length) {
-        var gh = heroPool[gIdx++];
-        this.waitingUnits.push({type:'hero', heroId:gh.heroId, emoji:gh.emoji, name:gh.name, level:1});
-        guaranteedHeroes--;
-      } else if (hasLocked && !shovelUsed && Math.random() < 0.3) {
+
+    for (var i = 0; i < 6; i++) {
+      if (hasLocked && !shovelUsed && Math.random() < 0.3) {
         this.waitingUnits.push({type:'shovel', emoji:'🔧', name:'鏟子'});
         shovelUsed = true;
-      } else if (Math.random() < heroChance && hIdx < heroPool.length) {
-        var h = heroPool[hIdx++];
-        this.waitingUnits.push({type:'hero', heroId:h.heroId, emoji:h.emoji, name:h.name, level:1});
-      } else if (sIdx < soldierPool.length) {
-        var s = soldierPool[sIdx++];
-        this.waitingUnits.push({type:s.type, soldierType:s.soldierType, level:s.level, emoji:s.emoji, name:s.name});
-      } else if (hIdx < heroPool.length) {
-        var h2 = heroPool[hIdx++];
-        this.waitingUnits.push({type:'hero', heroId:h2.heroId, emoji:h2.emoji, name:h2.name, level:1});
+      } else if (deployed.length > 0 && Math.random() < heroRate) {
+        var hid = deployed[Math.floor(Math.random() * deployed.length)];
+        var hd = getHeroData(hid);
+        if (hd) {
+          this.waitingUnits.push({type:'hero', heroId:hid, emoji:hd.emoji, name:hd.name, level:1});
+          heroCount++;
+        } else {
+          var t = SOLDIER_KEYS[Math.floor(Math.random() * SOLDIER_KEYS.length)];
+          this.waitingUnits.push({type:t, soldierType:t, level:1, emoji:SOLDIER_TYPES[t].emoji, name:SOLDIER_TYPES[t].name});
+        }
       } else {
-        break;
+        var t = SOLDIER_KEYS[Math.floor(Math.random() * SOLDIER_KEYS.length)];
+        this.waitingUnits.push({type:t, soldierType:t, level:1, emoji:SOLDIER_TYPES[t].emoji, name:SOLDIER_TYPES[t].name});
+      }
+    }
+
+    if (heroCount < guaranteedHeroes && deployed.length > 0) {
+      for (var j = 0; j < this.waitingUnits.length && heroCount < guaranteedHeroes; j++) {
+        if (this.waitingUnits[j].type !== 'hero' && this.waitingUnits[j].type !== 'shovel') {
+          var hid = deployed[Math.floor(Math.random() * deployed.length)];
+          var hd = getHeroData(hid);
+          if (hd) {
+            this.waitingUnits[j] = {type:'hero', heroId:hid, emoji:hd.emoji, name:hd.name, level:1};
+            heroCount++;
+          }
+        }
       }
     }
 
@@ -438,69 +424,11 @@ var Game = {
     return true;
   },
 
-  generateWavePool: function() {
-    this.wavePool = [];
-    var deployed = Service.getDeployedHeroes();
-    var ratios = [0.9, 0.86, 0.82, 0.78, 0.74, 0.7];
-    var campIdx = 0;
-    for (var ci = 0; ci < CAMPAIGNS.length; ci++) {
-      for (var si = 0; si < CAMPAIGNS[ci].stages.length; si++) {
-        if (CAMPAIGNS[ci].stages[si].id === this.stage.id) campIdx = ci;
-      }
-    }
-    if (campIdx >= ratios.length) campIdx = ratios.length - 1;
-    var soldierRate = ratios[campIdx];
-    var guaranteedHeroes = deployed.length > 0 ? (this.difficulty === 'hell' ? 3 : (this.difficulty === 'hard' ? 2 : 1)) : 0;
-    var heroInserted = {};
-    var heroCount = 0;
-    for (var i = 0; i < 6; i++) {
-      if (heroCount < guaranteedHeroes && deployed.length > 0) {
-        var hid = deployed[Math.floor(Math.random() * deployed.length)];
-        var hd = getHeroData(hid);
-        if (hd && !heroInserted[hid]) {
-          this.wavePool.push({ type:'hero', heroId:hid, emoji:hd.emoji, name:hd.name });
-          heroInserted[hid] = true;
-          heroCount++;
-          continue;
-        } else {
-          /* 已插入過，找沒插入過的 */
-          var unused = [];
-          for (var d = 0; d < deployed.length; d++) {
-            if (!heroInserted[deployed[d]]) unused.push(deployed[d]);
-          }
-          if (unused.length > 0) {
-            var hud = unused[Math.floor(Math.random() * unused.length)];
-            var hdu = getHeroData(hud);
-            if (hdu) {
-              this.wavePool.push({ type:'hero', heroId:hud, emoji:hdu.emoji, name:hdu.name });
-              heroInserted[hud] = true;
-              heroCount++;
-              continue;
-            }
-          }
-        }
-      }
-      if (deployed.length > 0 && Math.random() >= soldierRate && heroCount < 6) {
-        var hid2 = deployed[Math.floor(Math.random() * deployed.length)];
-        var hd2 = getHeroData(hid2);
-        if (hd2 && !heroInserted[hid2]) {
-          this.wavePool.push({ type:'hero', heroId:hid2, emoji:hd2.emoji, name:hd2.name });
-          heroInserted[hid2] = true;
-          heroCount++;
-          continue;
-        }
-      }
-      var t = SOLDIER_KEYS[Math.floor(Math.random() * SOLDIER_KEYS.length)];
-      this.wavePool.push({ type: t, level: 1 });
-    }
-  },
-
   startAutoWave: function() {
     if (this.gameEnded) return;
     this.autoWaveTimer = 3;
     this.waveIndex++;
     UI.updateHUD();
-    this.generateWavePool();
     this.startNextWave();
   },
 

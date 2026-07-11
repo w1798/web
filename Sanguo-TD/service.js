@@ -455,38 +455,9 @@ var Service = {
   },
 
   generateWeapon: function(stageId, guaranteed, difficulty) {
-    var rates = STAGE_WEAPON_DROP[stageId];
-    if (!rates) return null;
-
-    /* 難度倍率 */
     var diff = difficulty || 'normal';
-    var dm = diff === 'hard' ? 1.5 : (diff === 'hell' ? 2.0 : 1.0);
-    if (dm > 1) {
-      var ry = rates.yellow * dm;
-      var rp = rates.purple * dm;
-      var rb = rates.blue * dm;
-      var rw = rates.white * dm;
-      var total = ry + rp + rb + rw;
-      if (total > 1.0) {
-        if (ry + rp + rb >= 1.0) {
-          rw = 0;
-          if (ry + rp >= 1.0) {
-            rb = 0;
-            if (ry >= 1.0) {
-              rp = 0;
-              ry = 1.0;
-            } else {
-              rp = 1.0 - ry;
-            }
-          } else {
-            rb = 1.0 - ry - rp;
-          }
-        } else {
-          rw = 1.0 - ry - rp - rb;
-        }
-      }
-      rates = { yellow: ry, purple: rp, blue: rb, white: rw };
-    }
+    var rates = getDropRates(stageId, diff);
+    if (!rates) return null;
 
     var r = Math.random();
     var quality;
