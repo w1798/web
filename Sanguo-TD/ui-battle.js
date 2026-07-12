@@ -136,6 +136,9 @@ UI.renderBattle = function() {
             }, 200);
             function onCellMove(ev2) {
               if (dragStarted) return;
+              var dx = ev2.touches[0].clientX - ev.touches[0].clientX;
+              var dy = ev2.touches[0].clientY - ev.touches[0].clientY;
+              if (dx * dx + dy * dy < 100) return;
               dragStarted = true;
               clearTimeout(timer);
               document.removeEventListener('touchmove', onCellMove);
@@ -1081,6 +1084,9 @@ UI.renderWaitingArea = function() {
         }, 200);
         function onCardTouchMove(ev2) {
           if (dragStarted) return;
+          var dx = ev2.touches[0].clientX - e.touches[0].clientX;
+          var dy = ev2.touches[0].clientY - e.touches[0].clientY;
+          if (dx * dx + dy * dy < 100) return;
           dragStarted = true;
           clearTimeout(timer);
           document.removeEventListener('touchmove', onCardTouchMove);
