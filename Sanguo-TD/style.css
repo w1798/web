@@ -15,6 +15,7 @@ html, body {
 #app {
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   max-width: 480px;
   margin: 0 auto;
   position: relative;
@@ -1548,12 +1549,6 @@ html, body {
 .hero-card {
   position: relative;
 }
-.hero-card.clickable {
-  cursor: pointer;
-}
-.hero-card.clickable:active {
-  transform: scale(0.98);
-}
 /* Hero weapon label */
 .hc-weapon {
   font-size: 12px;
@@ -1946,6 +1941,7 @@ html, body {
   #app {
     padding-left: max(0px, env(safe-area-inset-left));
     padding-right: max(0px, env(safe-area-inset-right));
+    padding-top: max(0px, env(safe-area-inset-top));
   }
   .battle-bar {
     padding-bottom: max(8px, env(safe-area-inset-bottom));
@@ -1954,12 +1950,10 @@ html, body {
 
 /* ===== Mobile 手機 ===== */
 @media (max-width: 480px) {
-  .battle-hud {
-    padding-top: max(6px, env(safe-area-inset-top));
-  }
   .battle-grid {
     min-height: 0;
-    max-height: 55vh;
+    flex: 1;
+    overflow: hidden;
   }
   .waiting-area {
     padding: 4px 4px;
@@ -2002,8 +1996,28 @@ html, body {
     font-size: 9px;
   }
   .hud-item { font-size: 12px; }
+  #screen-battle {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  #screen-campaign .screen-header {
+    padding: 8px 12px;
+  }
+  #screen-campaign .campaign-info {
+    padding: 4px 12px;
+  }
+  #screen-campaign .campaign-list {
+    padding: 12px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+  .gacha-bottom-bar {
+    width: 95%;
+    margin: 0 auto;
+    gap: 4px;
+  }
   .gacha-bottom-bar .btn {
-    padding: 8px 10px;
-    font-size: 13px;
+    flex: 1;
+    min-width: 0;
+    padding: 8px 2px;
+    font-size: 12px;
   }
 }

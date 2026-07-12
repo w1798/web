@@ -2,16 +2,16 @@ UI.calcCellSize = function() {
     if (!Game.mapLayout) return;
     var cols = Game.mapLayout.cols;
     var rows = Game.mapLayout.rows;
-    var availW = window.innerWidth - 8 - Math.max(0, cols - 1);
-    var availH = window.innerHeight - 170 - 8 - Math.max(0, rows - 1);
+    var el = document.getElementById('battle-grid');
+    var rect = el ? el.getBoundingClientRect() : null;
+    var availW = (rect ? rect.width : window.innerWidth) - 8 - Math.max(0, cols - 1);
+    var availH = (rect ? rect.height : window.innerHeight - 170) - 8 - Math.max(0, rows - 1);
     this.cellSize = Math.max(32, Math.min(
       Math.floor(availW / cols),
       Math.floor(availH / rows),
       100
     ));
-    var el = document.getElementById('battle-grid');
     if (el) {
-      var rect = el.getBoundingClientRect();
       var totalW = this.cellSize * cols + Math.max(0, cols - 1);
       var totalH = this.cellSize * rows + Math.max(0, rows - 1);
       this.gridOffsetX = Math.floor((rect.width - totalW) / 2);
@@ -114,12 +114,39 @@ UI.renderBattle = function() {
             ev.preventDefault();
             UI.startBattleUnitDrag(uObj, ev.clientX, ev.clientY, ev.currentTarget);
           }; }(uu);
-          div.ontouchstart = function(uObj) { return function(ev) {
+          div.ontouchstart = function(uObj, c, r) { return function(ev) {
             ev.stopPropagation();
-            ev.preventDefault();
-            var t = ev.touches[0];
-            UI.startBattleUnitDrag(uObj, t.clientX, t.clientY, ev.currentTarget);
-          }; }(uu);
+            var startX = ev.touches[0].clientX;
+            var startY = ev.touches[0].clientY;
+            var moved = false;
+            var dragStarted = false;
+            var startTime = Date.now();
+
+            function onTouchMove(ev2) {
+              if (dragStarted) return;
+              var dx = ev2.touches[0].clientX - startX;
+              var dy = ev2.touches[0].clientY - startY;
+              if (dx * dx + dy * dy > 100) {
+                moved = true;
+                dragStarted = true;
+                document.removeEventListener('touchmove', onTouchMove);
+                UI.startBattleUnitDrag(uObj, startX, startY, ev.currentTarget);
+              }
+            }
+            function onTouchEnd(ev2) {
+              document.removeEventListener('touchmove', onTouchMove);
+              document.removeEventListener('touchend', onTouchEnd);
+              if (!moved) {
+                ev2.preventDefault();
+                UI._lastTappedUnit = uObj;
+                UI.selectUnitAt(c, r);
+                UI.showUnitTooltip(uObj);
+                UI.showHoverRange(uObj.col, uObj.row, uObj.range || 2);
+              }
+            }
+            document.addEventListener('touchmove', onTouchMove, {passive:true});
+            document.addEventListener('touchend', onTouchEnd);
+          }; }(uu, c, r);
           div.onmouseenter = function(unitData) { return function(e) {
             UI.showUnitTooltip(unitData);
             var el = document.getElementById('unit-tooltip');
@@ -926,7 +953,25 @@ UI.updateHUD = function() {
     if (nameEl && Game.stage) nameEl.textContent = Game.stage.name;
   };
 
-/* 手機觸控：點擊畫面任一處隱藏資訊欄 */
-document.addEventListener('touchstart', function() {
-  UI.hideUnitTooltip();
+/* 手機觸控：點擊非單位區域取消選取 */
+document.getElementById('battle-grid').addEventListener('click', function(ev) {
+  if (ev.target === this) {
+    UI.hideUnitTooltip();
+    UI.hideHoverRange();
+    UI.selectedUnitIdx = -1;
+    UI.selectedWaitingIdx = -1;
+    UI.renderBattle();
+    UI.renderWaitingArea();
+  }
+});
+document.getElementById('battle-grid').addEventListener('touchstart', function(ev) {
+  if (ev.target === this) {
+    UI._lastTappedUnit = null;
+    UI.hideUnitTooltip();
+    UI.hideHoverRange();
+    UI.selectedUnitIdx = -1;
+    UI.selectedWaitingIdx = -1;
+    UI.renderBattle();
+    UI.renderWaitingArea();
+  }
 });

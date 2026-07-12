@@ -318,16 +318,6 @@ UI.renderHeroList = function() {
         card.appendChild(deployBtn);
       }
 
-      /* 整張卡片點擊（無按鈕時） */
-      if (canToggle) {
-        (function(id) {
-          card.onclick = function(ev) {
-            Service.toggleDeploy(id);
-            self.renderHeroList();
-          };
-        })(hid);
-      }
-
       container.appendChild(card);
     }
 

@@ -80,6 +80,7 @@ var UI = {
       Service.spendStamina(STAMINA_COST);
     }
     this.showScreen('screen-battle');
+    window.scrollTo(0, 0);
     Game.state = 'battle';
     Game.initStage(stageId);
     this.selectedWaitingIdx = -1;
