@@ -561,7 +561,12 @@ UI.startBattleUnitDrag = function(unitObj, cx, cy, el) {
     this.selectedUnitIdx = -1;
     this.renderBattle();
     var self = this;
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('touchmove', onMove, {passive:false});
+    document.addEventListener('touchend', onUp);
     function onMove(e) {
+      if (e.cancelable) e.preventDefault();
       var cx2 = e.clientX || (e.touches && e.touches[0].clientX);
       var cy2 = e.clientY || (e.touches && e.touches[0].clientY);
       if (cx2 != null) {
