@@ -1031,6 +1031,20 @@ html, body {
   gap: 8px;
   flex-shrink: 0;
 }
+.gacha-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.2;
+}
+.gacha-btn-count {
+  font-size: 16px;
+  font-weight: bold;
+}
+.gacha-btn-cost {
+  font-size: 11px;
+  opacity: 0.8;
+}
 .gacha-info {
   display: flex;
   gap: 20px;
@@ -2019,5 +2033,8 @@ html, body {
     min-width: 0;
     padding: 8px 2px;
     font-size: 12px;
+  }
+  .unit-actions {
+    display: none !important;
   }
 }

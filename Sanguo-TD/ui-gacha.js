@@ -16,21 +16,21 @@ UI.renderGacha = function() {
 
     var btn = document.getElementById('btn-gacha');
     if (btn) {
-      btn.textContent = isWeaponMode ? '×1（100 金）' : '×1（10 金）';
+      btn.innerHTML = isWeaponMode ? '<span class="gacha-btn-count">×1</span><span class="gacha-btn-cost">100 金</span>' : '<span class="gacha-btn-count">×1</span><span class="gacha-btn-cost">10 金</span>';
       var minGold = isWeaponMode ? 100 : 10;
       btn.disabled = !DEV_MODE && d.gold < minGold;
       btn.style.opacity = !DEV_MODE && d.gold < minGold ? '0.5' : '1';
     }
     var btn10 = document.getElementById('btn-gacha10');
     if (btn10) {
-      btn10.textContent = isWeaponMode ? '×10（1000 金）' : '×10（100 金）';
+      btn10.innerHTML = isWeaponMode ? '<span class="gacha-btn-count">×10</span><span class="gacha-btn-cost">1000 金</span>' : '<span class="gacha-btn-count">×10</span><span class="gacha-btn-cost">100 金</span>';
       var minGold10 = isWeaponMode ? 1000 : 100;
       btn10.disabled = !DEV_MODE && d.gold < minGold10;
       btn10.style.opacity = !DEV_MODE && d.gold < minGold10 ? '0.5' : '1';
     }
     var btn100 = document.getElementById('btn-gacha100');
     if (btn100) {
-      btn100.textContent = isWeaponMode ? '×100（10000 金）' : '×100（1000 金）';
+      btn100.innerHTML = isWeaponMode ? '<span class="gacha-btn-count">×100</span><span class="gacha-btn-cost">10000 金</span>' : '<span class="gacha-btn-count">×100</span><span class="gacha-btn-cost">1000 金</span>';
       var minGold100 = isWeaponMode ? 10000 : 1000;
       btn100.disabled = !DEV_MODE && d.gold < minGold100;
       btn100.style.opacity = !DEV_MODE && d.gold < minGold100 ? '0.5' : '1';
