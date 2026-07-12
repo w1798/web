@@ -588,13 +588,12 @@ var Service = {
       var hd = getHeroData(hid2);
       if (!hd) continue;
       var wType = this.getHeroWeaponType(hd);
-      var bestIdx = -1, bestQ = -1, bestAtk = -1;
+      var bestIdx = -1, bestCp = -1;
       for (var k = 0; k < this.appData.weaponStorage.length; k++) {
         var w = this.appData.weaponStorage[k];
         if (w.type !== wType) continue;
-        if (w.quality > bestQ || (w.quality === bestQ && (w.atkPct || 0) > bestAtk)) {
-          bestIdx = k; bestQ = w.quality; bestAtk = w.atkPct || 0;
-        }
+        var cp = (w.atkPct || 0) + (w.hpPct || 0) / 2 + (w.spd || 0) * 100;
+        if (cp > bestCp) { bestIdx = k; bestCp = cp; }
       }
       if (bestIdx >= 0) {
         this.appData.weapons[hid2] = this.appData.weaponStorage.splice(bestIdx, 1)[0];

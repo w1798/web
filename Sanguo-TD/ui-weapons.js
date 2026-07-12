@@ -91,9 +91,9 @@ UI.renderWeaponsList = function() {
           var qName = WEAPON_QUALITY[w.quality] ? WEAPON_QUALITY[w.quality].name : '?';
           var qColor = WEAPON_QUALITY[w.quality] ? WEAPON_QUALITY[w.quality].color : '#888';
           var stats = '<span style="color:' + qColor + ';font-weight:bold;">[' + qName + ']</span> ';
-          stats += '⚔+' + w.atkPct + '%';
-          if (w.hpPct) stats += ' ❤+' + w.hpPct + '%';
-          if (w.spd) stats += ' 🏃+' + w.spd;
+          stats += '⚔+' + (w.atkPct || 0).toFixed(1) + '%';
+          if (w.hpPct) stats += ' ❤+' + (w.hpPct || 0).toFixed(1) + '%';
+          if (w.spd) stats += ' 🏃+' + (w.spd || 0).toFixed(1);
           card.innerHTML = heroInfo + '<div class="wc-weapon">' + wIcon + ' ' + stats + '</div>';
           var btnRow = document.createElement('div');
           btnRow.className = 'weapon-btn-row';
@@ -169,13 +169,13 @@ UI.renderWeaponsList = function() {
     /* ===== 武器倉庫 ===== */
     if (d.weaponStorage && d.weaponStorage.length > 0) {
       var storageTitle = document.createElement('div');
-      storageTitle.style.cssText = 'padding:12px 12px 6px;color:#c0b0a0;font-size:14px;font-weight:bold;display:flex;align-items:center;gap:6px;flex-wrap:wrap;';
+      storageTitle.style.cssText = 'padding:12px 12px 6px;color:#c0b0a0;font-size:14px;font-weight:bold;';
       storageTitle.innerHTML = '<span>— 武器倉庫 (' + d.weaponStorage.length + ') —</span>';
       container.appendChild(storageTitle);
 
       /* 批量回收按鈕 */
       var batchRow = document.createElement('div');
-      batchRow.style.cssText = 'padding:0 12px 8px;display:flex;gap:6px;flex-wrap:wrap;';
+      batchRow.style.cssText = 'padding:0 12px 4px;display:flex;gap:6px;flex-wrap:wrap;';
 
       function countByQuality(q) {
         var c = 0;
@@ -217,157 +217,143 @@ UI.renderWeaponsList = function() {
       batchRecycle(2, '藍', '#1a2a3a');
       batchRecycle(1, '白', '#2a2a2a');
 
-      if (batchRow.children.length > 0) {
-        container.appendChild(batchRow);
-        /* 分組渲染 */
-        var groups = [
-          { q:4, label:'黃', color:'#ffd700' },
-          { q:3, label:'紫', color:'#9b59b6' },
-          { q:2, label:'藍', color:'#3498db' },
-          { q:1, label:'白', color:'#b0b0b0' }
-        ];
-        for (var g = 0; g < groups.length; g++) {
-          var grp = groups[g];
-          var grpItems = [];
-          for (var x = 0; x < d.weaponStorage.length; x++) {
-            if (d.weaponStorage[x].quality === grp.q) {
-              grpItems.push({ w: d.weaponStorage[x], i: x });
+      if (batchRow.children.length > 0) container.appendChild(batchRow);
+
+      /* 排序按鈕列 */
+      if (typeof this._storageSortMode === 'undefined') this._storageSortMode = 'quality';
+      var storageSortMode = this._storageSortMode;
+      var sortRow = document.createElement('div');
+      sortRow.style.cssText = 'padding:0 12px 6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;';
+      var sortLabel = document.createElement('span');
+      sortLabel.style.cssText = 'font-size:12px;color:#9a8a7a;margin-right:4px;';
+      sortLabel.textContent = '排序:';
+      sortRow.appendChild(sortLabel);
+
+      var sortBtns = [
+        { mode: 'quality', label: '品質↓' },
+        { mode: 'atk', label: '攻↓' },
+        { mode: 'hp', label: '血↓' },
+        { mode: 'spd', label: '攻速↓' }
+      ];
+      for (var s = 0; s < sortBtns.length; s++) {
+        (function(sInfo) {
+          var sb = document.createElement('span');
+          sb.className = 'weapon-recycle-btn';
+          sb.style.cssText = 'background:#2a2a1a;border-color:#5a5a2a;font-size:12px;padding:2px 6px;';
+          sb.textContent = sInfo.label;
+          sb.onclick = function() {
+            self._storageSortMode = sInfo.mode;
+            self.renderWeaponsList();
+          };
+          sortRow.appendChild(sb);
+        })(sortBtns[s]);
+      }
+      container.appendChild(sortRow);
+
+      /* 兵種篩選列 */
+      if (typeof this._storageTypeFilter === 'undefined') this._storageTypeFilter = '';
+      var filterRow = document.createElement('div');
+      filterRow.style.cssText = 'padding:0 12px 6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;';
+      var filterLabel = document.createElement('span');
+      filterLabel.style.cssText = 'font-size:12px;color:#9a8a7a;margin-right:4px;';
+      filterLabel.textContent = '篩選:';
+      filterRow.appendChild(filterLabel);
+
+      var typeFilters = [
+        { type: '', label: '全部' },
+        { type: 'sword', label: '🗡️刀' },
+        { type: 'spear', label: '🔱槍' },
+        { type: 'bow', label: '🏹弓' },
+        { type: 'horse', label: '🐴騎' },
+        { type: 'mage', label: '🔮法' },
+        { type: 'monk', label: '🙏僧' }
+      ];
+      for (var f = 0; f < typeFilters.length; f++) {
+        (function(fInfo) {
+          var fb = document.createElement('span');
+          fb.className = 'weapon-recycle-btn';
+          fb.style.cssText = 'background:#1a2a1a;border-color:#2a5a2a;font-size:12px;padding:2px 6px;';
+          fb.textContent = fInfo.label;
+          fb.onclick = function() {
+            self._storageTypeFilter = fInfo.type;
+            self.renderWeaponsList();
+          };
+          filterRow.appendChild(fb);
+        })(typeFilters[f]);
+      }
+      container.appendChild(filterRow);
+
+      /* 倉庫武器清單（扁平排序） */
+      var storageSorted = d.weaponStorage.map(function(w, i) { return { w: w, i: i }; });
+      if (this._storageTypeFilter) {
+        storageSorted = storageSorted.filter(function(item) { return item.w.type === self._storageTypeFilter; });
+      }
+      var sortFns = {
+        quality: function(a, b) { if (b.w.quality !== a.w.quality) return b.w.quality - a.w.quality; return (b.w.atkPct || 0) - (a.w.atkPct || 0); },
+        atk: function(a, b) { return (b.w.atkPct || 0) - (a.w.atkPct || 0); },
+        hp: function(a, b) { return (b.w.hpPct || 0) - (a.w.hpPct || 0); },
+        spd: function(a, b) { return (b.w.spd || 0) - (a.w.spd || 0); }
+      };
+      storageSorted.sort(sortFns[storageSortMode] || sortFns.quality);
+
+      for (var j = 0; j < storageSorted.length; j++) {
+        (function(item) {
+          var idx = item.i;
+          var w = item.w;
+          var qName = WEAPON_QUALITY[w.quality] ? WEAPON_QUALITY[w.quality].name : '?';
+          var qColor = WEAPON_QUALITY[w.quality] ? WEAPON_QUALITY[w.quality].color : '#888';
+          var wIcon = WEAPON_TYPE_ICONS[w.type] || '🗡️';
+          var wLabel = WEAPON_TYPE_LABELS[w.type] || '刀';
+          var card = document.createElement('div');
+          card.className = 'weapon-card';
+          var stats = '<span style="color:' + qColor + ';font-weight:bold;">[' + qName + ']</span> ';
+          stats += wIcon + ' ' + wLabel + ' ';
+          stats += '⚔+' + (w.atkPct || 0).toFixed(1) + '%';
+          if (w.hpPct) stats += ' ❤+' + (w.hpPct || 0).toFixed(1) + '%';
+          if (w.spd) stats += ' 🏃+' + (w.spd || 0).toFixed(1);
+          card.innerHTML = '<div class="wc-weapon">' + stats + '</div>';
+          var btnRow = document.createElement('div');
+          btnRow.className = 'weapon-btn-row';
+          var candidates = [];
+          for (var k = 0; k < d.ownedHeroes.length; k++) {
+            var hd2 = getHeroData(d.ownedHeroes[k]);
+            if (hd2 && Service.getHeroWeaponType(hd2) === w.type) {
+              candidates.push(d.ownedHeroes[k]);
             }
           }
-          if (grpItems.length === 0) continue;
-          grpItems.sort(function(a, b) { return (b.w.atkPct || 0) - (a.w.atkPct || 0); });
-
-          var grpTitle = document.createElement('div');
-          grpTitle.style.cssText = 'padding:8px 12px 4px;font-size:13px;font-weight:bold;color:' + grp.color + ';';
-          grpTitle.textContent = '■ ' + grp.label + ' (' + grpItems.length + ')';
-          container.appendChild(grpTitle);
-
-          for (var j = 0; j < grpItems.length; j++) {
-            (function(item) {
-              var idx = item.i;
-              var w = item.w;
-              var qName = WEAPON_QUALITY[w.quality] ? WEAPON_QUALITY[w.quality].name : '?';
-              var qColor = WEAPON_QUALITY[w.quality] ? WEAPON_QUALITY[w.quality].color : '#888';
-              var wIcon = WEAPON_TYPE_ICONS[w.type] || '🗡️';
-              var wLabel = WEAPON_TYPE_LABELS[w.type] || '刀';
-              var card = document.createElement('div');
-              card.className = 'weapon-card';
-              var stats = '<span style="color:' + qColor + ';font-weight:bold;">[' + qName + ']</span> ';
-              stats += wIcon + ' ' + wLabel + ' ';
-              stats += '⚔+' + w.atkPct + '%';
-              if (w.hpPct) stats += ' ❤+' + w.hpPct + '%';
-              if (w.spd) stats += ' 🏃+' + w.spd;
-              card.innerHTML = '<div class="wc-weapon">' + stats + '</div>';
-              var btnRow = document.createElement('div');
-              btnRow.className = 'weapon-btn-row';
-              var candidates = [];
-              for (var k = 0; k < d.ownedHeroes.length; k++) {
-                var hd2 = getHeroData(d.ownedHeroes[k]);
-                if (hd2 && Service.getHeroWeaponType(hd2) === w.type) {
-                  candidates.push(d.ownedHeroes[k]);
-                }
+          var equipBtn = document.createElement('span');
+            equipBtn.className = 'weapon-recycle-btn';
+            equipBtn.style.cssText = 'background:#1a3a1a;border-color:#2a6a2a;';
+            equipBtn.textContent = '📦 裝備';
+            equipBtn.onclick = function() {
+              if (candidates.length === 0) {
+                self.showToast('沒有適合的人選');
+              } else if (candidates.length === 1) {
+                Service.equipStoredWeapon(idx, candidates[0]);
+                self.showToast('已裝備至武將！');
+                self.renderWeaponsList();
+              } else {
+                self.showWeaponEquipDialog(idx, candidates);
               }
-              var equipBtn = document.createElement('span');
-                equipBtn.className = 'weapon-recycle-btn';
-                equipBtn.style.cssText = 'background:#1a3a1a;border-color:#2a6a2a;';
-                equipBtn.textContent = '📦 裝備';
-                equipBtn.onclick = function() {
-                  if (candidates.length === 0) {
-                    self.showToast('沒有適合的人選');
-                  } else if (candidates.length === 1) {
-                    Service.equipStoredWeapon(idx, candidates[0]);
-                    self.showToast('已裝備至武將！');
-                    self.renderWeaponsList();
-                  } else {
-                    self.showWeaponEquipDialog(idx, candidates);
-                  }
-                };
-                btnRow.appendChild(equipBtn);
-              var recycleGold = WEAPON_QUALITY[w.quality] ? WEAPON_QUALITY[w.quality].recycleGold : 0;
-              var recycleBtn = document.createElement('span');
-              recycleBtn.className = 'weapon-recycle-btn';
-              recycleBtn.textContent = '🗑️ 回收 +' + recycleGold + '💰';
-              recycleBtn.onclick = function(i2, gold) {
-                return function() {
-                  self.showConfirm('確定要回收這把武器嗎？可獲得 ' + gold + ' 金幣', function() {
-                    var g = Service.recycleStoredWeapon(i2);
-                    if (g > 0) self.showToast('回收成功，獲得 ' + g + ' 金幣！');
-                    self.renderWeaponsList();
-                  });
-                };
-              }(idx, recycleGold);
-              btnRow.appendChild(recycleBtn);
-              card.appendChild(btnRow);
-              container.appendChild(card);
-            })(grpItems[j]);
-          }
-        }
-      } else {
-        /* 不分組，直接依品質+攻擊力排序 */
-        var storageSorted = d.weaponStorage.map(function(w, i) { return { w: w, i: i }; });
-        storageSorted.sort(function(a, b) {
-          if (b.w.quality !== a.w.quality) return b.w.quality - a.w.quality;
-          return (b.w.atkPct || 0) - (a.w.atkPct || 0);
-        });
-        for (var j = 0; j < storageSorted.length; j++) {
-          (function(item) {
-            var idx = item.i;
-            var w = item.w;
-            var qName = WEAPON_QUALITY[w.quality] ? WEAPON_QUALITY[w.quality].name : '?';
-            var qColor = WEAPON_QUALITY[w.quality] ? WEAPON_QUALITY[w.quality].color : '#888';
-            var wIcon = WEAPON_TYPE_ICONS[w.type] || '🗡️';
-            var wLabel = WEAPON_TYPE_LABELS[w.type] || '刀';
-            var card = document.createElement('div');
-            card.className = 'weapon-card';
-            var stats = '<span style="color:' + qColor + ';font-weight:bold;">[' + qName + ']</span> ';
-            stats += wIcon + ' ' + wLabel + ' ';
-            stats += '⚔+' + w.atkPct + '%';
-            if (w.hpPct) stats += ' ❤+' + w.hpPct + '%';
-            if (w.spd) stats += ' 🏃+' + w.spd;
-            card.innerHTML = '<div class="wc-weapon">' + stats + '</div>';
-            var btnRow = document.createElement('div');
-            btnRow.className = 'weapon-btn-row';
-            var candidates = [];
-            for (var k = 0; k < d.ownedHeroes.length; k++) {
-              var hd2 = getHeroData(d.ownedHeroes[k]);
-              if (hd2 && Service.getHeroWeaponType(hd2) === w.type) {
-                candidates.push(d.ownedHeroes[k]);
-              }
-            }
-            var equipBtn = document.createElement('span');
-              equipBtn.className = 'weapon-recycle-btn';
-              equipBtn.style.cssText = 'background:#1a3a1a;border-color:#2a6a2a;';
-              equipBtn.textContent = '📦 裝備';
-              equipBtn.onclick = function() {
-                if (candidates.length === 0) {
-                  self.showToast('沒有適合的人選');
-                } else if (candidates.length === 1) {
-                  Service.equipStoredWeapon(idx, candidates[0]);
-                  self.showToast('已裝備至武將！');
-                  self.renderWeaponsList();
-                } else {
-                  self.showWeaponEquipDialog(idx, candidates);
-                }
-              };
-              btnRow.appendChild(equipBtn);
-            var recycleGold = WEAPON_QUALITY[w.quality] ? WEAPON_QUALITY[w.quality].recycleGold : 0;
-            var recycleBtn = document.createElement('span');
-            recycleBtn.className = 'weapon-recycle-btn';
-            recycleBtn.textContent = '🗑️ 回收 +' + recycleGold + '💰';
-            recycleBtn.onclick = function(i2, gold) {
-              return function() {
-                self.showConfirm('確定要回收這把武器嗎？可獲得 ' + gold + ' 金幣', function() {
-                  var g = Service.recycleStoredWeapon(i2);
-                  if (g > 0) self.showToast('回收成功，獲得 ' + g + ' 金幣！');
-                  self.renderWeaponsList();
-                });
-              };
-            }(idx, recycleGold);
-            btnRow.appendChild(recycleBtn);
-            card.appendChild(btnRow);
-            container.appendChild(card);
-          })(storageSorted[j]);
-        }
+            };
+            btnRow.appendChild(equipBtn);
+          var recycleGold = WEAPON_QUALITY[w.quality] ? WEAPON_QUALITY[w.quality].recycleGold : 0;
+          var recycleBtn = document.createElement('span');
+          recycleBtn.className = 'weapon-recycle-btn';
+          recycleBtn.textContent = '🗑️ 回收 +' + recycleGold + '💰';
+          recycleBtn.onclick = function(i2, gold) {
+            return function() {
+              self.showConfirm('確定要回收這把武器嗎？可獲得 ' + gold + ' 金幣', function() {
+                var g = Service.recycleStoredWeapon(i2);
+                if (g > 0) self.showToast('回收成功，獲得 ' + g + ' 金幣！');
+                self.renderWeaponsList();
+              });
+            };
+          }(idx, recycleGold);
+          btnRow.appendChild(recycleBtn);
+          card.appendChild(btnRow);
+          container.appendChild(card);
+        })(storageSorted[j]);
       }
     }
 
@@ -396,9 +382,9 @@ UI.showWeaponEquipDialog = function(storageIndex, candidates) {
     overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;';
     var html = '<div style="background:#1a1208;border:2px solid #4a3a2a;border-radius:12px;padding:16px;max-width:320px;width:90%;">';
     html += '<div style="text-align:center;font-size:18px;font-weight:bold;margin-bottom:12px;color:' + qColor + ';">' + wIcon + ' 選擇裝備武將</div>';
-    html += '<div style="text-align:center;font-size:14px;margin-bottom:8px;color:#c0b0a0;">[' + qName + '] ' + wLabel + ' 武器 ⚔+' + w.atkPct + '%';
-    if (w.hpPct) html += ' ❤+' + w.hpPct + '%';
-    if (w.spd) html += ' 🏃+' + w.spd;
+    html += '<div style="text-align:center;font-size:14px;margin-bottom:8px;color:#c0b0a0;">[' + qName + '] ' + wLabel + ' 武器 ⚔+' + (w.atkPct || 0).toFixed(1) + '%';
+    if (w.hpPct) html += ' ❤+' + (w.hpPct || 0).toFixed(1) + '%';
+    if (w.spd) html += ' 🏃+' + (w.spd || 0).toFixed(1);
     html += '</div>';
     html += '<div style="max-height:300px;overflow-y:auto;">';
     var deployed = Service.getDeployedHeroes();
@@ -427,9 +413,9 @@ UI.showWeaponEquipDialog = function(storageIndex, candidates) {
       if (hasW) {
         var hqName = WEAPON_QUALITY[hasW.quality] ? WEAPON_QUALITY[hasW.quality].name : '?';
         var hqColor = WEAPON_QUALITY[hasW.quality] ? WEAPON_QUALITY[hasW.quality].color : '#888';
-        html += '<span style="font-size:12px;color:' + hqColor + ';">(' + hqName + ' ⚔+' + hasW.atkPct + '%';
-        if (hasW.hpPct) html += ' ❤+' + hasW.hpPct + '%';
-        if (hasW.spd) html += ' 🏃+' + hasW.spd;
+        html += '<span style="font-size:12px;color:' + hqColor + ';">(' + hqName + ' ⚔+' + (hasW.atkPct || 0).toFixed(1) + '%';
+        if (hasW.hpPct) html += ' ❤+' + (hasW.hpPct || 0).toFixed(1) + '%';
+        if (hasW.spd) html += ' 🏃+' + (hasW.spd || 0).toFixed(1);
         html += ')</span>';
       }
       html += '<span style="font-size:12px;color:' + TIER_COLORS[tier] + ';margin-left:auto;">' + TIER_NAMES[tier] + '</span>';
@@ -497,9 +483,9 @@ UI.showWeaponTransferDialog = function(fromHeroId, candidates) {
     var html = '<div style="background:#1a1208;border:2px solid #4a3a2a;border-radius:12px;padding:16px;max-width:320px;width:90%;">';
     html += '<div style="text-align:center;font-size:16px;font-weight:bold;margin-bottom:8px;color:' + qColor + ';">🔄 轉移武器</div>';
     html += '<div style="text-align:center;font-size:13px;margin-bottom:4px;color:#c0b0a0;">' + (fromHero ? fromHero.emoji + ' ' + fromHero.name : fromHeroId) + ' → ？</div>';
-    html += '<div style="text-align:center;font-size:13px;margin-bottom:10px;color:#c0b0a0;">[' + qName + '] ' + wLabel + ' ⚔+' + w.atkPct + '%';
-    if (w.hpPct) html += ' ❤+' + w.hpPct + '%';
-    if (w.spd) html += ' 🏃+' + w.spd;
+    html += '<div style="text-align:center;font-size:13px;margin-bottom:10px;color:#c0b0a0;">[' + qName + '] ' + wLabel + ' ⚔+' + (w.atkPct || 0).toFixed(1) + '%';
+    if (w.hpPct) html += ' ❤+' + (w.hpPct || 0).toFixed(1) + '%';
+    if (w.spd) html += ' 🏃+' + (w.spd || 0).toFixed(1);
     html += '</div>';
     html += '<div style="max-height:250px;overflow-y:auto;">';
     var deployed2 = Service.getDeployedHeroes();
