@@ -78,12 +78,14 @@ UI.renderBattle = function() {
         else if (cell.isBuildable) {
           div.className += ' buildable' + (cell.isDug ? ' dug' : ' locked');
           div.onclick = function(c, r) { return function(ev) {
+            if (UI._touchHandled && (Date.now() - UI._touchHandled) < 500) { UI._touchHandled = 0; return; }
             ev.stopPropagation();
             UI.onCellClick(c, r);
           }; }(c, r);
           div.ontouchstart = function(c, r) { return function(ev) {
             ev.preventDefault();
             ev.stopPropagation();
+            UI._touchHandled = Date.now();
             UI.onCellClick(c, r);
           }; }(c, r);
           div.onmouseenter = function(c, r) { return function(ev) {
@@ -105,6 +107,7 @@ UI.renderBattle = function() {
           div.className += ' occupied';
           div.dataset.unitId = uu.heroId || '';
           div.onclick = function(c, r) { return function(ev) {
+            if (UI._touchHandled && (Date.now() - UI._touchHandled) < 500) { UI._touchHandled = 0; return; }
             ev.stopPropagation();
             UI.selectUnitAt(c, r);
           }; }(c, r);
@@ -120,7 +123,6 @@ UI.renderBattle = function() {
             var startY = ev.touches[0].clientY;
             var moved = false;
             var dragStarted = false;
-            var startTime = Date.now();
 
             function onTouchMove(ev2) {
               if (dragStarted) return;
@@ -139,6 +141,7 @@ UI.renderBattle = function() {
               if (!moved) {
                 ev2.preventDefault();
                 UI._lastTappedUnit = uObj;
+                UI._touchHandled = Date.now();
                 UI.selectUnitAt(c, r);
                 UI.showUnitTooltip(uObj);
                 UI.showHoverRange(uObj.col, uObj.row, uObj.range || 2);
@@ -412,12 +415,12 @@ UI.startDrag = function(idx, cx, cy, el) {
     var lv = ghost.querySelector('.wc-lv');
     if (lv) lv.style.cssText = 'font-size:8px;color:#f1c40f;';
     document.body.appendChild(ghost);
-    document.body.appendChild(ghost);
     this.dragData = { idx: idx, ghost: ghost };
     this.selectedWaitingIdx = idx;
     this.renderWaitingArea();
     var self = this;
 function onMove(e) {
+      if (e.cancelable) e.preventDefault();
       var cx2 = e.clientX || (e.touches && e.touches[0].clientX);
       var cy2 = e.clientY || (e.touches && e.touches[0].clientY);
       if (cx2 != null) {
@@ -922,8 +925,35 @@ UI.renderWaitingArea = function() {
       }; }(i, card);
       card.ontouchstart = function(idx, el) { return function(e) {
         e.preventDefault();
-        var t = e.touches[0];
-        UI.startDrag(idx, t.clientX, t.clientY, el);
+        e.stopPropagation();
+        var startX = e.touches[0].clientX;
+        var startY = e.touches[0].clientY;
+        var moved = false;
+        var dragStarted = false;
+
+        function onCardTouchMove(ev2) {
+          if (dragStarted) return;
+          var dx = ev2.touches[0].clientX - startX;
+          var dy = ev2.touches[0].clientY - startY;
+          if (dx * dx + dy * dy > 100) {
+            moved = true;
+            dragStarted = true;
+            document.removeEventListener('touchmove', onCardTouchMove);
+            document.removeEventListener('touchend', onCardTouchEnd);
+            UI.startDrag(idx, startX, startY, el);
+          }
+        }
+        function onCardTouchEnd(ev2) {
+          document.removeEventListener('touchmove', onCardTouchMove);
+          document.removeEventListener('touchend', onCardTouchEnd);
+          if (!moved) {
+            UI._touchHandled = Date.now();
+            UI.selectedWaitingIdx = (UI.selectedWaitingIdx === idx) ? -1 : idx;
+            UI.renderWaitingArea();
+          }
+        }
+        document.addEventListener('touchmove', onCardTouchMove, {passive:true});
+        document.addEventListener('touchend', onCardTouchEnd);
       }; }(i, card);
       card.onmouseenter = function(w) { return function(e) {
         UI.showWaitingUnitTooltip(w, e);
@@ -933,6 +963,7 @@ UI.renderWaitingArea = function() {
       };
       card.onclick = function(idx) { return function() {
         if (UI.dragData) return;
+        if (UI._touchHandled && (Date.now() - UI._touchHandled) < 500) { UI._touchHandled = 0; return; }
         UI.selectedWaitingIdx = (UI.selectedWaitingIdx === idx) ? -1 : idx;
         UI.renderWaitingArea();
       }; }(i);
