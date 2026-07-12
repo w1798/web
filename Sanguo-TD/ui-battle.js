@@ -57,6 +57,8 @@ UI.showDmgNum = function(x, y, text, color) {
 UI.renderBattle = function() {
     var el = document.getElementById('battle-grid');
     if (!el) return;
+    var stale = document.querySelectorAll('.drag-ghost');
+    for (var si = 0; si < stale.length; si++) stale[si].remove();
     el.innerHTML = '';
     for (var _i = 0; _i < Game.units.length; _i++) { var _u = Game.units[_i]; _u.el = null; _u.gridEl = null; }
     for (var _i = 0; _i < Game.enemies.length; _i++) { var _e = Game.enemies[_i]; _e.el = null; }
@@ -120,18 +122,15 @@ UI.renderBattle = function() {
           div.ontouchstart = function(uObj, c, r) { return function(ev) {
             ev.preventDefault();
             ev.stopPropagation();
-            var startX = ev.touches[0].clientX;
-            var startY = ev.touches[0].clientY;
+            var tapStart = Date.now();
             var tap = true;
 
             function onCellMove(ev2) {
-              var dx = ev2.touches[0].clientX - startX;
-              var dy = ev2.touches[0].clientY - startY;
-              if (dx * dx + dy * dy > 100) {
+              if (tap && Date.now() - tapStart > 200) {
                 tap = false;
                 document.removeEventListener('touchmove', onCellMove);
                 document.removeEventListener('touchend', onCellEnd);
-                UI.startBattleUnitDrag(uObj, startX, startY, ev.currentTarget);
+                UI.startBattleUnitDrag(uObj, ev.touches[0].clientX, ev.touches[0].clientY, ev.currentTarget);
               }
             }
             function onCellEnd(ev2) {
@@ -181,6 +180,8 @@ UI.renderBattle = function() {
     uc.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:hidden;';
     el.appendChild(uc);
     this.updateUnitActions();
+    this.renderUnits();
+    this.renderEnemies();
   };
 
 UI.doRecruit = function() {
@@ -563,87 +564,90 @@ function onMove(e) {
       document.removeEventListener('mouseup', onUp);
       document.removeEventListener('touchmove', onMove);
       document.removeEventListener('touchend', onUp);
-      var ghostRect = ghost.getBoundingClientRect();
-      var ghostCx = ghostRect.left + ghostRect.width / 2;
-      var ghostCy = ghostRect.top + ghostRect.height / 2;
-      ghost.remove();
-      var last = UI.dragData;
-      UI.dragData = null;
-      var cx3 = e.clientX || (e.changedTouches && e.changedTouches[0].clientX);
-      var cy3 = e.clientY || (e.changedTouches && e.changedTouches[0].clientY);
-      if (cx3 == null || !last) return;
-      var waitingArea = document.getElementById('waiting-area');
-      if (waitingArea) {
-        var waRect = waitingArea.getBoundingClientRect();
-        var onWA = (cx3 >= waRect.left && cx3 <= waRect.right && cy3 >= waRect.top && cy3 <= waRect.bottom) ||
-                   (ghostRect && ghostRect.left < waRect.right && ghostRect.right > waRect.left &&
-                    ghostRect.top < waRect.bottom && ghostRect.bottom > waRect.top);
-        if (onWA) {
-          var bestCard = null;
-          var bestOverlap = 0;
-          var cards = waitingArea.querySelectorAll('.waiting-card');
-          for (var ci = 0; ci < cards.length; ci++) {
-            var cr = cards[ci].getBoundingClientRect();
-            var overlapX = Math.max(0, Math.min(ghostRect.right, cr.right) - Math.max(ghostRect.left, cr.left));
-            var overlapY = Math.max(0, Math.min(ghostRect.bottom, cr.bottom) - Math.max(ghostRect.top, cr.top));
-            var overlap = overlapX * overlapY;
-            if (overlap > bestOverlap) {
-              bestOverlap = overlap;
-              bestCard = cards[ci];
+      document.removeEventListener('touchcancel', onUp);
+      try {
+        var ghostRect = ghost.getBoundingClientRect();
+        var last = UI.dragData;
+        UI.dragData = null;
+        var cx3 = e.clientX || (e.changedTouches && e.changedTouches[0].clientX);
+        var cy3 = e.clientY || (e.changedTouches && e.changedTouches[0].clientY);
+        if (cx3 == null || !last) return;
+        var waitingArea = document.getElementById('waiting-area');
+        if (waitingArea) {
+          var waRect = waitingArea.getBoundingClientRect();
+          var onWA = (cx3 >= waRect.left && cx3 <= waRect.right && cy3 >= waRect.top && cy3 <= waRect.bottom) ||
+                     (ghostRect && ghostRect.left < waRect.right && ghostRect.right > waRect.left &&
+                      ghostRect.top < waRect.bottom && ghostRect.bottom > waRect.top);
+          if (onWA) {
+            var bestCard = null;
+            var bestOverlap = 0;
+            var cards = waitingArea.querySelectorAll('.waiting-card');
+            for (var ci = 0; ci < cards.length; ci++) {
+              var cr = cards[ci].getBoundingClientRect();
+              var overlapX = Math.max(0, Math.min(ghostRect.right, cr.right) - Math.max(ghostRect.left, cr.left));
+              var overlapY = Math.max(0, Math.min(ghostRect.bottom, cr.bottom) - Math.max(ghostRect.top, cr.top));
+              var overlap = overlapX * overlapY;
+              if (overlap > bestOverlap) {
+                bestOverlap = overlap;
+                bestCard = cards[ci];
+              }
             }
-          }
-          if (bestCard && bestCard.dataset.idx !== undefined) {
-            var tIdx = parseInt(bestCard.dataset.idx);
-            if (!isNaN(tIdx) && tIdx !== last.idx) {
-              var src = Game.waitingUnits[last.idx];
-              var tgt = Game.waitingUnits[tIdx];
-              if (src && tgt) {
-                if (src.soldierType && tgt.soldierType && src.soldierType === tgt.soldierType &&
-                    src.level === tgt.level && tgt.level < 5) {
-                  tgt.level++;
-                  Game.waitingUnits.splice(last.idx, 1);
-                  if (UI.selectedWaitingIdx >= last.idx) UI.selectedWaitingIdx--;
-                  UI.renderWaitingArea();
-                  return;
-                }
-                if (src.type === 'hero' && tgt.type === 'hero' && src.heroId === tgt.heroId && tgt.level < 5) {
-                  tgt.level = Math.max(tgt.level || 1, src.level || 1) + 1;
-                  if (tgt.level > 5) tgt.level = 5;
-                  Game.waitingUnits.splice(last.idx, 1);
-                  if (UI.selectedWaitingIdx >= last.idx) UI.selectedWaitingIdx--;
-                  UI.renderWaitingArea();
-                  return;
+            if (bestCard && bestCard.dataset.idx !== undefined) {
+              var tIdx = parseInt(bestCard.dataset.idx);
+              if (!isNaN(tIdx) && tIdx !== last.idx) {
+                var src = Game.waitingUnits[last.idx];
+                var tgt = Game.waitingUnits[tIdx];
+                if (src && tgt) {
+                  if (src.soldierType && tgt.soldierType && src.soldierType === tgt.soldierType &&
+                      src.level === tgt.level && tgt.level < 5) {
+                    tgt.level++;
+                    Game.waitingUnits.splice(last.idx, 1);
+                    if (UI.selectedWaitingIdx >= last.idx) UI.selectedWaitingIdx--;
+                    UI.renderWaitingArea();
+                    return;
+                  }
+                  if (src.type === 'hero' && tgt.type === 'hero' && src.heroId === tgt.heroId && tgt.level < 5) {
+                    tgt.level = Math.max(tgt.level || 1, src.level || 1) + 1;
+                    if (tgt.level > 5) tgt.level = 5;
+                    Game.waitingUnits.splice(last.idx, 1);
+                    if (UI.selectedWaitingIdx >= last.idx) UI.selectedWaitingIdx--;
+                    UI.renderWaitingArea();
+                    return;
+                  }
                 }
               }
             }
           }
         }
-      }
-      var target = document.elementFromPoint(cx3, cy3);
-      if (target) {
-        var cell = target.closest('.grid-cell.buildable');
-        if (cell) {
-          var col = parseInt(cell.dataset.col);
-          var row = parseInt(cell.dataset.row);
-          if (!isNaN(col) && !isNaN(row)) {
-            var ok = Game.deployFromWaitingIndex(last.idx, col, row);
-            if (ok) {
-              UI.selectedWaitingIdx = -1;
-              UI.renderBattle();
-              UI.renderWaitingArea();
-              return;
+        var target = document.elementFromPoint(cx3, cy3);
+        if (target) {
+          var cell = target.closest('.grid-cell.buildable');
+          if (cell) {
+            var col = parseInt(cell.dataset.col);
+            var row = parseInt(cell.dataset.row);
+            if (!isNaN(col) && !isNaN(row)) {
+              var ok = Game.deployFromWaitingIndex(last.idx, col, row);
+              if (ok) {
+                UI.selectedWaitingIdx = -1;
+                UI.renderBattle();
+                UI.renderWaitingArea();
+                return;
+              }
             }
           }
         }
+        UI.selectedWaitingIdx = -1;
+        UI.renderWaitingArea();
+        UI.hideHoverRange();
+      } finally {
+        if (ghost.parentNode) ghost.remove();
       }
-      UI.selectedWaitingIdx = -1;
-      UI.renderWaitingArea();
-      UI.hideHoverRange();
     }
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
     document.addEventListener('touchmove', onMove, {passive:false});
     document.addEventListener('touchend', onUp);
+    document.addEventListener('touchcancel', onUp);
   };
 
 UI.startBattleUnitDrag = function(unitObj, cx, cy, el) {
@@ -653,7 +657,6 @@ UI.startBattleUnitDrag = function(unitObj, cx, cy, el) {
     ghost.innerHTML = '<span>' + (unitObj.emoji || '?') + '</span><span class="unit-name-label" style="font-size:10px!important">' + (unitObj.isSoldier ? (unitObj.soldierName || '兵') : (unitObj.name || '').substring(0, 2)) + '</span>';
     document.body.appendChild(ghost);
     this.dragData = { unit: unitObj, ghost: ghost };
-    this.selectedUnitIdx = -1;
     this.renderBattle();
     var wu = unitObj.isSoldier
       ? { soldierType: unitObj.soldierType, level: unitObj.level }
@@ -664,6 +667,7 @@ UI.startBattleUnitDrag = function(unitObj, cx, cy, el) {
     document.addEventListener('mouseup', onUp);
     document.addEventListener('touchmove', onMove, {passive:false});
     document.addEventListener('touchend', onUp);
+    document.addEventListener('touchcancel', onUp);
     function onMove(e) {
       if (e.cancelable) e.preventDefault();
       var cx2 = e.clientX || (e.touches && e.touches[0].clientX);
@@ -697,123 +701,128 @@ UI.startBattleUnitDrag = function(unitObj, cx, cy, el) {
       document.removeEventListener('mouseup', onUp);
       document.removeEventListener('touchmove', onMove);
       document.removeEventListener('touchend', onUp);
-      var ghostRect = ghost.getBoundingClientRect();
-      ghost.remove();
-      var last = self.dragData;
-      self.dragData = null;
-      var cx3 = e.clientX || (e.changedTouches && e.changedTouches[0].clientX);
-      var cy3 = e.clientY || (e.changedTouches && e.changedTouches[0].clientY);
-      if (cx3 == null || !last) return;
-      e.stopPropagation();
-      e.preventDefault();
-      var target = document.elementFromPoint(cx3, cy3);
-      if (target) {
-        var cell = target.closest('.grid-cell.buildable');
-        if (cell) {
-          var col = parseInt(cell.dataset.col);
-          var row = parseInt(cell.dataset.row);
-          if (!isNaN(col) && !isNaN(row)) {
-            var ok = Game.moveUnit(last.unit, col, row);
-            if (ok) {
+      document.removeEventListener('touchcancel', onUp);
+      try {
+        var ghostRect = ghost.getBoundingClientRect();
+        var last = self.dragData;
+        self.dragData = null;
+        var cx3 = e.clientX || (e.changedTouches && e.changedTouches[0].clientX);
+        var cy3 = e.clientY || (e.changedTouches && e.changedTouches[0].clientY);
+        if (cx3 == null || !last) return;
+        e.stopPropagation();
+        e.preventDefault();
+        var target = document.elementFromPoint(cx3, cy3);
+        if (target) {
+          var cell = target.closest('.grid-cell.buildable');
+          if (cell) {
+            var col = parseInt(cell.dataset.col);
+            var row = parseInt(cell.dataset.row);
+            if (!isNaN(col) && !isNaN(row)) {
+              var ok = Game.moveUnit(last.unit, col, row);
+              if (ok) {
+                self.renderBattle();
+                return;
+              }
+            }
+          }
+          var recycleBin = document.getElementById('recycle-bin');
+          if (recycleBin) {
+            var rRect = recycleBin.getBoundingClientRect();
+            if (cx3 >= rRect.left - 8 && cx3 <= rRect.right + 8 && cy3 >= rRect.top - 8 && cy3 <= rRect.bottom + 8) {
+              Game.removeUnit(last.unit);
+              Game.food += 1;
+              self.renderBattle();
+              self.renderWaitingArea();
+              self.updateHUD();
+              self.showToast('回收 +1🍖');
+              return;
+            }
+          }
+          var waitingArea = document.getElementById('waiting-area');
+          if (waitingArea) {
+            var wRect = waitingArea.getBoundingClientRect();
+            var onWA = (cx3 >= wRect.left && cx3 <= wRect.right && cy3 >= wRect.top && cy3 <= wRect.bottom) ||
+                       (ghostRect && ghostRect.left < wRect.right && ghostRect.right > wRect.left &&
+                        ghostRect.top < wRect.bottom && ghostRect.bottom > wRect.top);
+            if (onWA) {
+              var bestCard = null;
+              var bestOverlap = 0;
+              var cards = waitingArea.querySelectorAll('.waiting-card');
+              for (var ci = 0; ci < cards.length; ci++) {
+                var cr = cards[ci].getBoundingClientRect();
+                var ox = Math.max(0, Math.min(ghostRect.right, cr.right) - Math.max(ghostRect.left, cr.left));
+                var oy = Math.max(0, Math.min(ghostRect.bottom, cr.bottom) - Math.max(ghostRect.top, cr.top));
+                var ov = ox * oy;
+                if (ov > bestOverlap) {
+                  bestOverlap = ov;
+                  bestCard = cards[ci];
+                }
+              }
+              if (bestCard && bestCard.dataset.idx !== undefined) {
+                var tIdx = parseInt(bestCard.dataset.idx);
+                if (!isNaN(tIdx)) {
+                  var wu = Game.waitingUnits[tIdx];
+                  var u = last.unit;
+                  if (wu && u) {
+                    var merged = false;
+                    if (u.isSoldier && wu.soldierType && u.soldierType === wu.soldierType && u.level === wu.level && wu.level < 5) {
+                      wu.level++;
+                      Game.removeUnit(u);
+                      UI.renderBattle();
+                      UI.renderWaitingArea();
+                      self.showToast('合成 Lv' + wu.level);
+                      merged = true;
+                    } else if (!u.isSoldier && wu.type === 'hero' && u.heroId === wu.heroId && wu.level < 5) {
+                      wu.level = Math.max(wu.level || 1, u.battleLevel || 1) + 1;
+                      if (wu.level > 5) wu.level = 5;
+                      Game.removeUnit(u);
+                      UI.renderBattle();
+                      UI.renderWaitingArea();
+                      self.showToast('合成 Lv' + wu.level);
+                      merged = true;
+                    }
+                    if (!merged) {
+                      var ucol = u.col, urow = u.row;
+                      var wuCopy = u.isSoldier
+                        ? {type:u.soldierType, soldierType:u.soldierType, level:u.level, emoji:u.emoji, name:u.soldierName}
+                        : {type:'hero', heroId:u.heroId, emoji:u.emoji, name:u.name, level:u.battleLevel || 1};
+                      wuCopy.hp = u.hp;
+                      wuCopy.maxHp = u.maxHp;
+                      Game.removeUnit(u);
+                      Game.waitingUnits.splice(tIdx, 1);
+                      Game.deployFromWaiting(wu, ucol, urow);
+                      Game.waitingUnits.splice(tIdx, 0, wuCopy);
+                      UI.renderBattle();
+                      UI.renderWaitingArea();
+                      self.showToast('交換位置');
+                    }
+                    return;
+                  }
+                }
+              }
+              var ok = Game.retreatToWaiting(last.unit);
+              if (ok) {
+                self.renderWaitingArea();
+                self.updateHUD();
+                self.showToast('送回等待區');
+                return;
+              }
+              self.showToast('等待區已滿！');
               self.renderBattle();
               return;
             }
           }
         }
-        var recycleBin = document.getElementById('recycle-bin');
-        if (recycleBin) {
-          var rRect = recycleBin.getBoundingClientRect();
-          if (cx3 >= rRect.left - 8 && cx3 <= rRect.right + 8 && cy3 >= rRect.top - 8 && cy3 <= rRect.bottom + 8) {
-            Game.removeUnit(last.unit);
-            Game.food += 1;
-            self.renderBattle();
-            self.renderWaitingArea();
-            self.updateHUD();
-            self.showToast('回收 +1🍖');
-            return;
-          }
-        }
-        var waitingArea = document.getElementById('waiting-area');
-        if (waitingArea) {
-          var wRect = waitingArea.getBoundingClientRect();
-          var onWA = (cx3 >= wRect.left && cx3 <= wRect.right && cy3 >= wRect.top && cy3 <= wRect.bottom) ||
-                     (ghostRect && ghostRect.left < wRect.right && ghostRect.right > wRect.left &&
-                      ghostRect.top < wRect.bottom && ghostRect.bottom > wRect.top);
-          if (onWA) {
-            var bestCard = null;
-            var bestOverlap = 0;
-            var cards = waitingArea.querySelectorAll('.waiting-card');
-            for (var ci = 0; ci < cards.length; ci++) {
-              var cr = cards[ci].getBoundingClientRect();
-              var ox = Math.max(0, Math.min(ghostRect.right, cr.right) - Math.max(ghostRect.left, cr.left));
-              var oy = Math.max(0, Math.min(ghostRect.bottom, cr.bottom) - Math.max(ghostRect.top, cr.top));
-              var ov = ox * oy;
-              if (ov > bestOverlap) {
-                bestOverlap = ov;
-                bestCard = cards[ci];
-              }
-            }
-            if (bestCard && bestCard.dataset.idx !== undefined) {
-              var tIdx = parseInt(bestCard.dataset.idx);
-              if (!isNaN(tIdx)) {
-                var wu = Game.waitingUnits[tIdx];
-                var u = last.unit;
-                if (wu && u) {
-                  var merged = false;
-                  if (u.isSoldier && wu.soldierType && u.soldierType === wu.soldierType && u.level === wu.level && wu.level < 5) {
-                    wu.level++;
-                    Game.removeUnit(u);
-                    UI.renderBattle();
-                    UI.renderWaitingArea();
-                    self.showToast('合成 Lv' + wu.level);
-                    merged = true;
-                  } else if (!u.isSoldier && wu.type === 'hero' && u.heroId === wu.heroId && wu.level < 5) {
-                    wu.level = Math.max(wu.level || 1, u.battleLevel || 1) + 1;
-                    if (wu.level > 5) wu.level = 5;
-                    Game.removeUnit(u);
-                    UI.renderBattle();
-                    UI.renderWaitingArea();
-                    self.showToast('合成 Lv' + wu.level);
-                    merged = true;
-                  }
-                  if (!merged) {
-                    var ucol = u.col, urow = u.row;
-                    var wuCopy = u.isSoldier
-                      ? {type:u.soldierType, soldierType:u.soldierType, level:u.level, emoji:u.emoji, name:u.soldierName}
-                      : {type:'hero', heroId:u.heroId, emoji:u.emoji, name:u.name, level:u.battleLevel || 1};
-                    wuCopy.hp = u.hp;
-                    wuCopy.maxHp = u.maxHp;
-                    Game.removeUnit(u);
-                    Game.waitingUnits.splice(tIdx, 1);
-                    Game.deployFromWaiting(wu, ucol, urow);
-                    Game.waitingUnits.splice(tIdx, 0, wuCopy);
-                    UI.renderBattle();
-                    UI.renderWaitingArea();
-                    self.showToast('交換位置');
-                  }
-                  return;
-                }
-              }
-            }
-            var ok = Game.retreatToWaiting(last.unit);
-            if (ok) {
-              self.renderWaitingArea();
-              self.updateHUD();
-              self.showToast('送回等待區');
-              return;
-            }
-            self.showToast('等待區已滿！');
-            self.renderBattle();
-            return;
-          }
-        }
+        self.renderBattle();
+      } finally {
+        if (ghost.parentNode) ghost.remove();
       }
-      self.renderBattle();
     }
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
     document.addEventListener('touchmove', onMove, {passive:false});
     document.addEventListener('touchend', onUp);
+    document.addEventListener('touchcancel', onUp);
   };
 
 UI.renderEnemies = function() {
@@ -1023,19 +1032,16 @@ UI.renderWaitingArea = function() {
       card.ontouchstart = function(idx, el) { return function(e) {
         e.preventDefault();
         e.stopPropagation();
-        var startX = e.touches[0].clientX;
-        var startY = e.touches[0].clientY;
+        var tapStart = Date.now();
         var dragStarted = false;
 
         function onCardTouchMove(ev2) {
           if (dragStarted) return;
-          var dx = ev2.touches[0].clientX - startX;
-          var dy = ev2.touches[0].clientY - startY;
-          if (dx * dx + dy * dy > 100) {
+          if (Date.now() - tapStart > 200) {
             dragStarted = true;
             document.removeEventListener('touchmove', onCardTouchMove);
             document.removeEventListener('touchend', onCardTouchEnd);
-            UI.startDrag(idx, startX, startY, el);
+            UI.startDrag(idx, e.touches[0].clientX, e.touches[0].clientY, el);
           }
         }
         function onCardTouchEnd(ev2) {
