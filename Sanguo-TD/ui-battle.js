@@ -305,6 +305,35 @@ UI._clearMergeHighlights = function() {
     }
   };
 
+UI._showDeployHighlights = function(wu) {
+    if (!Game.grid) return;
+    var isShovel = wu && wu.type === 'shovel';
+    for (var r = 0; r < Game.mapLayout.rows; r++) {
+      for (var c = 0; c < Game.mapLayout.cols; c++) {
+        var cell = Game.grid[r][c];
+        if (!cell || !cell.isBuildable) continue;
+        var el = document.querySelector('.grid-cell[data-col="' + c + '"][data-row="' + r + '"]');
+        if (!el) continue;
+        if (isShovel) {
+          if (!cell.isDug) el.classList.add('highlight-deploy');
+        } else {
+          if (cell.isDug && !cell.unit) {
+            el.classList.add('highlight-deploy');
+          } else if (cell.unit && wu && UI._canMerge(wu, cell.unit)) {
+            el.classList.add('highlight-merge');
+          }
+        }
+      }
+    }
+  };
+
+UI._clearDeployHighlights = function() {
+    var cells = document.querySelectorAll('.grid-cell.highlight-deploy');
+    for (var i = 0; i < cells.length; i++) {
+      cells[i].classList.remove('highlight-deploy');
+    }
+  };
+
 UI.showUnitTooltip = function(u) {
     var old = document.getElementById('unit-tooltip');
     if (old) old.remove();
@@ -418,6 +447,7 @@ UI.startDrag = function(idx, cx, cy, el) {
     this.dragData = { idx: idx, ghost: ghost };
     this.selectedWaitingIdx = idx;
     this.renderWaitingArea();
+    this._showDeployHighlights();
     var self = this;
 function onMove(e) {
       if (e.cancelable) e.preventDefault();
@@ -466,6 +496,7 @@ function onMove(e) {
     }
     function onUp(e) {
       self._clearMergeHighlights();
+      self._clearDeployHighlights();
       UI.hideHoverRange();
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
@@ -563,6 +594,7 @@ UI.startBattleUnitDrag = function(unitObj, cx, cy, el) {
     this.dragData = { unit: unitObj, ghost: ghost };
     this.selectedUnitIdx = -1;
     this.renderBattle();
+    this._showDeployHighlights();
     var self = this;
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
@@ -596,6 +628,7 @@ UI.startBattleUnitDrag = function(unitObj, cx, cy, el) {
     }
     function onUp(e) {
       UI.hideHoverRange();
+      self._clearDeployHighlights();
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
       document.removeEventListener('touchmove', onMove);

@@ -581,6 +581,15 @@ html, body {
   border-color: #ff8c00;
   box-shadow: 0 0 8px rgba(255,140,0,0.4);
 }
+.grid-cell.buildable.dug.highlight-deploy {
+  border: 2px solid rgba(0,255,120,0.7);
+  box-shadow: 0 0 8px rgba(0,255,120,0.35);
+  animation: pulse-deploy 1.2s ease-in-out infinite;
+}
+@keyframes pulse-deploy {
+  0%, 100% { box-shadow: 0 0 6px rgba(0,255,120,0.3); }
+  50% { box-shadow: 0 0 14px rgba(0,255,120,0.6); }
+}
 .grid-cell.occupied {
   background: rgba(30,80,120,0.15);
   border-color: rgba(30,80,120,0.35);
