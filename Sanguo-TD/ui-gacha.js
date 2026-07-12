@@ -148,7 +148,7 @@ UI.doGacha100 = function() {
   };
 
 UI._handleGachaResult = function(result) {
-    if (!result) { this.showToast('黃金不足！'); return; }
+    if (!result) { this.showToast('金幣不足！'); return; }
     var d = Service.appData;
     document.getElementById('gacha-gold').textContent = d.gold;
     var container = document.getElementById('gacha-result');
@@ -175,7 +175,7 @@ UI._handleGachaResult = function(result) {
   };
 
 UI._handleMultiGachaResult = function(results, count) {
-    if (!results || results.length === 0) { this.showToast('黃金不足！'); return; }
+    if (!results || results.length === 0) { this.showToast('金幣不足！'); return; }
     var d = Service.appData;
     document.getElementById('gacha-gold').textContent = d.gold;
     var container = document.getElementById('gacha-result');
@@ -208,7 +208,7 @@ UI._handleMultiGachaResult = function(results, count) {
 
 UI.doWeaponGacha = function() {
     var w = Service.doWeaponGacha ? Service.doWeaponGacha() : null;
-    if (!w) { this.showToast('黃金不足！'); return; }
+    if (!w) { this.showToast('金幣不足！'); return; }
     var d = Service.appData;
     document.getElementById('gacha-gold').textContent = d.gold;
     var qn = WEAPON_QUALITY[w.quality] ? WEAPON_QUALITY[w.quality].name : '?';
@@ -225,7 +225,7 @@ UI.doWeaponGacha = function() {
 
 UI.doWeaponGacha10 = function() {
     var ws = Service.doMultiWeaponGacha ? Service.doMultiWeaponGacha(10) : [];
-    if (ws.length === 0) { this.showToast('黃金不足！'); return; }
+    if (ws.length === 0) { this.showToast('金幣不足！'); return; }
     var d = Service.appData;
     document.getElementById('gacha-gold').textContent = d.gold;
     var container = document.getElementById('gacha-result');
@@ -250,7 +250,7 @@ UI.doWeaponGacha10 = function() {
 
 UI.doWeaponGacha100 = function() {
     var ws = Service.doMultiWeaponGacha ? Service.doMultiWeaponGacha(100) : [];
-    if (ws.length === 0) { this.showToast('黃金不足！'); return; }
+    if (ws.length === 0) { this.showToast('金幣不足！'); return; }
     var d = Service.appData;
     document.getElementById('gacha-gold').textContent = d.gold;
     var container = document.getElementById('gacha-result');

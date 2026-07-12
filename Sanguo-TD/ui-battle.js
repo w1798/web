@@ -109,7 +109,7 @@ UI.renderBattle = function() {
           div.onclick = function(c, r) { return function(ev) {
             if (UI._touchHandled && (Date.now() - UI._touchHandled) < 500) { UI._touchHandled = 0; return; }
             ev.stopPropagation();
-            UI.selectUnitAt(c, r);
+            UI.onCellClick(c, r);
           }; }(c, r);
           div.onmousedown = function(uObj) { return function(ev) {
             if (ev.button !== 0) return;
@@ -118,37 +118,32 @@ UI.renderBattle = function() {
             UI.startBattleUnitDrag(uObj, ev.clientX, ev.clientY, ev.currentTarget);
           }; }(uu);
           div.ontouchstart = function(uObj, c, r) { return function(ev) {
+            ev.preventDefault();
             ev.stopPropagation();
             var startX = ev.touches[0].clientX;
             var startY = ev.touches[0].clientY;
-            var moved = false;
-            var dragStarted = false;
+            var tap = true;
 
-            function onTouchMove(ev2) {
-              if (dragStarted) return;
+            function onCellMove(ev2) {
               var dx = ev2.touches[0].clientX - startX;
               var dy = ev2.touches[0].clientY - startY;
               if (dx * dx + dy * dy > 100) {
-                moved = true;
-                dragStarted = true;
-                document.removeEventListener('touchmove', onTouchMove);
+                tap = false;
+                document.removeEventListener('touchmove', onCellMove);
+                document.removeEventListener('touchend', onCellEnd);
                 UI.startBattleUnitDrag(uObj, startX, startY, ev.currentTarget);
               }
             }
-            function onTouchEnd(ev2) {
-              document.removeEventListener('touchmove', onTouchMove);
-              document.removeEventListener('touchend', onTouchEnd);
-              if (!moved) {
-                ev2.preventDefault();
-                UI._lastTappedUnit = uObj;
+            function onCellEnd(ev2) {
+              document.removeEventListener('touchmove', onCellMove);
+              document.removeEventListener('touchend', onCellEnd);
+              if (tap) {
                 UI._touchHandled = Date.now();
-                UI.selectUnitAt(c, r);
-                UI.showUnitTooltip(uObj);
-                UI.showHoverRange(uObj.col, uObj.row, uObj.range || 2);
+                UI.onCellClick(c, r);
               }
             }
-            document.addEventListener('touchmove', onTouchMove, {passive:true});
-            document.addEventListener('touchend', onTouchEnd);
+            document.addEventListener('touchmove', onCellMove, {passive:true});
+            document.addEventListener('touchend', onCellEnd);
           }; }(uu, c, r);
           div.onmouseenter = function(unitData) { return function(e) {
             UI.showUnitTooltip(unitData);
@@ -221,11 +216,45 @@ UI.selectUnitAt = function(col, row) {
   };
 
 UI.onCellClick = function(col, row) {
+    this.hideUnitTooltip();
+    this.hideHoverRange();
     if (this.selectedWaitingIdx >= 0 && this.selectedWaitingIdx < Game.waitingUnits.length) {
       var wu = Game.waitingUnits[this.selectedWaitingIdx];
+      var target = Game.grid[row] && Game.grid[row][col];
+      if (target && target.unit && this._canMerge(wu, target.unit)) {
+        var tu = target.unit;
+        if (wu.soldierType && tu.isSoldier) {
+          tu.level++;
+          tu.battleLevel = tu.level;
+          tu.upgradeStats();
+        } else if (wu.type === 'hero' && tu.heroId) {
+          tu.battleLevel++;
+          tu.level = tu.battleLevel;
+          var hd = getHeroData(tu.heroId);
+          if (hd) tu.applyTierStats(hd, tu.battleLevel);
+          tu.applyWeaponStats();
+          tu.applySynergyBonuses();
+        }
+        Game.waitingUnits.splice(this.selectedWaitingIdx, 1);
+        this.selectedWaitingIdx = -1;
+        this.selectedUnitIdx = -1;
+        this._clearDeployHighlights();
+        this._clearMergeHighlights();
+        this.hideUnitTooltip();
+        this.hideHoverRange();
+        this.renderBattle();
+        this.renderWaitingArea();
+        this.showToast('合成成功！');
+        return;
+      }
       var ok = Game.deployFromWaitingIndex(this.selectedWaitingIdx, col, row);
       if (ok) {
         this.selectedWaitingIdx = -1;
+        this.selectedUnitIdx = -1;
+        this._clearDeployHighlights();
+        this._clearMergeHighlights();
+        this.hideUnitTooltip();
+        this.hideHoverRange();
         this.renderBattle();
         this.renderWaitingArea();
       } else {
@@ -233,23 +262,39 @@ UI.onCellClick = function(col, row) {
       }
       return;
     }
+    var cell = Game.grid[row] && Game.grid[row][col];
     if (this.selectedUnitIdx >= 0 && this.selectedUnitIdx < Game.units.length) {
       var u = Game.units[this.selectedUnitIdx];
       if (Math.floor(u.col) === col && Math.floor(u.row) === row) {
         this.selectedUnitIdx = -1;
+        this.hideUnitTooltip();
+        this.hideHoverRange();
         this.renderBattle();
+        return;
+      }
+      if (cell && cell.unit) {
+        this.hideUnitTooltip();
+        this.hideHoverRange();
+        this.selectUnitAt(col, row);
+        this.showUnitTooltip(cell.unit);
         return;
       }
       var ok = Game.moveUnit(u, col, row);
       if (ok) {
         this.selectedUnitIdx = -1;
+        this.hideUnitTooltip();
+        this.hideHoverRange();
         this.renderBattle();
       } else {
         this.showToast('無法移動到此位置！');
       }
       return;
     }
-    var cell = Game.grid[row] && Game.grid[row][col];
+    if (cell && cell.unit) {
+      this.selectUnitAt(col, row);
+      this.showUnitTooltip(cell.unit);
+      return;
+    }
     if (cell && cell.isBuildable && !cell.isDug) {
       var hasShovel = false;
       for (var si = 0; si < Game.waitingUnits.length; si++) {
@@ -268,6 +313,13 @@ UI.onCellClick = function(col, row) {
         }
       }
     }
+    /* 無動作 → 清除選取和資訊 */
+    this.selectedUnitIdx = -1;
+    this.selectedWaitingIdx = -1;
+    this.hideUnitTooltip();
+    this.hideHoverRange();
+    this.renderBattle();
+    this.renderWaitingArea();
   };
 
 UI.showHoverRange = function(col, row, range) {
@@ -363,12 +415,20 @@ UI._clearDeployHighlights = function() {
     var grid = document.getElementById('battle-grid');
     var gx = 0, gy = 0;
     if (grid) { var gr = grid.getBoundingClientRect(); gx = gr.left; gy = gr.top; }
-    var tx = gx + pp.x + UI.cellSize / 2 + 8;
-    var ty = gy + pp.y - UI.cellSize / 2 - 8;
+    var cx = gx + pp.x;
+    var cy = gy + pp.y;
+    var tw = el.offsetWidth || 160;
+    var th = el.offsetHeight || 100;
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    var tx = cx + UI.cellSize / 2 + 8;
+    var ty = cy - UI.cellSize / 2 - th - 4;
+    if (tx + tw > vw - 8) tx = cx - UI.cellSize / 2 - tw - 8;
+    if (tx < 8) tx = 8;
+    if (ty < 8) ty = cy + UI.cellSize / 2 + 4;
+    if (ty + th > vh - 8) ty = vh - th - 8;
     el.style.left = tx + 'px';
     el.style.top = ty + 'px';
-    if (tx + 180 > window.innerWidth) el.style.left = (gx + pp.x - UI.cellSize / 2 - 180) + 'px';
-    if (ty < 0) el.style.top = (gy + pp.y + UI.cellSize / 2 + 8) + 'px';
   };
 
 UI.showWaitingUnitTooltip = function(wu, ev) {
@@ -965,34 +1025,35 @@ UI.renderWaitingArea = function() {
         e.stopPropagation();
         var startX = e.touches[0].clientX;
         var startY = e.touches[0].clientY;
-        var moved = false;
+        var dragStarted = false;
 
         function onCardTouchMove(ev2) {
+          if (dragStarted) return;
           var dx = ev2.touches[0].clientX - startX;
           var dy = ev2.touches[0].clientY - startY;
-          if (dx * dx + dy * dy > 100) moved = true;
+          if (dx * dx + dy * dy > 100) {
+            dragStarted = true;
+            document.removeEventListener('touchmove', onCardTouchMove);
+            document.removeEventListener('touchend', onCardTouchEnd);
+            UI.startDrag(idx, startX, startY, el);
+          }
         }
         function onCardTouchEnd(ev2) {
           document.removeEventListener('touchmove', onCardTouchMove);
           document.removeEventListener('touchend', onCardTouchEnd);
-          if (!moved) {
-            var last = UI.dragData;
-            UI.dragData = null;
-            if (last && last.ghost) last.ghost.remove();
-            UI._clearDeployHighlights();
-            UI._clearMergeHighlights();
-            UI.hideHoverRange();
+          if (!dragStarted) {
             UI._touchHandled = Date.now();
             UI.selectedWaitingIdx = (UI.selectedWaitingIdx === idx) ? -1 : idx;
             UI.renderWaitingArea();
             if (UI.selectedWaitingIdx >= 0) {
               UI._showDeployHighlights(Game.waitingUnits[UI.selectedWaitingIdx]);
+            } else {
+              UI._clearDeployHighlights();
             }
           }
         }
         document.addEventListener('touchmove', onCardTouchMove, {passive:true});
         document.addEventListener('touchend', onCardTouchEnd);
-        UI.startDrag(idx, e.touches[0].clientX, e.touches[0].clientY, el);
       }; }(i, card);
       card.onmouseenter = function(w) { return function(e) {
         UI.showWaitingUnitTooltip(w, e);
@@ -1028,25 +1089,34 @@ UI.updateHUD = function() {
     if (nameEl && Game.stage) nameEl.textContent = Game.stage.name;
   };
 
-/* 手機觸控：點擊非單位區域取消選取 */
+/* 點擊空白取消選取 */
 document.getElementById('battle-grid').addEventListener('click', function(ev) {
   if (ev.target === this) {
     UI.hideUnitTooltip();
     UI.hideHoverRange();
     UI.selectedUnitIdx = -1;
     UI.selectedWaitingIdx = -1;
+    UI._clearDeployHighlights();
+    UI._clearMergeHighlights();
     UI.renderBattle();
     UI.renderWaitingArea();
   }
 });
 document.getElementById('battle-grid').addEventListener('touchstart', function(ev) {
-  if (ev.target === this) {
-    UI._lastTappedUnit = null;
-    UI.hideUnitTooltip();
-    UI.hideHoverRange();
-    UI.selectedUnitIdx = -1;
-    UI.selectedWaitingIdx = -1;
-    UI.renderBattle();
-    UI.renderWaitingArea();
-  }
+    if (ev.target === this || ev.target.classList.contains('path') || ev.target.classList.contains('blocked') || ev.target.classList.contains('buildable') || ev.target.classList.contains('occupied')) {
+      var isInteract = ev.target.classList.contains('buildable') || ev.target.classList.contains('occupied');
+      if (isInteract && UI.selectedUnitIdx >= 0) { return; }
+      if (isInteract && UI.selectedWaitingIdx >= 0) { return; }
+      if (isInteract && UI.dragData) { return; }
+      UI.hideUnitTooltip();
+      UI.hideHoverRange();
+      if (!isInteract) {
+        UI.selectedUnitIdx = -1;
+        UI.selectedWaitingIdx = -1;
+        UI._clearDeployHighlights();
+        UI._clearMergeHighlights();
+        UI.renderBattle();
+        UI.renderWaitingArea();
+      }
+    }
 });

@@ -101,9 +101,9 @@ UI.renderWeaponsList = function() {
           recycleBtn.textContent = '🗑️ 回收 +' + recycleGold + '💰';
           recycleBtn.onclick = function(hid2, gold) {
             return function() {
-              self.showConfirm('確定要回收這把武器嗎？可獲得 ' + gold + ' 黃金', function() {
+              self.showConfirm('確定要回收這把武器嗎？可獲得 ' + gold + ' 金幣', function() {
                 var g = Service.recycleWeapon(hid2);
-                if (g > 0) self.showToast('回收成功，獲得 ' + g + ' 黃金！');
+                if (g > 0) self.showToast('回收成功，獲得 ' + g + ' 金幣！');
                 self.renderWeaponsList();
               });
             };
@@ -157,7 +157,7 @@ UI.renderWeaponsList = function() {
         btn.textContent = '🗑️ 回收全' + label + ' (' + cnt + '件)';
         btn.onclick = function() {
           var gold = WEAPON_QUALITY[q] ? WEAPON_QUALITY[q].recycleGold : 0;
-          self.showConfirm('確定回收全部 ' + cnt + ' 件' + label + '武器？可獲得 ' + (cnt * gold) + ' 黃金', function() {
+          self.showConfirm('確定回收全部 ' + cnt + ' 件' + label + '武器？可獲得 ' + (cnt * gold) + ' 金幣', function() {
             var total = 0, removed = 0;
             for (var k = d.weaponStorage.length - 1; k >= 0; k--) {
               if (d.weaponStorage[k].quality === q) {
@@ -168,7 +168,7 @@ UI.renderWeaponsList = function() {
             }
             d.gold += total;
             Service.saveData();
-            self.showToast('回收 ' + removed + ' 件' + label + '，獲得 ' + total + ' 黃金！');
+            self.showToast('回收 ' + removed + ' 件' + label + '，獲得 ' + total + ' 金幣！');
             self.renderWeaponsList();
           });
         };
@@ -252,9 +252,9 @@ UI.renderWeaponsList = function() {
               recycleBtn.textContent = '🗑️ 回收 +' + recycleGold + '💰';
               recycleBtn.onclick = function(i2, gold) {
                 return function() {
-                  self.showConfirm('確定要回收這把武器嗎？可獲得 ' + gold + ' 黃金', function() {
+                  self.showConfirm('確定要回收這把武器嗎？可獲得 ' + gold + ' 金幣', function() {
                     var g = Service.recycleStoredWeapon(i2);
-                    if (g > 0) self.showToast('回收成功，獲得 ' + g + ' 黃金！');
+                    if (g > 0) self.showToast('回收成功，獲得 ' + g + ' 金幣！');
                     self.renderWeaponsList();
                   });
                 };
@@ -319,9 +319,9 @@ UI.renderWeaponsList = function() {
             recycleBtn.textContent = '🗑️ 回收 +' + recycleGold + '💰';
             recycleBtn.onclick = function(i2, gold) {
               return function() {
-                self.showConfirm('確定要回收這把武器嗎？可獲得 ' + gold + ' 黃金', function() {
+                self.showConfirm('確定要回收這把武器嗎？可獲得 ' + gold + ' 金幣', function() {
                   var g = Service.recycleStoredWeapon(i2);
-                  if (g > 0) self.showToast('回收成功，獲得 ' + g + ' 黃金！');
+                  if (g > 0) self.showToast('回收成功，獲得 ' + g + ' 金幣！');
                   self.renderWeaponsList();
                 });
               };

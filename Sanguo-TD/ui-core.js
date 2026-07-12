@@ -155,7 +155,7 @@ var UI = {
     var title = document.getElementById('result-title');
     title.textContent = won ? '勝 利！' : '敗 北...';
     title.className = won ? 'victory' : 'defeat';
-    var html = won ? '👑 黃金 +' + gold : '下次再戰！';
+    var html = won ? '👑 金幣 +' + gold : '下次再戰！';
     if (weapon) {
       var qName = WEAPON_QUALITY[weapon.quality] ? WEAPON_QUALITY[weapon.quality].name : '?';
       var qColor = WEAPON_QUALITY[weapon.quality] ? WEAPON_QUALITY[weapon.quality].color : '#888';
