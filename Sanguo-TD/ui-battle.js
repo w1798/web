@@ -334,7 +334,7 @@ UI._clearDeployHighlights = function() {
     }
   };
 
-UI.showUnitTooltip = function(u) {
+  UI.showUnitTooltip = function(u) {
     var old = document.getElementById('unit-tooltip');
     if (old) old.remove();
     var info = [];
@@ -359,6 +359,16 @@ UI.showUnitTooltip = function(u) {
     el.style.cssText = 'position:fixed;background:rgba(0,0,0,0.85);color:#f0e6d0;padding:8px 12px;border-radius:8px;border:1px solid #ffd700;font-size:13px;line-height:1.5;z-index:10000;pointer-events:none;white-space:nowrap;';
     el.innerHTML = info.join('<br>');
     document.body.appendChild(el);
+    var pp = UI.cellToPixel(Math.floor(u.col), Math.floor(u.row));
+    var grid = document.getElementById('battle-grid');
+    var gx = 0, gy = 0;
+    if (grid) { var gr = grid.getBoundingClientRect(); gx = gr.left; gy = gr.top; }
+    var tx = gx + pp.x + UI.cellSize / 2 + 8;
+    var ty = gy + pp.y - UI.cellSize / 2 - 8;
+    el.style.left = tx + 'px';
+    el.style.top = ty + 'px';
+    if (tx + 180 > window.innerWidth) el.style.left = (gx + pp.x - UI.cellSize / 2 - 180) + 'px';
+    if (ty < 0) el.style.top = (gy + pp.y + UI.cellSize / 2 + 8) + 'px';
   };
 
 UI.showWaitingUnitTooltip = function(wu, ev) {
@@ -447,7 +457,7 @@ UI.startDrag = function(idx, cx, cy, el) {
     this.dragData = { idx: idx, ghost: ghost };
     this.selectedWaitingIdx = idx;
     this.renderWaitingArea();
-    this._showDeployHighlights();
+    this._showDeployHighlights(Game.waitingUnits[idx]);
     var self = this;
 function onMove(e) {
       if (e.cancelable) e.preventDefault();
@@ -458,7 +468,6 @@ function onMove(e) {
         ghost.style.top = cy2 + 'px';
         var target = document.elementFromPoint(cx2, cy2);
         if (target) {
-          self._clearMergeHighlights();
           var cell = target.closest('.grid-cell.buildable');
           if (cell && self.dragData && self.dragData.idx >= 0) {
             var wu = Game.waitingUnits[self.dragData.idx];
@@ -477,20 +486,12 @@ function onMove(e) {
               if (!isNaN(col) && !isNaN(row)) {
                 UI.showHoverRange(col, row, range);
               }
-              if (cell.classList.contains('occupied')) {
-                var occUnit = Game.grid[col] && Game.grid[col][row] && Game.grid[col][row].unit;
-                if (occUnit && self._canMerge(wu, occUnit)) {
-                  cell.classList.add('highlight-merge');
-                }
-              }
             }
           } else {
             UI.hideHoverRange();
-            self._clearMergeHighlights();
           }
         } else {
           UI.hideHoverRange();
-          self._clearMergeHighlights();
         }
       }
     }
@@ -594,7 +595,10 @@ UI.startBattleUnitDrag = function(unitObj, cx, cy, el) {
     this.dragData = { unit: unitObj, ghost: ghost };
     this.selectedUnitIdx = -1;
     this.renderBattle();
-    this._showDeployHighlights();
+    var wu = unitObj.isSoldier
+      ? { soldierType: unitObj.soldierType, level: unitObj.level }
+      : { type: 'hero', heroId: unitObj.heroId };
+    this._showDeployHighlights(wu);
     var self = this;
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
@@ -962,31 +966,33 @@ UI.renderWaitingArea = function() {
         var startX = e.touches[0].clientX;
         var startY = e.touches[0].clientY;
         var moved = false;
-        var dragStarted = false;
 
         function onCardTouchMove(ev2) {
-          if (dragStarted) return;
           var dx = ev2.touches[0].clientX - startX;
           var dy = ev2.touches[0].clientY - startY;
-          if (dx * dx + dy * dy > 100) {
-            moved = true;
-            dragStarted = true;
-            document.removeEventListener('touchmove', onCardTouchMove);
-            document.removeEventListener('touchend', onCardTouchEnd);
-            UI.startDrag(idx, startX, startY, el);
-          }
+          if (dx * dx + dy * dy > 100) moved = true;
         }
         function onCardTouchEnd(ev2) {
           document.removeEventListener('touchmove', onCardTouchMove);
           document.removeEventListener('touchend', onCardTouchEnd);
           if (!moved) {
+            var last = UI.dragData;
+            UI.dragData = null;
+            if (last && last.ghost) last.ghost.remove();
+            UI._clearDeployHighlights();
+            UI._clearMergeHighlights();
+            UI.hideHoverRange();
             UI._touchHandled = Date.now();
             UI.selectedWaitingIdx = (UI.selectedWaitingIdx === idx) ? -1 : idx;
             UI.renderWaitingArea();
+            if (UI.selectedWaitingIdx >= 0) {
+              UI._showDeployHighlights(Game.waitingUnits[UI.selectedWaitingIdx]);
+            }
           }
         }
         document.addEventListener('touchmove', onCardTouchMove, {passive:true});
         document.addEventListener('touchend', onCardTouchEnd);
+        UI.startDrag(idx, e.touches[0].clientX, e.touches[0].clientY, el);
       }; }(i, card);
       card.onmouseenter = function(w) { return function(e) {
         UI.showWaitingUnitTooltip(w, e);

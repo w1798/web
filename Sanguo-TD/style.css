@@ -540,6 +540,7 @@ html, body {
   background: rgba(60,40,80,0.5);
   border-color: rgba(160,120,200,0.3);
   cursor: pointer;
+  touch-action: none;
 }
 .grid-cell.buildable.dug {
   background: rgba(60,40,80,0.3);
@@ -586,13 +587,23 @@ html, body {
   box-shadow: 0 0 8px rgba(0,255,120,0.35);
   animation: pulse-deploy 1.2s ease-in-out infinite;
 }
+.grid-cell.buildable.locked.highlight-deploy {
+  border: 2px solid rgba(255,200,0,0.8);
+  box-shadow: 0 0 8px rgba(255,200,0,0.4);
+  animation: pulse-shovel 1.2s ease-in-out infinite;
+}
 @keyframes pulse-deploy {
   0%, 100% { box-shadow: 0 0 6px rgba(0,255,120,0.3); }
   50% { box-shadow: 0 0 14px rgba(0,255,120,0.6); }
 }
+@keyframes pulse-shovel {
+  0%, 100% { box-shadow: 0 0 6px rgba(255,200,0,0.3); }
+  50% { box-shadow: 0 0 14px rgba(255,200,0,0.6); }
+}
 .grid-cell.occupied {
   background: rgba(30,80,120,0.15);
   border-color: rgba(30,80,120,0.35);
+  touch-action: none;
 }
 .grid-cell.occupied.highlight-merge {
   background: rgba(255,140,0,0.2);
@@ -746,6 +757,7 @@ html, body {
   transition: transform 0.1s;
   position: relative;
   font-size: 24px;
+  touch-action: none;
 }
 .waiting-card:active {
   transform: scale(0.92);
