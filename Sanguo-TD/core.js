@@ -546,38 +546,31 @@ var Game = {
       Service.appData.weaponStorage.push(weapon);
     }
     if (firstClear) {
-      var types = ['sword','spear','bow','horse','mage','monk'];
-      var rType = types[Math.floor(Math.random() * types.length)];
-      var whiteWpn = { quality:1, type:rType, atkPct:+(15+Math.random()*35).toFixed(1), hpPct:0, spd:0 };
+      var whiteWpn = Service.generateWeaponByQuality(1);
       Service.appData.weaponStorage.push(whiteWpn);
       extraWeapons.push(whiteWpn);
       if (stageIdx % 3 === 2) {
         if (this.difficulty === 'hard') {
-          var rType2 = types[Math.floor(Math.random() * types.length)];
-          var blueWpn = { quality:2, type:rType2, atkPct:+(18+Math.random()*27).toFixed(1), hpPct:+(15+Math.random()*20).toFixed(1), spd:0 };
+          var blueWpn = Service.generateWeaponByQuality(2);
           Service.appData.weaponStorage.push(blueWpn);
           extraWeapons.push(blueWpn);
         } else if (this.difficulty === 'hell') {
-          var rType2 = types[Math.floor(Math.random() * types.length)];
-          var purpWpn = { quality:3, type:rType2, atkPct:+(25+Math.random()*35).toFixed(1), hpPct:+(20+Math.random()*30).toFixed(1), spd:+(0.2+Math.random()*0.3).toFixed(1) };
+          var purpWpn = Service.generateWeaponByQuality(3);
           Service.appData.weaponStorage.push(purpWpn);
           extraWeapons.push(purpWpn);
         }
       }
       if (s.id === 'hell') {
         if (this.difficulty === 'normal') {
-          var rTypeH = types[Math.floor(Math.random() * types.length)];
-          var hellBlue = { quality:2, type:rTypeH, atkPct:+(18+Math.random()*27).toFixed(1), hpPct:+(15+Math.random()*20).toFixed(1), spd:0 };
+          var hellBlue = Service.generateWeaponByQuality(2);
           Service.appData.weaponStorage.push(hellBlue);
           extraWeapons.push(hellBlue);
         } else if (this.difficulty === 'hard') {
-          var rTypeH2 = types[Math.floor(Math.random() * types.length)];
-          var hellPurp = { quality:3, type:rTypeH2, atkPct:+(25+Math.random()*35).toFixed(1), hpPct:+(20+Math.random()*30).toFixed(1), spd:+(0.2+Math.random()*0.3).toFixed(1) };
+          var hellPurp = Service.generateWeaponByQuality(3);
           Service.appData.weaponStorage.push(hellPurp);
           extraWeapons.push(hellPurp);
         } else {
-          var rTypeH3 = types[Math.floor(Math.random() * types.length)];
-          var hellGold = { quality:4, type:rTypeH3, atkPct:+(30+Math.random()*40).toFixed(1), hpPct:+(30+Math.random()*40).toFixed(1), spd:+(0.3+Math.random()*0.6).toFixed(1) };
+          var hellGold = Service.generateWeaponByQuality(4);
           Service.appData.weaponStorage.push(hellGold);
           extraWeapons.push(hellGold);
         }

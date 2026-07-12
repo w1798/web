@@ -409,22 +409,8 @@ var Service = {
 
     var types = ['sword','spear','bow','horse','mage','monk'];
     var type = types[Math.floor(Math.random() * types.length)];
-    var atkPct = 0, hpPct = 0, spd = 0;
-    if (quality === 1) {
-      atkPct = +(5.0 + Math.random() * 15.0).toFixed(1);
-    } else if (quality === 2) {
-      atkPct = +(5.0 + Math.random() * 20.0).toFixed(1);
-      hpPct = +(5.0 + Math.random() * 15.0).toFixed(1);
-    } else if (quality === 3) {
-      atkPct = +(5.0 + Math.random() * 30.0).toFixed(1);
-      hpPct = +(5.0 + Math.random() * 25.0).toFixed(1);
-      spd = +(0.1 + Math.random() * 0.4).toFixed(1);
-    } else if (quality === 4) {
-      atkPct = +(0.1 + Math.random() * 49.9).toFixed(1);
-      hpPct = +(0.1 + Math.random() * 49.9).toFixed(1);
-      spd = +(0.1 + Math.random() * 0.9).toFixed(1);
-    }
-    return { quality: quality, type: type, atkPct: atkPct, hpPct: hpPct, spd: spd };
+    var stats = this._generateWeaponStats(quality);
+    return { quality: quality, type: type, atkPct: stats.atkPct, hpPct: stats.hpPct, spd: stats.spd };
   },
 
   doWeaponGacha: function() {
@@ -478,6 +464,11 @@ var Service = {
     }
     var types = ['sword','spear','bow','horse','mage','monk'];
     var type = types[Math.floor(Math.random() * types.length)];
+    var stats = this._generateWeaponStats(quality);
+    return { quality: quality, type: type, atkPct: stats.atkPct, hpPct: stats.hpPct, spd: stats.spd };
+  },
+
+  _generateWeaponStats: function(quality) {
     var atkPct = 0, hpPct = 0, spd = 0;
     if (quality === 1) {
       atkPct = +(5.0 + Math.random() * 15.0).toFixed(1);
@@ -493,7 +484,14 @@ var Service = {
       hpPct = +(0.1 + Math.random() * 49.9).toFixed(1);
       spd = +(0.1 + Math.random() * 0.9).toFixed(1);
     }
-    return { quality: quality, type: type, atkPct: atkPct, hpPct: hpPct, spd: spd };
+    return { atkPct: atkPct, hpPct: hpPct, spd: spd };
+  },
+
+  generateWeaponByQuality: function(quality) {
+    var types = ['sword','spear','bow','horse','mage','monk'];
+    var type = types[Math.floor(Math.random() * types.length)];
+    var stats = this._generateWeaponStats(quality);
+    return { quality: quality, type: type, atkPct: stats.atkPct, hpPct: stats.hpPct, spd: stats.spd };
   },
 
   equipWeapon: function(heroId, weaponData) {
