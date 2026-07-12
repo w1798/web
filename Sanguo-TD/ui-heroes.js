@@ -284,12 +284,12 @@ UI.renderHeroList = function() {
                var _offAtk = hd.baseAtk - _std.atk[hd.rarity];
                var _offDef = hd.baseDef - _std.def[hd.rarity];
                var _offHp = hd.baseHp - _std.hp[hd.rarity];
-               var _effAtk = (_std.atk[tier] + _offAtk) * _wAtkMult;
-               var _effDef = _std.def[tier] + _offDef;
-               var _effHp = (_std.hp[tier] + _offHp) * _wHpMult;
-               return '⚔️' + Math.floor(_effAtk * tm) +
-                 ' 🛡' + Math.floor(_effDef * tm) +
-                 ' ❤' + Math.floor(_effHp * tm) +
+               var _effAtk = (_std.atk[tier] + _offAtk) * tm;
+               var _effDef = (_std.def[tier] + _offDef) * tm;
+               var _effHp = (_std.hp[tier] + _offHp) * tm;
+               return '⚔️' + Math.floor(_effAtk * _wAtkMult) +
+                 ' 🛡' + Math.floor(_effDef) +
+                 ' ❤' + Math.floor(_effHp * _wHpMult) +
                  ' 🎯' + (SOLDIER_TYPES[HERO_WEAPON[hd.type]] ? SOLDIER_TYPES[HERO_WEAPON[hd.type]].range : '?') +
                  ' 🏃' + (_baseAs + (tier - 1) * 0.1 + _wSpd).toFixed(2) + '次/秒';
              })() +
