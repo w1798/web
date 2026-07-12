@@ -1097,8 +1097,13 @@ UI.renderWaitingArea = function() {
           UI.renderWaitingArea();
           if (UI.selectedWaitingIdx >= 0) {
             UI._showDeployHighlights(Game.waitingUnits[UI.selectedWaitingIdx]);
+            var ct = ev2.changedTouches && ev2.changedTouches[0];
+            if (ct) {
+              UI.showWaitingUnitTooltip(Game.waitingUnits[UI.selectedWaitingIdx], { clientX: ct.clientX, clientY: ct.clientY });
+            }
           } else {
             UI._clearDeployHighlights();
+            UI.hideUnitTooltip();
           }
         }
         document.addEventListener('touchmove', onCardTouchMove, {passive:true});
@@ -1110,15 +1115,17 @@ UI.renderWaitingArea = function() {
       card.onmouseleave = function() {
         UI.hideUnitTooltip();
       };
-      card.onclick = function(idx) { return function() {
+      card.onclick = function(idx) { return function(ev) {
         if (UI.dragData) return;
         if (UI._touchHandled && (Date.now() - UI._touchHandled) < 500) { UI._touchHandled = 0; return; }
         UI.selectedWaitingIdx = (UI.selectedWaitingIdx === idx) ? -1 : idx;
         UI.renderWaitingArea();
         if (UI.selectedWaitingIdx >= 0) {
           UI._showDeployHighlights(Game.waitingUnits[UI.selectedWaitingIdx]);
+          UI.showWaitingUnitTooltip(Game.waitingUnits[UI.selectedWaitingIdx], ev);
         } else {
           UI._clearDeployHighlights();
+          UI.hideUnitTooltip();
         }
       }; }(i);
       area.appendChild(card);
