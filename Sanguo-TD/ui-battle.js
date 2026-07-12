@@ -125,24 +125,30 @@ UI.renderBattle = function() {
           div.ontouchstart = function(uObj, c, r) { return function(ev) {
             ev.preventDefault();
             ev.stopPropagation();
-            var tapStart = Date.now();
-            var tap = true;
-
-            function onCellMove(ev2) {
-              if (tap && Date.now() - tapStart > 200) {
-                tap = false;
-                document.removeEventListener('touchmove', onCellMove);
-                document.removeEventListener('touchend', onCellEnd);
-                UI.startBattleUnitDrag(uObj, ev.touches[0].clientX, ev.touches[0].clientY, ev.currentTarget);
-              }
-            }
-            function onCellEnd(ev2) {
+            var dragStarted = false;
+            var srcEl = ev.currentTarget;
+            var timer = setTimeout(function() {
+              if (dragStarted) return;
+              dragStarted = true;
               document.removeEventListener('touchmove', onCellMove);
               document.removeEventListener('touchend', onCellEnd);
-              if (tap) {
-                UI._touchHandled = Date.now();
-                UI.onCellClick(c, r);
-              }
+              UI.startBattleUnitDrag(uObj, ev.touches[0].clientX, ev.touches[0].clientY, srcEl);
+            }, 200);
+            function onCellMove(ev2) {
+              if (dragStarted) return;
+              dragStarted = true;
+              clearTimeout(timer);
+              document.removeEventListener('touchmove', onCellMove);
+              document.removeEventListener('touchend', onCellEnd);
+              UI.startBattleUnitDrag(uObj, ev2.touches[0].clientX, ev2.touches[0].clientY, srcEl);
+            }
+            function onCellEnd(ev2) {
+              if (dragStarted) return;
+              clearTimeout(timer);
+              document.removeEventListener('touchmove', onCellMove);
+              document.removeEventListener('touchend', onCellEnd);
+              UI._touchHandled = Date.now();
+              UI.onCellClick(c, r);
             }
             document.addEventListener('touchmove', onCellMove, {passive:true});
             document.addEventListener('touchend', onCellEnd);
@@ -1059,30 +1065,34 @@ UI.renderWaitingArea = function() {
       card.ontouchstart = function(idx, el) { return function(e) {
         e.preventDefault();
         e.stopPropagation();
-        var tapStart = Date.now();
         var dragStarted = false;
-
-        function onCardTouchMove(ev2) {
+        var timer = setTimeout(function() {
           if (dragStarted) return;
-          if (Date.now() - tapStart > 200) {
-            dragStarted = true;
-            document.removeEventListener('touchmove', onCardTouchMove);
-            document.removeEventListener('touchend', onCardTouchEnd);
-            UI.startDrag(idx, e.touches[0].clientX, e.touches[0].clientY, el);
-          }
-        }
-        function onCardTouchEnd(ev2) {
+          dragStarted = true;
           document.removeEventListener('touchmove', onCardTouchMove);
           document.removeEventListener('touchend', onCardTouchEnd);
-          if (!dragStarted) {
-            UI._touchHandled = Date.now();
-            UI.selectedWaitingIdx = (UI.selectedWaitingIdx === idx) ? -1 : idx;
-            UI.renderWaitingArea();
-            if (UI.selectedWaitingIdx >= 0) {
-              UI._showDeployHighlights(Game.waitingUnits[UI.selectedWaitingIdx]);
-            } else {
-              UI._clearDeployHighlights();
-            }
+          UI.startDrag(idx, e.touches[0].clientX, e.touches[0].clientY, el);
+        }, 200);
+        function onCardTouchMove(ev2) {
+          if (dragStarted) return;
+          dragStarted = true;
+          clearTimeout(timer);
+          document.removeEventListener('touchmove', onCardTouchMove);
+          document.removeEventListener('touchend', onCardTouchEnd);
+          UI.startDrag(idx, ev2.touches[0].clientX, ev2.touches[0].clientY, el);
+        }
+        function onCardTouchEnd(ev2) {
+          if (dragStarted) return;
+          clearTimeout(timer);
+          document.removeEventListener('touchmove', onCardTouchMove);
+          document.removeEventListener('touchend', onCardTouchEnd);
+          UI._touchHandled = Date.now();
+          UI.selectedWaitingIdx = (UI.selectedWaitingIdx === idx) ? -1 : idx;
+          UI.renderWaitingArea();
+          if (UI.selectedWaitingIdx >= 0) {
+            UI._showDeployHighlights(Game.waitingUnits[UI.selectedWaitingIdx]);
+          } else {
+            UI._clearDeployHighlights();
           }
         }
         document.addEventListener('touchmove', onCardTouchMove, {passive:true});
