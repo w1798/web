@@ -1518,6 +1518,33 @@ html, body {
   border-radius: 4px;
   color: #2ecc71;
 }
+.hc-deploy-btn {
+  flex-shrink: 0;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  background: rgba(46,204,113,0.2);
+  color: #2ecc71;
+  border-color: #2ecc71;
+  transition: 0.15s;
+  white-space: nowrap;
+}
+.hc-deploy-btn:active { transform: scale(0.92); }
+.hc-deploy-btn.deployed {
+  background: rgba(231,76,60,0.15);
+  color: #e74c3c;
+  border-color: #e74c3c;
+}
+.hc-body {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
 .hero-card {
   position: relative;
 }
@@ -1927,6 +1954,9 @@ html, body {
 
 /* ===== Mobile 手機 ===== */
 @media (max-width: 480px) {
+  .battle-hud {
+    padding-top: max(6px, env(safe-area-inset-top));
+  }
   .battle-grid {
     min-height: 0;
     max-height: 55vh;
@@ -1972,4 +2002,8 @@ html, body {
     font-size: 9px;
   }
   .hud-item { font-size: 12px; }
+  .gacha-bottom-bar .btn {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
 }

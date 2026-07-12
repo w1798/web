@@ -236,7 +236,7 @@ UI.renderHeroList = function() {
       var tierShow = TIER_NAMES[tier] + (tier >= 4 && star > 0 ? '+' + star + '⭐' : '');
 
       var card = document.createElement('div');
-      card.className = 'hero-card' + (deployed2 ? '' : ' not-deployed') + (canToggle ? ' clickable' : '');
+      card.className = 'hero-card' + (deployed2 ? '' : ' not-deployed');
 
       var nextPromo = getNextPromotion(hd.rarity, tier, star);
       var nextCost = nextPromo ? nextPromo.cost : 3;
@@ -266,55 +266,66 @@ UI.renderHeroList = function() {
         }
       }
 
-      card.innerHTML =
+      var cardBody = document.createElement('div');
+      cardBody.className = 'hc-body';
+      cardBody.innerHTML =
         '<div class="hc-emoji">' + hd.emoji + '</div>' +
         '<div class="hc-info">' +
            '<div class="hc-name-row"><span class="hc-name">' + hd.name + '</span><span class="hc-faction">[' + (FACTION_LABELS[hd.faction] || hd.faction) + ']</span><span class="hc-original-rarity" data-tip="原軍階" style="color:' + RARITY_COLORS[hd.rarity] + ';">' + RARITY_NAMES[hd.rarity] + '</span><span class="hc-rarity" data-tip="現軍階" style="color:' + TIER_COLORS[tier] + ';">' + tierShow + '</span><span class="hc-score">戰力 ' + getHeroScore(hd, tier, star, Service.getWeapon(hid)) + '分</span></div>' +
-          '<div class="hc-stats">' +
-            (function() {
-              var _w = Service.getWeapon(hid);
-              var _wAtkMult = (_w && _w.type === Service.getHeroWeaponType(hd)) ? (1 + (_w.atkPct || 0) / 100) : 1;
-              var _wHpMult = (_w && _w.type === Service.getHeroWeaponType(hd)) ? (1 + (_w.hpPct || 0) / 100) : 1;
-              var _wSpd = (_w && _w.type === Service.getHeroWeaponType(hd)) ? (_w.spd || 0) : 0;
-              var _baseAs = SOLDIER_TYPES[HERO_WEAPON[hd.type]] ? SOLDIER_TYPES[HERO_WEAPON[hd.type]].atkSpeed : 1;
-              var _wt = HERO_WEAPON[hd.type];
-              var _std = STANDARD_STATS[_wt];
-              var _offAtk = hd.baseAtk - _std.atk[hd.rarity];
-              var _offDef = hd.baseDef - _std.def[hd.rarity];
-              var _offHp = hd.baseHp - _std.hp[hd.rarity];
-              var _effAtk = (_std.atk[tier] + _offAtk) * _wAtkMult;
-              var _effDef = _std.def[tier] + _offDef;
-              var _effHp = (_std.hp[tier] + _offHp) * _wHpMult;
-              return '⚔️' + Math.floor(_effAtk * tm) +
-                ' 🛡' + Math.floor(_effDef * tm) +
-                ' ❤' + Math.floor(_effHp * tm) +
-                ' 🎯' + (SOLDIER_TYPES[HERO_WEAPON[hd.type]] ? SOLDIER_TYPES[HERO_WEAPON[hd.type]].range : '?') +
-                ' 🏃' + (_baseAs + (tier - 1) * 0.1 + _wSpd).toFixed(1) + '次/秒';
-            })() +
-          '</div>' +
-          (function() { var _w = Service.getWeapon(hid); if (!_w) return '<div class="hc-weapon">' + getWeaponAttackStr(HERO_WEAPON[hd.type]) + ' ' + hd.desc + '</div>'; var _qn = WEAPON_QUALITY[_w.quality] ? WEAPON_QUALITY[_w.quality].name : '?'; var _qc = WEAPON_QUALITY[_w.quality] ? WEAPON_QUALITY[_w.quality].color : '#888'; var _wt = WEAPON_TYPE_LABELS[_w.type] || '?'; var _s = '<span style="color:' + _qc + ';font-weight:bold;">[' + _qn + _wt + ']</span> ⚔+' + _w.atkPct + '%'; if (_w.hpPct) _s += ' ❤+' + _w.hpPct + '%'; if (_w.spd) _s += ' 🏃+' + _w.spd; return '<div class="hc-weapon">' + _s + '</div>'; })() +
-          (bondsHtml ? '<div class="hc-bonds">' + bondsHtml + '</div>' : '') +
-        '</div>';
+           '<div class="hc-stats">' +
+             (function() {
+               var _w = Service.getWeapon(hid);
+               var _wAtkMult = (_w && _w.type === Service.getHeroWeaponType(hd)) ? (1 + (_w.atkPct || 0) / 100) : 1;
+               var _wHpMult = (_w && _w.type === Service.getHeroWeaponType(hd)) ? (1 + (_w.hpPct || 0) / 100) : 1;
+               var _wSpd = (_w && _w.type === Service.getHeroWeaponType(hd)) ? (_w.spd || 0) : 0;
+               var _baseAs = SOLDIER_TYPES[HERO_WEAPON[hd.type]] ? SOLDIER_TYPES[HERO_WEAPON[hd.type]].atkSpeed : 1;
+               var _wt = HERO_WEAPON[hd.type];
+               var _std = STANDARD_STATS[_wt];
+               var _offAtk = hd.baseAtk - _std.atk[hd.rarity];
+               var _offDef = hd.baseDef - _std.def[hd.rarity];
+               var _offHp = hd.baseHp - _std.hp[hd.rarity];
+               var _effAtk = (_std.atk[tier] + _offAtk) * _wAtkMult;
+               var _effDef = _std.def[tier] + _offDef;
+               var _effHp = (_std.hp[tier] + _offHp) * _wHpMult;
+               return '⚔️' + Math.floor(_effAtk * tm) +
+                 ' 🛡' + Math.floor(_effDef * tm) +
+                 ' ❤' + Math.floor(_effHp * tm) +
+                 ' 🎯' + (SOLDIER_TYPES[HERO_WEAPON[hd.type]] ? SOLDIER_TYPES[HERO_WEAPON[hd.type]].range : '?') +
+                 ' 🏃' + (_baseAs + (tier - 1) * 0.1 + _wSpd).toFixed(1) + '次/秒';
+             })() +
+           '</div>' +
+           (function() { var _w = Service.getWeapon(hid); if (!_w) return '<div class="hc-weapon">' + getWeaponAttackStr(HERO_WEAPON[hd.type]) + ' ' + hd.desc + '</div>'; var _qn = WEAPON_QUALITY[_w.quality] ? WEAPON_QUALITY[_w.quality].name : '?'; var _qc = WEAPON_QUALITY[_w.quality] ? WEAPON_QUALITY[_w.quality].color : '#888'; var _wt = WEAPON_TYPE_LABELS[_w.type] || '?'; var _s = '<span style="color:' + _qc + ';font-weight:bold;">[' + _qn + _wt + ']</span> ⚔+' + _w.atkPct + '%'; if (_w.hpPct) _s += ' ❤+' + _w.hpPct + '%'; if (_w.spd) _s += ' 🏃+' + _w.spd; return '<div class="hc-weapon">' + _s + '</div>'; })() +
+           (bondsHtml ? '<div class="hc-bonds">' + bondsHtml + '</div>' : '') +
+         '</div>';
 
-      var info = card.querySelector('.hc-info');
+      var info = cardBody.querySelector('.hc-info');
       info.appendChild(fragBar);
       info.appendChild(fragLabel);
+      card.appendChild(cardBody);
 
-      if (deployed2) {
-        var tag = document.createElement('div');
-        tag.className = 'deploy-tag';
-        tag.textContent = '上陣中';
-        card.appendChild(tag);
-      }
-
+      /* 上陣/下陣按鈕 */
       if (canToggle) {
-        (function(id, isDep) {
-          card.onclick = function(ev) {
+        var deployBtn = document.createElement('button');
+        deployBtn.className = 'hc-deploy-btn' + (deployed2 ? ' deployed' : '');
+        deployBtn.textContent = deployed2 ? '下陣' : '上陣';
+        (function(id) {
+          deployBtn.onclick = function(ev) {
             ev.stopPropagation();
             Service.toggleDeploy(id);
             self.renderHeroList();
           };
-        })(hid, deployed2);
+        })(hid);
+        card.appendChild(deployBtn);
+      }
+
+      /* 整張卡片點擊（無按鈕時） */
+      if (canToggle) {
+        (function(id) {
+          card.onclick = function(ev) {
+            Service.toggleDeploy(id);
+            self.renderHeroList();
+          };
+        })(hid);
       }
 
       container.appendChild(card);

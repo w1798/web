@@ -81,6 +81,11 @@ UI.renderBattle = function() {
             ev.stopPropagation();
             UI.onCellClick(c, r);
           }; }(c, r);
+          div.ontouchstart = function(c, r) { return function(ev) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            UI.onCellClick(c, r);
+          }; }(c, r);
           div.onmouseenter = function(c, r) { return function(ev) {
             if (UI.selectedUnitIdx >= 0 && UI.selectedUnitIdx < Game.units.length) {
               var su = Game.units[UI.selectedUnitIdx];
@@ -920,3 +925,8 @@ UI.updateHUD = function() {
     var nameEl = document.getElementById('hud-stage-name');
     if (nameEl && Game.stage) nameEl.textContent = Game.stage.name;
   };
+
+/* 手機觸控：點擊畫面任一處隱藏資訊欄 */
+document.addEventListener('touchstart', function() {
+  UI.hideUnitTooltip();
+});

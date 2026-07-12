@@ -249,5 +249,26 @@ UI.doWeaponGacha10 = function() {
   };
 
 UI.doWeaponGacha100 = function() {
-    this.doWeaponGacha10();
+    var ws = Service.doMultiWeaponGacha ? Service.doMultiWeaponGacha(100) : [];
+    if (ws.length === 0) { this.showToast('黃金不足！'); return; }
+    var d = Service.appData;
+    document.getElementById('gacha-gold').textContent = d.gold;
+    var container = document.getElementById('gacha-result');
+    if (!container) return;
+    var counts = {};
+    for (var i = 0; i < ws.length; i++) {
+      var w = ws[i];
+      if (!w) continue;
+      var qn = WEAPON_QUALITY[w.quality] ? WEAPON_QUALITY[w.quality].name : '?';
+      counts[qn] = (counts[qn] || 0) + 1;
+    }
+    var parts = [];
+    var order = ['黃','紫','藍','白'];
+    for (var i = 0; i < order.length; i++) {
+      if (counts[order[i]]) parts.push(order[i] + ':' + counts[order[i]] + '把');
+    }
+    container.innerHTML = '<div style="padding:12px;color:#f0e6d0;font-size:15px;line-height:1.8;">' +
+      parts.join('　') +
+      '</div>';
+    this.renderGacha();
   };

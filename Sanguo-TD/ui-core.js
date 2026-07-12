@@ -190,6 +190,7 @@ var UI = {
   },
 
   exitBattle: function() {
+    if (!confirm('確定退出戰鬥？')) return;
     Game.battlePhase = 'idle';
     Game.paused = false;
     var overlay = document.getElementById('pause-overlay');
