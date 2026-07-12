@@ -16,6 +16,43 @@ UI.renderWeaponsList = function() {
       return;
     }
 
+    /* ===== 批次操作按鈕 ===== */
+    var actionRow = document.createElement('div');
+    actionRow.style.cssText = 'padding:8px 12px;display:flex;gap:8px;flex-wrap:wrap;';
+    var unequipAllBtn = document.createElement('span');
+    unequipAllBtn.className = 'weapon-recycle-btn';
+    unequipAllBtn.style.cssText = 'background:#2a2a1a;border-color:#5a5a2a;';
+    unequipAllBtn.textContent = '📥 全部放回倉庫';
+    unequipAllBtn.onclick = function() {
+      var cnt = 0;
+      for (var i = 0; i < d.ownedHeroes.length; i++) {
+        if (Service.getWeapon(d.ownedHeroes[i])) cnt++;
+      }
+      if (cnt === 0) { self.showToast('沒有已裝備的武器'); return; }
+      self.showConfirm('確定將全部 ' + cnt + ' 把武器放回倉庫？', function() {
+        Service.unequipAllToStorage();
+        self.showToast('已全部放回倉庫');
+        self.renderWeaponsList();
+      });
+    };
+    actionRow.appendChild(unequipAllBtn);
+    var autoBtn = document.createElement('span');
+    autoBtn.className = 'weapon-recycle-btn';
+    autoBtn.style.cssText = 'background:#1a3a1a;border-color:#2a6a2a;';
+    autoBtn.textContent = '⚡ 自動裝備';
+    autoBtn.onclick = function() {
+      if (!d.weaponStorage || d.weaponStorage.length === 0) { self.showToast('倉庫沒有武器'); return; }
+      var dep = Service.getDeployedHeroes();
+      if (dep.length === 0) { self.showToast('沒有已上陣的武將'); return; }
+      self.showConfirm('自動為已上陣武將裝備最佳武器？現有武器會重新分配。', function() {
+        Service.autoEquipBest();
+        self.showToast('自動裝備完成！');
+        self.renderWeaponsList();
+      });
+    };
+    actionRow.appendChild(autoBtn);
+    container.appendChild(actionRow);
+
     /* ===== 武將武器 ===== */
     if (d.ownedHeroes.length > 0) {
       var deployed = Service.getDeployedHeroes();

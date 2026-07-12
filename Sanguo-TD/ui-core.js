@@ -36,6 +36,7 @@ var UI = {
 
   /* ===== 畫面切換 ===== */
   showScreen: function(id) {
+    this.hideUnitTooltip();
     var all = document.querySelectorAll('.screen');
     for (var i = 0; i < all.length; i++) all[i].classList.remove('active');
     var el = document.getElementById(id);

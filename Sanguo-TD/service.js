@@ -556,6 +556,53 @@ var Service = {
     return gold;
   },
 
+  unequipAllToStorage: function() {
+    if (!this.appData.weaponStorage) this.appData.weaponStorage = [];
+    for (var i = 0; i < this.appData.ownedHeroes.length; i++) {
+      var hid = this.appData.ownedHeroes[i];
+      if (this.appData.weapons[hid]) {
+        this.appData.weaponStorage.push(this.appData.weapons[hid]);
+        delete this.appData.weapons[hid];
+      }
+    }
+    this.saveData();
+  },
+
+  autoEquipBest: function() {
+    if (!this.appData.weaponStorage) this.appData.weaponStorage = [];
+    for (var i = 0; i < this.appData.ownedHeroes.length; i++) {
+      var hid = this.appData.ownedHeroes[i];
+      if (this.appData.weapons[hid]) {
+        this.appData.weaponStorage.push(this.appData.weapons[hid]);
+        delete this.appData.weapons[hid];
+      }
+    }
+    var deployed = this.getDeployedHeroes();
+    deployed.sort(function(a, b) {
+      var ha = getHeroData(a), hb = getHeroData(b);
+      var ra = ha ? ha.rarity : 0, rb = hb ? hb.rarity : 0;
+      return rb - ra;
+    });
+    for (var j = 0; j < deployed.length; j++) {
+      var hid2 = deployed[j];
+      var hd = getHeroData(hid2);
+      if (!hd) continue;
+      var wType = this.getHeroWeaponType(hd);
+      var bestIdx = -1, bestQ = -1, bestAtk = -1;
+      for (var k = 0; k < this.appData.weaponStorage.length; k++) {
+        var w = this.appData.weaponStorage[k];
+        if (w.type !== wType) continue;
+        if (w.quality > bestQ || (w.quality === bestQ && (w.atkPct || 0) > bestAtk)) {
+          bestIdx = k; bestQ = w.quality; bestAtk = w.atkPct || 0;
+        }
+      }
+      if (bestIdx >= 0) {
+        this.appData.weapons[hid2] = this.appData.weaponStorage.splice(bestIdx, 1)[0];
+      }
+    }
+    this.saveData();
+  },
+
   getHeroWeaponType: function(hd) {
     var map = { warrior:'sword', spearman:'spear', archer:'bow', horse:'horse', mage:'mage', healer:'monk' };
     return map[hd.type] || 'sword';
