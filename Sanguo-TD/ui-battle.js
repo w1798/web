@@ -670,7 +670,6 @@ UI.startBattleUnitDrag = function(unitObj, cx, cy, el) {
     ghost.innerHTML = '<span>' + (unitObj.emoji || '?') + '</span><span class="unit-name-label" style="font-size:10px!important">' + (unitObj.isSoldier ? (unitObj.soldierName || '兵') : (unitObj.name || '').substring(0, 2)) + '</span>';
     document.body.appendChild(ghost);
     this.dragData = { unit: unitObj, ghost: ghost, startX: cx, startY: cy };
-    this.renderBattle();
     var wu = unitObj.isSoldier
       ? { soldierType: unitObj.soldierType, level: unitObj.level }
       : { type: 'hero', heroId: unitObj.heroId };
