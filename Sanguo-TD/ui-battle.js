@@ -536,7 +536,13 @@ UI.startDrag = function(idx, cx, cy, el) {
     document.body.appendChild(ghost);
     this.dragData = { idx: idx, ghost: ghost };
     this.selectedWaitingIdx = idx;
-    this.renderWaitingArea();
+    var wa = document.getElementById('waiting-area');
+    if (wa) {
+      var cards = wa.querySelectorAll('.waiting-card');
+      for (var ci = 0; ci < cards.length; ci++) {
+        cards[ci].className = 'waiting-card' + (ci === idx ? ' selected' : '');
+      }
+    }
     this._showDeployHighlights(Game.waitingUnits[idx]);
     var self = this;
 function onMove(e) {
@@ -1109,6 +1115,11 @@ UI.renderWaitingArea = function() {
         if (UI._touchHandled && (Date.now() - UI._touchHandled) < 500) { UI._touchHandled = 0; return; }
         UI.selectedWaitingIdx = (UI.selectedWaitingIdx === idx) ? -1 : idx;
         UI.renderWaitingArea();
+        if (UI.selectedWaitingIdx >= 0) {
+          UI._showDeployHighlights(Game.waitingUnits[UI.selectedWaitingIdx]);
+        } else {
+          UI._clearDeployHighlights();
+        }
       }; }(i);
       area.appendChild(card);
     }
