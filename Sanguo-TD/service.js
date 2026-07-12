@@ -471,14 +471,14 @@ var Service = {
   _generateWeaponStats: function(quality) {
     var atkPct = 0, hpPct = 0, spd = 0;
     if (quality === 1) {
-      atkPct = +(5.0 + Math.random() * 15.0).toFixed(1);
+      atkPct = +(0.1 + Math.random() * 19.9).toFixed(1);
     } else if (quality === 2) {
-      atkPct = +(5.0 + Math.random() * 20.0).toFixed(1);
-      hpPct = +(5.0 + Math.random() * 15.0).toFixed(1);
-    } else if (quality === 3) {
-      atkPct = +(5.0 + Math.random() * 30.0).toFixed(1);
+      atkPct = +(5.0 + Math.random() * 25.0).toFixed(1);
       hpPct = +(5.0 + Math.random() * 25.0).toFixed(1);
-      spd = +(0.01 + Math.random() * 0.49).toFixed(2);
+    } else if (quality === 3) {
+      atkPct = +(10.0 + Math.random() * 30.0).toFixed(1);
+      hpPct = +(10.0 + Math.random() * 30.0).toFixed(1);
+      spd = +(0.10 + Math.random() * 0.40).toFixed(2);
     } else if (quality === 4) {
       atkPct = +(0.1 + Math.random() * 49.9).toFixed(1);
       hpPct = +(0.1 + Math.random() * 49.9).toFixed(1);
