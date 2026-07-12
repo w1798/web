@@ -44,7 +44,7 @@ const CATEGORY_CONFIG = {
     daily: { label: '教學日常', filter: (item) => item.category === 'daily' },
     stage: { label: '階段任務', filter: (item) => item.category === 'stage' },
     doc: { label: '文件相關', filter: (item) => item.category === 'doc' },
-    game: { label: '教學遊戲', filter: (item) => item.category === 'game' },
+    game: { label: '好玩遊戲', filter: (item) => item.category === 'game' },
     tool: { label: '其他軟體', filter: (item) => item.category === 'tool' }
 };
 
