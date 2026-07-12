@@ -58,7 +58,10 @@ UI.renderBattle = function() {
     var el = document.getElementById('battle-grid');
     if (!el) return;
     var stale = document.querySelectorAll('.drag-ghost');
-    for (var si = 0; si < stale.length; si++) stale[si].remove();
+    var activeGhost = this.dragData && this.dragData.ghost;
+    for (var si = 0; si < stale.length; si++) {
+      if (stale[si] !== activeGhost) stale[si].remove();
+    }
     el.innerHTML = '';
     for (var _i = 0; _i < Game.units.length; _i++) { var _u = Game.units[_i]; _u.el = null; _u.gridEl = null; }
     for (var _i = 0; _i < Game.enemies.length; _i++) { var _e = Game.enemies[_i]; _e.el = null; }
@@ -278,6 +281,11 @@ UI.onCellClick = function(col, row) {
         this.hideHoverRange();
         this.selectUnitAt(col, row);
         this.showUnitTooltip(cell.unit);
+        var su = cell.unit;
+        var swu = su.isSoldier
+          ? { soldierType: su.soldierType, level: su.level }
+          : { type: 'hero', heroId: su.heroId };
+        this._showDeployHighlights(swu);
         return;
       }
       var ok = Game.moveUnit(u, col, row);
@@ -294,6 +302,11 @@ UI.onCellClick = function(col, row) {
     if (cell && cell.unit) {
       this.selectUnitAt(col, row);
       this.showUnitTooltip(cell.unit);
+      var u = cell.unit;
+      var wu = u.isSoldier
+        ? { soldierType: u.soldierType, level: u.level }
+        : { type: 'hero', heroId: u.heroId };
+      this._showDeployHighlights(wu);
       return;
     }
     if (cell && cell.isBuildable && !cell.isDug) {
@@ -656,7 +669,7 @@ UI.startBattleUnitDrag = function(unitObj, cx, cy, el) {
     ghost.style.cssText = 'position:fixed;left:' + cx + 'px;top:' + cy + 'px;transform:translate(-50%,-50%);width:56px;height:56px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:22px;background:rgba(0,0,0,0.8);border:2px solid #ffd700;border-radius:10px;padding:2px;pointer-events:none;z-index:9999;';
     ghost.innerHTML = '<span>' + (unitObj.emoji || '?') + '</span><span class="unit-name-label" style="font-size:10px!important">' + (unitObj.isSoldier ? (unitObj.soldierName || '兵') : (unitObj.name || '').substring(0, 2)) + '</span>';
     document.body.appendChild(ghost);
-    this.dragData = { unit: unitObj, ghost: ghost };
+    this.dragData = { unit: unitObj, ghost: ghost, startX: cx, startY: cy };
     this.renderBattle();
     var wu = unitObj.isSoldier
       ? { soldierType: unitObj.soldierType, level: unitObj.level }
@@ -709,6 +722,21 @@ UI.startBattleUnitDrag = function(unitObj, cx, cy, el) {
         var cx3 = e.clientX || (e.changedTouches && e.changedTouches[0].clientX);
         var cy3 = e.clientY || (e.changedTouches && e.changedTouches[0].clientY);
         if (cx3 == null || !last) return;
+        var dx = cx3 - last.startX;
+        var dy = cy3 - last.startY;
+        if (dx * dx + dy * dy < 400) {
+          self.selectedUnitIdx = -1;
+          for (var ui = 0; ui < Game.units.length; ui++) {
+            if (Game.units[ui] === last.unit) { self.selectedUnitIdx = ui; break; }
+          }
+          self.renderBattle();
+          self.showUnitTooltip(last.unit);
+          var wu = last.unit.isSoldier
+            ? { soldierType: last.unit.soldierType, level: last.unit.level }
+            : { type: 'hero', heroId: last.unit.heroId };
+          self._showDeployHighlights(wu);
+          return;
+        }
         e.stopPropagation();
         e.preventDefault();
         var target = document.elementFromPoint(cx3, cy3);
