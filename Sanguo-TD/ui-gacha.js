@@ -104,7 +104,7 @@ UI.showGachaHeroInfo = function(hero, rateInfo) {
 
     var weaponLabel = getWeaponAttackStr(HERO_WEAPON[hero.type]);
     var heroRange = SOLDIER_TYPES[HERO_WEAPON[hero.type]] ? SOLDIER_TYPES[HERO_WEAPON[hero.type]].range : 1;
-    var heroSpd = SOLDIER_TYPES[HERO_WEAPON[hero.type]] ? (SOLDIER_TYPES[HERO_WEAPON[hero.type]].atkSpeed + (hero.rarity - 1) * 0.1).toFixed(1) : '1.0';
+    var heroSpd = SOLDIER_TYPES[HERO_WEAPON[hero.type]] ? (SOLDIER_TYPES[HERO_WEAPON[hero.type]].atkSpeed + (hero.rarity - 1) * 0.1).toFixed(2) : '1.00';
 
     var panel = document.createElement('div');
     panel.id = 'gacha-hero-panel';
@@ -218,7 +218,7 @@ UI.doWeaponGacha = function() {
     if (!container) return;
     container.innerHTML = '<div class="gacha-card" style="border:2px solid ' + qc + ';">' +
       '<div class="gc-rarity" style="color:' + qc + ';">[' + qn + wt + ']</div>' +
-      '<div class="gc-name">⚔+' + w.atkPct + '%' + (w.hpPct ? ' ❤+' + w.hpPct + '%' : '') + (w.spd ? ' 🏃+' + w.spd : '') + '</div>' +
+      '<div class="gc-name">⚔+' + w.atkPct + '%' + (w.hpPct ? ' ❤+' + w.hpPct + '%' : '') + (w.spd ? ' 🏃+' + (w.spd || 0).toFixed(2) : '') + '</div>' +
       '</div>';
     this.renderGacha();
   };

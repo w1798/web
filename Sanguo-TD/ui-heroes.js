@@ -291,10 +291,10 @@ UI.renderHeroList = function() {
                  ' 🛡' + Math.floor(_effDef * tm) +
                  ' ❤' + Math.floor(_effHp * tm) +
                  ' 🎯' + (SOLDIER_TYPES[HERO_WEAPON[hd.type]] ? SOLDIER_TYPES[HERO_WEAPON[hd.type]].range : '?') +
-                 ' 🏃' + (_baseAs + (tier - 1) * 0.1 + _wSpd).toFixed(1) + '次/秒';
+                 ' 🏃' + (_baseAs + (tier - 1) * 0.1 + _wSpd).toFixed(2) + '次/秒';
              })() +
            '</div>' +
-           (function() { var _w = Service.getWeapon(hid); if (!_w) return '<div class="hc-weapon">' + getWeaponAttackStr(HERO_WEAPON[hd.type]) + ' ' + hd.desc + '</div>'; var _qn = WEAPON_QUALITY[_w.quality] ? WEAPON_QUALITY[_w.quality].name : '?'; var _qc = WEAPON_QUALITY[_w.quality] ? WEAPON_QUALITY[_w.quality].color : '#888'; var _wt = WEAPON_TYPE_LABELS[_w.type] || '?'; var _s = '<span style="color:' + _qc + ';font-weight:bold;">[' + _qn + _wt + ']</span> ⚔+' + _w.atkPct + '%'; if (_w.hpPct) _s += ' ❤+' + _w.hpPct + '%'; if (_w.spd) _s += ' 🏃+' + _w.spd; return '<div class="hc-weapon">' + _s + '</div>'; })() +
+           (function() { var _w = Service.getWeapon(hid); if (!_w) return '<div class="hc-weapon">' + getWeaponAttackStr(HERO_WEAPON[hd.type]) + ' ' + hd.desc + '</div>'; var _qn = WEAPON_QUALITY[_w.quality] ? WEAPON_QUALITY[_w.quality].name : '?'; var _qc = WEAPON_QUALITY[_w.quality] ? WEAPON_QUALITY[_w.quality].color : '#888'; var _wt = WEAPON_TYPE_LABELS[_w.type] || '?'; var _s = '<span style="color:' + _qc + ';font-weight:bold;">[' + _qn + _wt + ']</span> ⚔+' + _w.atkPct + '%'; if (_w.hpPct) _s += ' ❤+' + _w.hpPct + '%'; if (_w.spd) _s += ' 🏃+' + (_w.spd || 0).toFixed(2); return '<div class="hc-weapon">' + _s + '</div>'; })() +
            (bondsHtml ? '<div class="hc-bonds">' + bondsHtml + '</div>' : '') +
          '</div>';
 

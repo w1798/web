@@ -478,11 +478,11 @@ var Service = {
     } else if (quality === 3) {
       atkPct = +(5.0 + Math.random() * 30.0).toFixed(1);
       hpPct = +(5.0 + Math.random() * 25.0).toFixed(1);
-      spd = +(0.1 + Math.random() * 0.4).toFixed(1);
+      spd = +(0.01 + Math.random() * 0.49).toFixed(2);
     } else if (quality === 4) {
       atkPct = +(0.1 + Math.random() * 49.9).toFixed(1);
       hpPct = +(0.1 + Math.random() * 49.9).toFixed(1);
-      spd = +(0.1 + Math.random() * 0.9).toFixed(1);
+      spd = +(0.01 + Math.random() * 0.99).toFixed(2);
     }
     return { atkPct: atkPct, hpPct: hpPct, spd: spd };
   },

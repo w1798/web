@@ -93,7 +93,7 @@ UI.renderWeaponsList = function() {
           var stats = '<span style="color:' + qColor + ';font-weight:bold;">[' + qName + ']</span> ';
           stats += '⚔+' + (w.atkPct || 0).toFixed(1) + '%';
           if (w.hpPct) stats += ' ❤+' + (w.hpPct || 0).toFixed(1) + '%';
-          if (w.spd) stats += ' 🏃+' + (w.spd || 0).toFixed(1);
+          if (w.spd) stats += ' 🏃+' + (w.spd || 0).toFixed(2);
           card.innerHTML = heroInfo + '<div class="wc-weapon">' + wIcon + ' ' + stats + '</div>';
           var btnRow = document.createElement('div');
           btnRow.className = 'weapon-btn-row';
@@ -310,7 +310,7 @@ UI.renderWeaponsList = function() {
           stats += wIcon + ' ' + wLabel + ' ';
           stats += '⚔+' + (w.atkPct || 0).toFixed(1) + '%';
           if (w.hpPct) stats += ' ❤+' + (w.hpPct || 0).toFixed(1) + '%';
-          if (w.spd) stats += ' 🏃+' + (w.spd || 0).toFixed(1);
+          if (w.spd) stats += ' 🏃+' + (w.spd || 0).toFixed(2);
           card.innerHTML = '<div class="wc-weapon">' + stats + '</div>';
           var btnRow = document.createElement('div');
           btnRow.className = 'weapon-btn-row';
@@ -384,7 +384,7 @@ UI.showWeaponEquipDialog = function(storageIndex, candidates) {
     html += '<div style="text-align:center;font-size:18px;font-weight:bold;margin-bottom:12px;color:' + qColor + ';">' + wIcon + ' 選擇裝備武將</div>';
     html += '<div style="text-align:center;font-size:14px;margin-bottom:8px;color:#c0b0a0;">[' + qName + '] ' + wLabel + ' 武器 ⚔+' + (w.atkPct || 0).toFixed(1) + '%';
     if (w.hpPct) html += ' ❤+' + (w.hpPct || 0).toFixed(1) + '%';
-    if (w.spd) html += ' 🏃+' + (w.spd || 0).toFixed(1);
+    if (w.spd) html += ' 🏃+' + (w.spd || 0).toFixed(2);
     html += '</div>';
     html += '<div style="max-height:300px;overflow-y:auto;">';
     var deployed = Service.getDeployedHeroes();
@@ -415,7 +415,7 @@ UI.showWeaponEquipDialog = function(storageIndex, candidates) {
         var hqColor = WEAPON_QUALITY[hasW.quality] ? WEAPON_QUALITY[hasW.quality].color : '#888';
         html += '<span style="font-size:12px;color:' + hqColor + ';">(' + hqName + ' ⚔+' + (hasW.atkPct || 0).toFixed(1) + '%';
         if (hasW.hpPct) html += ' ❤+' + (hasW.hpPct || 0).toFixed(1) + '%';
-        if (hasW.spd) html += ' 🏃+' + (hasW.spd || 0).toFixed(1);
+        if (hasW.spd) html += ' 🏃+' + (hasW.spd || 0).toFixed(2);
         html += ')</span>';
       }
       html += '<span style="font-size:12px;color:' + TIER_COLORS[tier] + ';margin-left:auto;">' + TIER_NAMES[tier] + '</span>';
@@ -485,7 +485,7 @@ UI.showWeaponTransferDialog = function(fromHeroId, candidates) {
     html += '<div style="text-align:center;font-size:13px;margin-bottom:4px;color:#c0b0a0;">' + (fromHero ? fromHero.emoji + ' ' + fromHero.name : fromHeroId) + ' → ？</div>';
     html += '<div style="text-align:center;font-size:13px;margin-bottom:10px;color:#c0b0a0;">[' + qName + '] ' + wLabel + ' ⚔+' + (w.atkPct || 0).toFixed(1) + '%';
     if (w.hpPct) html += ' ❤+' + (w.hpPct || 0).toFixed(1) + '%';
-    if (w.spd) html += ' 🏃+' + (w.spd || 0).toFixed(1);
+    if (w.spd) html += ' 🏃+' + (w.spd || 0).toFixed(2);
     html += '</div>';
     html += '<div style="max-height:250px;overflow-y:auto;">';
     var deployed2 = Service.getDeployedHeroes();

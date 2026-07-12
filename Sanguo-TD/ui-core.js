@@ -166,7 +166,7 @@ var UI = {
       html += wIcon + ' ' + wLabel + '武器 <span style="color:' + qColor + ';font-weight:bold;">[' + qName + ']</span> 掉落！';
       html += '<br><span style="font-size:12px;">⚔+' + weapon.atkPct + '%';
       if (weapon.hpPct) html += ' ❤+' + weapon.hpPct + '%';
-      if (weapon.spd) html += ' 🏃+' + weapon.spd;
+      if (weapon.spd) html += ' 🏃+' + (weapon.spd || 0).toFixed(2);
       html += '　<span style="color:#8a7a20;">已存入倉庫</span></span></div>';
     }
     if (extraWeapons && extraWeapons.length) {
@@ -180,7 +180,7 @@ var UI = {
         html += '🎁 ' + ewIcon + ' ' + ewLabel + '武器 <span style="color:' + eqColor + ';font-weight:bold;">[' + eqName + ']</span> 首通獎勵！';
         html += '<br><span style="font-size:12px;">⚔+' + ew.atkPct + '%';
         if (ew.hpPct) html += ' ❤+' + ew.hpPct + '%';
-        if (ew.spd) html += ' 🏃+' + ew.spd;
+        if (ew.spd) html += ' 🏃+' + (ew.spd || 0).toFixed(2);
         html += '　<span style="color:#8a7a20;">已存入倉庫</span></span></div>';
       }
     }
