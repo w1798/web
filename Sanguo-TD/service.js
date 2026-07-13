@@ -21,7 +21,9 @@ var DEFAULT_DATA = {
   depositedGold: 0,
   settings: {},
   weapons: {},
-  weaponStorage: []
+  weaponStorage: [],
+  playerName: '',
+  lastScoreUploadTime: 0
 };
 
 var Service = {
@@ -91,6 +93,7 @@ var Service = {
         d.weaponStorage.push(w);
       }
     }
+    if (typeof data.playerName === 'string') d.playerName = data.playerName;
     return d;
   },
 

@@ -6,8 +6,12 @@
 <meta name="screen-orientation" content="portrait">
 <meta name="x5-orientation" content="portrait">
 <title>三國 RPG 塔防</title>
+<link rel="icon" href="favicon.ico">
 <style>html{visibility:hidden}</style>
-<script>var APP_VER='1.7.1',APP_JSX='vanilla';</script>
+<script>var APP_VER='1.7.2',APP_JSX='vanilla';</script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="../loader_engine.js?ver=1.0.0"></script>
 </head>
 <body>
@@ -25,6 +29,7 @@
         <button class="btn btn-secondary" onclick="UI.showGacha()">招 募</button>
         <button class="btn btn-secondary" onclick="UI.showHeroes()" style="background:linear-gradient(135deg,#2c3e50,#34495e)">🦸 武 將</button>
         <button class="btn btn-secondary" onclick="UI.showWeapons()" style="background:linear-gradient(135deg,#5a2a3a,#7a3a4a)">🗡️ 武 器</button>
+        <button id="lb-menu-btn" class="btn btn-primary" onclick="UI.showLeaderboard()" style="background:linear-gradient(135deg,#b8860b,#daa520)">🏆 排行榜</button>
         <button class="btn btn-small" onclick="UI.showSettings()">⚙️ 設 定</button>
       </div>
       <div class="menu-info">
@@ -150,6 +155,31 @@
     <div class="weapons-list" id="weapons-list"></div>
   </div>
 
+  <!-- 排行榜 -->
+  <div id="screen-leaderboard" class="screen">
+    <div class="screen-header">
+      <button class="btn-back" onclick="UI.showMenu()">←</button>
+      <h2>🏆 排行榜</h2>
+    </div>
+    <div class="leaderboard-content" id="leaderboard-content"></div>
+  </div>
+
+  <!-- 姓名輸入彈窗 -->
+  <div id="name-dialog" class="modal-overlay" style="display:none;">
+    <div class="modal-box name-dialog-box">
+      <div class="modal-header">
+        <h3>請輸入排行榜名稱</h3>
+      </div>
+      <div class="modal-body">
+        <input id="name-input" type="text" maxlength="10" placeholder="最多10字" style="width:100%;padding:10px;font-size:16px;border:1px solid #5a3a20;border-radius:6px;background:#2d1810;color:#f0e6d0;">
+        <div style="margin-top:12px;display:flex;gap:8px;justify-content:center;">
+          <button class="btn btn-primary" style="min-width:auto;padding:10px 24px;" onclick="UI.submitPlayerName()">確認</button>
+          <button class="btn btn-small" onclick="UI.closeNameDialog()">取消</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- 設定 -->
   <div id="screen-settings" class="screen">
     <div class="screen-header">
@@ -171,6 +201,24 @@
           <span class="toggle-slider"></span>
         </label>
       </div>
+      <div class="settings-item" style="cursor:pointer;" onclick="UI.showNameDialog()">
+        <span>排行榜名稱</span>
+        <span><span id="setting-lb-name" style="color:#ffd700;">(未設定)</span> <span style="color:#8a7a6a;font-size:12px;">[修改]</span></span>
+      </div>
+      <div class="settings-section-title">雲端存檔</div>
+      <div class="settings-item">
+        <span>復原名稱</span>
+        <input id="cloud-name" type="text" maxlength="10" placeholder="玩家名稱" style="width:120px;">
+      </div>
+      <div class="settings-item">
+        <span>復原密碼</span>
+        <input id="cloud-password" type="password" placeholder="輸入密碼" style="width:120px;">
+      </div>
+      <div style="display:flex;gap:8px;justify-content:center;margin:10px 0;">
+        <button class="btn btn-secondary btn-sm" onclick="UI.cloudUpload()">上傳存檔</button>
+        <button class="btn btn-secondary btn-sm" onclick="UI.cloudDownload()">下載存檔</button>
+      </div>
+      <div id="cloud-status" style="font-size:12px;color:#8a7a6a;text-align:center;margin:0 0 8px 0;"></div>
       <button class="btn btn-danger" onclick="UI.showResetConfirm()">重置所有資料</button>
     </div>
   </div>

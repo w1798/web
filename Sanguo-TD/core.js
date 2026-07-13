@@ -577,6 +577,9 @@ var Game = {
       }
       Service.saveData();
     }
+    if (Service.appData.playerName) {
+      UI.uploadCurrentScore();
+    }
     UI.showResult(true, gold, weapon, extraWeapons);
   },
 

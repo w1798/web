@@ -13,6 +13,7 @@ var UI = {
     Service.loadData();
     Service.getStamina();
     Sound.init();
+    LeaderboardAPI.init();
     this.showMenu();
     Game.start();
     this.updateMenuInfo();
@@ -47,6 +48,22 @@ var UI = {
     this.showScreen('screen-menu');
     this.updateMenuInfo();
     Game.state = 'menu';
+    if (!DEV_MODE) {
+      var now = Date.now();
+      if (!Service.appData.playerName) {
+        this._nameDialogMode = 'firstTime';
+        document.getElementById('name-dialog').style.display = 'flex';
+        document.getElementById('name-input').value = '';
+        var self = this;
+        setTimeout(function() { document.getElementById('name-input').focus(); }, 100);
+        return;
+      }
+      if (now - (Service.appData.lastScoreUploadTime || 0) > 120000) {
+        this.uploadCurrentScore(true);
+        Service.appData.lastScoreUploadTime = now;
+        Service.saveData();
+      }
+    }
   },
 
   showCampaign: function() {
@@ -105,6 +122,13 @@ var UI = {
     if (devItem) devItem.style.display = DEV_MODE ? '' : 'none';
     var devToggle = document.getElementById('setting-dev');
     if (devToggle) devToggle.checked = DEV_MODE;
+    var lbNameEl = document.getElementById('setting-lb-name');
+    if (lbNameEl) lbNameEl.textContent = Service.appData.playerName || '(未設定)';
+    var cloudNameEl = document.getElementById('cloud-name');
+    if (cloudNameEl) cloudNameEl.value = Service.appData.playerName || '';
+    var cloudStatusEl = document.getElementById('cloud-status');
+    if (cloudStatusEl) cloudStatusEl.textContent = '';
+    document.getElementById('cloud-password').value = '';
   },
 
   toggleSound: function(on) {
@@ -359,5 +383,253 @@ var UI = {
       '<div style="font-size:13px;color:#8a7a6a;">所屬：' + hd.faction + '</div>' +
       '<div style="font-size:13px;margin-top:6px;">' + hd.desc + '</div>';
     document.body.appendChild(panel);
+  },
+
+  /* ===== 排行榜 ===== */
+  showLeaderboard: function() {
+    this.showScreen('screen-leaderboard');
+    Game.state = 'leaderboard';
+    var self = this;
+    if (!DEV_MODE) {
+      if (!Service.appData.playerName) {
+        this._nameDialogMode = 'firstTime';
+        document.getElementById('name-dialog').style.display = 'flex';
+        document.getElementById('name-input').value = '';
+        var self = this;
+        setTimeout(function() { document.getElementById('name-input').focus(); }, 100);
+        return;
+      }
+      var now = Date.now();
+      var last = Service.appData.lastScoreUploadTime || 0;
+      if (now - last > 120000) {
+        self.uploadCurrentScore(true);
+        Service.appData.lastScoreUploadTime = now;
+        Service.saveData();
+      }
+    }
+    this.renderLeaderboard();
+  },
+
+  showNameDialog: function() {
+    this._nameDialogMode = 'edit';
+    document.getElementById('name-dialog').style.display = 'flex';
+    document.getElementById('name-input').value = Service.appData.playerName || '';
+    var self = this;
+    setTimeout(function() { document.getElementById('name-input').focus(); }, 100);
+  },
+  closeNameDialog: function() {
+    document.getElementById('name-dialog').style.display = 'none';
+    if (this._nameDialogMode === 'firstTime') {
+      var rand = 'user' + Math.floor(Math.random() * 90000 + 10000);
+      document.getElementById('name-input').value = rand;
+      this.submitPlayerName();
+    }
+  },
+
+  submitPlayerName: function() {
+    if (DEV_MODE) { this.showToast('本機模式無法設定排行榜'); return; }
+    var name = document.getElementById('name-input').value.trim();
+    if (!name) { this.showToast('請輸入名稱'); return; }
+    if (name.length > 10) { this.showToast('名稱最多10字'); return; }
+    var badWords = ['幹','操','屌','肏','fuck','shit','ass','bitch','王八','垃圾','白痴','智障'];
+    for (var b = 0; b < badWords.length; b++) {
+      if (name.indexOf(badWords[b]) !== -1) { this.showToast('名稱包含不雅字詞'); return; }
+    }
+    var self = this;
+    LeaderboardAPI.checkNameExists(name, function(exists) {
+      if (exists) {
+        if (self._nameDialogMode === 'edit') {
+          document.getElementById('name-dialog').style.display = 'none';
+          self.showToast('已有相同的名字');
+          return;
+        }
+        var rand = 'user' + Math.floor(Math.random() * 90000 + 10000);
+        Service.appData.playerName = rand;
+        Service.saveData();
+        document.getElementById('name-dialog').style.display = 'none';
+        var lbNameEl = document.getElementById('setting-lb-name');
+        if (lbNameEl) lbNameEl.textContent = rand;
+        self.showToast('此名稱已有人使用，已為您取名：' + rand);
+        self.uploadCurrentScore();
+        self.renderLeaderboard();
+        return;
+      }
+      Service.appData.playerName = name;
+      Service.saveData();
+      document.getElementById('name-dialog').style.display = 'none';
+      var lbNameEl = document.getElementById('setting-lb-name');
+      if (lbNameEl) lbNameEl.textContent = name;
+      self.showToast('名稱已設定：' + name);
+      self.uploadCurrentScore();
+      self.renderLeaderboard();
+    });
+  },
+
+  uploadCurrentScore: function(silent) {
+    if (DEV_MODE) return;
+    var name = Service.appData.playerName;
+    if (!name) {
+      document.getElementById('name-dialog').style.display = 'flex';
+      return;
+    }
+    var deployed = Service.getDeployedHeroes();
+    var heroes = [];
+    var totalScore = 0;
+    for (var i = 0; i < deployed.length; i++) {
+      var hid = deployed[i];
+      var hd = getHeroData(hid);
+      if (!hd) continue;
+      var tier = Service.getHeroTier(hid);
+      var star = Service.getHeroStar(hid);
+      var w = Service.getWeapon(hid);
+      var score = getHeroScore(hd, tier, star, w);
+      totalScore += score;
+      var tierShow = TIER_NAMES[tier] + (tier >= 4 && star > 0 ? '+' + star + '⭐' : '');
+      var wInfo = {};
+      if (w) {
+        wInfo = {
+          qualityName: WEAPON_QUALITY[w.quality] ? WEAPON_QUALITY[w.quality].name : '?',
+          qualityColor: WEAPON_QUALITY[w.quality] ? WEAPON_QUALITY[w.quality].color : '#fff',
+          typeLabel: WEAPON_TYPE_LABELS[w.type] || '?',
+          typeIcon: WEAPON_TYPE_ICONS[w.type] || '?',
+          atkPct: w.atkPct,
+          hpPct: w.hpPct,
+          spd: w.spd
+        };
+      }
+      heroes.push({
+        name: hd.name,
+        emoji: hd.emoji,
+        tierShow: tierShow,
+        heroScore: score,
+        weapon: wInfo
+      });
+    }
+    var self = this;
+    LeaderboardAPI.submitScore(name, totalScore, heroes, function(ok) {
+      if (ok) { if (!silent) self.showToast('戰力已上傳！'); }
+      else if (!silent) self.showToast('上傳失敗，請稍後再試');
+    });
+  },
+
+  /* ===== 雲端存檔 ===== */
+  cloudUpload: function() {
+    if (DEV_MODE) { this.showToast('本機模式無法使用雲端存檔'); return; }
+    var password = document.getElementById('cloud-password').value;
+    if (!password) { this.showToast('請輸入密碼'); return; }
+    var name = Service.appData.playerName;
+    if (!name) { this.showToast('請先設定排行榜名稱'); return; }
+    var self = this;
+    var statusEl = document.getElementById('cloud-status');
+    statusEl.textContent = '⏳ 加密上傳中...';
+    CloudSaveAPI.checkExists(name).then(function(exists) {
+      if (exists && !confirm('已有存檔，確定覆蓋？')) {
+        statusEl.textContent = '';
+        return;
+      }
+      CloudSaveAPI.upload(name, Service.appData, password).then(function(ok) {
+        statusEl.textContent = ok ? '✅ 上傳成功' : '❌ 上傳失敗';
+        if (ok) self.showToast('雲端存檔上傳成功');
+      });
+    });
+  },
+
+  cloudDownload: function() {
+    if (DEV_MODE) { this.showToast('本機模式無法使用雲端存檔'); return; }
+    var name = document.getElementById('cloud-name').value.trim();
+    var password = document.getElementById('cloud-password').value;
+    if (!name || !password) { this.showToast('請輸入名稱和密碼'); return; }
+    var statusEl = document.getElementById('cloud-status');
+    statusEl.textContent = '⏳ 解密下載中...';
+    var self = this;
+    CloudSaveAPI.download(name, password).then(function(result) {
+      if (!result.ok) {
+        var msg = result.reason === 'not_found' ? '❌ 無此存檔' : '❌ 密碼錯誤';
+        statusEl.textContent = msg;
+        self.showToast(msg);
+        return;
+      }
+      Service.appData = Service.mergeDefaults(result.data);
+      Service.getStamina();
+      Service.saveData();
+      var lbNameEl = document.getElementById('setting-lb-name');
+      if (lbNameEl) lbNameEl.textContent = Service.appData.playerName || '(未設定)';
+      document.getElementById('cloud-name').value = Service.appData.playerName || '';
+      statusEl.textContent = '✅ 下載成功，請重整頁面';
+      self.showToast('下載成功，請重整頁面');
+    });
+  },
+
+  renderLeaderboard: function() {
+    var container = document.getElementById('leaderboard-content');
+    container.innerHTML = '<div style="text-align:center;padding:20px;color:#8a7a6a;">載入中...</div>';
+    LeaderboardAPI.getLeaderboard(50, function(list) {
+      if (!list || list.length === 0) {
+        container.innerHTML = '<div style="text-align:center;padding:40px;color:#8a7a6a;">尚無排行資料</div>';
+        return;
+      }
+      var dedup = {};
+      for (var di = 0; di < list.length; di++) {
+        var e = list[di];
+        var key = e.playerName;
+        var existing = dedup[key];
+        if (!existing) { dedup[key] = e; continue; }
+        var eTime = e.updatedAt && e.updatedAt.toDate ? e.updatedAt.toDate().getTime() : 0;
+        var xTime = existing.updatedAt && existing.updatedAt.toDate ? existing.updatedAt.toDate().getTime() : 0;
+        if (eTime > xTime) dedup[key] = e;
+      }
+      var unique = [];
+      for (var k in dedup) unique.push(dedup[k]);
+      unique.sort(function(a,b) { return (b.totalScore||0) - (a.totalScore||0); });
+      var html = '';
+      for (var i = 0; i < unique.length; i++) {
+        var entry = unique[i];
+        var rank = i + 1;
+        var medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank;
+        var isMe = entry.playerName === Service.appData.playerName;
+        html += '<div class="lb-entry' + (isMe ? ' lb-me' : '') + '" onclick="UI.toggleLbDetail(this)">';
+        html += '<div class="lb-rank">' + medal + '</div>';
+        html += '<div class="lb-info">';
+        html += '<div class="lb-name">' + entry.playerName + '</div>';
+        html += '<div class="lb-score">戰力 ' + (entry.totalScore || 0) + '</div>';
+        if (entry.updatedAt) {
+          var d = entry.updatedAt.toDate ? entry.updatedAt.toDate() : new Date(entry.updatedAt);
+          html += '<div class="lb-time">🕐 ' + d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate() + ' ' + ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2) + '</div>';
+        }
+        html += '</div>';
+        html += '<div class="lb-detail" style="display:none;">';
+        if (entry.heroes && entry.heroes.length) {
+          for (var j = 0; j < entry.heroes.length; j++) {
+            var h = entry.heroes[j];
+            html += '<div class="lb-hero-row">';
+            html += '<span>' + (h.emoji || '') + ' ' + (h.name || '') + '</span>';
+            html += '<span style="color:#9b59b6;">' + (h.tierShow || '') + '</span>';
+            html += '<span style="color:#ffd700;">' + (h.heroScore || 0) + '</span>';
+            if (h.weapon && h.weapon.typeLabel) {
+              var w = h.weapon;
+              html += '<div class="lb-weapon">';
+              html += w.typeIcon + ' <span style="color:' + w.qualityColor + ';">' + w.qualityName + w.typeLabel + '</span>';
+              html += ' <span style="color:#e74c3c;">攻+' + (w.atkPct || 0) + '%</span>';
+              html += ' <span style="color:#27ae60;">血+' + (w.hpPct || 0) + '%</span>';
+              html += ' <span style="color:#f39c12;">速+' + (w.spd ? w.spd.toFixed(2) : '0.00') + '</span>';
+              html += '</div>';
+            }
+            html += '</div>';
+          }
+        }
+        html += '</div>';
+        html += '</div>';
+      }
+      container.innerHTML = html;
+    });
+  },
+
+  toggleLbDetail: function(el) {
+    var detail = el.querySelector('.lb-detail');
+    if (!detail) return;
+    var show = detail.style.display === 'none';
+    detail.style.display = show ? 'block' : 'none';
+    if (show) el.classList.add('open');
+    else el.classList.remove('open');
   }
 };
