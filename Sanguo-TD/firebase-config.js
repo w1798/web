@@ -204,5 +204,13 @@ var CloudSaveAPI = {
     } catch(e) {
       return {ok:false, reason:'wrong_password'};
     }
+  },
+
+  deleteDoc: async function(playerName) {
+    if (!LeaderboardAPI.db) return false;
+    try {
+      await LeaderboardAPI.db.collection('saves').doc(playerName).delete();
+      return true;
+    } catch(e) { return false; }
   }
 };

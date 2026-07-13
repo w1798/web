@@ -512,13 +512,14 @@ var UI = {
     });
   },
 
-  /* ===== 雲端存檔 ===== */
+  /* ===== 資料轉移 ===== */
   cloudUpload: function() {
-    if (DEV_MODE) { this.showToast('本機模式無法使用雲端存檔'); return; }
+    if (DEV_MODE) { this.showToast('本機模式無法使用資料轉移'); return; }
     var password = document.getElementById('cloud-password').value;
     if (!password) { this.showToast('請輸入密碼'); return; }
     var name = Service.appData.playerName;
     if (!name) { this.showToast('請先設定排行榜名稱'); return; }
+    if (!confirm('確定要將本裝置資料轉移到雲端？(本裝置資料會清除！)')) return;
     var self = this;
     var statusEl = document.getElementById('cloud-status');
     statusEl.textContent = '⏳ 加密上傳中...';
@@ -528,17 +529,26 @@ var UI = {
         return;
       }
       CloudSaveAPI.upload(name, Service.appData, password).then(function(ok) {
-        statusEl.textContent = ok ? '✅ 上傳成功' : '❌ 上傳失敗';
-        if (ok) self.showToast('雲端存檔上傳成功');
+        if (ok) {
+          statusEl.textContent = '✅ 上傳成功，本地資料已清除';
+          self.showToast('資料已上傳，本地已重置');
+          localStorage.removeItem(STORAGE_KEY);
+          Service.loadData();
+          self.showMenu();
+        } else {
+          statusEl.textContent = '❌ 上傳失敗';
+          self.showToast('上傳失敗');
+        }
       });
     });
   },
 
   cloudDownload: function() {
-    if (DEV_MODE) { this.showToast('本機模式無法使用雲端存檔'); return; }
+    if (DEV_MODE) { this.showToast('本機模式無法使用資料轉移'); return; }
     var name = document.getElementById('cloud-name').value.trim();
     var password = document.getElementById('cloud-password').value;
     if (!name || !password) { this.showToast('請輸入名稱和密碼'); return; }
+    if (!confirm('確定要將雲端資料轉移到本裝置？(雲端資料會清除！)')) return;
     var statusEl = document.getElementById('cloud-status');
     statusEl.textContent = '⏳ 解密下載中...';
     var self = this;
@@ -552,18 +562,20 @@ var UI = {
       Service.appData = Service.mergeDefaults(result.data);
       Service.getStamina();
       Service.saveData();
-      var lbNameEl = document.getElementById('setting-lb-name');
-      if (lbNameEl) lbNameEl.textContent = Service.appData.playerName || '(未設定)';
-      document.getElementById('cloud-name').value = Service.appData.playerName || '';
-      statusEl.textContent = '✅ 下載成功，請重整頁面';
-      self.showToast('下載成功，請重整頁面');
+      CloudSaveAPI.deleteDoc(name).then(function() {
+        var lbNameEl = document.getElementById('setting-lb-name');
+        if (lbNameEl) lbNameEl.textContent = Service.appData.playerName || '(未設定)';
+        document.getElementById('cloud-name').value = Service.appData.playerName || '';
+        statusEl.textContent = '✅ 下載成功，雲端已清除';
+        self.showToast('下載成功，請重整頁面');
+      });
     });
   },
 
   renderLeaderboard: function() {
     var container = document.getElementById('leaderboard-content');
     container.innerHTML = '<div style="text-align:center;padding:20px;color:#8a7a6a;">載入中...</div>';
-    LeaderboardAPI.getLeaderboard(50, function(list) {
+    LeaderboardAPI.getLeaderboard(20, function(list) {
       if (!list || list.length === 0) {
         container.innerHTML = '<div style="text-align:center;padding:40px;color:#8a7a6a;">尚無排行資料</div>';
         return;
