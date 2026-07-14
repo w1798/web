@@ -58,7 +58,7 @@ var UI = {
         setTimeout(function() { document.getElementById('name-input').focus(); }, 100);
         return;
       }
-      if (now - (Service.appData.lastScoreUploadTime || 0) > 120000) {
+      if (now - (Service.appData.lastScoreUploadTime || 0) > 60000) {
         this.uploadCurrentScore(true);
         Service.appData.lastScoreUploadTime = now;
         Service.saveData();
@@ -129,6 +129,8 @@ var UI = {
     var cloudStatusEl = document.getElementById('cloud-status');
     if (cloudStatusEl) cloudStatusEl.textContent = '';
     document.getElementById('cloud-password').value = '';
+    var cleanupBtn = document.getElementById('btn-cleanup-lb');
+    if (cleanupBtn) cleanupBtn.style.display = (DEV_MODE || window.location.href.indexOf('file:///') === 0) ? '' : 'none';
   },
 
   toggleSound: function(on) {
@@ -401,7 +403,7 @@ var UI = {
       }
       var now = Date.now();
       var last = Service.appData.lastScoreUploadTime || 0;
-      if (now - last > 120000) {
+      if (now - last > 60000) {
         self.uploadCurrentScore(true);
         Service.appData.lastScoreUploadTime = now;
         Service.saveData();
@@ -574,66 +576,86 @@ var UI = {
 
   renderLeaderboard: function() {
     var container = document.getElementById('leaderboard-content');
+    var cacheRaw = localStorage.getItem(LB_CACHE_KEY);
+    var cache = cacheRaw ? JSON.parse(cacheRaw) : null;
+    if (cache && cache.data && Date.now() - cache.timestamp < 300000) {
+      this._renderLBList(container, cache.data);
+      return;
+    }
     container.innerHTML = '<div style="text-align:center;padding:20px;color:#8a7a6a;">載入中...</div>';
-    LeaderboardAPI.getLeaderboard(20, function(list) {
+    LeaderboardAPI.getLeaderboard(50, function(list) {
       if (!list || list.length === 0) {
         container.innerHTML = '<div style="text-align:center;padding:40px;color:#8a7a6a;">尚無排行資料</div>';
         return;
       }
-      var dedup = {};
-      for (var di = 0; di < list.length; di++) {
-        var e = list[di];
-        var key = e.playerName;
-        var existing = dedup[key];
-        if (!existing) { dedup[key] = e; continue; }
-        var eTime = e.updatedAt && e.updatedAt.toDate ? e.updatedAt.toDate().getTime() : 0;
-        var xTime = existing.updatedAt && existing.updatedAt.toDate ? existing.updatedAt.toDate().getTime() : 0;
-        if (eTime > xTime) dedup[key] = e;
+      localStorage.setItem(LB_CACHE_KEY, JSON.stringify({data:list, timestamp:Date.now()}));
+      UI._renderLBList(container, list);
+    });
+  },
+
+  _renderLBList: function(container, list) {
+    var filtered = [];
+    for (var fi = 0; fi < list.length; fi++) {
+      if (!list[fi].totalScore) continue;
+      filtered.push(list[fi]);
+    }
+    if (filtered.length === 0) {
+      container.innerHTML = '<div style="text-align:center;padding:40px;color:#8a7a6a;">尚無排行資料</div>';
+      return;
+    }
+    var dedup = {};
+    for (var di = 0; di < filtered.length; di++) {
+      var e = filtered[di];
+      var key = e.playerName;
+      var existing = dedup[key];
+      if (!existing) { dedup[key] = e; continue; }
+      var eTime = e.updatedAt ? (e.updatedAt.toDate ? e.updatedAt.toDate().getTime() : (e.updatedAt.seconds ? e.updatedAt.seconds * 1000 : 0)) : 0;
+      var xTime = existing.updatedAt ? (existing.updatedAt.toDate ? existing.updatedAt.toDate().getTime() : (existing.updatedAt.seconds ? existing.updatedAt.seconds * 1000 : 0)) : 0;
+      if (eTime > xTime) dedup[key] = e;
+    }
+    var unique = [];
+    for (var k in dedup) unique.push(dedup[k]);
+    unique.sort(function(a,b) { return (b.totalScore||0) - (a.totalScore||0); });
+    var html = '';
+    for (var i = 0; i < unique.length; i++) {
+      var entry = unique[i];
+      var rank = i + 1;
+      var medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank;
+      var isMe = entry.playerName === Service.appData.playerName;
+      html += '<div class="lb-entry' + (isMe ? ' lb-me' : '') + '" onclick="UI.toggleLbDetail(this)">';
+      html += '<div class="lb-rank">' + medal + '</div>';
+      html += '<div class="lb-info">';
+      html += '<div class="lb-name">' + entry.playerName + '</div>';
+      html += '<div class="lb-score">戰力 ' + (entry.totalScore || 0) + '</div>';
+      if (entry.updatedAt) {
+        var d = entry.updatedAt.toDate ? entry.updatedAt.toDate() : (entry.updatedAt.seconds ? new Date(entry.updatedAt.seconds * 1000) : new Date(entry.updatedAt));
+        html += '<div class="lb-time">🕐 ' + d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate() + ' ' + ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2) + '</div>';
       }
-      var unique = [];
-      for (var k in dedup) unique.push(dedup[k]);
-      unique.sort(function(a,b) { return (b.totalScore||0) - (a.totalScore||0); });
-      var html = '';
-      for (var i = 0; i < unique.length; i++) {
-        var entry = unique[i];
-        var rank = i + 1;
-        var medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank;
-        var isMe = entry.playerName === Service.appData.playerName;
-        html += '<div class="lb-entry' + (isMe ? ' lb-me' : '') + '" onclick="UI.toggleLbDetail(this)">';
-        html += '<div class="lb-rank">' + medal + '</div>';
-        html += '<div class="lb-info">';
-        html += '<div class="lb-name">' + entry.playerName + '</div>';
-        html += '<div class="lb-score">戰力 ' + (entry.totalScore || 0) + '</div>';
-        if (entry.updatedAt) {
-          var d = entry.updatedAt.toDate ? entry.updatedAt.toDate() : new Date(entry.updatedAt);
-          html += '<div class="lb-time">🕐 ' + d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate() + ' ' + ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2) + '</div>';
-        }
-        html += '</div>';
-        html += '<div class="lb-detail" style="display:none;">';
-        if (entry.heroes && entry.heroes.length) {
-          for (var j = 0; j < entry.heroes.length; j++) {
-            var h = entry.heroes[j];
-            html += '<div class="lb-hero-row">';
-            html += '<span>' + (h.emoji || '') + ' ' + (h.name || '') + '</span>';
-            html += '<span style="color:#9b59b6;">' + (h.tierShow || '') + '</span>';
-            html += '<span style="color:#ffd700;">' + (h.heroScore || 0) + '</span>';
-            if (h.weapon && h.weapon.typeLabel) {
-              var w = h.weapon;
-              html += '<div class="lb-weapon">';
-              html += w.typeIcon + ' <span style="color:' + w.qualityColor + ';">' + w.qualityName + w.typeLabel + '</span>';
-              html += ' <span style="color:#e74c3c;">攻+' + (w.atkPct || 0) + '%</span>';
-              html += ' <span style="color:#27ae60;">血+' + (w.hpPct || 0) + '%</span>';
-              html += ' <span style="color:#f39c12;">速+' + (w.spd ? w.spd.toFixed(2) : '0.00') + '</span>';
-              html += '</div>';
-            }
+      html += '</div>';
+      html += '<div class="lb-detail" style="display:none;">';
+      if (entry.heroes && entry.heroes.length) {
+        for (var j = 0; j < entry.heroes.length; j++) {
+          var h = entry.heroes[j];
+          html += '<div class="lb-hero-row">';
+          html += '<span>' + (h.emoji || '') + ' ' + (h.name || '') + '</span>';
+          html += '<span style="color:#9b59b6;">' + (h.tierShow || '') + '</span>';
+          html += '<span style="color:#ffd700;">' + (h.heroScore || 0) + '</span>';
+          if (h.weapon && h.weapon.typeLabel) {
+            var w = h.weapon;
+            html += '<div class="lb-weapon">';
+            html += w.typeIcon + ' <span style="color:' + w.qualityColor + ';">' + w.qualityName + w.typeLabel + '</span>';
+            html += ' <span style="color:#e74c3c;">攻+' + (w.atkPct || 0) + '%</span>';
+            html += ' <span style="color:#27ae60;">血+' + (w.hpPct || 0) + '%</span>';
+            html += ' <span style="color:#f39c12;">速+' + (w.spd ? w.spd.toFixed(2) : '0.00') + '</span>';
             html += '</div>';
           }
+          html += '</div>';
         }
-        html += '</div>';
-        html += '</div>';
       }
-      container.innerHTML = html;
-    });
+      html += '</div>';
+      html += '</div>';
+    }
+    container.innerHTML = html;
   },
 
   toggleLbDetail: function(el) {
@@ -643,5 +665,19 @@ var UI = {
     detail.style.display = show ? 'block' : 'none';
     if (show) el.classList.add('open');
     else el.classList.remove('open');
+  },
+
+  cleanupZeroScores: function() {
+    if (DEV_MODE && !LeaderboardAPI.db) { this.showToast('本機模式無法連接 Firebase'); var btn = document.getElementById('btn-cleanup-lb'); if (btn) btn.disabled = false; return; }
+    if (!confirm('確定清除 totalScore=0 且超過3天的排行資料？')) return;
+    var btn = document.getElementById('btn-cleanup-lb');
+    if (btn) btn.disabled = true;
+    LeaderboardAPI.cleanupZeroScores(function(count) {
+      if (btn) btn.disabled = false;
+      if (count < 0) { this.showToast('清理失敗（可能無權限）'); return; }
+      this.showToast('已清理 ' + count + ' 筆資料');
+      localStorage.removeItem(LB_CACHE_KEY);
+      this.renderLeaderboard();
+    }.bind(this));
   }
 };

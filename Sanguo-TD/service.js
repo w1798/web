@@ -1,5 +1,6 @@
 /* ===== 存檔、金幣、抽卡、碎片、上陣系統 ===== */
 var STORAGE_KEY = 'sanguo_td_save';
+var LB_CACHE_KEY = 'sanguo_td_lb_cache';
 var TIER_NAMES = ['', '良', '優', '名將', '傳說', '無雙'];
 var TIER_COLORS = ['', '#8a8a8a', '#2ecc71', '#3498db', '#9b59b6', '#ffd700'];
 var STAMINA_MAX = 120;

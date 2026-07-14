@@ -92,6 +92,35 @@ var LeaderboardAPI = {
         console.warn('Check name failed:', e);
         if (callback) callback(false);
       });
+  },
+
+  cleanupZeroScores: function(callback) {
+    if (!this.db) { if (callback) callback(0); return; }
+    var threeDaysAgo = new Date(Date.now() - 259200000);
+    this.db.collection('leaderboard').where('totalScore', '==', 0).get()
+      .then(function(snapshot) {
+        var batch = LeaderboardAPI.db.batch();
+        var count = 0;
+        snapshot.forEach(function(doc) {
+          var data = doc.data();
+          var t = data.updatedAt && data.updatedAt.toDate ? data.updatedAt.toDate() : null;
+          if (t && t < threeDaysAgo) {
+            batch.delete(doc.ref);
+            count++;
+          }
+        });
+        if (count === 0) { if (callback) callback(0); return; }
+        batch.commit().then(function() {
+          if (callback) callback(count);
+        }).catch(function(e) {
+          console.warn('Cleanup commit failed:', e);
+          if (callback) callback(-1);
+        });
+      })
+      .catch(function(e) {
+        console.warn('Cleanup query failed:', e);
+        if (callback) callback(-1);
+      });
   }
 };
 
