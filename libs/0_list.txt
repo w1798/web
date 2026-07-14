@@ -12,4 +12,6 @@ xlsx.full.min.js        https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.
 react.production.min.js   https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js         GutTracker
 react-dom.production.min.js   https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js     GutTracker
 babel.min.js         https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js       GutTracker
-    
+firebase-app-compat.js  https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js    Sanguo-TD
+firebase-auth-compat.js https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js   Sanguo-TD
+firebase-firestore-compat.js    https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js  Sanguo-TD
