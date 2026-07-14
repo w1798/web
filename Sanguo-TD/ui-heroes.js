@@ -103,6 +103,44 @@ UI.renderHeroList = function() {
       container.appendChild(confirmBar);
     }
 
+    /* --- 總戰力（含加乘） --- */
+    if (deployed.length > 0) {
+      var bonuses = Service.getDeployedSynergyBonuses(deployed);
+      var totalWithSynergy = 0;
+      for (var si = 0; si < deployed.length; si++) {
+        var shd = getHeroData(deployed[si]);
+        if (!shd) continue;
+        var stag = Service.getHeroTier(deployed[si]);
+        var sstar = Service.getHeroStar(deployed[si]);
+        var sw = Service.getWeapon(deployed[si]);
+        var heroAtkPct = bonuses.atkPct;
+        var heroHpPct = 0;
+        for (var bi = 0; bi < bonuses.bonds.length; bi++) {
+          if (bonuses.bonds[bi].members.indexOf(deployed[si]) !== -1) {
+            heroAtkPct += bonuses.bonds[bi].atkPct;
+            heroHpPct += bonuses.bonds[bi].hpPct;
+          }
+        }
+        totalWithSynergy += getHeroScoreWithSynergy(shd, stag, sstar, sw, heroAtkPct, heroHpPct);
+      }
+      var totalDiv = document.createElement('div');
+      totalDiv.className = 'deploy-total-score';
+      var bonusLabel = '';
+      if (bonuses.atkPct > 0 || bonuses.bonds.length > 0) {
+        bonusLabel = '（必然ATK+' + bonuses.atkPct + '%';
+        var bondAtk = 0, bondHp = 0;
+        for (var bi2 = 0; bi2 < bonuses.bonds.length; bi2++) {
+          bondAtk += bonuses.bonds[bi2].atkPct;
+          bondHp += bonuses.bonds[bi2].hpPct;
+        }
+        if (bondAtk > 0) bonusLabel += ' 限定ATK+' + bondAtk + '%';
+        if (bondHp > 0) bonusLabel += ' HP+' + bondHp + '%';
+        bonusLabel += '）';
+      }
+      totalDiv.innerHTML = '⚔ 總戰力 <span class="total-score-num">' + totalWithSynergy + '</span> 分 ' + bonusLabel;
+      container.appendChild(totalDiv);
+    }
+
     /* --- 篩選按鈕 --- */
     var filterRow = document.createElement('div');
     filterRow.className = 'filter-row';

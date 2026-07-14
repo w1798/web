@@ -8,7 +8,7 @@
 <title>三國 RPG 塔防</title>
 <link rel="icon" href="favicon.ico">
 <style>html{visibility:hidden}</style>
-<script>var APP_VER='1.7.2a',APP_JSX='vanilla';</script>
+<script>var APP_VER='1.7.3',APP_JSX='vanilla';</script>
 <script src="../loader_engine.js?ver=1.0.0a"></script>
 </head>
 <body>
@@ -168,7 +168,7 @@
         <h3>請輸入排行榜名稱</h3>
       </div>
       <div class="modal-body">
-        <input id="name-input" type="text" maxlength="10" placeholder="最多10字" style="width:100%;padding:10px;font-size:16px;border:1px solid #5a3a20;border-radius:6px;background:#2d1810;color:#f0e6d0;">
+        <input id="name-input" type="text" maxlength="16" placeholder="最多8個中文字或16個字母" style="width:100%;padding:10px;font-size:16px;border:1px solid #5a3a20;border-radius:6px;background:#2d1810;color:#f0e6d0;">
         <div style="margin-top:12px;display:flex;gap:8px;justify-content:center;">
           <button class="btn btn-primary" style="min-width:auto;padding:10px 24px;" onclick="UI.submitPlayerName()">確認</button>
           <button class="btn btn-small" onclick="UI.closeNameDialog()">取消</button>
@@ -205,7 +205,7 @@
       <div class="settings-section-title">資料轉移</div>
       <div class="settings-item">
         <span>復原名稱</span>
-        <input id="cloud-name" type="text" maxlength="10" placeholder="玩家名稱" style="width:120px;">
+        <input id="cloud-name" type="text" maxlength="16" placeholder="玩家名稱" style="width:120px;">
       </div>
       <div class="settings-item">
         <span>復原密碼</span>

@@ -248,6 +248,41 @@ var Service = {
     return d;
   },
 
+  getDeployedSynergyBonuses: function(deployed) {
+    var typeCount = {}, rarityCount = {}, factionCount = {};
+    for (var i = 0; i < deployed.length; i++) {
+      var hd = getHeroData(deployed[i]);
+      if (!hd) continue;
+      typeCount[hd.type] = (typeCount[hd.type] || 0) + 1;
+      rarityCount[hd.rarity] = (rarityCount[hd.rarity] || 0) + 1;
+      factionCount[hd.faction] = (factionCount[hd.faction] || 0) + 1;
+    }
+    var atkPct = 0;
+    var distinctTypes = Object.keys(typeCount).length;
+    if (distinctTypes >= 3) atkPct += 2 * distinctTypes - 2;
+    var rarityMax = 0;
+    for (var r in rarityCount) { if (rarityCount[r] > rarityMax) rarityMax = rarityCount[r]; }
+    if (rarityMax >= 3) atkPct += 4 + rarityMax * 2;
+    var distinctRarities = Object.keys(rarityCount).length;
+    if (distinctRarities >= 5) atkPct += DISTINCT_RARITY_BONUS_ATK;
+    var factionMax = 0;
+    for (var f in factionCount) { if (factionCount[f] > factionMax) factionMax = factionCount[f]; }
+    if (factionMax >= 3) atkPct += 4 + 2 * factionMax;
+    var bonds = [];
+    for (var b = 0; b < BOND_DATA.length; b++) {
+      var bond = BOND_DATA[b];
+      if (bond.type !== 'bond') continue;
+      var allOk = true;
+      for (var m = 0; m < bond.members.length; m++) {
+        if (deployed.indexOf(bond.members[m]) === -1) { allOk = false; break; }
+      }
+      if (allOk) {
+        bonds.push({ name: bond.name, members: bond.members, atkPct: bond.atkPct || 0, hpPct: bond.hpPct || 0 });
+      }
+    }
+    return { atkPct: atkPct, bonds: bonds };
+  },
+
   autoFillDeploy: function() {
     var d = this.appData;
     if (d.ownedHeroes.length <= 6) {

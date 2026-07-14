@@ -55,7 +55,7 @@ var HERO_DATA = [
   /* ══════ 無雙 (Rarity 5) — 目標分數 240 ══════ */
   { id:'simayi',     name:'司馬懿', emoji:'🦊', type:'mage',      baseAtk:58, baseDef:7,  baseHp:155, rarity:5, faction:'魏', desc:'冢虎，韜光養晦' },
   { id:'dianwei',    name:'典韋',   emoji:'⛓️', type:'warrior',   baseAtk:115, baseDef:18, baseHp:220, rarity:5, faction:'魏', desc:'古之惡來，護主死戰，近戰無敵' },
-  { id:'zhaoyun',    name:'趙雲',   emoji:'✨', type:'spearman',  baseAtk:74, baseDef:14, baseHp:275, rarity:5, faction:'蜀', desc:'常勝將軍，七進七出，一身是膽' },
+  { id:'zhaoyun',    name:'趙雲',   emoji:'✨', type:'spearman',  baseAtk:82, baseDef:14, baseHp:275, rarity:5, faction:'蜀', desc:'常勝將軍，七進七出，一身是膽' },
   { id:'huangzhong', name:'黃忠',   emoji:'🎯', type:'archer',    baseAtk:87, baseDef:11, baseHp:154, rarity:5, faction:'蜀', desc:'老當益壯，百步穿楊，箭無虛發' },
   { id:'sunce',      name:'孫策',   emoji:'⚔️', type:'spearman',  baseAtk:80, baseDef:13, baseHp:270, rarity:5, faction:'吳', desc:'小霸王，江東基業開創者，霸王槍橫掃江東' },
   { id:'zhouyu',     name:'周瑜',   emoji:'🔥', type:'healer',    baseAtk:33, baseDef:12, baseHp:196, rarity:5, faction:'吳', desc:'江東美周郎，火燒赤壁' },
@@ -297,14 +297,42 @@ function getHeroScore(hd, tier, star, weapon) {
   var effectiveAtk = std.atk[tier] + offsetAtk;
   var effectiveHp = std.hp[tier] + offsetHp;
   var effectiveDef = std.def[tier] + offsetDef;
+  var wSpd = 0;
   if (weapon && weapon.type === wt) {
     effectiveAtk *= (1 + (weapon.atkPct || 0) / 100);
     effectiveHp *= (1 + (weapon.hpPct || 0) / 100);
+    wSpd = weapon.spd || 0;
   }
   var tm = 1.0 + (star || 0) * (PROMO_STAR[tier] || 0);
-  var atkScore = effectiveAtk * tm * mult * sd.atkSpeed;
+  var fullAtkSpeed = sd.atkSpeed + (tier - 1) * 0.1 + wSpd;
+  var atkScore = effectiveAtk * tm * mult * fullAtkSpeed;
   var rangeScore = (sd.range - 0.5) * 40;
   return Math.round(atkScore + rangeScore + effectiveHp + effectiveDef);
+}
+function getHeroScoreWithSynergy(hd, tier, star, weapon, teamAtkPct, teamHpPct) {
+  var wt = HERO_WEAPON[hd.type];
+  var sd = SOLDIER_TYPES[wt];
+  var std = STANDARD_STATS[wt];
+  if (!sd || !std) return 0;
+  var mult = (wt === 'sword') ? 1 : (wt === 'spear') ? 2 : (wt === 'bow') ? 2 : 3;
+  var offsetAtk = hd.baseAtk - std.atk[hd.rarity];
+  var offsetHp = hd.baseHp - std.hp[hd.rarity];
+  var offsetDef = hd.baseDef - std.def[hd.rarity];
+  var effectiveAtk = std.atk[tier] + offsetAtk;
+  var effectiveHp = std.hp[tier] + offsetHp;
+  var effectiveDef = std.def[tier] + offsetDef;
+  var wSpd = 0;
+  if (weapon && weapon.type === wt) {
+    effectiveAtk *= (1 + (weapon.atkPct || 0) / 100);
+    effectiveHp *= (1 + (weapon.hpPct || 0) / 100);
+    wSpd = weapon.spd || 0;
+  }
+  var tm = 1.0 + (star || 0) * (PROMO_STAR[tier] || 0);
+  var fullAtkSpeed = sd.atkSpeed + (tier - 1) * 0.1 + wSpd;
+  var atkScore = effectiveAtk * tm * mult * fullAtkSpeed * (1 + (teamAtkPct || 0) / 100);
+  var rangeScore = (sd.range - 0.5) * 40;
+  var hpWithBonus = effectiveHp * (1 + (teamHpPct || 0) / 100);
+  return Math.round(atkScore + rangeScore + hpWithBonus + effectiveDef);
 }
 var ATTACK_ICON = {
   warrior:  '⚔️',
@@ -360,7 +388,7 @@ var ENEMY_DATA = [
 ];
 
 /* ===== 開發模式（僅本機檔案開啟） ===== */
-var DEV_MODE = window.location.href.indexOf('file:///D:/dl/src/Sanguo-TD/') === 0;
+var DEV_MODE = window.location.protocol === 'file:';
 
 /* ===== 難度系統 ===== */
 var DIFFICULTY = {

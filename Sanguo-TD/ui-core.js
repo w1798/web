@@ -130,7 +130,7 @@ var UI = {
     if (cloudStatusEl) cloudStatusEl.textContent = '';
     document.getElementById('cloud-password').value = '';
     var cleanupBtn = document.getElementById('btn-cleanup-lb');
-    if (cleanupBtn) cleanupBtn.style.display = (DEV_MODE || window.location.href.indexOf('file:///') === 0) ? '' : 'none';
+    if (cleanupBtn) cleanupBtn.style.display = DEV_MODE ? '' : 'none';
   },
 
   toggleSound: function(on) {
@@ -432,7 +432,12 @@ var UI = {
     if (DEV_MODE) { this.showToast('本機模式無法設定排行榜'); return; }
     var name = document.getElementById('name-input').value.trim();
     if (!name) { this.showToast('請輸入名稱'); return; }
-    if (name.length > 10) { this.showToast('名稱最多10字'); return; }
+    var hasNonAscii = false;
+    for (var ci = 0; ci < name.length; ci++) {
+      if (name.charCodeAt(ci) > 127) { hasNonAscii = true; break; }
+    }
+    if (hasNonAscii && name.length > 8) { this.showToast('名稱最多8個中文字'); return; }
+    if (!hasNonAscii && name.length > 16) { this.showToast('名稱最多16個字母'); return; }
     var badWords = ['幹','操','屌','肏','fuck','shit','ass','bitch','王八','垃圾','白痴','智障'];
     for (var b = 0; b < badWords.length; b++) {
       if (name.indexOf(badWords[b]) !== -1) { this.showToast('名稱包含不雅字詞'); return; }
@@ -477,6 +482,7 @@ var UI = {
     var deployed = Service.getDeployedHeroes();
     var heroes = [];
     var totalScore = 0;
+    var bonuses = Service.getDeployedSynergyBonuses(deployed);
     for (var i = 0; i < deployed.length; i++) {
       var hid = deployed[i];
       var hd = getHeroData(hid);
@@ -484,7 +490,15 @@ var UI = {
       var tier = Service.getHeroTier(hid);
       var star = Service.getHeroStar(hid);
       var w = Service.getWeapon(hid);
-      var score = getHeroScore(hd, tier, star, w);
+      var heroAtkPct = bonuses.atkPct;
+      var heroHpPct = 0;
+      for (var bi = 0; bi < bonuses.bonds.length; bi++) {
+        if (bonuses.bonds[bi].members.indexOf(hid) !== -1) {
+          heroAtkPct += bonuses.bonds[bi].atkPct;
+          heroHpPct += bonuses.bonds[bi].hpPct;
+        }
+      }
+      var score = getHeroScoreWithSynergy(hd, tier, star, w, heroAtkPct, heroHpPct);
       totalScore += score;
       var tierShow = TIER_NAMES[tier] + (tier >= 4 && star > 0 ? '+' + star + '⭐' : '');
       var wInfo = {};
