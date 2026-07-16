@@ -111,6 +111,7 @@ var UI = {
     if (overlay) overlay.style.display = 'none';
     var btn = document.getElementById('btn-pause');
     if (btn) btn.textContent = '⏸';
+    this.renderSkillBar();
   },
 
   showSettings: function() {
@@ -177,12 +178,24 @@ var UI = {
     document.body.appendChild(overlay);
   },
 
-  showResult: function(won, gold, weapon, extraWeapons) {
+  showResult: function(won, gold, weapon, extraWeapons, gainedExp, levelUpList) {
     this.showScreen('screen-result');
     var title = document.getElementById('result-title');
     title.textContent = won ? '勝 利！' : '敗 北...';
     title.className = won ? 'victory' : 'defeat';
     var html = won ? '👑 金幣 +' + gold : '下次再戰！';
+    
+    // 顯示經驗值收益
+    if (won && gainedExp > 0) {
+      html += '<br><div class="exp-reward">✨ 存活英雄各獲得 <span style="color:#ffd700;font-weight:bold;">' + gainedExp + '</span> 點經驗</div>';
+    }
+    if (levelUpList && levelUpList.length > 0) {
+      html += '<div class="levelup-list">';
+      for (var li = 0; li < levelUpList.length; li++) {
+        html += '<div class="levelup-item">⬆ ' + levelUpList[li] + '</div>';
+      }
+      html += '</div>';
+    }
     if (weapon) {
       var qName = WEAPON_QUALITY[weapon.quality] ? WEAPON_QUALITY[weapon.quality].name : '?';
       var qColor = WEAPON_QUALITY[weapon.quality] ? WEAPON_QUALITY[weapon.quality].color : '#888';

@@ -1,4 +1,4 @@
-﻿/* ===== 三國武將資料庫 ===== */
+/* ===== 三國武將資料庫 ===== */
 var HERO_DATA = [
   /* ══════ 良 (Rarity 1) — 目標分數 40 ══════ */
   { id:'caoxing',    name:'曹性',   emoji:'🏹', type:'archer',    baseAtk:15, baseDef:2,  baseHp:33,  rarity:1, faction:'群', desc:'呂布部將，善射，射中夏侯惇一目' },
@@ -294,9 +294,16 @@ function getHeroScore(hd, tier, star, weapon) {
   var offsetAtk = hd.baseAtk - std.atk[hd.rarity];
   var offsetHp = hd.baseHp - std.hp[hd.rarity];
   var offsetDef = hd.baseDef - std.def[hd.rarity];
-  var effectiveAtk = std.atk[tier] + offsetAtk;
-  var effectiveHp = std.hp[tier] + offsetHp;
-  var effectiveDef = std.def[tier] + offsetDef;
+  
+  var lv = 0;
+  if (window.Service && Service.appData && Service.appData.heroLevel) {
+    lv = Service.appData.heroLevel[hd.id] || 0;
+  }
+  var levelBonus = 1 + lv * 0.02;
+
+  var effectiveAtk = (std.atk[tier] + offsetAtk) * levelBonus;
+  var effectiveHp = (std.hp[tier] + offsetHp) * levelBonus;
+  var effectiveDef = (std.def[tier] + offsetDef) * levelBonus;
   var wSpd = 0;
   if (weapon && weapon.type === wt) {
     effectiveAtk *= (1 + (weapon.atkPct || 0) / 100);
@@ -318,9 +325,16 @@ function getHeroScoreWithSynergy(hd, tier, star, weapon, teamAtkPct, teamHpPct) 
   var offsetAtk = hd.baseAtk - std.atk[hd.rarity];
   var offsetHp = hd.baseHp - std.hp[hd.rarity];
   var offsetDef = hd.baseDef - std.def[hd.rarity];
-  var effectiveAtk = std.atk[tier] + offsetAtk;
-  var effectiveHp = std.hp[tier] + offsetHp;
-  var effectiveDef = std.def[tier] + offsetDef;
+  
+  var lv = 0;
+  if (window.Service && Service.appData && Service.appData.heroLevel) {
+    lv = Service.appData.heroLevel[hd.id] || 0;
+  }
+  var levelBonus = 1 + lv * 0.02;
+
+  var effectiveAtk = (std.atk[tier] + offsetAtk) * levelBonus;
+  var effectiveHp = (std.hp[tier] + offsetHp) * levelBonus;
+  var effectiveDef = (std.def[tier] + offsetDef) * levelBonus;
   var wSpd = 0;
   if (weapon && weapon.type === wt) {
     effectiveAtk *= (1 + (weapon.atkPct || 0) / 100);
@@ -813,4 +827,77 @@ function getSoldierAttackStr(wt) {
   var atkType = st.attackType === 'single' ? '單體' : st.attackType === 'aoe' ? '群體' : '治療';
   var count = st.attackType === 'single' ? (st.special === 'double' ? 2 : 1) : (st.aoeMax || 1);
   return st.name + '·' + atkType + 'x' + count;
+}
+
+/* ===== 52 英雄主動技能定義 ===== */
+var HERO_SKILLS = {
+  // R1 (良)
+  caoxing: { name: '流星箭', type: 'damage_single', desc: '對單一敵人造成 200% 攻擊傷害', cd: 8, cost: 0, multiplier: 2.0, aoeRange: 0, duration: 0, effectValue: 0 },
+  guanping: { name: '連環斬', type: 'damage_single', desc: '對單一敵人造成 200% 攻擊傷害', cd: 8, cost: 0, multiplier: 2.0, aoeRange: 0, duration: 0, effectValue: 0 },
+  jiangwei: { name: '麒麟刺', type: 'damage_single', desc: '對單一敵人造成 200% 攻擊傷害', cd: 8, cost: 0, multiplier: 2.0, aoeRange: 0, duration: 0, effectValue: 0 },
+  jiangwan: { name: '仁政', type: 'heal', desc: '治療生命最低的我方，恢復 30% 最大生命', cd: 12, cost: 0, multiplier: 0.3, aoeRange: 0, duration: 0, effectValue: 0 },
+  jiaxu: { name: '毒士謀', type: 'damage_aoe', desc: '對範圍敵人造成 150% 魔法傷害', cd: 10, cost: 0, multiplier: 1.5, aoeRange: 2.0, duration: 0, effectValue: 0 },
+  xunyu: { name: '王佐之風', type: 'heal', desc: '治療生命最低的我方，恢復 30% 最大生命', cd: 12, cost: 0, multiplier: 0.3, aoeRange: 0, duration: 0, effectValue: 0 },
+  guojia: { name: '十勝十敗', type: 'damage_aoe', desc: '對範圍敵人造成 150% 魔法傷害', cd: 10, cost: 0, multiplier: 1.5, aoeRange: 2.0, duration: 0, effectValue: 0 },
+  lingtong: { name: '救主突擊', type: 'damage_single', desc: '對單一敵人造成 200% 攻擊傷害', cd: 8, cost: 0, multiplier: 2.0, aoeRange: 0, duration: 0, effectValue: 0 },
+  lvmeng: { name: '克己迅襲', type: 'damage_single', desc: '對單一敵人造成 200% 攻擊傷害', cd: 8, cost: 0, multiplier: 2.0, aoeRange: 0, duration: 0, effectValue: 0 },
+  buliangshi: { name: '蓮華咒', type: 'damage_aoe', desc: '對範圍敵人造成 150% 魔法傷害', cd: 10, cost: 0, multiplier: 1.5, aoeRange: 2.0, duration: 0, effectValue: 0 },
+  chengong: { name: '剛直計', type: 'damage_aoe', desc: '對範圍敵人造成 150% 魔法傷害', cd: 10, cost: 0, multiplier: 1.5, aoeRange: 2.0, duration: 0, effectValue: 0 },
+  yanliang: { name: '河北怒砍', type: 'damage_single', desc: '對單一敵人造成 200% 攻擊傷害', cd: 8, cost: 0, multiplier: 2.0, aoeRange: 0, duration: 0, effectValue: 0 },
+
+  // R2 (優)
+  xiahoudun: { name: '吞睛怒斬', type: 'damage_single', desc: '對單一敵人造成 250% 攻擊傷害', cd: 8, cost: 0, multiplier: 2.5, aoeRange: 0, duration: 0, effectValue: 0 },
+  zhenji: { name: '洛神流嵐', type: 'heal', desc: '治療生命最低的我方，恢復 40% 最大生命', cd: 12, cost: 0, multiplier: 0.4, aoeRange: 0, duration: 0, effectValue: 0 },
+  xiahouyuan: { name: '神速怒箭', type: 'damage_single', desc: '對單一敵人造成 250% 攻擊傷害', cd: 8, cost: 0, multiplier: 2.5, aoeRange: 0, duration: 0, effectValue: 0 },
+  guanxing: { name: '青龍探爪', type: 'damage_single', desc: '對單一敵人造成 250% 攻擊傷害', cd: 8, cost: 0, multiplier: 2.5, aoeRange: 0, duration: 0, effectValue: 0 },
+  weiyan: { name: '反骨一擊', type: 'stun', desc: '對目標造成 100% 攻擊傷害並暈眩 1.5 秒', cd: 10, cost: 0, multiplier: 1.0, aoeRange: 0, duration: 1.5, effectValue: 0 },
+  zhangbao: { name: '虎子怒吼', type: 'damage_aoe', desc: '對範圍敵人造成 180% 攻擊傷害', cd: 10, cost: 0, multiplier: 1.8, aoeRange: 2.0, duration: 0, effectValue: 0 },
+  huanggai: { name: '苦肉碎擊', type: 'damage_single', desc: '對單一敵人造成 250% 攻擊傷害', cd: 8, cost: 0, multiplier: 2.5, aoeRange: 0, duration: 0, effectValue: 0 },
+  zhoutai: { name: '護主怒斬', type: 'stun', desc: '對目標造成 100% 攻擊傷害並暈眩 1.5 秒', cd: 10, cost: 0, multiplier: 1.0, aoeRange: 0, duration: 1.5, effectValue: 0 },
+  xiaoqiao: { name: '春風拂柳', type: 'damage_aoe', desc: '對範圍敵人造成 180% 攻擊傷害', cd: 10, cost: 0, multiplier: 1.8, aoeRange: 2.0, duration: 0, effectValue: 0 },
+  gongsunzan: { name: '義從齊射', type: 'damage_single', desc: '對單一敵人造成 250% 攻擊傷害', cd: 8, cost: 0, multiplier: 2.5, aoeRange: 0, duration: 0, effectValue: 0 },
+  tianfeng: { name: '烈火燎原', type: 'damage_aoe', desc: '對範圍敵人造成 180% 魔法傷害', cd: 10, cost: 0, multiplier: 1.8, aoeRange: 2.0, duration: 0, effectValue: 0 },
+  huaxiong: { name: '力劈華山', type: 'stun', desc: '對目標造成 100% 攻擊傷害並暈眩 1.5 秒', cd: 10, cost: 0, multiplier: 1.0, aoeRange: 0, duration: 1.5, effectValue: 0 },
+
+  // R3 (名將)
+  liubei: { name: '桃園桃李', type: 'heal', desc: '治療生命最低的我方，恢復 50% 最大生命', cd: 12, cost: 0, multiplier: 0.5, aoeRange: 0, duration: 0, effectValue: 0 },
+  zhangfei: { name: '當陽怒喝', type: 'stun', desc: '對目標造成 100% 攻擊傷害並暈眩 2.0 秒', cd: 10, cost: 0, multiplier: 1.0, aoeRange: 0, duration: 2.0, effectValue: 0 },
+  pangtong: { name: '涅槃真火', type: 'damage_aoe', desc: '對範圍敵人造成 200% 魔法傷害', cd: 10, cost: 0, multiplier: 2.0, aoeRange: 2.5, duration: 0, effectValue: 0 },
+  caopi: { name: '帝業怒射', type: 'damage_single', desc: '對單一敵人造成 300% 攻擊傷害', cd: 8, cost: 0, multiplier: 3.0, aoeRange: 0, duration: 0, effectValue: 0 },
+  zhanghe: { name: '陣法巧變', type: 'buff_self', desc: '自身攻擊力提升 20%，持續 5 秒', cd: 15, cost: 0, multiplier: 0, aoeRange: 0, duration: 5, effectValue: 20 },
+  zhangliao: { name: '突擊威風', type: 'buff_self', desc: '自身攻擊力提升 20%，持續 5 秒', cd: 15, cost: 0, multiplier: 0, aoeRange: 0, duration: 5, effectValue: 20 },
+  taishi_ci: { name: '流星貫日', type: 'damage_single', desc: '對單一敵人造成 300% 攻擊傷害', cd: 8, cost: 0, multiplier: 3.0, aoeRange: 0, duration: 0, effectValue: 0 },
+  lusu: { name: '合縱火攻', type: 'damage_aoe', desc: '對範圍敵人造成 200% 魔法傷害', cd: 10, cost: 0, multiplier: 2.0, aoeRange: 2.5, duration: 0, effectValue: 0 },
+  zhangzhao: { name: '安民持重', type: 'heal', desc: '治療生命最低的我方，恢復 50% 最大生命', cd: 12, cost: 0, multiplier: 0.5, aoeRange: 0, duration: 0, effectValue: 0 },
+  wenchou: { name: '橫掃千軍', type: 'stun', desc: '對目標造成 100% 攻擊傷害並暈眩 2.0 秒', cd: 10, cost: 0, multiplier: 1.0, aoeRange: 0, duration: 2.0, effectValue: 0 },
+  mateng: { name: '西涼突襲', type: 'damage_single', desc: '對單一敵人造成 300% 攻擊傷害', cd: 8, cost: 0, multiplier: 3.0, aoeRange: 0, duration: 0, effectValue: 0 },
+  zhangjiao: { name: '太平雨霖', type: 'heal', desc: '治療生命最低的我方，恢復 50% 最大生命', cd: 12, cost: 0, multiplier: 0.5, aoeRange: 0, duration: 0, effectValue: 0 },
+
+  // R4 (傳說)
+  xuchu: { name: '裸衣死戰', type: 'buff_self', desc: '自身攻擊力提升 30%，持續 6 秒', cd: 15, cost: 0, multiplier: 0, aoeRange: 0, duration: 6, effectValue: 30 },
+  caocao: { name: '唯才是舉', type: 'buff_ally', desc: '鼓舞全體我方，提升 15% 攻擊力，持續 6 秒', cd: 18, cost: 0, multiplier: 0, aoeRange: 0, duration: 6, effectValue: 15 },
+  guanyu: { name: '青龍斬', type: 'damage_single', desc: '對單一敵人造成 400% 攻擊傷害', cd: 8, cost: 0, multiplier: 4.0, aoeRange: 0, duration: 0, effectValue: 0 },
+  zhugeliang: { name: '八卦陣', type: 'stun', desc: '對目標造成 100% 攻擊傷害並暈眩 2.5 秒', cd: 10, cost: 0, multiplier: 1.0, aoeRange: 0, duration: 2.5, effectValue: 0 },
+  sunshangxiang: { name: '梟姬神射', type: 'damage_single', desc: '對單一敵人造成 400% 攻擊傷害', cd: 8, cost: 0, multiplier: 4.0, aoeRange: 0, duration: 0, effectValue: 0 },
+  ganning: { name: '夜襲突刺', type: 'stun', desc: '對目標造成 100% 攻擊傷害並暈眩 2.5 秒', cd: 10, cost: 0, multiplier: 1.0, aoeRange: 0, duration: 2.5, effectValue: 0 },
+  machao: { name: '鐵騎疾馳', type: 'buff_self', desc: '自身攻擊力提升 30%，持續 6 秒', cd: 15, cost: 0, multiplier: 0, aoeRange: 0, duration: 6, effectValue: 30 },
+  diaochan: { name: '閉月羞花', type: 'heal', desc: '治療生命最低的我方，恢復 60% 最大生命', cd: 12, cost: 0, multiplier: 0.6, aoeRange: 0, duration: 0, effectValue: 0 },
+
+  // R5 (無雙)
+  simayi: { name: '鷹視狼顧', type: 'buff_self', desc: '自身攻擊力提升 50%，持續 8 秒', cd: 15, cost: 0, multiplier: 0, aoeRange: 0, duration: 8, effectValue: 50 },
+  dianwei: { name: '古之惡來', type: 'buff_self', desc: '自身攻擊力提升 50%，持續 8 秒', cd: 15, cost: 0, multiplier: 0, aoeRange: 0, duration: 8, effectValue: 50 },
+  zhaoyun: { name: '蛇膽銀槍', type: 'damage_single', desc: '對單一敵人造成 500% 攻擊傷害', cd: 8, cost: 0, multiplier: 5.0, aoeRange: 0, duration: 0, effectValue: 0 },
+  huangzhong: { name: '百步穿楊', type: 'damage_single', desc: '對單一敵人造成 500% 攻擊傷害', cd: 8, cost: 0, multiplier: 5.0, aoeRange: 0, duration: 0, effectValue: 0 },
+  sunce: { name: '小霸王怒震', type: 'buff_self', desc: '自身攻擊力提升 50%，持續 8 秒', cd: 15, cost: 0, multiplier: 0, aoeRange: 0, duration: 8, effectValue: 50 },
+  zhouyu: { name: '赤壁神炎', type: 'heal', desc: '治療生命最低的我方，恢復 80% 最大生命', cd: 12, cost: 0, multiplier: 0.8, aoeRange: 0, duration: 0, effectValue: 0 },
+  lubu: { name: '狂暴無雙', type: 'buff_self', desc: '自身攻擊力提升 50%，持續 8 秒', cd: 15, cost: 0, multiplier: 0, aoeRange: 0, duration: 8, effectValue: 50 },
+  zuoci: { name: '幻影遁甲', type: 'buff_ally', desc: '鼓舞全體我方，提升 25% 攻擊力，持續 8 秒', cd: 18, cost: 0, multiplier: 0, aoeRange: 0, duration: 8, effectValue: 25 },
+};
+
+// 將技能欄位動態附加到 HERO_DATA
+for (var i = 0; i < HERO_DATA.length; i++) {
+  var hid = HERO_DATA[i].id;
+  if (HERO_SKILLS[hid]) {
+    HERO_DATA[i].skill = HERO_SKILLS[hid];
+  }
 }

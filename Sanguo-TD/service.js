@@ -24,7 +24,11 @@ var DEFAULT_DATA = {
   weapons: {},
   weaponStorage: [],
   playerName: '',
-  lastScoreUploadTime: 0
+  lastScoreUploadTime: 0,
+  heroExp: {},
+  heroLevel: {},
+  challengeHighWave: 0,
+  bossRushKills: 0
 };
 
 var Service = {
@@ -95,6 +99,14 @@ var Service = {
       }
     }
     if (typeof data.playerName === 'string') d.playerName = data.playerName;
+    if (data.heroExp && typeof data.heroExp === 'object') {
+      for (var k in data.heroExp) d.heroExp[k] = data.heroExp[k];
+    }
+    if (data.heroLevel && typeof data.heroLevel === 'object') {
+      for (var k in data.heroLevel) d.heroLevel[k] = data.heroLevel[k];
+    }
+    if (typeof data.challengeHighWave === 'number') d.challengeHighWave = data.challengeHighWave;
+    if (typeof data.bossRushKills === 'number') d.bossRushKills = data.bossRushKills;
     return d;
   },
 

@@ -1,4 +1,4 @@
-UI.calcCellSize = function() {
+﻿UI.calcCellSize = function() {
     if (!Game.mapLayout) return;
     var cols = Game.mapLayout.cols;
     var rows = Game.mapLayout.rows;
@@ -424,7 +424,11 @@ UI._clearDeployHighlights = function() {
         info.push(hd.name + ' ' + getWeaponAttackStr(wt));
       }
       info.push('★' + (hd ? hd.rarity : '?') + '  Lv.' + (u.battleLevel || 1));
-    }
+    
+      if (u.skill) {
+        info.push('<strong style="color:#ffd700;">【主動技能】 ' + u.skill.name + '</strong> (CD: ' + u.skill.cd + ' 秒)');
+        info.push('<span style="color:#e0d0b0;font-size:11px;">描述: ' + u.skill.desc + '</span>');
+      }}
     info.push('HP: ' + Math.floor(u.hp) + '/' + Math.floor(u.maxHp));
     info.push('ATK: ' + Math.floor(u.atk));
     info.push('DEF: ' + Math.floor(u.def || 0));
@@ -466,6 +470,10 @@ UI.showWaitingUnitTooltip = function(wu, ev) {
         var tier = Service.getHeroTier(wu.heroId);
         var star = Service.getHeroStar(wu.heroId);
         info.push('★' + hd.rarity + '  Lv.' + (wu.level || 1));
+        if (hd.skill) {
+          info.push('<strong style="color:#ffd700;">【主動技能】 ' + hd.skill.name + '</strong> (CD: ' + hd.skill.cd + ' 秒)');
+          info.push('<span style="color:#e0d0b0;font-size:11px;">描述: ' + hd.skill.desc + '</span>');
+        }
         var lv = wu.level || 1;
         var lvMult = 1 + (lv - 1) * 0.5;
         var tm = 1.0 + star * (PROMO_STAR[tier] || 0);
@@ -1025,18 +1033,192 @@ UI.updateUnitActions = function() {
     var panel = document.getElementById('unit-actions');
     if (!panel) return;
     if (this.selectedUnitIdx >= 0 && this.selectedUnitIdx < Game.units.length && !Game.units[this.selectedUnitIdx].dead) {
-      panel.style.display = 'flex';
-      var u = Game.units[this.selectedUnitIdx];
+      panel.style.display = 'none';
       var infoDiv = document.getElementById('unit-action-info');
-      if (!infoDiv) {
-        infoDiv = document.createElement('div');
-        infoDiv.id = 'unit-action-info';
-        panel.insertBefore(infoDiv, panel.firstChild);
-      }
-      var levelText = u.isSoldier ? 'Lv.' + u.level : 'Lv.' + (u.battleLevel || 1);
-      infoDiv.textContent = (u.name || u.soldierName || '') + '  ' + levelText;
+      if (infoDiv) infoDiv.remove();
+      var oldSkillBtn = panel.querySelector('.unit-skill-btn');
+      if (oldSkillBtn) oldSkillBtn.remove();
     } else {
       panel.style.display = 'none';
+    }
+  };
+
+/* ===== 技能欄 (左右兩側區分 & 自動施法) ===== */
+UI.showSkillTooltip = function(skill, ev, heroName, row, col) {
+  var old = document.getElementById('unit-tooltip');
+  if (old) old.remove();
+  var info = [];
+  var title = '【' + (heroName || '') + ' 大招】' + skill.name;
+  if (row !== undefined && col !== undefined) {
+    title += ' (第' + (row + 1) + '行, 第' + (col + 1) + '列)';
+  }
+  info.push('<strong style="color:#ffd700;font-size:14px;">' + title + '</strong>');
+  info.push('冷卻時間: ' + skill.cd + ' 秒');
+  var typeZh = {
+    'damage_single': '單體傷害',
+    'damage_aoe': '範圍傷害',
+    'heal': '治療',
+    'stun': '控場暈眩',
+    'buff_self': '自身強化',
+    'buff_ally': '全體強化'
+  }[skill.type] || skill.type;
+  info.push('類型: ' + typeZh);
+  info.push('<span style="color:#c8b896;font-size:12px;">' + skill.desc + '</span>');
+  
+  var el = document.createElement('div');
+  el.id = 'unit-tooltip';
+  el.style.cssText = 'position:fixed;background:rgba(0,0,0,0.85);color:#f0e6d0;padding:8px 12px;border-radius:8px;border:1px solid #ffd700;font-size:13px;line-height:1.5;z-index:10000;pointer-events:none;white-space:normal;max-width:250px;';
+  el.innerHTML = info.join('<br>');
+  document.body.appendChild(el);
+  
+  var cx = ev.clientX;
+  var cy = ev.clientY;
+  var tw = el.offsetWidth || 180;
+  var th = el.offsetHeight || 100;
+  var vw = window.innerWidth;
+  var vh = window.innerHeight;
+  var tx = cx + 12;
+  var ty = cy - th - 12;
+  if (tx + tw > vw - 12) tx = cx - tw - 12;
+  if (tx < 12) tx = 12;
+  if (ty < 12) ty = cy + 16;
+  el.style.left = tx + 'px';
+  el.style.top = ty + 'px';
+};
+
+UI.renderSkillBar = function() {
+    var barLeft = document.getElementById('skill-bar-left');
+    var barRight = document.getElementById('skill-bar-right');
+    if (!barLeft || !barRight) return;
+    barLeft.innerHTML = '';
+    barRight.innerHTML = '';
+    
+    var heroes = Game.units.filter(function(u) { return !u.isSoldier && !u.dead && u.skill; });
+    if (heroes.length === 0) {
+      barLeft.style.display = 'none';
+      barRight.style.display = 'none';
+      return;
+    }
+    
+    var mid = Math.ceil(heroes.length / 2);
+    var leftHeroes = heroes.slice(0, mid);
+    var rightHeroes = heroes.slice(mid);
+    
+    barLeft.style.display = leftHeroes.length > 0 ? 'flex' : 'none';
+    barRight.style.display = rightHeroes.length > 0 ? 'flex' : 'none';
+    
+    function addHeroToBar(u, container) {
+      var cdLeft = Math.max(0, Math.ceil(u.skillCooldown || 0));
+      var ready = cdLeft <= 0;
+      var btn = document.createElement('div');
+      btn.className = 'skill-bar-btn' + (ready ? ' skill-ready' : '');
+      btn.dataset.uniqueId = u.uniqueId;
+      
+      var posTxt = '[' + (u.row + 1) + ',' + (u.col + 1) + ']';
+      var autoClass = u.autoCast ? 'active' : '';
+      
+      btn.innerHTML = '<span class="sb-pos">' + posTxt + '</span>' +
+        '<span class="sb-emoji">' + u.emoji + '</span>' +
+        '<span class="sb-name">' + (u.skill.name || '大招') + '</span>' +
+        (ready ? '' : '<span class="sb-cd">' + cdLeft + 's</span>') +
+        (u.buffDuration > 0 ? '<div class="sb-buff-dur">增幅 ' + u.buffDuration.toFixed(1) + 's</div>' : '') +
+        '<div class="sb-auto-toggle ' + autoClass + '">Auto</div>';
+      
+      btn.onmouseenter = function(e) {
+        if (u.el) u.el.classList.add('highlight-skill-owner');
+        UI.showSkillTooltip(u.skill, e, u.name, u.row, u.col);
+      };
+      btn.onmouseleave = function() {
+        if (u.el) u.el.classList.remove('highlight-skill-owner');
+        UI.hideUnitTooltip();
+      };
+      
+      btn.onclick = function(e) {
+        if (e.target.classList.contains('sb-auto-toggle')) {
+          e.stopPropagation();
+          u.autoCast = !u.autoCast;
+          UI.updateSkillBar();
+          return;
+        }
+        if (ready) {
+          var ok = u.useSkill();
+          if (!ok) UI.showToast('技能無效果！');
+          UI.updateSkillBar();
+          UI.updateUnitActions();
+        } else {
+          UI.showToast('技能冷卻中...');
+        }
+      };
+      container.appendChild(btn);
+    }
+    
+    leftHeroes.forEach(function(u) { addHeroToBar(u, barLeft); });
+    rightHeroes.forEach(function(u) { addHeroToBar(u, barRight); });
+  };
+
+UI.updateSkillBar = function() {
+    var barLeft = document.getElementById('skill-bar-left');
+    var barRight = document.getElementById('skill-bar-right');
+    if (!barLeft || !barRight) return;
+    
+    var heroes = Game.units.filter(function(u) { return !u.isSoldier && !u.dead && u.skill; });
+    var btnsLeft = barLeft.querySelectorAll('.skill-bar-btn');
+    var btnsRight = barRight.querySelectorAll('.skill-bar-btn');
+    
+    if ((btnsLeft.length + btnsRight.length) !== heroes.length) {
+      this.renderSkillBar();
+      return;
+    }
+    
+    var mid = Math.ceil(heroes.length / 2);
+    var leftHeroes = heroes.slice(0, mid);
+    var rightHeroes = heroes.slice(mid);
+    
+    function updateHeroBtn(u, btn) {
+      var cdLeft = Math.max(0, Math.ceil(u.skillCooldown || 0));
+      var ready = cdLeft <= 0;
+      
+      btn.className = 'skill-bar-btn' + (ready ? ' skill-ready' : '');
+      
+      var sbCd = btn.querySelector('.sb-cd');
+      if (ready) {
+        if (sbCd) sbCd.remove();
+      } else {
+        if (!sbCd) {
+          sbCd = document.createElement('span');
+          sbCd.className = 'sb-cd';
+          btn.appendChild(sbCd);
+        }
+        sbCd.textContent = cdLeft + 's';
+      }
+      
+      var sbBuff = btn.querySelector('.sb-buff-dur');
+      if (u.buffDuration > 0) {
+        if (!sbBuff) {
+          sbBuff = document.createElement('div');
+          sbBuff.className = 'sb-buff-dur';
+          btn.appendChild(sbBuff);
+        }
+        sbBuff.textContent = '增幅 ' + u.buffDuration.toFixed(1) + 's';
+      } else {
+        if (sbBuff) sbBuff.remove();
+      }
+      
+      var autoBtn = btn.querySelector('.sb-auto-toggle');
+      if (autoBtn) {
+        if (u.autoCast) {
+          autoBtn.classList.add('active');
+        } else {
+          autoBtn.classList.remove('active');
+        }
+      }
+    }
+    
+    for (var i = 0; i < leftHeroes.length; i++) {
+        updateHeroBtn(leftHeroes[i], btnsLeft[i]);
+    }
+    for (var j = 0; j < rightHeroes.length; j++) {
+        updateHeroBtn(rightHeroes[j], btnsRight[j]);
     }
   };
 

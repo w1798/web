@@ -538,6 +538,44 @@ var Game = {
     var firstClear = !Service.isStageCompleted(s.id, this.difficulty);
     var stageIdx = getStageIndex(s.id);
     var gold = getStageGold(stageIdx, this.difficulty, firstClear);
+    
+    // 經驗值分配與升級計算 (3.3)
+    var diffMult = this.difficulty === 'hard' ? 1.5 : (this.difficulty === 'hell' ? 2.5 : 1.0);
+    var baseExp = 1;
+    var gainedExp = Math.round(baseExp * (stageIdx + 1) * diffMult);
+    var survivors = this.units.filter(function(u) { return !u.isSoldier && !u.dead; });
+    var levelUpList = [];
+    
+    if (!Service.appData.heroExp) Service.appData.heroExp = {};
+    if (!Service.appData.heroLevel) Service.appData.heroLevel = {};
+
+    survivors.forEach(function(u) {
+      var heroId = u.heroId;
+      var curExp = Service.appData.heroExp[heroId] || 0;
+      var curLevel = Service.appData.heroLevel[heroId] || 1;
+      
+      if (curLevel >= 20) return;
+      curExp += gainedExp;
+      
+      var leveled = false;
+      while (true) {
+        var req = 200 + curLevel * 250;
+        if (curExp >= req && curLevel < 20) {
+          curExp -= req;
+          curLevel++;
+          leveled = true;
+        } else {
+          break;
+        }
+      }
+      
+      Service.appData.heroExp[heroId] = curExp;
+      Service.appData.heroLevel[heroId] = curLevel;
+      if (leveled) {
+        levelUpList.push(u.emoji + u.name + ' 升至 Lv.' + curLevel);
+      }
+    });
+
     Service.addGold(gold);
     if (firstClear) Service.completeStage(s.id, this.difficulty);
     var weapon = firstClear ? Service.generateWeapon(s.id, true, this.difficulty) : Service.generateWeapon(s.id, false, this.difficulty);
@@ -575,12 +613,12 @@ var Game = {
           extraWeapons.push(hellGold);
         }
       }
-      Service.saveData();
     }
+    Service.saveData();
     if (Service.appData.playerName) {
       UI.uploadCurrentScore();
     }
-    UI.showResult(true, gold, weapon, extraWeapons);
+    UI.showResult(true, gold, weapon, extraWeapons, gainedExp, levelUpList);
   },
 
   onDefeat: function() {
@@ -597,12 +635,19 @@ var Game = {
     var self = this;
     this.lastTime = performance.now();
     this.speed = 1;
+    this._skillBarTick = 0;
     function loop(now) {
       var dt = Math.min((now - self.lastTime) / 1000, 0.05) * self.speed;
       self.lastTime = now;
       if (!self.paused) self.update(dt);
       UI.renderEnemies();
       UI.renderUnits();
+      // 每 20 幀更新技能欄 CD 顯示
+      self._skillBarTick = (self._skillBarTick || 0) + 1;
+      if (self._skillBarTick >= 20) {
+        self._skillBarTick = 0;
+        if (typeof UI.updateSkillBar === 'function') UI.updateSkillBar();
+      }
       self.animFrame = requestAnimationFrame(loop);
     }
     this.animFrame = requestAnimationFrame(loop);

@@ -79,7 +79,7 @@ var Combat = {
       }
       targets.sort(function(a, b) { return (a.hp / a.maxHp) - (b.hp / b.maxHp); });
       for (var j = 0; j < targets.length && j < (unit.aoeMax || 3); j++) {
-        var healAmt = Math.floor(unit.atk * 1.0);
+        var healAmt = Math.floor(unit.atk * (1 + (unit.buffAtkPct || 0) / 100) * 1.0);
         targets[j].hp = Math.min(targets[j].hp + healAmt, targets[j].maxHp);
         var pp = UI.cellToPixel(targets[j].col, targets[j].row);
         UI.showDmgNum(pp.x, pp.y, '+' + healAmt + '❤', '#2ecc71');
@@ -93,7 +93,7 @@ var Combat = {
       Sound.play(unit.weaponType);
     }
     var adv = this.getAdvMult(unit, enemy);
-    var dmg = Math.floor(unit.atk * adv);
+    var dmg = Math.floor(unit.atk * (1 + (unit.buffAtkPct || 0) / 100) * adv);
     var crit = Math.random() < 0.1;
     if (crit) dmg = Math.floor(dmg * 1.5);
 

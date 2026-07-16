@@ -19,6 +19,7 @@ function Enemy(data, startCol, startRow) {
   this.el = null;
   this.attackCooldown = 0;
   this.weaponType = data.weaponType || 'sword';
+  this.stunnedTimer = 0; // 初始化眩暈計數器
 
   this.syncPixelPos();
 }
@@ -32,6 +33,31 @@ Enemy.prototype.syncPixelPos = function() {
 Enemy.prototype.update = function(dt) {
   if (this.dead) return;
   this.hp = Math.max(0, this.hp);
+
+  // 暈眩狀態處理
+  if (this.stunnedTimer > 0) {
+    this.stunnedTimer -= dt;
+    if (this.el && !this.el.querySelector('.stunned-effect')) {
+      var stunDiv = document.createElement('div');
+      stunDiv.className = 'stunned-effect';
+      stunDiv.textContent = '💫';
+      this.el.appendChild(stunDiv);
+    }
+    if (this.el) {
+      var hpPct = Math.max(0, this.hp / this.maxHp);
+      var hpBar = this.el.querySelector('.enemy-hp-fill');
+      if (hpBar) {
+        hpBar.style.width = (hpPct * 100) + '%';
+        hpBar.style.background = hpPct < 0.3 ? '#e74c3c' : hpPct < 0.6 ? '#f39c12' : '#2ecc71';
+      }
+    }
+    return; // 眩暈中，跳過行動
+  } else {
+    if (this.el) {
+      var stunDiv = this.el.querySelector('.stunned-effect');
+      if (stunDiv) stunDiv.remove();
+    }
+  }
 
   var path = Game.mapLayout.path;
   if (this.pathIndex >= path.length - 1) {

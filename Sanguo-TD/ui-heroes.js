@@ -1,4 +1,4 @@
-  /* ===== 武將管理 ===== */
+﻿  /* ===== 武將管理 ===== */
 UI.showHeroes = function() {
     this.showScreen('screen-heroes');
     Service.autoFillDeploy();
@@ -272,6 +272,10 @@ UI.renderHeroList = function() {
       var tm = 1.0 + star * (PROMO_STAR[tier] || 0);
       var canToggle = d.ownedHeroes.length > 6 && (deployed2 || Service.getDeployedHeroes().length < 6);
       var tierShow = TIER_NAMES[tier] + (tier >= 4 && star > 0 ? '+' + star + '⭐' : '');
+      var lv = (Service.appData.heroLevel && Service.appData.heroLevel[hid]) || 0;
+      var exp = (Service.appData.heroExp && Service.appData.heroExp[hid]) || 0;
+      var nextLvCost = lv >= 20 ? 0 : (lv || 1) * 100;
+      var globalLvBonus = 1 + lv * 0.02;
 
       var card = document.createElement('div');
       card.className = 'hero-card' + (deployed2 ? '' : ' not-deployed');
@@ -309,7 +313,7 @@ UI.renderHeroList = function() {
       cardBody.innerHTML =
         '<div class="hc-emoji">' + hd.emoji + '</div>' +
         '<div class="hc-info">' +
-           '<div class="hc-name-row"><span class="hc-name">' + hd.name + '</span><span class="hc-faction">[' + (FACTION_LABELS[hd.faction] || hd.faction) + ']</span><span class="hc-original-rarity" data-tip="原軍階" style="color:' + RARITY_COLORS[hd.rarity] + ';">' + RARITY_NAMES[hd.rarity] + '</span><span class="hc-rarity" data-tip="現軍階" style="color:' + TIER_COLORS[tier] + ';">' + tierShow + '</span><span class="hc-score">戰力 ' + getHeroScore(hd, tier, star, Service.getWeapon(hid)) + '分</span></div>' +
+           '<div class="hc-name-row"><span class="hc-name">' + hd.name + '</span><span class="hc-lv" style="color:#3498db;font-weight:bold;font-size:13px;margin-left:4px;">Lv.' + lv + '</span><span class="hc-faction">[' + (FACTION_LABELS[hd.faction] || hd.faction) + ']</span><span class="hc-original-rarity" data-tip="原軍階" style="color:' + RARITY_COLORS[hd.rarity] + ';">' + RARITY_NAMES[hd.rarity] + '</span><span class="hc-rarity" data-tip="現軍階" style="color:' + TIER_COLORS[tier] + ';">' + tierShow + '</span><span class="hc-score">戰力 ' + getHeroScore(hd, tier, star, Service.getWeapon(hid)) + '分</span></div>' +
            '<div class="hc-stats">' +
              (function() {
                var _w = Service.getWeapon(hid);
@@ -322,9 +326,9 @@ UI.renderHeroList = function() {
                var _offAtk = hd.baseAtk - _std.atk[hd.rarity];
                var _offDef = hd.baseDef - _std.def[hd.rarity];
                var _offHp = hd.baseHp - _std.hp[hd.rarity];
-               var _effAtk = (_std.atk[tier] + _offAtk) * tm;
-               var _effDef = (_std.def[tier] + _offDef) * tm;
-               var _effHp = (_std.hp[tier] + _offHp) * tm;
+                var _effAtk = (_std.atk[tier] + _offAtk) * tm * globalLvBonus;
+                var _effDef = (_std.def[tier] + _offDef) * tm * globalLvBonus;
+                var _effHp = (_std.hp[tier] + _offHp) * tm * globalLvBonus;
                return '⚔️' + Math.floor(_effAtk * _wAtkMult) +
                  ' 🛡' + Math.floor(_effDef) +
                  ' ❤' + Math.floor(_effHp * _wHpMult) +
@@ -334,11 +338,23 @@ UI.renderHeroList = function() {
            '</div>' +
            (function() { var _w = Service.getWeapon(hid); if (!_w) return '<div class="hc-weapon">' + getWeaponAttackStr(HERO_WEAPON[hd.type]) + ' ' + hd.desc + '</div>'; var _qn = WEAPON_QUALITY[_w.quality] ? WEAPON_QUALITY[_w.quality].name : '?'; var _qc = WEAPON_QUALITY[_w.quality] ? WEAPON_QUALITY[_w.quality].color : '#888'; var _wt = WEAPON_TYPE_LABELS[_w.type] || '?'; var _s = '<span style="color:' + _qc + ';font-weight:bold;">[' + _qn + _wt + ']</span> ⚔+' + _w.atkPct + '%'; if (_w.hpPct) _s += ' ❤+' + _w.hpPct + '%'; if (_w.spd) _s += ' 🏃+' + (_w.spd || 0).toFixed(2); return '<div class="hc-weapon">' + _s + '</div>'; })() +
            (bondsHtml ? '<div class="hc-bonds">' + bondsHtml + '</div>' : '') +
+            (hd.skill ? '<div class="hc-skill" style="margin-top:4px;font-size:12px;color:#ffd700;">\u2726\u5927\u62db \u3010' + hd.skill.name + '\u3011: ' + hd.skill.desc + ' (CD: ' + hd.skill.cd + '\u79d2)</div>' : '') +
          '</div>';
+
+      var expBar = document.createElement('div');
+      expBar.className = 'frag-bar';
+      var expPct = nextLvCost ? Math.min(exp / nextLvCost * 100, 100) : 100;
+      expBar.innerHTML = '<div class="frag-fill" style="width:' + expPct + '%;background:#3498db;"></div>';
+
+      var expLabel = document.createElement('div');
+      expLabel.className = 'frag-label';
+      expLabel.textContent = '等級: ' + lv + '/20 經驗值: ' + exp + (nextLvCost ? '/' + nextLvCost : ' (已滿級)');
 
       var info = cardBody.querySelector('.hc-info');
       info.appendChild(fragBar);
       info.appendChild(fragLabel);
+      info.appendChild(expBar);
+      info.appendChild(expLabel);
       card.appendChild(cardBody);
 
       /* 上陣/下陣按鈕 */

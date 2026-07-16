@@ -2172,3 +2172,217 @@ html, body {
   padding:6px 14px !important;
   min-width:auto !important;
 }
+
+/* ===== 技能系統 ===== */
+/* 技能欄（左右兩側直排面板） */
+.skill-bar-side {
+  position: absolute;
+  top: 130px;
+  width: 72px;
+  max-height: 52vh;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(15, 8, 3, 0.88);
+  border: 1px solid rgba(255, 180, 50, 0.4);
+  border-radius: 12px;
+  padding: 8px 4px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.65);
+  overflow-y: auto;
+  align-items: center;
+}
+.skill-bar-side.left {
+  left: 8px;
+}
+.skill-bar-side.right {
+  right: 8px;
+}
+
+.skill-bar-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  width: 62px;
+  padding: 5px 2px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid #5a3a20;
+  background: rgba(40, 20, 10, 0.85);
+  transition: all 0.18s;
+  position: relative;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.skill-bar-btn .sb-pos {
+  font-size: 8px;
+  color: #a0a0a0;
+  transform: scale(0.9);
+}
+.skill-bar-btn.skill-ready {
+  border-color: #ffd700;
+  background: rgba(255, 215, 0, 0.1);
+  box-shadow: 0 0 6px rgba(255, 215, 0, 0.3);
+  animation: skill-pulse 1.6s ease-in-out infinite;
+}
+.skill-bar-btn.skill-ready:active {
+  transform: scale(0.92);
+}
+.skill-bar-btn .sb-emoji { font-size: 20px; line-height: 1; }
+.skill-bar-btn .sb-name { font-size: 9px; color: #c8b896; text-align: center; white-space: nowrap; max-width: 58px; overflow: hidden; text-overflow: ellipsis; }
+.skill-bar-btn .sb-cd {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(10,5,2,0.72);
+  font-size: 13px;
+  font-weight: bold;
+  color: #e0c890;
+}
+
+/* 自動施法 Auto 切換小球 */
+.sb-auto-toggle {
+  font-size: 8px;
+  border: 1px solid #666;
+  border-radius: 4px;
+  padding: 0 3px;
+  background: #333;
+  color: #bbb;
+  cursor: pointer;
+  margin-top: 1px;
+  user-select: none;
+}
+.sb-auto-toggle.active {
+  background: #27ae60;
+  color: #fff;
+  border-color: #2ecc71;
+  text-shadow: 0 0 2px #fff;
+}
+.sb-auto-toggle:hover {
+  transform: scale(1.08);
+}
+
+/* Buff 持續時間倒計時 */
+.sb-buff-dur {
+  font-size: 8px;
+  color: #2ecc71;
+  background: rgba(46, 204, 113, 0.12);
+  border: 1px solid rgba(46, 204, 113, 0.3);
+  border-radius: 4px;
+  padding: 0 2px;
+  margin-top: 1px;
+  white-space: nowrap;
+}
+
+@keyframes skill-pulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(255,215,0,.3); }
+  50%       { box-shadow: 0 0 12px rgba(255,215,0,.65); }
+}
+
+/* 地圖武將高亮發光動畫 */
+.battle-unit.highlight-skill-owner {
+  box-shadow: 0 0 20px #ffd700, inset 0 0 10px #ffd700;
+  border-color: #ffd700 !important;
+  transform: scale(1.22);
+  z-index: 999;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+/* 選中單位面板的技能按鈕 */
+.unit-skill-btn {
+  padding: 5px 14px;
+  border-radius: 8px;
+  border: 1px solid #5a8a20;
+  background: rgba(80, 160, 30, 0.15);
+  color: #a0e060;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.unit-skill-btn.skill-ready {
+  border-color: #ffd700;
+  background: rgba(255, 215, 0, 0.15);
+  color: #ffd700;
+  animation: skill-pulse 1.5s ease-in-out infinite;
+}
+.unit-skill-btn.skill-cd {
+  opacity: 0.55;
+  cursor: default;
+}
+.unit-skill-btn .skill-cd-num {
+  color: #e0b060;
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+/* 眩暈效果 */
+.stunned-effect {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 16px;
+  animation: stunned-spin 0.7s linear infinite;
+  z-index: 110;
+  pointer-events: none;
+}
+@keyframes stunned-spin {
+  0%   { transform: translateX(-50%) rotate(0deg); }
+  100% { transform: translateX(-50%) rotate(360deg); }
+}
+
+/* 技能特效 */
+.skill-effect-fx {
+  position: absolute;
+  pointer-events: none;
+  z-index: 9999;
+  font-size: 32px;
+  transition: all 0.6s ease;
+}
+
+/* 結算畫面——經驗值與升級列表 */
+.exp-reward {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #b0c8e0;
+}
+.levelup-list {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  background: rgba(255, 215, 0, 0.06);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 8px;
+}
+.levelup-item {
+  font-size: 14px;
+  color: #ffd700;
+  font-weight: bold;
+  text-shadow: 0 0 8px rgba(255,215,0,0.6);
+}
+
+@media (max-width: 480px) {
+  .skill-bar-side {
+    top: 74px;
+    width: 58px;
+    gap: 4px;
+    padding: 4px 2px;
+    max-height: 48vh;
+  }
+  .skill-bar-btn {
+    width: 52px;
+    padding: 3px 1px;
+  }
+  .skill-bar-btn .sb-emoji { font-size: 17px; }
+  .skill-bar-btn .sb-name  { font-size: 8.5px; max-width: 48px; }
+  .skill-bar-side.left { left: 4px; }
+  .skill-bar-side.right { right: 4px; }
+}
+

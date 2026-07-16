@@ -23,6 +23,16 @@ function Unit(heroData, col, row, tier, star) {
   this.damageType = st ? st.damageType : 'physical';
   this.aoeMax = st ? (st.aoeMax || 3) : 3;
   this.atkSpeed = st ? st.atkSpeed + (this.tier - 1) * 0.1 : 1.0;
+  
+  // 技能與特殊狀態初始化
+  this.uniqueId = 'u_' + Math.random().toString(36).substr(2, 9);
+  this.autoCast = true; // 預設開啟自動施法
+  this.skill = heroData.skill || null;
+  this.skillCooldown = 0;
+  this.stunnedTimer = 0;
+  this.buffAtkPct = 0;
+  this.buffDuration = 0;
+
   this.applyTierStats(heroData);
 }
 
@@ -32,15 +42,24 @@ Unit.prototype.applyTierStats = function(heroData, battleLv) {
   var lv = battleLv || this.battleLevel || 1;
   var lvMult = 1 + (lv - 1) * 0.5;
   var tm = 1.0 + (this.star || 0) * (PROMO_STAR[this.tier] || 0);
+
+  // 取得全球武將等級並計算加成
+  var gLevel = 0;
+  if (window.Service && Service.appData && Service.appData.heroLevel) {
+    gLevel = Service.appData.heroLevel[heroData.id] || 0;
+  }
+  var globalLvBonus = 1 + gLevel * 0.02;
+
   var offsetAtk = heroData.baseAtk - std.atk[heroData.rarity];
   var offsetDef = heroData.baseDef - std.def[heroData.rarity];
   var offsetHp = heroData.baseHp - std.hp[heroData.rarity];
   var effectiveAtk = std.atk[this.tier] + offsetAtk;
   var effectiveDef = std.def[this.tier] + offsetDef;
   var effectiveHp = std.hp[this.tier] + offsetHp;
-  this.atk = Math.floor(effectiveAtk * tm * lvMult);
-  this.def = Math.floor(effectiveDef * tm * lvMult);
-  this.maxHp = Math.floor(effectiveHp * tm * lvMult);
+
+  this.atk = Math.floor(effectiveAtk * tm * lvMult * globalLvBonus);
+  this.def = Math.floor(effectiveDef * tm * lvMult * globalLvBonus);
+  this.maxHp = Math.floor(effectiveHp * tm * lvMult * globalLvBonus);
   this.hp = this.maxHp;
   this.name = heroData.name + (lv > 1 ? ' Lv' + lv : '');
 };
@@ -51,6 +70,14 @@ Unit.prototype.applyWeaponStats = function() {
   var wType = Service.getHeroWeaponType({ type: this.type });
   if (w.type !== wType) return;
   var heroData = getHeroData(this.heroId);
+  
+  // 取得全球武將等級並計算加成
+  var gLevel = 0;
+  if (window.Service && Service.appData && Service.appData.heroLevel) {
+    gLevel = Service.appData.heroLevel[this.heroId] || 0;
+  }
+  var globalLvBonus = 1 + gLevel * 0.02;
+
   if (heroData) {
     var weaponType = HERO_WEAPON[heroData.type];
     var std = STANDARD_STATS[weaponType] || STANDARD_STATS.sword;
@@ -58,9 +85,9 @@ Unit.prototype.applyWeaponStats = function() {
     var lvMult = 1 + (this.battleLevel - 1) * 0.5;
     var offsetAtk = heroData.baseAtk - std.atk[heroData.rarity];
     var effectiveAtk = std.atk[this.tier] + offsetAtk;
-    this.atk = Math.floor(effectiveAtk * tm * lvMult * (1 + (w.atkPct || 0) / 100));
+    this.atk = Math.floor(effectiveAtk * tm * lvMult * globalLvBonus * (1 + (w.atkPct || 0) / 100));
     var effectiveHp = std.hp[this.tier] + (heroData.baseHp - std.hp[heroData.rarity]);
-    this.maxHp = Math.floor(effectiveHp * tm * lvMult * (1 + (w.hpPct || 0) / 100));
+    this.maxHp = Math.floor(effectiveHp * tm * lvMult * globalLvBonus * (1 + (w.hpPct || 0) / 100));
     this.hp = this.maxHp;
   } else {
     this.atk = Math.floor(this.atk * (1 + (w.atkPct || 0) / 100));
@@ -88,6 +115,49 @@ Unit.prototype.findTarget = function() {
 
 Unit.prototype.update = function(dt) {
   if (this.dead) return;
+
+  // 技能冷卻與狀態倒數
+  if (this.skillCooldown > 0) {
+    this.skillCooldown -= dt;
+  }
+  if (this.buffDuration > 0) {
+    this.buffDuration -= dt;
+    if (this.buffDuration <= 0) {
+      this.buffDuration = 0;
+      this.buffAtkPct = 0;
+    }
+  }
+
+  // 自動施法判定 (4.2 - 自動功能)
+  if (this.autoCast && this.skill && this.skillCooldown <= 0) {
+    this.useSkill();
+  }
+
+  // 暈眩狀態處理
+  if (this.stunnedTimer > 0) {
+    this.stunnedTimer -= dt;
+    if (this.el && !this.el.querySelector('.stunned-effect')) {
+      var stunDiv = document.createElement('div');
+      stunDiv.className = 'stunned-effect';
+      stunDiv.textContent = '💫';
+      this.el.appendChild(stunDiv);
+    }
+    if (this.el) {
+      var hpPct = Math.max(0, this.hp / this.maxHp);
+      var hpBar = this.el.querySelector('.unit-hp-fill');
+      if (hpBar) {
+        hpBar.style.width = (hpPct * 100) + '%';
+        hpBar.style.background = hpPct < 0.3 ? '#e74c3c' : hpPct < 0.6 ? '#f39c12' : '#2ecc71';
+      }
+    }
+    return;
+  } else {
+    if (this.el) {
+      var stunDiv = this.el.querySelector('.stunned-effect');
+      if (stunDiv) stunDiv.remove();
+    }
+  }
+
   this.cooldown -= dt;
   this.target = this.findTarget();
   if (this.cooldown <= 0) {
@@ -106,6 +176,123 @@ Unit.prototype.update = function(dt) {
       hpBar.style.width = (hpPct * 100) + '%';
       hpBar.style.background = hpPct < 0.3 ? '#e74c3c' : hpPct < 0.6 ? '#f39c12' : '#2ecc71';
     }
+  }
+};
+
+Unit.prototype.useSkill = function() {
+  if (this.dead || !this.skill || this.skillCooldown > 0) return false;
+  
+  var type = this.skill.type;
+  var mult = this.skill.multiplier || 0;
+  var aoeRange = this.skill.aoeRange || 0;
+  var dur = this.skill.duration || 0;
+  var effectVal = this.skill.effectValue || 0;
+  
+  var selfValAtk = this.atk * (1 + (this.buffAtkPct || 0) / 100);
+  
+  if (type === 'damage_single') {
+    var tgt = this.target || this.findTarget();
+    if (!tgt || tgt.dead) return false;
+    
+    var dmg = Math.round(selfValAtk * mult);
+    tgt.takeDamage(dmg);
+    this.showSkillEffect(tgt.pixelX, tgt.pixelY, '⚡', 'rgba(255,165,0,0.8)');
+  }
+  else if (type === 'damage_aoe') {
+    var center = this.target || this.findTarget();
+    if (!center || center.dead) return false;
+    
+    var dmg = Math.round(selfValAtk * mult);
+    this.showSkillEffect(center.pixelX, center.pixelY, '🔥', 'rgba(255,69,0,0.8)', aoeRange * 40);
+    
+    var inRange = [];
+    for (var i = 0; i < Game.enemies.length; i++) {
+      var e = Game.enemies[i];
+      if (e.dead) continue;
+      var dx = e.col - center.col;
+      var dy = e.row - center.row;
+      var d = Math.sqrt(dx*dx + dy*dy);
+      if (d <= aoeRange) {
+        inRange.push(e);
+      }
+    }
+    inRange.forEach(function(e) {
+      e.takeDamage(dmg);
+    });
+  }
+  else if (type === 'heal') {
+    var tgt = null;
+    var minPct = 1.0;
+    Game.units.forEach(function(u) {
+      if (u.dead) return;
+      var pct = u.hp / u.maxHp;
+      if (pct < minPct) {
+        minPct = pct;
+        tgt = u;
+      }
+    });
+    if (!tgt) tgt = this;
+    
+    var healVal = Math.round(tgt.maxHp * mult);
+    tgt.hp = Math.min(tgt.maxHp, tgt.hp + healVal);
+    var pos = UI.cellToPixel(tgt.col, tgt.row);
+    this.showSkillEffect(pos.x, pos.y, '💚', 'rgba(46,204,113,0.8)');
+    UI.showDmgNum(pos.x, pos.y, '+' + healVal, '#2ecc71');
+  }
+  else if (type === 'stun') {
+    var tgt = this.target || this.findTarget();
+    if (!tgt || tgt.dead) return false;
+    
+    tgt.takeDamage(Math.round(selfValAtk * mult));
+    tgt.stunnedTimer = dur;
+    this.showSkillEffect(tgt.pixelX, tgt.pixelY, '🌀', 'rgba(52,152,219,0.8)');
+  }
+  else if (type === 'buff_self') {
+    this.buffAtkPct = effectVal;
+    this.buffDuration = dur;
+    var pos = UI.cellToPixel(this.col, this.row);
+    this.showSkillEffect(pos.x, pos.y, '✨', 'rgba(230,126,34,0.8)');
+  }
+  else if (type === 'buff_ally') {
+    var self = this;
+    Game.units.forEach(function(u) {
+      if (u.dead) return;
+      u.buffAtkPct = effectVal;
+      u.buffDuration = dur;
+      var pos = UI.cellToPixel(u.col, u.row);
+      self.showSkillEffect(pos.x, pos.y, '🌞', 'rgba(241,196,15,0.8)');
+    });
+  }
+  
+  if (typeof UI.triggerScreenShake === 'function') {
+    UI.triggerScreenShake();
+  }
+  
+  this.skillCooldown = this.skill.cd;
+  
+  if (window.Sound && typeof Sound.play === 'function') {
+    Sound.play('upgrade');
+  }
+  
+  return true;
+};
+
+Unit.prototype.showSkillEffect = function(px, py, emoji, color, radius) {
+  var fx = document.createElement('div');
+  fx.className = 'skill-effect-fx';
+  fx.style.cssText = 'position:absolute;left:' + px + 'px;top:' + py + 'px;transform:translate(-50%,-50%);font-size:32px;pointer-events:none;z-index:9999;transition:all 0.6s ease;opacity:1;';
+  fx.textContent = emoji;
+  
+  var gridContainer = document.getElementById('battle-grid');
+  if (gridContainer) {
+    gridContainer.appendChild(fx);
+    setTimeout(function() {
+      fx.style.transform = 'translate(-50%, -100%) scale(2.0)';
+      fx.style.opacity = '0';
+    }, 50);
+    setTimeout(function() {
+      fx.remove();
+    }, 650);
   }
 };
 
