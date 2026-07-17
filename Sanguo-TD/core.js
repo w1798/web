@@ -677,7 +677,7 @@ var Game = {
     if (overlay) overlay.style.display = 'none';
     /* 挑戰模式勝利 */
     if (this.gameMode === 'challenge') {
-      var gold = this.challengeWave * CHALLENGE_CONFIG.goldRewardBase;
+      var gold = this.challengeWave;
       Service.addGold(gold);
       if (this.challengeWave > (Service.appData.challengeHighWave || 0)) {
         Service.appData.challengeHighWave = this.challengeWave;
@@ -689,6 +689,7 @@ var Game = {
     /* Boss Rush 通關/進入休息 */
     if (this.gameMode === 'bossrush') {
       this.bossRushKills++;
+      Service.addGold(this.bossRushKills * 10);
       if (this.bossRushKills > (Service.appData.bossRushKills || 0)) {
         Service.appData.bossRushKills = this.bossRushKills;
       }
