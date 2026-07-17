@@ -33,7 +33,7 @@ var LeaderboardAPI = {
       });
   },
 
-  submitScore: function(playerName, totalScore, heroes, callback) {
+  submitScore: function(playerName, totalScore, heroes, extraData, callback) {
     if (!this.db || !this.uid) {
       if (callback) callback(false);
       return;
@@ -43,6 +43,8 @@ var LeaderboardAPI = {
       playerName: playerName,
       totalScore: totalScore,
       heroes: heroes,
+      challengeHighWave: (extraData && extraData.challengeHighWave) || 0,
+      bossRushKills: (extraData && extraData.bossRushKills) || 0,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
     this.db.collection('leaderboard').doc(this.uid).set(data)
@@ -50,20 +52,22 @@ var LeaderboardAPI = {
       .catch(function(e) { console.warn('Submit score failed:', e); if (callback) callback(false); });
   },
 
-  getLeaderboard: function(topN, callback) {
+  getLeaderboard: function(topN, sortBy, callback) {
     if (!this.db) {
       if (callback) callback([]);
       return;
     }
     this.db.collection('leaderboard')
       .orderBy('totalScore', 'desc')
-      .limit(topN || 20)
+      .limit(topN || 50)
       .get()
       .then(function(snapshot) {
         var list = [];
         snapshot.forEach(function(doc) {
           list.push(doc.data());
         });
+        var field = sortBy || 'totalScore';
+        list.sort(function(a, b) { return (b[field] || 0) - (a[field] || 0); });
         if (callback) callback(list);
       })
       .catch(function(e) {

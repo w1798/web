@@ -16,12 +16,28 @@ var Game = {
   recruitCost: 10,
   maxLives: 3,
   difficulty: 'normal',
+  gameMode: 'campaign',
+  challengeWave: 0,
+  challengeGold: 0,
+  bossRushIndex: 0,
+  bossRushKills: 0,
+  bossRushUnits: [],
+  bossRushMap: null,
 
   getStage: function(stageId) {
     return getStageData(stageId);
   },
 
-  initStage: function(stageId) {
+  initStage: function(stageId, mode) {
+    this.gameMode = mode || 'campaign';
+    if (this.gameMode === 'challenge') {
+      this.challengeWave = 0;
+      this.challengeGold = 0;
+    }
+    if (this.gameMode === 'bossrush') {
+      // bossrush 由 initBossRushStage 處理
+      return;
+    }
     var s = this.getStage(stageId);
     if (!s) return;
     this.stage = s;
@@ -46,7 +62,6 @@ var Game = {
     this.waitingUnits = [];
     this.recruitCount = 0;
     this.recruitCost = 10;
-
     this.buildGrid();
     UI.renderBattle();
     UI.updateHUD();
@@ -207,8 +222,87 @@ var Game = {
     return true;
   },
 
+  generateChallengeWave: function(waveNum) {
+    var enemies = [];
+    var baseCount = 3 + Math.floor(waveNum * 0.5);
+    var isBoss = (waveNum % CHALLENGE_CONFIG.bossInterval === 0);
+    if (isBoss) {
+      var bossPool = ['boss_dongzhuo', 'boss_caocao', 'boss_sunquan', 'boss_lubu'];
+      var bossId = bossPool[Math.floor(Math.random() * bossPool.length)];
+      enemies.push({ type: bossId, count: 1 });
+      for (var i = 0; i < Math.floor(baseCount / 2); i++) {
+        enemies.push({ type: 'wei_soldier', count: 1 });
+      }
+    } else {
+      var typeMap = ['wei_soldier', 'wu_soldier', 'wei_archer', 'dong_cavalry', 'wei_general'];
+      for (var i = 0; i < baseCount; i++) {
+        enemies.push({ type: typeMap[Math.floor(Math.random() * typeMap.length)], count: 1 });
+      }
+    }
+    return { enemies: enemies, delay: 2 };
+  },
+
+  initBossRushStage: function(bossIndex) {
+    if (bossIndex >= BOSS_RUSH_ORDER.length) {
+      this.battlePhase = 'won';
+      this.onVictory();
+      return;
+    }
+    this.bossRushIndex = bossIndex;
+    var boss = BOSS_RUSH_ORDER[bossIndex];
+    var layoutKey = getRandomMapLayout();
+    this.stage = {
+      id: 'bossrush_' + bossIndex,
+      name: 'Boss Rush ' + (bossIndex + 1),
+      map: layoutKey,
+      waves: [{ enemies: [{ type: boss.heroId, count: 1 }], delay: 2 }]
+    };
+    this.mapLayout = MAP_LAYOUTS[layoutKey];
+    this.units = [];
+    this.enemies = [];
+    this.food = 10;
+    this.lives = 1;
+    this.waveIndex = 0;
+    this.spawnedCount = 0;
+    this.currentWaveEnemies = [];
+    this.waveActive = false;
+    this.spawnTimer = 0;
+    this.spawnInterval = 0.8;
+    this.waveDelay = 0;
+    this.battlePhase = 'fighting';
+    this.selectedUnit = null;
+    this.gameEnded = false;
+    this.paused = false;
+    this.speed = 1;
+    this.autoWaveTimer = 10;
+    this.waitingUnits = [];
+    this.recruitCount = 0;
+    this.recruitCost = CHALLENGE_CONFIG.recruitCostBase;
+    this.buildGrid();
+    UI.renderBattle();
+    UI.updateHUD();
+  },
+
+  startBossRushWave: function() {
+    var boss = BOSS_RUSH_ORDER[this.bossRushIndex];
+    if (!boss) return;
+    this.waveIndex = 1;
+    this.currentWaveEnemies = [boss.heroId];
+    this.waveActive = true;
+    this.spawnedCount = 0;
+    this.waveDelay = 2;
+    this.spawnTimer = 0;
+    UI.updateHUD();
+    UI.renderBarUnits();
+    UI.renderWaitingArea();
+  },
+
   batchRecruit: function() {
     var cost = this.recruitCost;
+    if (this.gameMode === 'challenge' || this.gameMode === 'bossrush') {
+      cost = CHALLENGE_CONFIG.recruitCostBase + this.recruitCount * 2;
+      this.recruitCost = cost;
+    }
     if (!DEV_MODE && this.food < cost) return null;
 
     var deployed = Service.getDeployedHeroes();
@@ -433,6 +527,29 @@ var Game = {
   },
 
   startNextWave: function() {
+    if (this.gameMode === 'challenge') {
+      this.challengeWave++;
+      var wave = this.generateChallengeWave(this.challengeWave);
+      this.currentWaveEnemies = [];
+      this.waveActive = true;
+      this.spawnedCount = 0;
+      this.waveDelay = wave.delay || 2;
+      this.spawnTimer = 0;
+      for (var i = 0; i < wave.enemies.length; i++) {
+        var ew = wave.enemies[i];
+        for (var j = 0; j < ew.count; j++) {
+          this.currentWaveEnemies.push(ew.type);
+        }
+      }
+      UI.updateHUD();
+      UI.renderBarUnits();
+      UI.renderWaitingArea();
+      return;
+    }
+    if (this.gameMode === 'bossrush') {
+      this.startBossRushWave();
+      return;
+    }
     if (this.waveIndex > this.stage.waves.length) {
       this.battlePhase = 'won';
       this.onVictory();
@@ -445,7 +562,6 @@ var Game = {
     this.spawnedCount = 0;
     this.waveDelay = wave.delay || 2;
     this.spawnTimer = 0;
-
     var difficultyMult = this.difficulty === 'hell' ? 2 : (this.difficulty === 'hard' ? 1.2 : 1);
     for (var i = 0; i < wave.enemies.length; i++) {
       var ew = wave.enemies[i];
@@ -478,7 +594,17 @@ var Game = {
           UI.renderBarUnits();
           var enemyData = getEnemyData(etype);
           if (enemyData) {
-            var mult = getEnemyMult(this.stage.id, this.difficulty);
+            var mult;
+            if (this.gameMode === 'challenge') {
+              var scale = 1 + (this.challengeWave - 1) * CHALLENGE_CONFIG.atkScale;
+              var hpScale = 1 + (this.challengeWave - 1) * CHALLENGE_CONFIG.hpScale;
+              mult = { atk: scale, hp: hpScale };
+            } else if (this.gameMode === 'bossrush') {
+              var boss = BOSS_RUSH_ORDER[this.bossRushIndex];
+              mult = { atk: boss ? boss.atkMult : 3, hp: boss ? boss.hpMult : 3 };
+            } else {
+              mult = getEnemyMult(this.stage.id, this.difficulty);
+            }
             var scaledData = {};
             for (var key in enemyData) scaledData[key] = enemyData[key];
             scaledData.hp = Math.round(enemyData.hp * mult.hp);
@@ -493,6 +619,21 @@ var Game = {
         if (!this.waveActive) return;
         if (this.spawnedCount >= this.currentWaveEnemies.length && this.enemies.length === 0) {
           this.waveActive = false;
+          if (this.gameMode === 'bossrush') {
+            this.bossRushKills++;
+            if (this.bossRushKills > (Service.appData.bossRushKills || 0)) {
+              Service.appData.bossRushKills = this.bossRushKills;
+            }
+            this.bossRushIndex++;
+            Service.saveData();
+            UI.updateHUD();
+            if (this.bossRushIndex >= BOSS_RUSH_ORDER.length) {
+              this.onVictory();
+            } else {
+              UI.showBossRest();
+            }
+            return;
+          }
           var waveMin = [12, 14, 16, 18, 20];
           var minFood = (this.waveIndex <= waveMin.length) ? waveMin[this.waveIndex - 1] : 20;
           if (this.waveIndex >= 1 && this.food < minFood) this.food = minFood;
@@ -534,6 +675,31 @@ var Game = {
     this.paused = false;
     var overlay = document.getElementById('pause-overlay');
     if (overlay) overlay.style.display = 'none';
+    /* 挑戰模式勝利 */
+    if (this.gameMode === 'challenge') {
+      var gold = this.challengeWave * CHALLENGE_CONFIG.goldRewardBase;
+      Service.addGold(gold);
+      if (this.challengeWave > (Service.appData.challengeHighWave || 0)) {
+        Service.appData.challengeHighWave = this.challengeWave;
+      }
+      Service.saveData();
+      UI.showResult(true, gold, null);
+      return;
+    }
+    /* Boss Rush 通關/進入休息 */
+    if (this.gameMode === 'bossrush') {
+      this.bossRushKills++;
+      if (this.bossRushKills > (Service.appData.bossRushKills || 0)) {
+        Service.appData.bossRushKills = this.bossRushKills;
+      }
+      Service.saveData();
+      if (this.bossRushIndex + 1 >= BOSS_RUSH_ORDER.length) {
+        UI.showResult(true, 0, null);
+      } else {
+        UI.showBossRest();
+      }
+      return;
+    }
     var s = this.stage;
     var firstClear = !Service.isStageCompleted(s.id, this.difficulty);
     var stageIdx = getStageIndex(s.id);
@@ -627,6 +793,26 @@ var Game = {
     this.paused = false;
     var overlay = document.getElementById('pause-overlay');
     if (overlay) overlay.style.display = 'none';
+    /* 挑戰模式敗北 */
+    if (this.gameMode === 'challenge') {
+      var gold = Math.floor(this.challengeWave * CHALLENGE_CONFIG.goldRewardBase * 0.5);
+      Service.addGold(gold);
+      if (this.challengeWave > (Service.appData.challengeHighWave || 0)) {
+        Service.appData.challengeHighWave = this.challengeWave;
+      }
+      Service.saveData();
+      UI.showResult(false, gold, null);
+      return;
+    }
+    /* Boss Rush 敗北 */
+    if (this.gameMode === 'bossrush') {
+      if (this.bossRushKills > (Service.appData.bossRushKills || 0)) {
+        Service.appData.bossRushKills = this.bossRushKills;
+      }
+      Service.saveData();
+      UI.showResult(false, 0, null);
+      return;
+    }
     Service.addGold(5);
     UI.showResult(false, 5, null);
   },

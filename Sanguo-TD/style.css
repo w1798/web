@@ -1,4 +1,4 @@
-* {
+﻿* {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -553,10 +553,10 @@ html, body {
 .grid-cell.buildable.locked {
   background: rgba(60,50,40,0.5);
   border-color: rgba(90,58,32,0.6);
-  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><text y="18" font-size="16">🔒</text></svg>'), auto;
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><text y="18" font-size="16">??</text></svg>'), auto;
 }
 .grid-cell.buildable.locked::after {
-  content: '🔒';
+  content: '??';
   font-size: 12px;
   opacity: 0.5;
   position: absolute;
@@ -1915,7 +1915,7 @@ html, body {
 }
 
 /* iPhone notch safe area */
-/* ===== 武器管理 ===== */
+/* ===== 甇血蝞∠? ===== */
 .weapons-list {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -1961,13 +1961,13 @@ html, body {
 }
 .weapon-recycle-btn:hover { background: #5a2a1a; }
 
-/* ===== 掉落武器 ===== */
+/* ===== ?甇血 ===== */
 .weapon-drop {
   font-size: 13px;
   line-height: 1.6;
 }
 
-/* ===== 加速控制 ===== */
+/* ===== ???===== */
 .speed-controls {
   display: flex;
   gap: 4px;
@@ -2000,7 +2000,7 @@ html, body {
   }
 }
 
-/* ===== Mobile 手機 ===== */
+/* ===== Mobile ?? ===== */
 @media (max-width: 480px) {
   .battle-grid {
     min-height: 0;
@@ -2099,13 +2099,13 @@ html, body {
   cursor: pointer;
 }
 .lb-entry:after {
-  content:'▶';
+  content:'??;
   color:#6a5a4a;
   font-size:12px;
   transition:transform 0.2s;
 }
 .lb-entry.open:after {
-  content:'▼';
+  content:'??;
 }
 .lb-entry.lb-me {
   border-color: #ffd700;
@@ -2173,8 +2173,8 @@ html, body {
   min-width:auto !important;
 }
 
-/* ===== 技能系統 ===== */
-/* 技能欄（左右兩側直排面板） */
+/* ===== ??賜頂蝯?===== */
+/* ??賣?嚗椰?喳?渡??選? */
 .skill-bar-side {
   position: absolute;
   top: 130px;
@@ -2244,7 +2244,7 @@ html, body {
   color: #e0c890;
 }
 
-/* 自動施法 Auto 切換小球 */
+/* ?芸??賣? Auto ??撠? */
 .sb-auto-toggle {
   font-size: 8px;
   border: 1px solid #666;
@@ -2266,7 +2266,7 @@ html, body {
   transform: scale(1.08);
 }
 
-/* Buff 持續時間倒計時 */
+/* Buff ????????*/
 .sb-buff-dur {
   font-size: 8px;
   color: #2ecc71;
@@ -2283,7 +2283,7 @@ html, body {
   50%       { box-shadow: 0 0 12px rgba(255,215,0,.65); }
 }
 
-/* 地圖武將高亮發光動畫 */
+/* ?啣?甇血?擃漁?澆?? */
 .battle-unit.highlight-skill-owner {
   box-shadow: 0 0 20px #ffd700, inset 0 0 10px #ffd700;
   border-color: #ffd700 !important;
@@ -2292,7 +2292,7 @@ html, body {
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
-/* 選中單位面板的技能按鈕 */
+/* ?訾葉?桐??Ｘ???賣???*/
 .unit-skill-btn {
   padding: 5px 14px;
   border-radius: 8px;
@@ -2320,7 +2320,7 @@ html, body {
   margin-left: 4px;
 }
 
-/* 眩暈效果 */
+/* ?拇??? */
 .stunned-effect {
   position: absolute;
   top: -18px;
@@ -2336,7 +2336,7 @@ html, body {
   100% { transform: translateX(-50%) rotate(360deg); }
 }
 
-/* 技能特效 */
+/* ??賜??*/
 .skill-effect-fx {
   position: absolute;
   pointer-events: none;
@@ -2345,7 +2345,7 @@ html, body {
   transition: all 0.6s ease;
 }
 
-/* 結算畫面——經驗值與升級列表 */
+/* 蝯??恍??撽潸????” */
 .exp-reward {
   margin-top: 8px;
   font-size: 14px;
@@ -2386,3 +2386,234 @@ html, body {
   .skill-bar-side.right { right: 4px; }
 }
 
+
+/* ===== 敺璅∪??豢? ===== */
+.campaign-mode-list {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+.campaign-mode-card {
+  background: rgba(40,25,15,0.9);
+  border: 1px solid #5a3a20;
+  border-radius: 12px;
+  padding: 16px 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: transform 0.15s, border-color 0.15s;
+}
+.campaign-mode-card:active {
+  transform: scale(0.97);
+  border-color: #ffd700;
+}
+.cmc-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+  width: 48px;
+  text-align: center;
+}
+.cmc-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #ffd700;
+  margin-bottom: 2px;
+}
+.cmc-desc {
+  font-size: 13px;
+  color: #8a7a6a;
+}
+
+/* ===== ?璅∪? ===== */
+#screen-challenge {
+  background: linear-gradient(180deg, #1a0a00, #2d1810);
+}
+.challenge-content {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+.challenge-stats {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+.challenge-stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.cs-label {
+  font-size: 12px;
+  color: #8a7a6a;
+}
+.cs-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #ffd700;
+}
+.cs-best {
+  color: #e74c3c;
+}
+.challenge-info-box, .bossrush-info-box {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid #3a2215;
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+.ci-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 14px;
+  color: #c8a87a;
+}
+.challenge-btns {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+/* ===== Boss Rush ===== */
+#screen-bossrush {
+  background: linear-gradient(180deg, #1a0a00, #2d1810);
+}
+.bossrush-content {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+.bossrush-progress {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 8px 0;
+}
+.bossrush-progress .br-dot {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #5a3a20;
+  background: #2a1a10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #6a5a4a;
+}
+.bossrush-progress .br-dot.cleared {
+  border-color: #27ae60;
+  background: #1a3a20;
+  color: #2ecc71;
+}
+.bossrush-progress .br-dot.current {
+  border-color: #ffd700;
+  background: #3a2a10;
+  color: #ffd700;
+  animation: pulse 1.5s infinite;
+}
+.bossrush-progress .br-dot.failed {
+  border-color: #e74c3c;
+  background: #3a1a1a;
+  color: #e74c3c;
+}
+.bossrush-stats {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+}
+.br-stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ===== Boss Rush 隡?恍 ===== */
+#screen-boss-rest {
+  background: linear-gradient(180deg, #1a0a00, #2d1810);
+}
+.boss-rest-content {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+.rest-progress {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 8px 0;
+}
+.rest-stats {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid #3a2215;
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+.rest-stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 15px;
+  color: #c8a87a;
+}
+.rest-kills {
+  font-size: 20px;
+  font-weight: bold;
+  color: #ffd700;
+}
+.rest-info {
+  margin-top: 4px;
+}
+.rest-deploy-slots {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 8px 0;
+}
+
+/* ===== RWD 撠撟?===== */
+@media (max-width: 480px) {
+  #screen-campaign-stages .screen-header {
+    padding: 8px 12px;
+  }
+  #screen-campaign-stages .campaign-info {
+    padding: 4px 12px;
+  }
+  #screen-campaign-stages .campaign-list {
+    padding: 12px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+.campaign-mode-card {
+     padding: 12px 14px;
+   }
+   .cmc-icon { font-size: 28px; width: 40px; }
+   .cmc-title { font-size: 16px; }
+   .challenge-stats { gap: 12px; }
+   .cs-value { font-size: 20px; }
+   .bossrush-progress .br-dot { width: 32px; height: 32px; font-size: 14px; }
+
+/* 排行榜排序與額外數據 */
+.lb-sort-bar { display: flex; gap: 8px; justify-content: center; padding: 12px; flex-wrap: wrap; }
+.lb-sort-btn { font-size: 12px; padding: 6px 12px; border-radius: 6px; border: 1px solid #5a3a20; background: rgba(40,25,15,0.9); color: #8a7a6a; cursor: pointer; }
+.lb-sort-btn.active { border-color: #ffd700; color: #ffd700; background: rgba(255,215,0,0.1); }
+.lb-name-row { display:flex; justify-content:space-between; align-items:center; }
+.lb-extra { font-size: 12px; color: #c0b0a0; text-align: right; flex-shrink: 0; margin-left: 8px; }

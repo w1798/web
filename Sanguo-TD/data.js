@@ -401,6 +401,27 @@ var ENEMY_DATA = [
   { id:'boss_lubu',        name:'魔化呂布',     emoji:'💀', hp:250, atk:28, def:10, speed:0.3, weaponType:'horse',  color:'#aa3a1a' },
 ];
 
+/* ===== 挑戰模式設定 ===== */
+var CHALLENGE_CONFIG = {
+  atkScale: 0.15,       // 每波 ATK +15%
+  hpScale: 0.20,        // 每波 HP +20%
+  bossInterval: 5,      // 每 5 波出 Boss
+  recruitCostBase: 8,   // 征招基礎費用
+  goldRewardBase: 3     // 退出/失敗時金幣獎勵基礎
+};
+
+/* ===== Boss Rush 順序 ===== */
+var BOSS_RUSH_ORDER = [
+  { heroId: 'boss_dongzhuo', atkMult: 3, hpMult: 3 },
+  { heroId: 'boss_caocao',   atkMult: 3.5, hpMult: 3.5 },
+  { heroId: 'boss_sunquan',  atkMult: 4, hpMult: 4 },
+  { heroId: 'boss_lubu',     atkMult: 4.5, hpMult: 4.5 },
+  { heroId: 'boss_caocao',   atkMult: 5, hpMult: 5 },
+  { heroId: 'boss_dongzhuo', atkMult: 5, hpMult: 5 },
+  { heroId: 'boss_sunquan',  atkMult: 5.5, hpMult: 5.5 },
+  { heroId: 'boss_lubu',     atkMult: 6, hpMult: 6 }
+];
+
 /* ===== 開發模式（僅本機檔案開啟） ===== */
 var DEV_MODE = window.location.protocol === 'file:';
 
@@ -572,8 +593,16 @@ var MAP_LAYOUTS = {
       {col:1,row:4},
       {col:4,row:4}
     ]
-  }
+  },
+
+
 };
+
+var MAP_LAYOUT_KEYS = Object.keys(MAP_LAYOUTS);
+function getRandomMapLayout() {
+  var key = MAP_LAYOUT_KEYS[Math.floor(Math.random() * MAP_LAYOUT_KEYS.length)];
+  return key;
+}
 
 function getBuildableCells(mapLayout) {
   var cells = [];

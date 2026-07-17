@@ -69,6 +69,11 @@ var UI = {
   showCampaign: function() {
     this.showScreen('screen-campaign');
     if (Game && Game.setSpeed) Game.setSpeed(1);
+    Game.state = 'campaign';
+  },
+
+  showCampaignStages: function() {
+    this.showScreen('screen-campaign-stages');
     var stamina = Service.getStamina();
     var staminaEl = document.getElementById('campaign-stamina');
     if (staminaEl) staminaEl.textContent = '⚡ 體力 ' + stamina + '/' + STAMINA_MAX;
@@ -85,7 +90,6 @@ var UI = {
       if (!target && stages.length) target = stages[stages.length - 1];
       if (target) target.scrollIntoView({ block:'center', behavior:'smooth' });
     }
-    Game.state = 'campaign';
   },
 
   showBattle: function(stageId) {
@@ -111,6 +115,238 @@ var UI = {
     if (overlay) overlay.style.display = 'none';
     var btn = document.getElementById('btn-pause');
     if (btn) btn.textContent = '⏸';
+    this.renderSkillBar();
+  },
+
+  showChallenge: function() {
+    this.showScreen('screen-challenge');
+    var bestEl = document.getElementById('challenge-best');
+    if (bestEl) bestEl.textContent = Service.appData.challengeHighWave || 0;
+    var waveEl = document.getElementById('challenge-wave');
+    if (waveEl) waveEl.textContent = '0';
+    var goldEl = document.getElementById('challenge-gold');
+    if (goldEl) goldEl.textContent = '0';
+  },
+
+  startChallenge: function() {
+    if (!DEV_MODE) {
+      var stamina = Service.getStamina();
+      if (stamina < STAMINA_COST) { this.showToast('體力不足！'); return; }
+    }
+    Game.gameMode = 'challenge';
+    var layoutKey = getRandomMapLayout();
+    Game.stage = { id: 'challenge', name: '挑戰模式', map: layoutKey, waves: [] };
+    Game.mapLayout = MAP_LAYOUTS[layoutKey];
+    Game.units = [];
+    Game.enemies = [];
+    Game.food = 10;
+    Game.lives = Game.maxLives;
+    Game.waveIndex = 0;
+    Game.spawnedCount = 0;
+    Game.currentWaveEnemies = [];
+    Game.waveActive = false;
+    Game.spawnTimer = 0;
+    Game.spawnInterval = 0.8;
+    Game.waveDelay = 0;
+    Game.battlePhase = 'fighting';
+    Game.selectedUnit = null;
+    Game.gameEnded = false;
+    Game.paused = false;
+    Game.speed = 1;
+    Game.autoWaveTimer = 10;
+    Game.waitingUnits = [];
+    Game.recruitCount = 0;
+    Game.recruitCost = CHALLENGE_CONFIG.recruitCostBase;
+    Game.challengeWave = 0;
+    Game.challengeGold = 0;
+    this.showScreen('screen-battle');
+    window.scrollTo(0, 0);
+    Game.state = 'battle';
+    Game.buildGrid();
+    UI.renderBattle();
+    this.selectedWaitingIdx = -1;
+    this.selectedUnitIdx = -1;
+    this.renderWaitingArea();
+    this.updateHUD();
+    var btn = document.getElementById('btn-recruit');
+    if (btn) btn.innerHTML = '征招 🍖<span id="recruit-cost">' + Game.recruitCost + '</span>';
+    var overlay = document.getElementById('pause-overlay');
+    if (overlay) overlay.style.display = 'none';
+    var btnPause = document.getElementById('btn-pause');
+    if (btnPause) btnPause.textContent = '⏸';
+    this.renderSkillBar();
+  },
+
+  showBossRush: function() {
+    this.showScreen('screen-bossrush');
+    var killsEl = document.getElementById('bossrush-kills');
+    if (killsEl) killsEl.textContent = Service.appData.bossRushKills || 0;
+    var bestEl = document.getElementById('bossrush-best');
+    if (bestEl) bestEl.textContent = Service.appData.bossRushKills || 0;
+    this.renderBossRushProgress(-1);
+  },
+
+  renderBossRushProgress: function(currentIdx) {
+    var el = document.getElementById('bossrush-progress');
+    if (!el) return;
+    var html = '';
+    for (var i = 0; i < BOSS_RUSH_ORDER.length; i++) {
+      var cls = 'br-dot';
+      if (i < currentIdx) cls += ' cleared';
+      else if (i === currentIdx) cls += ' current';
+      var boss = BOSS_RUSH_ORDER[i];
+      var enemyData = getEnemyData(boss.heroId);
+      var emoji = enemyData ? enemyData.emoji : '?';
+      html += '<div class="' + cls + '">' + emoji + '</div>';
+    }
+    el.innerHTML = html;
+  },
+
+  startBossRush: function() {
+    if (!DEV_MODE) {
+      var stamina = Service.getStamina();
+      if (stamina < STAMINA_COST) { this.showToast('體力不足！'); return; }
+    }
+    Game.gameMode = 'bossrush';
+    Game.bossRushIndex = 0;
+    Game.bossRushKills = 0;
+    Game.bossRushUnits = [];
+    this.showScreen('screen-battle');
+    window.scrollTo(0, 0);
+    Game.state = 'battle';
+    Game.initBossRushStage(0);
+    this.selectedWaitingIdx = -1;
+    this.selectedUnitIdx = -1;
+    this.renderWaitingArea();
+    this.updateHUD();
+    var btn = document.getElementById('btn-recruit');
+    if (btn) btn.innerHTML = '征招 🍖<span id="recruit-cost">' + Game.recruitCost + '</span>';
+    var overlay = document.getElementById('pause-overlay');
+    if (overlay) overlay.style.display = 'none';
+    var btnPause = document.getElementById('btn-pause');
+    if (btnPause) btnPause.textContent = '⏸';
+    this.renderSkillBar();
+  },
+
+  showBossRest: function() {
+    Game.paused = true;
+    this.showScreen('screen-boss-rest');
+    var killsEl = document.getElementById('rest-kills');
+    if (killsEl) killsEl.textContent = Game.bossRushKills;
+    this.renderRestProgress();
+    // 恢復存活單位 50% HP
+    for (var i = 0; i < Game.units.length; i++) {
+      var u = Game.units[i];
+      if (!u.dead) {
+        var heal = Math.round(u.maxHp * 0.5);
+        u.hp = Math.min(u.hp + heal, u.maxHp);
+      }
+    }
+    // 保存存活單位到 bossRushUnits
+    Game.bossRushUnits = [];
+    for (var i = 0; i < Game.units.length; i++) {
+      var u = Game.units[i];
+      if (!u.dead) {
+        if (u.isSoldier) {
+          Game.bossRushUnits.push({
+            soldierType: u.soldierType, level: u.level,
+            emoji: u.emoji, name: u.soldierName, hp: u.hp, maxHp: u.maxHp
+          });
+        } else {
+          Game.bossRushUnits.push({
+            heroId: u.heroId, level: u.battleLevel || u.level,
+            emoji: u.emoji, name: u.name, hp: u.hp, maxHp: u.maxHp
+          });
+        }
+      }
+    }
+    this.renderRestDeploySlots();
+  },
+
+  renderRestProgress: function() {
+    var el = document.getElementById('rest-progress');
+    if (!el) return;
+    var html = '';
+    for (var i = 0; i < BOSS_RUSH_ORDER.length; i++) {
+      var cls = 'br-dot';
+      if (i < Game.bossRushIndex) cls += ' cleared';
+      else if (i === Game.bossRushIndex) cls += ' current';
+      var boss = BOSS_RUSH_ORDER[i];
+      var enemyData = getEnemyData(boss.heroId);
+      var emoji = enemyData ? enemyData.emoji : '?';
+      html += '<div class="' + cls + '">' + emoji + '</div>';
+    }
+    el.innerHTML = html;
+  },
+
+  renderRestDeploySlots: function() {
+    var el = document.getElementById('rest-deploy-slots');
+    if (!el) return;
+    var html = '';
+    for (var i = 0; i < Game.bossRushUnits.length; i++) {
+      var u = Game.bossRushUnits[i];
+      var hpPct = u.maxHp ? Math.round(u.hp / u.maxHp * 100) : 100;
+      html += '<div class="rest-unit-card">';
+      html += '<div class="rest-unit-emoji">' + (u.emoji || '?') + '</div>';
+      html += '<div class="rest-unit-name">' + (u.name || '?') + '</div>';
+      html += '<div class="rest-unit-hp">❤ ' + hpPct + '%</div>';
+      html += '</div>';
+    }
+    if (Game.bossRushUnits.length === 0) {
+      html = '<div style="color:#8a7a6a;text-align:center;padding:12px;">無存活單位</div>';
+    }
+    el.innerHTML = html;
+  },
+
+  continueBossRush: function() {
+    Game.paused = false;
+    this.showScreen('screen-battle');
+    window.scrollTo(0, 0);
+    Game.state = 'battle';
+    // 恢復存活單位到戰場
+    Game.units = [];
+    Game.enemies = [];
+    Game.waveIndex = 0;
+    Game.spawnedCount = 0;
+    Game.currentWaveEnemies = [];
+    Game.waveActive = false;
+    Game.waveDelay = 0;
+    Game.spawnTimer = 0;
+    Game.autoWaveTimer = 10;
+    Game.waitingUnits = [];
+    Game.recruitCount = 0;
+    Game.recruitCost = CHALLENGE_CONFIG.recruitCostBase;
+    if (Game.food < Game.recruitCost) Game.food = Game.recruitCost;
+    Game.battlePhase = 'fighting';
+    Game.gameEnded = false;
+    Game.paused = false;
+    // 用新的地圖初始化
+    var layoutKey = getRandomMapLayout();
+    Game.stage = {
+      id: 'bossrush_' + Game.bossRushIndex,
+      name: 'Boss Rush ' + (Game.bossRushIndex + 1),
+      map: layoutKey,
+      waves: []
+    };
+    Game.mapLayout = MAP_LAYOUTS[layoutKey];
+    Game.buildGrid();
+    // 把保存的單位放回等待區（避免重疊）
+    for (var i = 0; i < Game.bossRushUnits.length; i++) {
+      var wu = Game.bossRushUnits[i];
+      Game.waitingUnits.push(wu);
+    }
+    Game.bossRushUnits = [];
+    UI.renderBattle();
+    this.selectedWaitingIdx = -1;
+    this.selectedUnitIdx = -1;
+    this.renderWaitingArea();
+    this.updateHUD();
+    var btn = document.getElementById('btn-recruit');
+    if (btn) btn.innerHTML = '征招 🍖<span id="recruit-cost">' + Game.recruitCost + '</span>';
+    var overlay = document.getElementById('pause-overlay');
+    if (overlay) overlay.style.display = 'none';
+    var btnPause = document.getElementById('btn-pause');
+    if (btnPause) btnPause.textContent = '⏸';
     this.renderSkillBar();
   },
 
@@ -227,12 +463,28 @@ var UI = {
   },
 
   afterResult: function() {
+    Game.gameMode = 'campaign';
     this.showCampaign();
   },
 
   exitBattle: function() {
     if (!confirm('確定退出戰鬥？')) return;
+    if (Game.gameMode === 'challenge') {
+      var gold = Math.floor(Game.challengeWave * CHALLENGE_CONFIG.goldRewardBase * 0.5);
+      Service.addGold(gold);
+      if (Game.challengeWave > (Service.appData.challengeHighWave || 0)) {
+        Service.appData.challengeHighWave = Game.challengeWave;
+      }
+      Service.saveData();
+    }
+    if (Game.gameMode === 'bossrush') {
+      if (Game.bossRushKills > (Service.appData.bossRushKills || 0)) {
+        Service.appData.bossRushKills = Game.bossRushKills;
+      }
+      Service.saveData();
+    }
     Game.battlePhase = 'idle';
+    Game.gameMode = 'campaign';
     Game.paused = false;
     var overlay = document.getElementById('pause-overlay');
     if (overlay) overlay.style.display = 'none';
@@ -422,7 +674,7 @@ var UI = {
         Service.saveData();
       }
     }
-    this.renderLeaderboard();
+    this.renderLeaderboard('totalScore');
   },
 
   showNameDialog: function() {
@@ -471,7 +723,7 @@ var UI = {
         if (lbNameEl) lbNameEl.textContent = rand;
         self.showToast('此名稱已有人使用，已為您取名：' + rand);
         self.uploadCurrentScore();
-        self.renderLeaderboard();
+        self.renderLeaderboard('totalScore');
         return;
       }
       Service.appData.playerName = name;
@@ -481,7 +733,7 @@ var UI = {
       if (lbNameEl) lbNameEl.textContent = name;
       self.showToast('名稱已設定：' + name);
       self.uploadCurrentScore();
-      self.renderLeaderboard();
+      self.renderLeaderboard('totalScore');
     });
   },
 
@@ -535,8 +787,20 @@ var UI = {
       });
     }
     var self = this;
-    LeaderboardAPI.submitScore(name, totalScore, heroes, function(ok) {
-      if (ok) { if (!silent) self.showToast('戰力已上傳！'); }
+    var extraData = {
+      challengeHighWave: Service.appData.challengeHighWave || 0,
+      bossRushKills: Service.appData.bossRushKills || 0
+    };
+    LeaderboardAPI.submitScore(name, totalScore, heroes, extraData, function(ok) {
+      if (ok) {
+        if (!silent) self.showToast('戰力已上傳！');
+        // 清除排行榜快取，確保下次進入時顯示最新資料
+        localStorage.removeItem(LB_CACHE_KEY);
+        // 如果目前在排行榜畫面，重新渲染
+        if (Game.state === 'leaderboard') {
+          self.renderLeaderboard('totalScore');
+        }
+      }
       else if (!silent) self.showToast('上傳失敗，請稍後再試');
     });
   },
@@ -601,26 +865,26 @@ var UI = {
     });
   },
 
-  renderLeaderboard: function() {
+  renderLeaderboard: function(sortBy) {
     var container = document.getElementById('leaderboard-content');
     var cacheRaw = localStorage.getItem(LB_CACHE_KEY);
     var cache = cacheRaw ? JSON.parse(cacheRaw) : null;
     if (cache && cache.data && Date.now() - cache.timestamp < 300000) {
-      this._renderLBList(container, cache.data);
+      this._renderLBList(container, cache.data, sortBy);
       return;
     }
     container.innerHTML = '<div style="text-align:center;padding:20px;color:#8a7a6a;">載入中...</div>';
-    LeaderboardAPI.getLeaderboard(50, function(list) {
+    LeaderboardAPI.getLeaderboard(50, sortBy, function(list) {
       if (!list || list.length === 0) {
         container.innerHTML = '<div style="text-align:center;padding:40px;color:#8a7a6a;">尚無排行資料</div>';
         return;
       }
       localStorage.setItem(LB_CACHE_KEY, JSON.stringify({data:list, timestamp:Date.now()}));
-      UI._renderLBList(container, list);
+      UI._renderLBList(container, list, sortBy);
     });
   },
 
-  _renderLBList: function(container, list) {
+  _renderLBList: function(container, list, sortBy) {
     var filtered = [];
     for (var fi = 0; fi < list.length; fi++) {
       if (!list[fi].totalScore) continue;
@@ -642,8 +906,17 @@ var UI = {
     }
     var unique = [];
     for (var k in dedup) unique.push(dedup[k]);
-    unique.sort(function(a,b) { return (b.totalScore||0) - (a.totalScore||0); });
+    var field = sortBy || 'totalScore';
+    unique.sort(function(a,b) { return (b[field]||0) - (a[field]||0); });
     var html = '';
+    
+    // Add sort bar
+    html += '<div class="lb-sort-bar">';
+    html += '<button class="btn btn-small lb-sort-btn' + (sortBy === 'totalScore' ? ' active' : '') + '" onclick="UI.sortLeaderboard(\'totalScore\')">戰力</button>';
+    html += '<button class="btn btn-small lb-sort-btn' + (sortBy === 'challengeHighWave' ? ' active' : '') + '" onclick="UI.sortLeaderboard(\'challengeHighWave\')">🌊 挑戰波數</button>';
+    html += '<button class="btn btn-small lb-sort-btn' + (sortBy === 'bossRushKills' ? ' active' : '') + '" onclick="UI.sortLeaderboard(\'bossRushKills\')">👹 Boss Rush</button>';
+    html += '</div>';
+    
     for (var i = 0; i < unique.length; i++) {
       var entry = unique[i];
       var rank = i + 1;
@@ -652,7 +925,20 @@ var UI = {
       html += '<div class="lb-entry' + (isMe ? ' lb-me' : '') + '" onclick="UI.toggleLbDetail(this)">';
       html += '<div class="lb-rank">' + medal + '</div>';
       html += '<div class="lb-info">';
+      html += '<div class="lb-name-row" style="display:flex;justify-content:space-between;align-items:center;">';
       html += '<div class="lb-name">' + entry.playerName + '</div>';
+      // Add challenge/bossrush data
+      var extraInfo = [];
+      if ((entry.challengeHighWave || 0) > 0) {
+        extraInfo.push('🌊 第' + entry.challengeHighWave + '波');
+      }
+      if ((entry.bossRushKills || 0) > 0) {
+        extraInfo.push('👹 第' + entry.bossRushKills + '關');
+      }
+      if (extraInfo.length > 0) {
+        html += '<div class="lb-extra">' + extraInfo.join(' ') + '</div>';
+      }
+      html += '</div>';
       html += '<div class="lb-score">戰力 ' + (entry.totalScore || 0) + '</div>';
       if (entry.updatedAt) {
         var d = entry.updatedAt.toDate ? entry.updatedAt.toDate() : (entry.updatedAt.seconds ? new Date(entry.updatedAt.seconds * 1000) : new Date(entry.updatedAt));
@@ -694,6 +980,14 @@ var UI = {
     else el.classList.remove('open');
   },
 
+  sortLeaderboard: function(sortBy) {
+    localStorage.removeItem(LB_CACHE_KEY);
+    LeaderboardAPI.getLeaderboard(50, sortBy, function(list) {
+      var container = document.getElementById('leaderboard-content');
+      UI._renderLBList(container, list, sortBy);
+    });
+  },
+
   cleanupZeroScores: function() {
     if (DEV_MODE && !LeaderboardAPI.db) { this.showToast('本機模式無法連接 Firebase'); var btn = document.getElementById('btn-cleanup-lb'); if (btn) btn.disabled = false; return; }
     if (!confirm('確定清除 totalScore=0 且超過3天的排行資料？')) return;
@@ -704,7 +998,7 @@ var UI = {
       if (count < 0) { this.showToast('清理失敗（可能無權限）'); return; }
       this.showToast('已清理 ' + count + ' 筆資料');
       localStorage.removeItem(LB_CACHE_KEY);
-      this.renderLeaderboard();
+      this.renderLeaderboard('totalScore');
     }.bind(this));
   }
 };

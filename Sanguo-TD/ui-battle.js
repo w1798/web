@@ -1333,7 +1333,15 @@ UI.updateHUD = function() {
     var goldEl = document.getElementById('hud-gold');
     if (goldEl) goldEl.textContent = '💰 ' + Service.appData.gold;
     var waveEl = document.getElementById('hud-wave');
-    if (waveEl) waveEl.textContent = '🌊 ' + Game.waveIndex + '/' + Game.stage.waves.length;
+    if (waveEl) {
+      if (Game.gameMode === 'challenge') {
+        waveEl.textContent = '🌊 第 ' + Game.challengeWave + ' 波';
+      } else if (Game.gameMode === 'bossrush') {
+        waveEl.textContent = '👹 Boss ' + (Game.bossRushIndex + 1) + '/' + BOSS_RUSH_ORDER.length;
+      } else {
+        waveEl.textContent = '🌊 ' + Game.waveIndex + '/' + Game.stage.waves.length;
+      }
+    }
     var nameEl = document.getElementById('hud-stage-name');
     if (nameEl && Game.stage) nameEl.textContent = Game.stage.name;
   };

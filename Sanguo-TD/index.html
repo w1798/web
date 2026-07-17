@@ -39,20 +39,27 @@
   </div>
 
   <!-- 征戰地圖 -->
+  <!-- 征戰模式選擇 -->
   <div id="screen-campaign" class="screen">
     <div class="screen-header">
       <button class="btn-back" onclick="UI.showMenu()">←</button>
-      <h2>征戰天下</h2>
+      <h2>⚔ 征 戰</h2>
     </div>
-    <div class="campaign-info">
-      <span id="campaign-stamina">⚡ 體力 120/120</span>
+    <div class="campaign-mode-card" onclick="UI.showCampaignStages()">
+      <div class="cmc-icon">⚔</div>
+      <div class="cmc-title">征服天下</div>
+      <div class="cmc-desc">征服六大戰役，挑戰不同難度</div>
     </div>
-    <div id="difficulty-tabs" class="diff-tabs">
-      <button class="diff-btn active" data-diff="normal" onclick="UI.selectDifficulty('normal')">正常</button>
-      <button class="diff-btn" data-diff="hard" onclick="UI.selectDifficulty('hard')">困難</button>
-      <button class="diff-btn" data-diff="hell" onclick="UI.selectDifficulty('hell')">地獄</button>
+    <div class="campaign-mode-card" onclick="UI.showChallenge()">
+      <div class="cmc-icon">🌊</div>
+      <div class="cmc-title">挑戰模式</div>
+      <div class="cmc-desc">無限波次，越強越遠</div>
     </div>
-    <div id="campaign-list" class="campaign-list"></div>
+    <div class="campaign-mode-card" onclick="UI.showBossRush()">
+      <div class="cmc-icon">👹</div>
+      <div class="cmc-title">連續Boss戰</div>
+      <div class="cmc-desc">八場硬仗，考驗極限</div>
+    </div>
   </div>
 
   <!-- 戰鬥畫面 -->
@@ -90,6 +97,111 @@
     <div id="pause-overlay" class="pause-overlay" style="display:none;">
       <div class="pause-text">⏸ 暫停中</div>
       <button class="btn btn-primary" onclick="Game.togglePause()">▶ 繼續</button>
+    </div>
+  </div>
+
+  <!-- 征戰關卡列表（原 screen-campaign 內容） -->
+  <div id="screen-campaign-stages" class="screen">
+    <div class="screen-header">
+      <button class="btn-back" onclick="UI.showCampaign()">←</button>
+      <h2>征戰天下</h2>
+    </div>
+    <div class="campaign-info">
+      <span id="campaign-stamina">⚡ 體力 120/120</span>
+    </div>
+    <div id="difficulty-tabs" class="diff-tabs">
+      <button class="diff-btn active" data-diff="normal" onclick="UI.selectDifficulty('normal')">正常</button>
+      <button class="diff-btn" data-diff="hard" onclick="UI.selectDifficulty('hard')">困難</button>
+      <button class="diff-btn" data-diff="hell" onclick="UI.selectDifficulty('hell')">地獄</button>
+    </div>
+    <div id="campaign-list" class="campaign-list"></div>
+  </div>
+
+  <!-- 挑戰模式 -->
+  <div id="screen-challenge" class="screen">
+    <div class="screen-header">
+      <button class="btn-back" onclick="UI.showCampaign()">←</button>
+      <h2>🌊 挑戰模式</h2>
+    </div>
+    <div class="challenge-content">
+      <div class="challenge-stats">
+        <div class="challenge-stat-item">
+          <span class="cs-label">目前波數</span>
+          <span class="cs-value" id="challenge-wave">0</span>
+        </div>
+        <div class="challenge-stat-item">
+          <span class="cs-label">金幣</span>
+          <span class="cs-value" id="challenge-gold">0</span>
+        </div>
+        <div class="challenge-stat-item">
+          <span class="cs-label">最高波數</span>
+          <span class="cs-value cs-best" id="challenge-best">0</span>
+        </div>
+      </div>
+      <div class="challenge-info-box">
+        <div class="ci-row"><span>每波敵人增加：</span><span>ATK +15% / HP +20%</span></div>
+        <div class="ci-row"><span>Boss 出現：</span><span>每 5 波</span></div>
+        <div class="ci-row"><span>消耗體力：</span><span style="color:#2ecc71;">免費</span></div>
+      </div>
+      <div class="challenge-btns">
+        <button class="btn btn-primary" onclick="UI.startChallenge()">⚔ 開始挑戰</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Boss Rush -->
+  <div id="screen-bossrush" class="screen">
+    <div class="screen-header">
+      <button class="btn-back" onclick="UI.showCampaign()">←</button>
+      <h2>👹 連續Boss戰</h2>
+    </div>
+    <div class="bossrush-content">
+      <div class="bossrush-progress" id="bossrush-progress"></div>
+      <div class="bossrush-stats">
+        <div class="br-stat-item">
+          <span class="cs-label">已擊殺</span>
+          <span class="cs-value" id="bossrush-kills">0</span>
+        </div>
+        <div class="br-stat-item">
+          <span class="cs-label">最高紀錄</span>
+          <span class="cs-value cs-best" id="bossrush-best">0</span>
+        </div>
+      </div>
+      <div class="bossrush-info-box">
+        <div class="ci-row"><span>固定 8 場 Boss 戰</span><span></span></div>
+        <div class="ci-row"><span>Boss 屬性：</span><span>×3 ~ ×6</span></div>
+        <div class="ci-row"><span>每場後休息：</span><span>補陣容 + 恢復50%HP</span></div>
+      </div>
+      <div class="challenge-btns">
+        <button class="btn btn-primary" onclick="UI.startBossRush()">👹 開始Boss Rush</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Boss Rush 休息畫面 -->
+  <div id="screen-boss-rest" class="screen">
+    <div class="screen-header">
+      <h2>🏕 休息階段</h2>
+    </div>
+    <div class="boss-rest-content">
+      <div class="rest-progress" id="rest-progress"></div>
+      <div class="rest-stats">
+        <div class="rest-stat-row">
+          <span>已擊殺 Boss</span>
+          <span class="rest-kills" id="rest-kills">0</span>
+        </div>
+        <div class="rest-stat-row">
+          <span>全體恢復</span>
+          <span style="color:#2ecc71;">+50% HP</span>
+        </div>
+      </div>
+      <div class="rest-info">
+        <div style="color:#8a7a6a;font-size:13px;text-align:center;margin-bottom:8px;">可調整上陣陣容（無金幣/食物消耗）</div>
+        <div class="rest-deploy-slots" id="rest-deploy-slots"></div>
+      </div>
+      <div class="challenge-btns">
+        <button class="btn btn-primary" onclick="UI.continueBossRush()">▶ 繼續下一戰</button>
+      </div>
     </div>
   </div>
 
