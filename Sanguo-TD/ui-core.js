@@ -366,8 +366,6 @@ var UI = {
     var cloudStatusEl = document.getElementById('cloud-status');
     if (cloudStatusEl) cloudStatusEl.textContent = '';
     document.getElementById('cloud-password').value = '';
-    var cleanupBtn = document.getElementById('btn-cleanup-lb');
-    if (cleanupBtn) cleanupBtn.style.display = (window.location.protocol === 'file:') ? 'block' : 'none';
   },
 
   toggleSound: function(on) {
@@ -986,19 +984,5 @@ var UI = {
       var container = document.getElementById('leaderboard-content');
       UI._renderLBList(container, list, sortBy);
     });
-  },
-
-  cleanupZeroScores: function() {
-    if (DEV_MODE && !LeaderboardAPI.db) { this.showToast('本機模式無法連接 Firebase'); var btn = document.getElementById('btn-cleanup-lb'); if (btn) btn.disabled = false; return; }
-    if (!confirm('確定清除 totalScore=0 且超過1天的排行資料，並移除重複名稱的舊資料？')) return;
-    var btn = document.getElementById('btn-cleanup-lb');
-    if (btn) btn.disabled = true;
-    LeaderboardAPI.cleanupZeroScores(function(count) {
-      if (btn) btn.disabled = false;
-      if (count < 0) { this.showToast('清理失敗（可能無權限）'); return; }
-      this.showToast('已清理 ' + count + ' 筆資料');
-      localStorage.removeItem(LB_CACHE_KEY);
-      this.renderLeaderboard('totalScore');
-    }.bind(this));
   }
 };

@@ -96,57 +96,6 @@ var LeaderboardAPI = {
         console.warn('Check name failed:', e);
         if (callback) callback(false);
       });
-  },
-
-  cleanupZeroScores: function(callback) {
-    if (!this.db) { if (callback) callback(0); return; }
-    var oneDayAgo = new Date(Date.now() - 86400000);
-    this.db.collection('leaderboard').get()
-      .then(function(snapshot) {
-        var batch = LeaderboardAPI.db.batch();
-        var count = 0;
-        var entries = {}; // playerName -> {ref, time}
-
-        snapshot.forEach(function(doc) {
-          var data = doc.data();
-          var name = data.playerName;
-          var t = data.updatedAt && data.updatedAt.toDate ? data.updatedAt.toDate() : new Date(0);
-
-          // Rule 1: totalScore == 0 and older than 1 day
-          if (data.totalScore === 0 && t < oneDayAgo) {
-            batch.delete(doc.ref);
-            count++;
-            return;
-          }
-
-          // Rule 2: Deduplication
-          if (!entries[name]) {
-            entries[name] = {ref: doc.ref, time: t};
-          } else {
-            if (t > entries[name].time) {
-              // Current is newer, delete old
-              batch.delete(entries[name].ref);
-              count++;
-              entries[name] = {ref: doc.ref, time: t};
-            } else {
-              // Current is older, delete current
-              batch.delete(doc.ref);
-              count++;
-            }
-          }
-        });
-        if (count === 0) { if (callback) callback(0); return; }
-        batch.commit().then(function() {
-          if (callback) callback(count);
-        }).catch(function(e) {
-          console.warn('Cleanup commit failed:', e);
-          if (callback) callback(-1);
-        });
-      })
-      .catch(function(e) {
-        console.warn('Cleanup query failed:', e);
-        if (callback) callback(-1);
-      });
   }
 };
 
