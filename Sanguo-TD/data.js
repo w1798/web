@@ -403,8 +403,8 @@ var ENEMY_DATA = [
 
 /* ===== 挑戰模式設定 ===== */
 var CHALLENGE_CONFIG = {
-  atkScale: 0.15,       // 每波 ATK +15%
-  hpScale: 0.20,        // 每波 HP +20%
+  atkScale: 0.45,       // 每波 ATK +45%
+  hpScale: 0.60,        // 每波 HP +60%
   bossInterval: 5,      // 每 5 波出 Boss
   recruitCostBase: 8,   // 征招基礎費用
   goldRewardBase: 3     // 退出/失敗時金幣獎勵基礎
