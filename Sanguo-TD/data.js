@@ -403,8 +403,8 @@ var ENEMY_DATA = [
 
 /* ===== 挑戰模式設定 ===== */
 var CHALLENGE_CONFIG = {
-  atkScale: 0.45,       // 每波 ATK +45%
-  hpScale: 0.60,        // 每波 HP +60%
+  atkScale: 1.0,       // 每波 ATK +100%
+  hpScale: 1.5,        // 每波 HP +150%
   bossInterval: 5,      // 每 5 波出 Boss
   recruitCostBase: 8,   // 征招基礎費用
   goldRewardBase: 3     // 退出/失敗時金幣獎勵基礎
@@ -412,15 +412,33 @@ var CHALLENGE_CONFIG = {
 
 /* ===== Boss Rush 順序 ===== */
 var BOSS_RUSH_ORDER = [
-  { heroId: 'boss_dongzhuo', atkMult: 3, hpMult: 3 },
-  { heroId: 'boss_caocao',   atkMult: 3.5, hpMult: 3.5 },
-  { heroId: 'boss_sunquan',  atkMult: 4, hpMult: 4 },
-  { heroId: 'boss_lubu',     atkMult: 4.5, hpMult: 4.5 },
-  { heroId: 'boss_caocao',   atkMult: 5, hpMult: 5 },
-  { heroId: 'boss_dongzhuo', atkMult: 5, hpMult: 5 },
-  { heroId: 'boss_sunquan',  atkMult: 5.5, hpMult: 5.5 },
-  { heroId: 'boss_lubu',     atkMult: 6, hpMult: 6 }
+  { heroId: 'boss_dongzhuo', atkMult: 3.0, hpMult: 3.0 },
+  { heroId: 'boss_caocao',   atkMult: 13.37, hpMult: 13.37 },
+  { heroId: 'boss_sunquan',  atkMult: 23.74, hpMult: 23.74 },
+  { heroId: 'boss_lubu',     atkMult: 34.11, hpMult: 34.11 },
+  { heroId: 'boss_dongzhuo', atkMult: 44.47, hpMult: 44.47 },
+  { heroId: 'boss_caocao',   atkMult: 54.84, hpMult: 54.84 },
+  { heroId: 'boss_sunquan',  atkMult: 65.21, hpMult: 65.21 },
+  { heroId: 'boss_lubu',     atkMult: 75.58, hpMult: 75.58 },
+  { heroId: 'boss_dongzhuo', atkMult: 85.95, hpMult: 85.95 },
+  { heroId: 'boss_caocao',   atkMult: 96.32, hpMult: 96.32 },
+  { heroId: 'boss_sunquan',  atkMult: 106.68, hpMult: 106.68 },
+  { heroId: 'boss_lubu',     atkMult: 117.05, hpMult: 117.05 },
+  { heroId: 'boss_dongzhuo', atkMult: 127.42, hpMult: 127.42 },
+  { heroId: 'boss_caocao',   atkMult: 137.79, hpMult: 137.79 },
+  { heroId: 'boss_sunquan',  atkMult: 148.16, hpMult: 148.16 },
+  { heroId: 'boss_lubu',     atkMult: 158.53, hpMult: 158.53 },
+  { heroId: 'boss_dongzhuo', atkMult: 168.89, hpMult: 168.89 },
+  { heroId: 'boss_caocao',   atkMult: 179.26, hpMult: 179.26 },
+  { heroId: 'boss_sunquan',  atkMult: 189.63, hpMult: 189.63 },
+  { heroId: 'boss_lubu',     atkMult: 200.0, hpMult: 200.0 }
 ];
+
+function getBossRushDescription() {
+  var min = BOSS_RUSH_ORDER[0].atkMult;
+  var max = BOSS_RUSH_ORDER[BOSS_RUSH_ORDER.length - 1].atkMult;
+  return '共 ' + BOSS_RUSH_ORDER.length + ' 關，Boss 屬性：×' + min + ' ~ ×' + max;
+}
 
 /* ===== 開發模式（僅本機檔案開啟） ===== */
 var DEV_MODE = window.location.protocol === 'file:';
