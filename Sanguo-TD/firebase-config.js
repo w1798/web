@@ -96,8 +96,71 @@ var LeaderboardAPI = {
         console.warn('Check name failed:', e);
         if (callback) callback(false);
       });
+  },
+
+  cleanupLeaderboard: async function() {
+    if (!this.db) return 0;
+    var snapshot = await this.db.collection('leaderboard').get();
+    var allDocs = [];
+    snapshot.forEach(function(doc) {
+      allDocs.push({id: doc.id, data: doc.data()});
+    });
+    if (allDocs.length === 0) return 0;
+
+    var now = Date.now();
+    var oneDay = 24 * 60 * 60 * 1000;
+    var toDelete = [];
+    var playerMap = {};
+
+    for (var i = 0; i < allDocs.length; i++) {
+      var doc = allDocs[i];
+      var data = doc.data;
+      var updatedAt = data.updatedAt ? (data.updatedAt.toDate ? data.updatedAt.toDate().getTime() : (data.updatedAt.seconds ? data.updatedAt.seconds * 1000 : 0)) : 0;
+      
+      // 1. 刪除 totalScore == 0 且超過 1 天的
+      if ((data.totalScore || 0) === 0 && (now - updatedAt > oneDay)) {
+        toDelete.push(doc.id);
+        continue;
+      }
+
+      // 2. 同名保留最新
+      if (data.playerName) {
+        if (!playerMap[data.playerName] || updatedAt > playerMap[data.playerName].updatedAt) {
+          if (playerMap[data.playerName]) toDelete.push(playerMap[data.playerName].id);
+          playerMap[data.playerName] = { id: doc.id, updatedAt: updatedAt };
+        } else {
+          toDelete.push(doc.id);
+        }
+      }
+    }
+
+    if (toDelete.length === 0) return 0;
+
+    // 使用 batch 批次刪除
+    var batchSize = 500;
+    var deleted = 0;
+    for (var startIdx = 0; startIdx < toDelete.length; startIdx += batchSize) {
+      var endIdx = Math.min(startIdx + batchSize, toDelete.length);
+      var batch = this.db.batch();
+      for (var i = startIdx; i < endIdx; i++) {
+        batch.delete(this.db.collection('leaderboard').doc(toDelete[i]));
+      }
+      await batch.commit();
+      deleted += (endIdx - startIdx);
+    }
+
+    return deleted;
   }
 };
+
+/* 輔助：從 Firestore Timestamp 取得毫秒時間戳 */
+function _getTimestamp(ts) {
+  if (!ts) return 0;
+  if (ts.toDate) return ts.toDate().getTime();
+  if (ts.seconds) return ts.seconds * 1000;
+  if (typeof ts === 'number') return ts;
+  return 0;
+}
 
 /* ===== 雲端存檔（AES-256-GCM + PBKDF2） ===== */
 function _bufToB64(buf) {

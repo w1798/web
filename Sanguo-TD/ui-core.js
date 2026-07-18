@@ -366,6 +366,11 @@ var UI = {
     var cloudStatusEl = document.getElementById('cloud-status');
     if (cloudStatusEl) cloudStatusEl.textContent = '';
     document.getElementById('cloud-password').value = '';
+    // 排行榜清理按鈕（僅在本地 file 協定時顯示）
+    var lbCleanItem = document.getElementById('setting-lb-clean-item');
+    if (lbCleanItem) {
+      lbCleanItem.style.display = (location.protocol === 'file:') ? '' : 'none';
+    }
   },
 
   toggleSound: function(on) {
@@ -983,6 +988,23 @@ var UI = {
     LeaderboardAPI.getLeaderboard(50, sortBy, function(list) {
       var container = document.getElementById('leaderboard-content');
       UI._renderLBList(container, list, sortBy);
+    });
+  },
+
+  cleanupLeaderboard: function() {
+    if (!confirm('確定要清理排行榜？\n\n將刪除：\n1. 戰力為 0 且超過 1 天的紀錄\n2. 同一玩家名稱只保留最新一筆\n\n此操作無法復原！')) return;
+    var self = this;
+    this.showToast('⏳ 清理中...');
+    LeaderboardAPI.cleanupLeaderboard().then(function(deleted) {
+      if (deleted > 0) {
+        self.showToast('已清理 ' + deleted + ' 筆紀錄');
+        // 清除排行榜快取
+        localStorage.removeItem(LB_CACHE_KEY);
+      } else {
+        self.showToast('沒有需要清理的紀錄');
+      }
+    }).catch(function(e) {
+      self.showToast('清理失敗：' + (e && e.message || '未知錯誤'));
     });
   }
 };
