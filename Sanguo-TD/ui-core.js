@@ -18,6 +18,9 @@ var UI = {
     Game.start();
     this.updateMenuInfo();
 
+    // 強制設定回頂部按鈕定位到 #app 右下角
+    this._positionScrollTopBtn();
+
     var self = this;
     document.addEventListener('touchmove', function(e) {
       if (document.querySelector('.drag-ghost')) e.preventDefault();
@@ -33,6 +36,16 @@ var UI = {
         }
       }
     });
+
+    window.addEventListener('resize', function() { self._positionScrollTopBtn(); });
+
+    // 回頂部按鈕：使用定時輪詢取代 scroll 事件監聽，確保在 mobile WebView 中即時更新
+    if (!self._scrollTopTimer) {
+      self._scrollTopTimer = setInterval(function() {
+        self._updateScrollTopBtn();
+      }, 100);
+    }
+
   },
 
   /* ===== 畫面切換 ===== */
@@ -42,6 +55,7 @@ var UI = {
     for (var i = 0; i < all.length; i++) all[i].classList.remove('active');
     var el = document.getElementById(id);
     if (el) el.classList.add('active');
+    this._updateScrollTopBtn();
   },
 
   showMenu: function() {
@@ -88,7 +102,11 @@ var UI = {
         if (!stages[si].classList.contains('cleared')) { target = stages[si]; break; }
       }
       if (!target && stages.length) target = stages[stages.length - 1];
-      if (target) target.scrollIntoView({ block:'center', behavior:'smooth' });
+      if (target) {
+        var listRect = list.getBoundingClientRect();
+        var targetRect = target.getBoundingClientRect();
+        list.scrollTop += targetRect.top - listRect.top - listRect.height / 3;
+      }
     }
   },
 
@@ -562,6 +580,55 @@ var UI = {
     el.style.opacity = '1';
     clearTimeout(el._timer);
     el._timer = setTimeout(function() { el.style.opacity = '0'; }, 2000);
+  },
+
+  /* ===== 回頂部按鈕 ===== */
+  _positionScrollTopBtn: function() {
+    var btn = document.getElementById('scroll-top');
+    if (!btn) return;
+    var app = document.getElementById('app');
+    if (!app) return;
+    var rect = app.getBoundingClientRect();
+    btn.style.cssText = 'position:fixed;bottom:24px;left:' + (rect.right - 76) + 'px;width:52px;height:52px;font-size:26px;line-height:52px;text-align:center;background:#e67e22;color:#fff;border-radius:50%;cursor:pointer;z-index:99999;border:2px solid rgba(255,255,255,0.3);box-shadow:0 4px 16px rgba(230,126,34,0.5);transition:opacity 0.3s,transform 0.3s;user-select:none;';
+    this._updateScrollTopBtn();
+  },
+  _findScrollContainer: function() {
+    var activeScreen = document.querySelector('.screen.active');
+    if (!activeScreen) return null;
+    // 優先找明確的滾動容器（只要元素存在就回傳，不檢查高度避免誤差）
+    var selectors = ['.settings-content', '.leaderboard-content', '.campaign-list', '.heroes-list', '.weapons-list', '.gacha-content'];
+    for (var i = 0; i < selectors.length; i++) {
+      var el = activeScreen.querySelector(selectors[i]);
+      if (el) return el;
+    }
+    // fallback: 整個 active screen
+    return activeScreen;
+  },
+
+  _updateScrollTopBtn: function() {
+    var btn = document.getElementById('scroll-top');
+    if (!btn) return;
+    var scrollEl = this._findScrollContainer();
+    if (!scrollEl) { btn.style.opacity = '0'; btn.style.pointerEvents = 'none'; return; }
+    if (scrollEl.scrollTop > 200) {
+      btn.style.opacity = '1';
+      btn.style.pointerEvents = 'auto';
+    } else {
+      btn.style.opacity = '0';
+      btn.style.pointerEvents = 'none';
+    }
+  },
+
+  scrollToTop: function() {
+    var scrollEl = this._findScrollContainer();
+    if (scrollEl) {
+      if (scrollEl.scrollTo) {
+        scrollEl.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        scrollEl.scrollTop = 0;
+      }
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   },
 
   hideUnitInfo: function() {

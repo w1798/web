@@ -8,6 +8,7 @@ UI.showHeroes = function() {
     this.filterType = '';
     this.filterRarity = '';
     this.renderHeroList();
+    this._updateScrollTopBtn();
     Game.state = 'heroes';
   };
 
@@ -15,6 +16,7 @@ UI.showHeroes = function() {
 UI.renderHeroList = function() {
     var container = document.getElementById('heroes-list');
     container.innerHTML = '';
+    container.scrollTop = 0;
     var d = Service.appData;
     if (d.ownedHeroes.length === 0) {
       container.innerHTML = '<div style="text-align:center;padding:40px;color:#6a5a4a;">尚無武將，快去招募！</div>';

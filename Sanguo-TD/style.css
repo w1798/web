@@ -31,6 +31,7 @@ html, body {
   position: absolute;
   top: 0; left: 0;
   flex-direction: column;
+  overflow: hidden;
 }
 .screen.active {
   display: flex;
@@ -174,7 +175,7 @@ html, body {
   justify-content: center;
   align-items: center;
   background: linear-gradient(180deg, #1a0a00 0%, #2d1810 40%, #1a0a00 100%);
-  overflow-y: auto;
+  overflow: hidden;
 }
 .menu-bg {
   position: absolute;
@@ -294,6 +295,7 @@ html, body {
   color: #e0d4c0;
   font-size: 14px;
   border-bottom: 1px solid #3a2215;
+  flex-shrink: 0;
 }
 .diff-tabs {
   display: flex;
@@ -302,6 +304,7 @@ html, body {
   justify-content: center;
   background: rgba(20,12,8,0.8);
   border-bottom: 1px solid #3a2215;
+  flex-shrink: 0;
 }
 .diff-btn {
   flex: 1;
@@ -1375,6 +1378,8 @@ html, body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #5a3a20; border-radius: 2px; }
 
+/* ===== Scroll Top Button (base styles moved to bottom; keep this block empty to avoid conflicts) ===== */
+
 /* ===== Hero Management ===== */
 #screen-heroes {
   background: linear-gradient(180deg, #1a0a00, #2d1810);
@@ -1917,9 +1922,11 @@ html, body {
 /* iPhone notch safe area */
 /* ===== 甇血蝞∠? ===== */
 .weapons-list {
+  flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   padding-bottom: 20px;
+  min-height: 0;
 }
 .weapon-card {
   background: #2a1a10;
@@ -2617,3 +2624,35 @@ html, body {
 .lb-sort-btn.active { border-color: #ffd700; color: #ffd700; background: rgba(255,215,0,0.1); }
 .lb-name-row { display:flex; justify-content:space-between; align-items:center; }
 .lb-extra { font-size: 12px; color: #c0b0a0; text-align: right; flex-shrink: 0; margin-left: 8px; }
+
+/* ===== Scroll to Top ===== */
+#scroll-top {
+  opacity: 0;
+  pointer-events: none;
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 52px;
+  height: 52px;
+  font-size: 26px;
+  line-height: 52px;
+  text-align: center;
+  background: #e67e22;
+  color: #fff;
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 9999;
+  user-select: none;
+  transition: opacity 0.3s, transform 0.3s;
+  box-shadow: 0 4px 16px rgba(230, 126, 34, 0.5);
+  border: 2px solid rgba(255,255,255,0.3);
+}
+#scroll-top.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+#scroll-top:hover {
+  background: #f0943a;
+  transform: scale(1.15);
+  box-shadow: 0 6px 20px rgba(230, 126, 34, 0.7);
+}

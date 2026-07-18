@@ -5,6 +5,7 @@ UI.showGacha = function() {
     var menuBtn = document.querySelector('#screen-menu .menu-btns .btn-secondary');
     if (menuBtn) menuBtn.textContent = isWeaponMode ? '⚒️ 打 鐵' : '📜 招 募';
     this.renderGacha();
+    this._updateScrollTopBtn();
     Game.state = 'gacha';
   };
 
@@ -39,6 +40,7 @@ UI.renderGacha = function() {
     var container = document.getElementById('gacha-heroes');
     if (!container) return;
     container.innerHTML = '';
+    container.closest('.gacha-content').scrollTop = 0;
 
     if (isWeaponMode) {
       var sec = document.createElement('div');

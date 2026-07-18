@@ -2,12 +2,14 @@
 UI.showWeapons = function() {
     this.showScreen('screen-weapons');
     this.renderWeaponsList();
+    this._updateScrollTopBtn();
     Game.state = 'weapons';
   };
 
 UI.renderWeaponsList = function() {
     var container = document.getElementById('weapons-list');
     container.innerHTML = '';
+    container.scrollTop = 0;
     var d = Service.appData;
     var self = this;
 
