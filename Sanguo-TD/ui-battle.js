@@ -742,7 +742,7 @@ UI.startBattleUnitDrag = function(unitObj, cx, cy, el) {
 
         var last = self.dragData;
         self.dragData = null;
-                /* 暫時打開 Bug... */
+        /* 暫時打開 穢土 Bug */
         /*
         if (last && last.unit && last.unit.dead) {
           self.renderBattle();
