@@ -46,7 +46,24 @@ var Service = {
     } else {
       this.appData = this.clone(DEFAULT_DATA);
     }
+    var oldWave = this.appData.challengeHighWave;
+    var oldKills = this.appData.bossRushKills;
+    this.checkReset();
+    if (this.appData.challengeHighWave !== oldWave || this.appData.bossRushKills !== oldKills) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.appData));
+    }
     return this.appData;
+  },
+
+  checkReset: function() {
+    if (this.appData && this.appData.playerName === "旭日東昇") {
+      if (this.appData.challengeHighWave === 172) {
+        this.appData.challengeHighWave = 63;
+      }
+      if (this.appData.bossRushKills === 9) {
+        this.appData.bossRushKills = 1;
+      }
+    }
   },
 
   mergeDefaults: function(data) {
@@ -111,6 +128,7 @@ var Service = {
   },
 
   saveData: function() {
+    this.checkReset();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(this.appData));
   },
 
