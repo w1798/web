@@ -739,12 +739,16 @@ UI.startBattleUnitDrag = function(unitObj, cx, cy, el) {
       document.removeEventListener('touchcancel', onUp);
       try {
         var ghostRect = ghost.getBoundingClientRect();
+
         var last = self.dragData;
         self.dragData = null;
+                /* 暫時打開 Bug... */
+        /*
         if (last && last.unit && last.unit.dead) {
           self.renderBattle();
           return;
         }
+        */
         var cx3 = e.clientX || (e.changedTouches && e.changedTouches[0].clientX);
         var cy3 = e.clientY || (e.changedTouches && e.changedTouches[0].clientY);
         if (cx3 == null || !last) return;

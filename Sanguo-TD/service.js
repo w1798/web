@@ -56,7 +56,9 @@ var Service = {
   },
 
   checkReset: function() {
-    if (this.appData && this.appData.playerName === "旭日東昇") {
+    return;     // 重置玩家紀錄時，請註解此行
+    
+    if (this.appData && this.appData.playerName === "使用者名稱") {
       if (this.appData.challengeHighWave === 172) {
         this.appData.challengeHighWave = 63;
       }
