@@ -931,7 +931,7 @@ var DAILY_SHOP = [
     icon: '💎',
     desc: '100 金幣換 1 鑽石',
     costGold: 100,
-    dailyLimit: 5, // 無限制
+    dailyLimit: 10, // 限購10次
     effect: function() {
       Service.addDiamond(1);
     }
