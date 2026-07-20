@@ -892,21 +892,21 @@ var DAILY_TASKS = [
     id: 'battle_win',
     name: '征戰勝利',
     icon: '⚔️',
-    milestones: [1, 3, 6, 10, 15, 20, 25],
+    milestones: [1, 2, 3, 5, 8, 11, 15],
     reward: 2
   },
   {
     id: 'stamina_spend',
     name: '體力消耗',
     icon: '⚡',
-    milestones: [30, 60, 100, 150],
+    milestones: [10, 30, 60, 100],
     reward: 2
   },
   {
     id: 'weapon_sell',
     name: '出售武器',
     icon: '🗡️',
-    milestones: [1, 3, 6, 10],
+    milestones: [1, 2, 3, 5],
     reward: 2
   }
 ];
