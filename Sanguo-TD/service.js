@@ -268,9 +268,9 @@ var Service = {
     if (this.appData.redeemedCodes.indexOf(cleanCode) !== -1) return { ok: false, msg: '此禮包碼已領取過' };
 
     var codes = {
-      'VIP666': { gold: 200, diamond: 20, yellowWeapon: 1 },
-      'VIP777': { gold: 200, diamond: 20, yellowWeapon: 1 },
-      'VIP888': { gold: 200, diamond: 20, yellowWeapon: 1 }
+      'VIP666': { gold: 2000, diamond: 200, yellowWeapon: 1 },
+      'VIP777': { gold: 2000, diamond: 200, yellowWeapon: 1 },
+      'VIP888': { gold: 2000, diamond: 200, yellowWeapon: 1 }
     };
 
     var reward = codes[cleanCode];
