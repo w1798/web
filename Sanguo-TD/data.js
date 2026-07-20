@@ -892,14 +892,14 @@ var DAILY_TASKS = [
     id: 'battle_win',
     name: '征戰勝利',
     icon: '⚔️',
-    milestones: [1, 2, 3, 5, 8, 11, 15],
+    milestones: [1, 2, 3, 4, 5, 7, 10],
     reward: 2
   },
   {
     id: 'stamina_spend',
     name: '體力消耗',
     icon: '⚡',
-    milestones: [10, 30, 60, 100],
+    milestones: [10, 20, 30, 50],
     reward: 2
   },
   {
@@ -917,8 +917,8 @@ var DAILY_SHOP = [
     id: 'buy_stamina',
     name: '體力補充',
     icon: '⚡',
-    desc: '500 金幣換 50 體力（可超過上限）',
-    costGold: 500,
+    desc: '200 金幣換 50 體力（可超過上限）',
+    costGold: 200,
     dailyLimit: 3,
     effect: function() {
       Service.appData.stamina = Service.appData.stamina + 50;
