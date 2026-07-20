@@ -368,6 +368,15 @@ var UI = {
     this.renderSkillBar();
   },
 
+  showRecruitMenu: function() {
+    this.showScreen('screen-recruit');
+    var btn = document.getElementById('btn-recruit-main');
+    if (btn) btn.textContent = Service.allHeroesMaxed() ? '打鐵鍛造' : '三國群雄';
+  },
+  showArmoryMenu: function() {
+    this.showScreen('screen-armory');
+  },
+
   showSettings: function() {
     this.showScreen('screen-settings');
     Game.state = 'settings';
@@ -531,10 +540,20 @@ var UI = {
       html += '<div class="sh-item"><span class="sh-label">同陣營 ≥' + n + ' 人</span><span class="sh-desc">全體攻擊力 +' + (4 + n * 2) + '%</span></div>';
     }
     html += '</div>';
+
+    /* 限定加乘（bond + factionBond） */
     html += '<div class="sh-section"><h4 class="sh-limited">限定加乘（只有限定成員生效）</h4>';
     for (var b = 0; b < BOND_DATA.length; b++) {
       var bond = BOND_DATA[b];
-      if (bond.type !== 'bond') continue;
+      if (bond.type !== 'bond' && bond.type !== 'factionBond') continue;
+      if (bond.type === 'factionBond') {
+        var effect = '';
+        if (bond.atkPct) effect += '攻擊 +' + bond.atkPct + '%';
+        if (bond.hpPct) effect += (effect ? '  ' : '') + '生命 +' + bond.hpPct + '%';
+        html += '<div class="sh-item"><span class="sh-label">' + bond.name + '</span><span class="sh-desc">' + effect + '</span></div>';
+        html += '<div class="sh-members" style="font-size:12px;color:#b8a898;">' + bond.desc + '</div>';
+        continue;
+      }
       var memberNames = [];
       for (var m = 0; m < bond.members.length; m++) {
         var mhd = getHeroData(bond.members[m]);
@@ -543,7 +562,8 @@ var UI = {
       var effect = '';
       if (bond.atkPct) effect += '攻擊 +' + bond.atkPct + '%';
       if (bond.hpPct) effect += (effect ? '  ' : '') + '生命 +' + bond.hpPct + '%';
-      html += '<div class="sh-item"><span class="sh-label">' + bond.name + '</span><span class="sh-desc">' + effect + '</span></div>';
+      var minNote = bond.minMembers ? '（任' + bond.minMembers + '人）' : '';
+      html += '<div class="sh-item"><span class="sh-label">' + bond.name + minNote + '</span><span class="sh-desc">' + effect + '</span></div>';
       html += '<div class="sh-members">' + memberNames.join(' + ') + '</div>';
     }
     html += '</div>';
@@ -551,21 +571,47 @@ var UI = {
     modal.style.display = 'flex';
   },
 
+  redeemGiftCode: function() {
+    var input = document.getElementById('setting-gift-code');
+    if (!input) return;
+    var code = input.value;
+    var result = Service.redeemCode(code);
+    if (result.ok) {
+      this.showToast(result.msg);
+      input.value = '';
+      var d = Service.appData;
+      var goldEl = document.getElementById('menu-gold');
+      if (goldEl) goldEl.textContent = '金幣：' + d.gold;
+      var diamondEl = document.getElementById('menu-diamond');
+      if (diamondEl) diamondEl.textContent = '💎：' + (d.diamond || 0);
+    } else {
+      this.showToast(result.msg);
+    }
+  },
+
   hideSynergyHelp: function() {
     var modal = document.getElementById('synergy-help-modal');
     if (modal) modal.style.display = 'none';
+  },
+
+  showRecruitMenu: function() {
+    this.showScreen('screen-recruit');
+    var btn = document.getElementById('btn-recruit-main');
+    if (btn) btn.textContent = Service.allHeroesMaxed() ? '打鐵鍛造' : '三國群雄';
+  },
+  showArmoryMenu: function() {
+    this.showScreen('screen-armory');
   },
 
   /* ===== 選單資訊 ===== */
   updateMenuInfo: function() {
       var d = Service.appData;
       document.getElementById('menu-gold').textContent = '金幣：' + d.gold;
+      document.getElementById('menu-diamond').textContent = '💎：' + (d.diamond || 0);
       document.getElementById('menu-heroes').textContent = '武將：' + d.ownedHeroes.length;
       var wc = 0; for (var k in d.weapons) { if (d.weapons[k]) wc++; }
       wc += d.weaponStorage ? d.weaponStorage.length : 0;
       document.getElementById('menu-weapons').textContent = '兵器：' + wc;
-      var menuBtn = document.querySelector('#screen-menu .menu-btns .btn-secondary');
-        if (menuBtn) menuBtn.textContent = Service.allHeroesMaxed() ? '⚒️ 打 鐵' : '📜 招 募';
     },
 
   showToast: function(msg) {
@@ -1073,5 +1119,100 @@ var UI = {
     }).catch(function(e) {
       self.showToast('清理失敗：' + (e && e.message || '未知錯誤'));
     });
+  },
+
+  /* ===== 每日系統 ===== */
+  showDaily: function() {
+    this.showScreen('screen-daily');
+    Game.state = 'daily';
+    Service.checkDailyReset();
+    var gotReward = Service.checkDailyLogin();
+    this.renderDailyLogin(gotReward);
+    this.renderDailyShop();
+    this.renderDailyTasks();
+  },
+
+  renderDailyLogin: function(gotReward) {
+    var el = document.getElementById('daily-login-status');
+    if (!el) return;
+    if (gotReward) {
+      el.innerHTML = '<div class="daily-login-reward">✅ 今日已領取登入獎勵 <span style="color:#ffd700;">+10 💎</span></div>';
+    } else {
+      el.innerHTML = '<div class="daily-login-reward">✅ 今日已簽到，明日再來領取 💎</div>';
+    }
+  },
+
+  renderDailyShop: function() {
+    var el = document.getElementById('daily-shop-list');
+    if (!el) return;
+    var html = '';
+    for (var i = 0; i < DAILY_SHOP.length; i++) {
+      var item = DAILY_SHOP[i];
+      var bought = Service.getShopPurchaseCount(item.id);
+      var limitText = item.dailyLimit > 0 ? ' (今日 ' + bought + '/' + item.dailyLimit + ')' : ' (無限制)';
+      var canBuy = item.dailyLimit === 0 || bought < item.dailyLimit;
+      html += '<div class="daily-shop-item">';
+      html += '<div class="shop-item-info">';
+      html += '<span class="shop-item-icon">' + item.icon + '</span>';
+      html += '<span class="shop-item-name">' + item.name + '</span>';
+      html += '<span class="shop-item-desc">' + item.desc + '</span>';
+      html += '<span class="shop-item-limit">' + limitText + '</span>';
+      html += '</div>';
+      html += '<button class="btn btn-small shop-buy-btn" onclick="UI.buyShopItem(\'' + item.id + '\')" ' + (canBuy ? '' : 'disabled') + '>購買</button>';
+      html += '</div>';
+    }
+    el.innerHTML = html;
+  },
+
+  buyShopItem: function(itemId) {
+    var result = Service.buyShopItem(itemId);
+    if (result.ok) {
+      this.showToast('購買成功！');
+      this.renderDailyShop();
+      this.updateMenuInfo();
+    } else {
+      this.showToast(result.msg);
+    }
+  },
+
+  renderDailyTasks: function() {
+    var el = document.getElementById('daily-task-list');
+    if (!el) return;
+    var html = '';
+    for (var i = 0; i < DAILY_TASKS.length; i++) {
+      var task = DAILY_TASKS[i];
+      var progress = Service.getTaskProgress(task.id);
+      var category = task.id === 'battle_win' ? '⚔️ 戰鬥類' : (task.id === 'stamina_spend' ? '⚡ 資源類' : '🗡️ 裝備類');
+      html += '<div class="daily-task-card">';
+      html += '<div class="task-header">' + task.icon + ' ' + task.name + ' <span class="task-category">' + category + '</span></div>';
+      html += '<div class="task-progress-bar"><div class="task-progress-fill" style="width:' + Math.min(100, progress / task.milestones[task.milestones.length - 1] * 100) + '%"></div></div>';
+      html += '<div class="task-progress-text">進度：' + progress + ' / ' + task.milestones[task.milestones.length - 1] + '</div>';
+      html += '<div class="task-milestones">';
+      for (var j = 0; j < task.milestones.length; j++) {
+        var ms = task.milestones[j];
+        var reached = progress >= ms;
+        var claimed = Service.isTaskClaimed(task.id, j);
+        var cls = claimed ? 'milestone-claimed' : (reached ? 'milestone-ready' : 'milestone-locked');
+        var label = claimed ? '已領取' : (reached ? '領取' : ms);
+        html += '<div class="task-milestone ' + cls + '" onclick="' + (reached && !claimed ? 'UI.claimTask(\'' + task.id + '\',' + j + ')' : '') + '">';
+        html += '<div class="ms-icon">' + (claimed ? '✅' : (reached ? '🎁' : '🔒')) + '</div>';
+        html += '<div class="ms-label">' + label + '</div>';
+        html += '<div class="ms-reward">+' + task.reward + '💎</div>';
+        html += '</div>';
+      }
+      html += '</div>';
+      html += '</div>';
+    }
+    el.innerHTML = html;
+  },
+
+  claimTask: function(taskId, milestoneIdx) {
+    if (Service.claimTaskReward(taskId, milestoneIdx)) {
+      this.showToast('領取成功！');
+      this.renderDailyTasks();
+      this.updateMenuInfo();
+    } else {
+      this.showToast('無法領取此獎勵');
+    }
   }
 };

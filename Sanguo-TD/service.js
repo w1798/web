@@ -28,7 +28,14 @@ var DEFAULT_DATA = {
   heroExp: {},
   heroLevel: {},
   challengeHighWave: 0,
-  bossRushKills: 0
+  bossRushKills: 0,
+  diamond: 0,
+  redeemedCodes: [],
+  dailyLoginDate: '',
+  dailyResetDate: '',
+  dailyTaskProgress: {},
+  dailyTaskClaimed: {},
+  dailyShopPurchases: {}
 };
 
 var Service = {
@@ -126,12 +133,117 @@ var Service = {
     }
     if (typeof data.challengeHighWave === 'number') d.challengeHighWave = data.challengeHighWave;
     if (typeof data.bossRushKills === 'number') d.bossRushKills = data.bossRushKills;
+    if (typeof data.diamond === 'number') d.diamond = data.diamond;
+    if (Array.isArray(data.redeemedCodes)) d.redeemedCodes = data.redeemedCodes;
+    if (typeof data.dailyLoginDate === 'string') d.dailyLoginDate = data.dailyLoginDate;
+    if (typeof data.dailyResetDate === 'string') d.dailyResetDate = data.dailyResetDate;
+    if (data.dailyTaskProgress && typeof data.dailyTaskProgress === 'object') {
+      for (var k in data.dailyTaskProgress) d.dailyTaskProgress[k] = data.dailyTaskProgress[k];
+    }
+    if (data.dailyTaskClaimed && typeof data.dailyTaskClaimed === 'object') {
+      for (var k in data.dailyTaskClaimed) d.dailyTaskClaimed[k] = data.dailyTaskClaimed[k];
+    }
+    if (data.dailyShopPurchases && typeof data.dailyShopPurchases === 'object') {
+      for (var k in data.dailyShopPurchases) d.dailyShopPurchases[k] = data.dailyShopPurchases[k];
+    }
     return d;
   },
 
   saveData: function() {
     this.checkReset();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(this.appData));
+  },
+
+  addDiamond: function(amount) {
+    this.appData.diamond += amount;
+    this.saveData();
+  },
+
+  spendDiamond: function(amount) {
+    if (this.appData.diamond < amount) return false;
+    this.appData.diamond -= amount;
+    this.saveData();
+    return true;
+  },
+
+  getTodayStr: function() {
+    var d = new Date();
+    return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+  },
+
+  checkDailyReset: function() {
+    var today = this.getTodayStr();
+    if (this.appData.dailyResetDate !== today) {
+      this.appData.dailyTaskProgress = {};
+      this.appData.dailyTaskClaimed = {};
+      this.appData.dailyShopPurchases = {};
+      this.appData.dailyResetDate = today;
+      this.saveData();
+    }
+  },
+
+  checkDailyLogin: function() {
+    var today = this.getTodayStr();
+    if (this.appData.dailyLoginDate !== today) {
+      this.appData.dailyLoginDate = today;
+      this.addDiamond(10);
+      return true;
+    }
+    return false;
+  },
+
+  addTaskProgress: function(taskId, amount) {
+    this.checkDailyReset();
+    var p = this.appData.dailyTaskProgress;
+    p[taskId] = (p[taskId] || 0) + amount;
+    this.saveData();
+  },
+
+  getTaskProgress: function(taskId) {
+    return this.appData.dailyTaskProgress[taskId] || 0;
+  },
+
+  isTaskClaimed: function(taskId, milestoneIdx) {
+    var key = taskId + '_' + milestoneIdx;
+    return !!this.appData.dailyTaskClaimed[key];
+  },
+
+  claimTaskReward: function(taskId, milestoneIdx) {
+    var key = taskId + '_' + milestoneIdx;
+    if (this.appData.dailyTaskClaimed[key]) return false;
+    var task = null;
+    for (var i = 0; i < DAILY_TASKS.length; i++) {
+      if (DAILY_TASKS[i].id === taskId) { task = DAILY_TASKS[i]; break; }
+    }
+    if (!task || milestoneIdx >= task.milestones.length) return false;
+    if (this.getTaskProgress(taskId) < task.milestones[milestoneIdx]) return false;
+    this.appData.dailyTaskClaimed[key] = true;
+    this.addDiamond(task.reward);
+    return true;
+  },
+
+  getShopPurchaseCount: function(itemId) {
+    return this.appData.dailyShopPurchases[itemId] || 0;
+  },
+
+  buyShopItem: function(itemId) {
+    this.checkDailyReset();
+    var item = null;
+    for (var i = 0; i < DAILY_SHOP.length; i++) {
+      if (DAILY_SHOP[i].id === itemId) { item = DAILY_SHOP[i]; break; }
+    }
+    if (!item) return { ok: false, msg: '物品不存在' };
+    if (item.dailyLimit > 0) {
+      var bought = this.getShopPurchaseCount(itemId);
+      if (bought >= item.dailyLimit) return { ok: false, msg: '今日已達購買上限' };
+    }
+    if (!this.spendGold(item.costGold)) return { ok: false, msg: '金幣不足' };
+    item.effect();
+    if (item.dailyLimit > 0) {
+      this.appData.dailyShopPurchases[itemId] = (this.appData.dailyShopPurchases[itemId] || 0) + 1;
+      this.saveData();
+    }
+    return { ok: true };
   },
 
   resetData: function() {
@@ -148,7 +260,36 @@ var Service = {
 
   addGold: function(amount) {
     this.appData.gold += amount;
+  },
+
+  redeemCode: function(code) {
+    var cleanCode = code.trim().toUpperCase();
+    if (!cleanCode) return { ok: false, msg: '請輸入禮包碼' };
+    if (this.appData.redeemedCodes.indexOf(cleanCode) !== -1) return { ok: false, msg: '此禮包碼已領取過' };
+
+    var codes = {
+      'VIP666': { gold: 200, diamond: 20, yellowWeapon: 1 },
+      'VIP777': { gold: 200, diamond: 20, yellowWeapon: 1 },
+      'VIP888': { gold: 200, diamond: 20, yellowWeapon: 1 }
+    };
+
+    var reward = codes[cleanCode];
+    if (!reward) return { ok: false, msg: '無效的禮包碼' };
+
+    if (reward.gold) this.addGold(reward.gold);
+    if (reward.diamond) this.addDiamond(reward.diamond);
+    if (reward.yellowWeapon) {
+      if (!this.appData.weaponStorage) this.appData.weaponStorage = [];
+      for (var i = 0; i < reward.yellowWeapon; i++) {
+        this.appData.weaponStorage.push(this.generateWeaponByQuality(4));
+      }
+    }
+    this.appData.redeemedCodes.push(cleanCode);
     this.saveData();
+    
+    var msg = '領取成功！獲得金幣 ' + (reward.gold || 0) + '，鑽石 ' + (reward.diamond || 0);
+    if (reward.yellowWeapon) msg += '，黃武器 x' + reward.yellowWeapon;
+    return { ok: true, msg: msg };
   },
 
   spendGold: function(amount) {
@@ -163,7 +304,10 @@ var Service = {
     var elapsed = now - this.appData.staminaLastRecovery;
     var recover = Math.floor(elapsed / STAMINA_RECOVER_MS);
     if (recover > 0) {
-      this.appData.stamina = Math.min(STAMINA_MAX, this.appData.stamina + recover);
+      /* 只在未達上限時自然回復；超過上限（購買所得）不削減 */
+      if (this.appData.stamina < STAMINA_MAX) {
+        this.appData.stamina = Math.min(STAMINA_MAX, this.appData.stamina + recover);
+      }
       this.appData.staminaLastRecovery += recover * STAMINA_RECOVER_MS;
       this.saveData();
     }
@@ -174,6 +318,7 @@ var Service = {
     this.getStamina();
     if (this.appData.stamina < amount) return false;
     this.appData.stamina -= amount;
+    this.addTaskProgress('stamina_spend', amount);
     this.saveData();
     return true;
   },
@@ -224,9 +369,14 @@ var Service = {
   },
 
   allHeroesMaxed: function() {
-    if (this.appData.ownedHeroes.length < HERO_DATA.length) return false;
-    for (var i = 0; i < this.appData.ownedHeroes.length; i++) {
-      var hid = this.appData.ownedHeroes[i];
+    var threeKingdomsHeroes = HERO_DATA.filter(function(h) { return h.faction !== '特'; });
+    var ownedThreeKingdoms = this.appData.ownedHeroes.filter(function(hid) {
+      var hd = getHeroData(hid);
+      return hd && hd.faction !== '特';
+    });
+    if (ownedThreeKingdoms.length < threeKingdomsHeroes.length) return false;
+    for (var i = 0; i < ownedThreeKingdoms.length; i++) {
+      var hid = ownedThreeKingdoms[i];
       var hd = getHeroData(hid);
       if (!hd) continue;
       var tier = this.getHeroTier(hid);
@@ -239,8 +389,9 @@ var Service = {
   addFrag: function(heroId, count) {
     var f = this.appData.heroFrags;
     f[heroId] = (f[heroId] || 0) + count;
+    var addedCount = count;
     var hd = getHeroData(heroId);
-    if (!hd) return { upgraded: false, msg: '', tier: this.getHeroTier(heroId), star: this.getHeroStar(heroId) };
+    if (!hd) return { upgraded: false, msg: '', tier: this.getHeroTier(heroId), star: this.getHeroStar(heroId), fragCount: addedCount };
     var origin = hd.rarity;
     var tier = this.getHeroTier(heroId);
     var star = this.getHeroStar(heroId);
@@ -266,7 +417,7 @@ var Service = {
       }
     }
     this.saveData();
-    return { upgraded: upgraded, msg: upgradeMsg, tier: tier, star: star };
+    return { upgraded: upgraded, msg: upgradeMsg, tier: tier, star: star, fragCount: addedCount };
   },
 
   /* ===== Deploy System ===== */
@@ -303,11 +454,22 @@ var Service = {
     var bonds = [];
     for (var b = 0; b < BOND_DATA.length; b++) {
       var bond = BOND_DATA[b];
-      if (bond.type !== 'bond') continue;
+      if (bond.type !== 'bond' && bond.type !== 'factionBond') continue;
       var allOk = true;
-      for (var m = 0; m < bond.members.length; m++) {
-        if (deployed.indexOf(bond.members[m]) === -1) { allOk = false; break; }
+      if (bond.factionBond) {
+        var fc = factionCount[bond.factionBond] || 0;
+        allOk = fc >= (bond.minFaction || 2);
+        if (allOk) {
+          bonds.push({ name: bond.name, members: [], atkPct: bond.atkPct || 0, hpPct: bond.hpPct || 0 });
+        }
+        continue;
       }
+      var deployedCount = 0;
+      for (var m = 0; m < bond.members.length; m++) {
+        if (deployed.indexOf(bond.members[m]) !== -1) deployedCount++;
+      }
+      var required = bond.minMembers || bond.members.length;
+      allOk = deployedCount >= required;
       if (allOk) {
         bonds.push({ name: bond.name, members: bond.members, atkPct: bond.atkPct || 0, hpPct: bond.hpPct || 0 });
       }
@@ -330,6 +492,13 @@ var Service = {
       });
       for (var i = 0; i < sorted.length && existing.length < 6; i++) {
         if (existing.indexOf(sorted[i]) === -1) {
+          var hd = getHeroData(sorted[i]);
+          var specialCount = 0;
+          for (var j = 0; j < existing.length; j++) {
+            var shd = getHeroData(existing[j]);
+            if (shd && shd.faction === '特') specialCount++;
+          }
+          if (hd && hd.faction === '特' && specialCount >= 2) continue;
           existing.push(sorted[i]);
         }
       }
@@ -341,15 +510,25 @@ var Service = {
 
   toggleDeploy: function(heroId) {
     var d = this.appData;
-    if (d.ownedHeroes.length <= 6) return;
+    if (d.ownedHeroes.length <= 6) return { ok: true };
     var idx = d.deployedHeroes.indexOf(heroId);
     if (idx !== -1) {
       d.deployedHeroes.splice(idx, 1);
     } else {
-      if (d.deployedHeroes.length >= 6) return;
+      if (d.deployedHeroes.length >= 6) return { ok: false, msg: '上陣已滿 6 人' };
+      var hd = getHeroData(heroId);
+      if (hd && hd.faction === '特') {
+        var specialCount = 0;
+        for (var i = 0; i < d.deployedHeroes.length; i++) {
+          var shd = getHeroData(d.deployedHeroes[i]);
+          if (shd && shd.faction === '特') specialCount++;
+        }
+        if (specialCount >= 2) return { ok: false, msg: '特陣營英雄最多只能上陣 2 人' };
+      }
       d.deployedHeroes.push(heroId);
     }
     this.saveData();
+    return { ok: true };
   },
 
   clearDeploy: function() {
@@ -364,30 +543,31 @@ var Service = {
     return this.appData.deployedHeroes.indexOf(heroId) !== -1;
   },
 
-  completeStage: function(stageId, difficulty) {
+completeStage: function(stageId, difficulty) {
     difficulty = difficulty || 'normal';
     if (DEV_MODE) {
-      for (var c = 0; c < CAMPAIGNS.length; c++) {
-        for (var s = 0; s < CAMPAIGNS[c].stages.length; s++) {
-          var sid = CAMPAIGNS[c].stages[s].id;
-          if (this.appData.completedStages.indexOf(sid) === -1) {
-            this.appData.completedStages.push(sid);
-          }
+        for (var c = 0; c < CAMPAIGNS.length; c++) {
+            for (var s = 0; s < CAMPAIGNS[c].stages.length; s++) {
+                var sid = CAMPAIGNS[c].stages[s].id;
+                if (this.appData.completedStages.indexOf(sid) === -1) {
+                    this.appData.completedStages.push(sid);
+                }
+            }
         }
-      }
-      return;
+        this.saveData();
+        return;
     }
     if (difficulty === 'normal' && this.appData.completedStages.indexOf(stageId) === -1) {
-      this.appData.completedStages.push(stageId);
+        this.appData.completedStages.push(stageId);
     }
     if (difficulty === 'hard' && this.appData.completedHard.indexOf(stageId) === -1) {
-      this.appData.completedHard.push(stageId);
+        this.appData.completedHard.push(stageId);
     }
     if (difficulty === 'hell' && this.appData.completedHell.indexOf(stageId) === -1) {
-      this.appData.completedHell.push(stageId);
+        this.appData.completedHell.push(stageId);
     }
     this.saveData();
-  },
+},
 
   /* 特定難度是否通關 */
   isStageCompleted: function(stageId, difficulty) {
@@ -446,8 +626,8 @@ var Service = {
     else if (roll < 0.50) rarity = 2;
     else rarity = 1;
 
-    var candidates = HERO_DATA.filter(function(h) { return h.rarity === rarity; });
-    if (candidates.length === 0) candidates = HERO_DATA.filter(function(h) { return h.rarity <= 2; });
+    var candidates = HERO_DATA.filter(function(h) { return h.rarity === rarity && h.faction !== '特'; });
+    if (candidates.length === 0) candidates = HERO_DATA.filter(function(h) { return h.rarity <= 2 && h.faction !== '特'; });
     var picked = candidates[Math.floor(Math.random() * candidates.length)];
 
     var isNew = !this.hasHero(picked.id);
@@ -468,6 +648,59 @@ var Service = {
       results.push(this._gachaPull());
     }
     return results;
+  },
+
+  /* ===== 事件抽卡（時空裂隙·特陣營） ===== */
+  EVENT_GACHA_COST: 30,
+  EVENT_GACHA_MULTI: 10,
+  EVENT_GACHA_PITY: 10,
+
+  doEventGacha: function() {
+    if (!DEV_MODE && !this.spendDiamond(this.EVENT_GACHA_COST)) return null;
+    return this._eventGachaPull(false);
+  },
+
+  doMultiEventGacha: function(count) {
+    count = count || this.EVENT_GACHA_MULTI;
+    var cost = count * this.EVENT_GACHA_COST;
+    if (!DEV_MODE && !this.spendDiamond(cost)) return null;
+    var results = [];
+    var pityCounter = 0;
+    for (var i = 0; i < count; i++) {
+      pityCounter++;
+      var force5 = (pityCounter >= this.EVENT_GACHA_PITY);
+      var r = this._eventGachaPull(force5);
+      if (r && r.rarity === 5) pityCounter = 0;
+      results.push(r);
+    }
+    return results;
+  },
+
+  _eventGachaPull: function(forceWushuang) {
+    var roll = Math.random();
+    var rarity;
+    if (forceWushuang) {
+      rarity = 5;
+    } else if (roll < 0.10) {
+      rarity = 5;
+    } else {
+      rarity = 4;
+    }
+    var candidates = HERO_DATA.filter(function(h) {
+      return h.rarity === rarity && h.faction === '特';
+    });
+    if (candidates.length === 0) {
+      candidates = HERO_DATA.filter(function(h) { return h.faction === '特'; });
+    }
+    var picked = candidates[Math.floor(Math.random() * candidates.length)];
+    var isNew = !this.hasHero(picked.id);
+    var upgradeInfo = null;
+    if (isNew) {
+      this.addHero(picked.id);
+    } else {
+      upgradeInfo = this.addFrag(picked.id, 1);
+    }
+    return { hero: picked, isNew: isNew, rarity: rarity, upgradeInfo: upgradeInfo };
   },
 
   _weaponGachaPull: function() {
@@ -599,6 +832,7 @@ var Service = {
     var gold = WEAPON_QUALITY[w.quality] ? WEAPON_QUALITY[w.quality].recycleGold : 0;
     delete this.appData.weapons[heroId];
     this.appData.gold += gold;
+    this.addTaskProgress('weapon_sell', 1);
     this.saveData();
     return gold;
   },
@@ -623,6 +857,7 @@ var Service = {
     var gold = WEAPON_QUALITY[stored.quality] ? WEAPON_QUALITY[stored.quality].recycleGold : 0;
     this.appData.weaponStorage.splice(storageIndex, 1);
     this.appData.gold += gold;
+    this.addTaskProgress('weapon_sell', 1);
     this.saveData();
     return gold;
   },

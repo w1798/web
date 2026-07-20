@@ -2617,6 +2617,7 @@ html, body {
    .challenge-stats { gap: 12px; }
    .cs-value { font-size: 20px; }
    .bossrush-progress .br-dot { width: 32px; height: 32px; font-size: 14px; }
+}
 
 /* 排行榜排序與額外數據 */
 .lb-sort-bar { display: flex; gap: 8px; justify-content: center; padding: 12px; flex-wrap: wrap; }
@@ -2655,4 +2656,166 @@ html, body {
   background: #f0943a;
   transform: scale(1.15);
   box-shadow: 0 6px 20px rgba(230, 126, 34, 0.7);
+}
+
+/* ===== 每日系統 ===== */
+.daily-content {
+  padding: 12px;
+  overflow-y: auto;
+  height: calc(100% - 56px);
+}
+.daily-card, .daily-section {
+  background: rgba(30, 22, 16, 0.85);
+  border: 1px solid rgba(255, 215, 0, 0.15);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+.daily-section-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #ffd700;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+}
+.daily-login-reward {
+  font-size: 14px;
+  color: #f0e6d0;
+  padding: 8px 0;
+}
+
+/* 每日商店網格 */
+.daily-shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+.daily-shop-item {
+  background: rgba(20, 15, 10, 0.6);
+  border: 1px solid rgba(255, 215, 0, 0.1);
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.shop-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.shop-item-icon {
+  font-size: 24px;
+  text-align: center;
+}
+.shop-item-name {
+  font-size: 14px;
+  font-weight: bold;
+  color: #f0e6d0;
+}
+.shop-item-desc {
+  font-size: 12px;
+  color: #b8a898;
+}
+.shop-item-limit {
+  font-size: 11px;
+  color: #8a7a6a;
+}
+.shop-buy-btn {
+  margin-top: 4px;
+  background: linear-gradient(135deg, #1a4a6a, #2a6a8a);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 0;
+  font-size: 13px;
+  cursor: pointer;
+}
+.shop-buy-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* 每日任務卡片 */
+.daily-task-card {
+  background: rgba(20, 15, 10, 0.6);
+  border: 1px solid rgba(255, 215, 0, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+.task-header {
+  font-size: 15px;
+  font-weight: bold;
+  color: #f0e6d0;
+  margin-bottom: 8px;
+}
+.task-category {
+  font-size: 11px;
+  font-weight: normal;
+  color: #8a7a6a;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin-left: 6px;
+}
+.task-progress-bar {
+  height: 8px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.task-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #e67e22, #ffd700);
+  transition: width 0.3s;
+}
+.task-progress-text {
+  font-size: 12px;
+  color: #b8a898;
+  margin-bottom: 8px;
+}
+.task-milestones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.task-milestone {
+  flex: 1 1 calc(33% - 8px);
+  min-width: 70px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 6px 4px;
+  text-align: center;
+  font-size: 12px;
+  cursor: pointer;
+}
+.task-milestone.milestone-ready {
+  border-color: #ffd700;
+  background: rgba(255, 215, 0, 0.15);
+  cursor: pointer;
+}
+.task-milestone.milestone-claimed {
+  opacity: 0.5;
+  cursor: default;
+}
+.task-milestone.milestone-locked {
+  opacity: 0.6;
+  cursor: default;
+}
+.ms-icon {
+  font-size: 16px;
+  margin-bottom: 2px;
+}
+.ms-label {
+  font-size: 11px;
+  color: #f0e6d0;
+}
+.ms-reward {
+  font-size: 11px;
+  color: #ffd700;
 }

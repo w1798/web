@@ -317,21 +317,21 @@ Unit.prototype.getPixelPos = function() {
 };
 
 Unit.prototype.applySynergyBonuses = function() {
-  if (this.isSoldier) return;
-  this._synAtkPct = 0;
-  this._synHpPct = 0;
-  var bonus = Combat.getSynergyBonus(this.heroId);
-  this._synAtkPct = bonus.atkPct || 0;
-  this._synHpPct = bonus.hpPct || 0;
-  if (this._synAtkPct) {
-    this.atk = Math.floor(this.atk * (1 + this._synAtkPct / 100));
-  }
-  if (this._synHpPct) {
-    var oldMax = this.maxHp;
-    this.maxHp = Math.floor(this.maxHp * (1 + this._synHpPct / 100));
-    this.hp = Math.floor(this.hp * this.maxHp / oldMax);
-  }
-  this._activeBonds = bonus.activeBonds || [];
+    if (this.isSoldier) return;
+    this._synAtkPct = 0;
+    this._synHpPct = 0;
+    var bonus = Combat.getSynergyBonus(this.heroId);
+    this._synAtkPct = bonus.atkPct || 0;
+    this._synHpPct = bonus.hpPct || 0;
+    if (this._synAtkPct) {
+        this.atk = Math.floor(this.atk * (1 + this._synAtkPct / 100));
+    }
+    if (this._synHpPct) {
+        var oldMax = this.maxHp;
+        this.maxHp = Math.floor(this.maxHp * (1 + this._synHpPct / 100));
+        this.hp = Math.floor(this.hp * this.maxHp / oldMax);
+    }
+    this._activeBonds = bonus.activeBonds || [];
 };
 
 Unit.prototype.upgradeStats = function() {

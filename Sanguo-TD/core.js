@@ -675,6 +675,8 @@ var Game = {
     this.paused = false;
     var overlay = document.getElementById('pause-overlay');
     if (overlay) overlay.style.display = 'none';
+    /* 所有模式勝利皆觸發每日任務進度 */
+    Service.addTaskProgress('battle_win', 1);
     /* 挑戰模式勝利 */
     if (this.gameMode === 'challenge') {
       var gold = this.challengeWave;

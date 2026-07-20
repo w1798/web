@@ -8,7 +8,7 @@
 <title>三國 RPG 塔防</title>
 <link rel="icon" href="favicon.ico">
 <style>html{visibility:hidden}</style>
-<script>var APP_VER='1.7.5',APP_JSX='vanilla';</script>
+<script>var APP_VER='1.7.8',APP_JSX='vanilla';</script>
 <script src="../loader_engine.js?ver=1.0.0a"></script>
 </head>
 <body>
@@ -23,18 +23,43 @@
       <p class="game-subtitle">亂世英雄，誰與爭鋒</p>
       <div class="menu-btns">
         <button class="btn btn-primary" onclick="UI.showCampaign()">⚔️ 征 戰</button>
-        <button class="btn btn-secondary" onclick="UI.showGacha()">招 募</button>
-        <button class="btn btn-secondary" onclick="UI.showHeroes()" style="background:linear-gradient(135deg,#2c3e50,#34495e)">🦸 武 將</button>
-        <button class="btn btn-secondary" onclick="UI.showWeapons()" style="background:linear-gradient(135deg,#5a2a3a,#7a3a4a)">🗡️ 武 器</button>
+        <button class="btn btn-secondary" onclick="UI.showRecruitMenu()">📜 招 募</button>
+        <button class="btn btn-secondary" onclick="UI.showArmoryMenu()">🛡️ 武 備</button>
+        <button class="btn btn-secondary" onclick="UI.showDaily()" style="background:linear-gradient(135deg,#1a4a6a,#2a6a8a)">💎 每 日</button>
         <button id="lb-menu-btn" class="btn btn-primary" onclick="UI.showLeaderboard()" style="background:linear-gradient(135deg,#b8860b,#daa520)">🏆 排行榜</button>
         <button class="btn btn-small" onclick="UI.showSettings()">⚙️ 設 定</button>
       </div>
       <div class="menu-info">
         <span id="menu-gold">金幣：0</span>
+        <span id="menu-diamond">💎：0</span>
         <span id="menu-heroes">武將：0</span>
         <span id="menu-weapons">武器：0</span>
       </div>
       <footer class="menu-footer"></footer>
+    </div>
+  </div>
+
+  <!-- 招募子選單 -->
+  <div id="screen-recruit" class="screen">
+    <div class="screen-header">
+      <button class="btn-back" onclick="UI.showMenu()">←</button>
+      <h2>📜 招 募</h2>
+    </div>
+    <div class="menu-btns" style="padding-top:40px;">
+      <button class="btn btn-secondary" id="btn-recruit-main" onclick="UI.showGacha()">三國群雄</button>
+      <button class="btn btn-secondary" onclick="UI.showEventGacha()" style="background:linear-gradient(135deg,#6a2a8a,#8a4aaa)">時空裂隙</button>
+    </div>
+  </div>
+
+  <!-- 武備子選單 -->
+  <div id="screen-armory" class="screen">
+    <div class="screen-header">
+      <button class="btn-back" onclick="UI.showMenu()">←</button>
+      <h2>🛡️ 武 備</h2>
+    </div>
+    <div class="menu-btns" style="padding-top:40px;">
+      <button class="btn btn-secondary" onclick="UI.showHeroes()" style="background:linear-gradient(135deg,#2c3e50,#34495e)">🦸 武 將</button>
+      <button class="btn btn-secondary" onclick="UI.showWeapons()" style="background:linear-gradient(135deg,#5a2a3a,#7a3a4a)">🗡️ 武 器</button>
     </div>
   </div>
 
@@ -238,6 +263,27 @@
     </div>
   </div>
 
+  <!-- 時空裂隙活動池 -->
+  <div id="screen-event-gacha" class="screen">
+    <div class="screen-header">
+      <button class="btn-back" onclick="UI.showMenu()">←</button>
+      <h2>⏳ 時空裂隙</h2>
+    </div>
+    <div class="gacha-content">
+      <div class="gacha-info">
+        <span>💎 鑽石：<span id="event-gacha-diamond">0</span></span>
+        <span style="margin-left:12px;color:#b8a898;">當前系列：<span id="event-gacha-series">楚漢爭霸</span></span>
+      </div>
+      <div style="padding:4px 12px;font-size:12px;color:#ffd700;background:rgba(255,215,0,0.08);border-radius:6px;margin:0 12px 8px;">⭐ 10連保底必出無雙英雄碎片！</div>
+      <div class="gacha-bottom-bar">
+        <button class="btn btn-primary gacha-btn" id="btn-event-gacha" onclick="UI.doEventGacha()"><span class="gacha-btn-count">×1</span><span class="gacha-btn-cost">30 💎</span></button>
+        <button class="btn btn-primary gacha-btn" id="btn-event-gacha10" onclick="UI.doEventGacha10()"><span class="gacha-btn-count">×10</span><span class="gacha-btn-cost">300 💎</span></button>
+      </div>
+      <div class="gacha-result" id="event-gacha-result"></div>
+      <div class="gacha-heroes" id="event-gacha-heroes"></div>
+    </div>
+  </div>
+
   <!-- 武將管理 -->
   <div id="screen-heroes" class="screen">
     <div class="screen-header">
@@ -275,6 +321,28 @@
     <div class="leaderboard-content" id="leaderboard-content"></div>
   </div>
 
+  <!-- 每日商店與任務 -->
+  <div id="screen-daily" class="screen">
+    <div class="screen-header">
+      <button class="btn-back" onclick="UI.showMenu()">←</button>
+      <h2>💎 每日系統</h2>
+    </div>
+    <div class="daily-content">
+      <div class="daily-card daily-login">
+        <div class="daily-section-title">🎁 每日登入</div>
+        <div id="daily-login-status"></div>
+      </div>
+      <div class="daily-section">
+        <div class="daily-section-title">🛒 每日商店</div>
+        <div id="daily-shop-list" class="daily-shop-grid"></div>
+      </div>
+      <div class="daily-section">
+        <div class="daily-section-title">📋 每日任務</div>
+        <div id="daily-task-list"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- 姓名輸入彈窗 -->
   <div id="name-dialog" class="modal-overlay" style="display:none;">
     <div class="modal-box name-dialog-box">
@@ -298,6 +366,8 @@
       <h2>設 定</h2>
     </div>
     <div class="settings-content">
+      <!-- 基礎設定 -->
+      <div class="settings-section-title">基礎設定</div>
       <div class="settings-item">
         <span>音效</span>
         <label class="toggle-switch">
@@ -312,14 +382,29 @@
           <span class="toggle-slider"></span>
         </label>
       </div>
-      <div class="settings-item" id="setting-lb-clean-item" style="cursor:pointer;" onclick="UI.cleanupLeaderboard()">
-        <span>🧹 清理排行榜</span>
-        <span style="color:#8a7a6a;font-size:12px;">[開發工具]</span>
+
+      <!-- 禮包兌換 -->
+      <div class="settings-section-title">禮包兌換</div>
+      <div class="settings-item" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <span>輸入禮包碼</span>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="setting-gift-code" type="text" placeholder="請輸入禮包碼" style="flex:1;padding:6px 10px;border:1px solid #5a3a20;border-radius:4px;background:#2d1810;color:#f0e6d0;font-size:14px;">
+          <button class="btn btn-primary btn-sm" onclick="UI.redeemGiftCode()">兌換</button>
+        </div>
       </div>
+
+      <!-- 排行榜設定 -->
+      <div class="settings-section-title">排行榜設定</div>
       <div class="settings-item" style="cursor:pointer;" onclick="UI.showNameDialog()">
         <span>排行榜名稱</span>
         <span><span id="setting-lb-name" style="color:#ffd700;">(未設定)</span> <span style="color:#8a7a6a;font-size:12px;">[修改]</span></span>
       </div>
+      <div class="settings-item" id="setting-lb-clean-item" style="cursor:pointer;" onclick="UI.cleanupLeaderboard()">
+        <span>🧹 清理排行榜</span>
+        <span style="color:#8a7a6a;font-size:12px;">[開發工具]</span>
+      </div>
+
+      <!-- 資料轉移 -->
       <div class="settings-section-title">資料轉移</div>
       <div class="settings-item">
         <span>復原名稱</span>
@@ -334,6 +419,9 @@
         <button class="btn btn-secondary btn-sm" onclick="UI.cloudDownload()">轉移下載</button>
       </div>
       <div id="cloud-status" style="font-size:12px;color:#8a7a6a;text-align:center;margin:0 0 8px 0;"></div>
+
+      <!-- 危險操作 -->
+      <div class="settings-section-title">危險操作</div>
       <button class="btn btn-danger" onclick="UI.showResetConfirm()">重置所有資料</button>
     </div>
   </div>

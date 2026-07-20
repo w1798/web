@@ -203,6 +203,7 @@ UI.renderWeaponsList = function() {
                 total += gold;
                 d.weaponStorage.splice(k, 1);
                 removed++;
+                Service.addTaskProgress('weapon_sell', 1);
               }
             }
             d.gold += total;

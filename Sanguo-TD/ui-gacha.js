@@ -19,22 +19,25 @@ UI.renderGacha = function() {
     if (btn) {
       btn.innerHTML = isWeaponMode ? '<span class="gacha-btn-count">×1</span><span class="gacha-btn-cost">100 金</span>' : '<span class="gacha-btn-count">×1</span><span class="gacha-btn-cost">10 金</span>';
       var minGold = isWeaponMode ? 100 : 10;
-      btn.disabled = !DEV_MODE && d.gold < minGold;
-      btn.style.opacity = !DEV_MODE && d.gold < minGold ? '0.5' : '1';
+      var goldShort = !DEV_MODE && d.gold < minGold;
+      btn.disabled = false;
+      btn.style.opacity = goldShort ? '0.5' : '1';
     }
     var btn10 = document.getElementById('btn-gacha10');
     if (btn10) {
       btn10.innerHTML = isWeaponMode ? '<span class="gacha-btn-count">×10</span><span class="gacha-btn-cost">1000 金</span>' : '<span class="gacha-btn-count">×10</span><span class="gacha-btn-cost">100 金</span>';
       var minGold10 = isWeaponMode ? 1000 : 100;
-      btn10.disabled = !DEV_MODE && d.gold < minGold10;
-      btn10.style.opacity = !DEV_MODE && d.gold < minGold10 ? '0.5' : '1';
+      var goldShort10 = !DEV_MODE && d.gold < minGold10;
+      btn10.disabled = false;
+      btn10.style.opacity = goldShort10 ? '0.5' : '1';
     }
     var btn100 = document.getElementById('btn-gacha100');
     if (btn100) {
       btn100.innerHTML = isWeaponMode ? '<span class="gacha-btn-count">×100</span><span class="gacha-btn-cost">10000 金</span>' : '<span class="gacha-btn-count">×100</span><span class="gacha-btn-cost">1000 金</span>';
       var minGold100 = isWeaponMode ? 10000 : 1000;
-      btn100.disabled = !DEV_MODE && d.gold < minGold100;
-      btn100.style.opacity = !DEV_MODE && d.gold < minGold100 ? '0.5' : '1';
+      var goldShort100 = !DEV_MODE && d.gold < minGold100;
+      btn100.disabled = false;
+      btn100.style.opacity = goldShort100 ? '0.5' : '1';
     }
 
     var container = document.getElementById('gacha-heroes');
@@ -150,7 +153,7 @@ UI.doGacha100 = function() {
   };
 
 UI._handleGachaResult = function(result) {
-    if (!result) { this.showToast('金幣不足！'); return; }
+    if (!result) { this.showToast('金幣不足，無法招募'); return; }
     var d = Service.appData;
     document.getElementById('gacha-gold').textContent = d.gold;
     var container = document.getElementById('gacha-result');
@@ -177,7 +180,7 @@ UI._handleGachaResult = function(result) {
   };
 
 UI._handleMultiGachaResult = function(results, count) {
-    if (!results || results.length === 0) { this.showToast('金幣不足！'); return; }
+    if (!results || results.length === 0) { this.showToast('金幣不足，無法招募'); return; }
     var d = Service.appData;
     document.getElementById('gacha-gold').textContent = d.gold;
     var container = document.getElementById('gacha-result');
@@ -273,4 +276,151 @@ UI.doWeaponGacha100 = function() {
       parts.join('　') +
       '</div>';
     this.renderGacha();
+  };
+
+/* ===== 時空裂隙活動池 ===== */
+UI.showEventGacha = function() {
+    this.showScreen('screen-event-gacha');
+    Game.state = 'event-gacha';
+    this.renderEventGacha();
+    this._updateScrollTopBtn();
+  };
+
+UI.renderEventGacha = function() {
+    var d = Service.appData;
+    var diamondEl = document.getElementById('event-gacha-diamond');
+    if (diamondEl) diamondEl.textContent = d.diamond;
+
+    var btn = document.getElementById('btn-event-gacha');
+    if (btn) {
+      btn.disabled = false;
+      btn.style.opacity = !DEV_MODE && d.diamond < 30 ? '0.5' : '1';
+    }
+    var btn10 = document.getElementById('btn-event-gacha10');
+    if (btn10) {
+      btn10.disabled = false;
+      btn10.style.opacity = !DEV_MODE && d.diamond < 300 ? '0.5' : '1';
+    }
+
+    var container = document.getElementById('event-gacha-heroes');
+    if (!container) return;
+    container.innerHTML = '';
+    container.closest('.gacha-content').scrollTop = 0;
+
+    var specialHeroes = HERO_DATA.filter(function(h) { return h.faction === '特'; });
+    var rates = [
+      { rarity: 5, label: '無雙', pct: '10%', color: '#ffd700' },
+      { rarity: 4, label: '傳說', pct: '90%', color: '#9b59b6' }
+    ];
+
+    var self = this;
+    for (var r = 0; r < rates.length; r++) {
+      var rd = rates[r];
+      var list = specialHeroes.filter(function(h) { return h.rarity === rd.rarity; });
+      if (list.length === 0) continue;
+
+      var sec = document.createElement('div');
+      sec.className = 'gacha-section';
+      var hdr = document.createElement('div');
+      hdr.className = 'gacha-section-header';
+      hdr.innerHTML = '<span style="color:' + rd.color + ';">' + rd.label + '</span><span class="gacha-rate">' + rd.pct + '</span>';
+      sec.appendChild(hdr);
+
+      var grid = document.createElement('div');
+      grid.className = 'gacha-pool-grid';
+      for (var j = 0; j < list.length; j++) {
+        (function(hero, rateData) {
+          var card = document.createElement('div');
+          card.className = 'gacha-pool-card rarity-' + hero.rarity;
+          var owned = Service.hasHero(hero.id);
+          if (owned) card.classList.add('owned');
+          card.innerHTML = '<div class="gpc-emoji">' + hero.emoji + '</div><div class="gpc-name">' + hero.name + '</div><div class="gpc-atk">' + (ATTACK_ICON[hero.type] || '⚔️') + '</div>' +
+            (owned ? '<div class="gpc-owned">✓ 已有</div>' : '<div class="gpc-new">✧ 未得</div>');
+          card.onclick = function() { self.showGachaHeroInfo(hero, rateData); };
+          grid.appendChild(card);
+        })(list[j], rd);
+      }
+      sec.appendChild(grid);
+      container.appendChild(sec);
+    }
+  };
+
+UI.doEventGacha = function() {
+    var result = Service.doEventGacha();
+    if (!result) { this.showToast('鑽石不足，無法招募'); return; }
+    this._handleEventGachaResult(result, 1);
+  };
+
+UI.doEventGacha10 = function() {
+    var results = Service.doMultiEventGacha(10);
+    if (!results || results.length === 0) { this.showToast('鑽石不足，無法招募'); return; }
+    this._handleEventGachaResult(results, 10);
+  };
+
+UI._handleEventGachaResult = function(result, count) {
+    var d = Service.appData;
+    var diamondEl = document.getElementById('event-gacha-diamond');
+    if (diamondEl) diamondEl.textContent = d.diamond;
+
+    var container = document.getElementById('event-gacha-result');
+    if (!container) return;
+
+    if (count === 1) {
+      var h = result.hero;
+      var label = RARITY_NAMES[h.rarity];
+      var color = RARITY_COLORS[h.rarity];
+      var fragHtml = '';
+      if (result.isNew) {
+        fragHtml = '<div class="gc-new">✧ 新武將！</div>';
+      } else if (result.upgradeInfo && result.upgradeInfo.upgraded) {
+        fragHtml = '<div class="gc-frag" style="color:#2ecc71;">⬆ ' + result.upgradeInfo.msg + '</div>';
+      } else {
+        fragHtml = '<div class="gc-frag" style="color:#e67e22;">+' + (result.upgradeInfo ? result.upgradeInfo.fragCount : 1) + ' 碎片</div>';
+      }
+      container.innerHTML = '<div class="gacha-card rarity-' + h.rarity + '" style="border:2px solid ' + color + ';">' +
+        '<div class="gc-emoji">' + h.emoji + '</div>' +
+        '<div class="gc-name" style="color:' + color + ';">' + h.name + '</div>' +
+        '<div class="gc-rarity">' + label + '</div>' +
+        fragHtml +
+        '</div>';
+    } else {
+      var counts = {}, fragTotal = 0, newCount = 0, upgrades = [];
+      var heroListHtml = '';
+      for (var i = 0; i < result.length; i++) {
+        var r = result[i];
+        if (!r) continue;
+        var rn = RARITY_NAMES[r.hero.rarity] || '?';
+        counts[rn] = (counts[rn] || 0) + 1;
+        var color = RARITY_COLORS[r.hero.rarity] || '#888';
+        var statusHtml = '';
+        if (r.isNew) {
+          newCount++;
+          statusHtml = '<span style="color:#2ecc71;">✧ 新武將！</span>';
+        } else if (r.upgradeInfo && r.upgradeInfo.upgraded) {
+          upgrades.push(r.hero.emoji + r.hero.name + ' ' + r.upgradeInfo.msg);
+          statusHtml = '<span style="color:#2ecc71;">⬆ ' + r.upgradeInfo.msg + '</span>';
+        } else {
+          statusHtml = '<span style="color:#e67e22;">+1 碎片</span>';
+        }
+        heroListHtml += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);">' +
+          '<span style="font-size:20px;">' + r.hero.emoji + '</span>' +
+          '<span style="color:' + color + ';flex:1;">' + r.hero.name + '</span>' +
+          '<span style="color:' + color + ';font-size:12px;">' + rn + '</span>' +
+          statusHtml +
+          '</div>';
+      }
+      var parts = [];
+      var order = ['無雙','傳說','名將','優','良'];
+      for (var i = 0; i < order.length; i++) {
+        if (counts[order[i]]) parts.push(order[i] + ':' + counts[order[i]] + '人');
+      }
+      var summaryHtml = '<div style="padding:8px 12px;color:#f0e6d0;font-size:14px;background:rgba(0,0,0,0.2);border-radius:6px;margin-bottom:8px;">' +
+        parts.join('　');
+      if (newCount > 0) summaryHtml += '<br><span style="color:#2ecc71;">✧ 新武將 ' + newCount + ' 隻</span>';
+      if (upgrades.length > 0) summaryHtml += '<br><span style="color:#2ecc71;">⬆ ' + upgrades.join('、') + '</span>';
+      summaryHtml += '</div>';
+      container.innerHTML = '<div style="padding:12px;color:#f0e6d0;font-size:14px;line-height:1.8;">' +
+        summaryHtml + heroListHtml + '</div>';
+    }
+    this.renderEventGacha();
   };

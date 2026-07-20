@@ -34,19 +34,42 @@ var Combat = {
     var distinctRarities = Object.keys(rarityCount).length;
     if (distinctRarities >= 5) atkPct += DISTINCT_RARITY_BONUS_ATK;
 
-    /* 必然：同陣營（每多一人 +2%）: base=10, 總和=4+count*2，全體生效 */
+    /* 必然：同陣營（每多一人 +2%）: base=10, 總和=4+count*2，全體生效
+       特陣營不跟三國混：三國陣營互比，特陣營獨立計算 */
     var factionMax = 0;
-    for (var f in factionCount) { if (factionCount[f] > factionMax) factionMax = factionCount[f]; }
+    for (var f in factionCount) {
+      if (f === '特') continue;
+      if (factionCount[f] > factionMax) factionMax = factionCount[f];
+    }
     if (factionMax >= 3) atkPct += 4 + 2 * factionMax;
+    if ((factionCount['特'] || 0) >= 3) atkPct += 4 + 2 * factionCount['特'];
 
-    /* 限定：羈絆 — 僅 bond members 生效 */
+    /* 限定：羈絆 — 僅 bond members 生效；factionBond 按陣營觸發 */
     for (var b = 0; b < BOND_DATA.length; b++) {
       var bond = BOND_DATA[b];
-      if (bond.type !== 'bond') continue;
+      if (bond.type !== 'bond' && bond.type !== 'factionBond') continue;
       var allOk = true;
-      for (var m = 0; m < bond.members.length; m++) {
-        if (heroIds.indexOf(bond.members[m]) === -1) { allOk = false; break; }
+      /* factionBond：按陣營觸發（如楚漢羈絆，上陣 2 個「特」英雄） */
+      if (bond.factionBond) {
+        var fc = factionCount[bond.factionBond] || 0;
+        allOk = fc >= (bond.minFaction || 2);
+        if (allOk) {
+          var hd = getHeroData(heroId);
+          if (hd && hd.faction === bond.factionBond) {
+            if (bond.atkPct) atkPct += bond.atkPct;
+            if (bond.hpPct) hpPct += bond.hpPct;
+            activeBonds.push(bond);
+          }
+        }
+        continue;
       }
+      /* 計算已上陣的 bond members 數量，支援 minMembers（預設需全部上陣） */
+      var deployedCount = 0;
+      for (var m = 0; m < bond.members.length; m++) {
+        if (heroIds.indexOf(bond.members[m]) !== -1) deployedCount++;
+      }
+      var required = bond.minMembers || bond.members.length;
+      allOk = deployedCount >= required;
       if (allOk && bond.members.indexOf(heroId) !== -1) {
         if (bond.atkPct) atkPct += bond.atkPct;
         if (bond.hpPct) hpPct += bond.hpPct;
@@ -55,6 +78,21 @@ var Combat = {
     }
 
     return { atkPct: atkPct, hpPct: hpPct, defPct: defPct, activeBonds: activeBonds };
+  },
+
+  /* 特陣營上陣限制：最多 2 人。回傳 { ok, msg } */
+  MAX_SPECIAL_DEPLOY: 2,
+  validateDeploy: function(deployedHeroIds) {
+    var ids = deployedHeroIds || (Service.appData ? Service.appData.deployedHeroes : []);
+    var specialCount = 0;
+    for (var i = 0; i < ids.length; i++) {
+      var hd = getHeroData(ids[i]);
+      if (hd && hd.faction === '特') specialCount++;
+    }
+    if (specialCount > this.MAX_SPECIAL_DEPLOY) {
+      return { ok: false, msg: '特陣營最多上陣 ' + this.MAX_SPECIAL_DEPLOY + ' 人（當前 ' + specialCount + ' 人）' };
+    }
+    return { ok: true, msg: '' };
   },
 
   getAdvMult: function(attacker, defender) {

@@ -11,13 +11,13 @@ var HERO_DATA = [
   { id:'lingtong',   name:'凌統',   emoji:'🌊', type:'spearman',  baseAtk:15, baseDef:4,  baseHp:79,  rarity:1, faction:'吳', desc:'江東猛將，不計前嫌救甘寧' },
   { id:'lvmeng',     name:'呂蒙',   emoji:'📖', type:'horse',     baseAtk:12, baseDef:3,  baseHp:67,  rarity:1, faction:'吳', desc:'士別三日，刮目相看，白衣渡江' },
   { id:'buliangshi', name:'步練師', emoji:'🌸', type:'mage',      baseAtk:10, baseDef:2,  baseHp:31,  rarity:1, faction:'吳', desc:'孫權之妃，賢淑溫婉' },
-  { id:'chengong',   name:'陳宮',   emoji:'🎭', type:'mage',      baseAtk:9,  baseDef:1,  baseHp:31,  rarity:1, faction:'群', desc:'呂布謀主，剛直不屈' },
-  { id:'yanliang',   name:'顏良',   emoji:'🗡️', type:'warrior',   baseAtk:20, baseDef:5,  baseHp:55,  rarity:1, faction:'群', desc:'河北名將，勇冠三軍' },
+  { id:'chengong',   name:'陳宮',   emoji:'🎪', type:'mage',      baseAtk:9,  baseDef:1,  baseHp:31,  rarity:1, faction:'群', desc:'呂布謀主，剛直不屈' },
+  { id:'yanliang',   name:'顏良',   emoji:'🔱', type:'warrior',   baseAtk:20, baseDef:5,  baseHp:55,  rarity:1, faction:'群', desc:'河北名將，勇冠三軍' },
 
   /* ══════ 優 (Rarity 2) — 目標分數 60 ══════ */
   { id:'xiahoudun',  name:'夏侯惇', emoji:'🦁', type:'warrior',   baseAtk:28, baseDef:5,  baseHp:68,  rarity:2, faction:'魏', desc:'獨目將軍，剛烈驍勇' },
   { id:'zhenji',     name:'甄姬',   emoji:'❄️', type:'healer',    baseAtk:9,  baseDef:3,  baseHp:69,  rarity:2, faction:'魏', desc:'洛神，翩若驚鴻，婉若游龍' },
-  { id:'xiahouyuan', name:'夏侯淵', emoji:'⚡', type:'archer',    baseAtk:21, baseDef:3,  baseHp:47,  rarity:2, faction:'魏', desc:'曹魏名將，虎步關右，千里奔襲' },
+  { id:'xiahouyuan', name:'夏侯淵', emoji:'🌪️', type:'archer',    baseAtk:21, baseDef:3,  baseHp:47,  rarity:2, faction:'魏', desc:'曹魏名將，虎步關右，千里奔襲' },
   { id:'guanxing',   name:'關興',   emoji:'🪓', type:'archer',    baseAtk:21, baseDef:3,  baseHp:47,  rarity:2, faction:'蜀', desc:'關羽之子，繼承父志' },
   { id:'weiyan',     name:'魏延',   emoji:'⚔️', type:'warrior',   baseAtk:30, baseDef:4,  baseHp:68,  rarity:2, faction:'蜀', desc:'子午谷奇謀，蜀漢大將' },
   { id:'zhangbao',   name:'張苞',   emoji:'🐂', type:'horse',     baseAtk:17, baseDef:5,  baseHp:88,  rarity:2, faction:'蜀', desc:'張飛之子，勇猛過人' },
@@ -29,16 +29,16 @@ var HERO_DATA = [
   { id:'huaxiong',   name:'華雄',   emoji:'👹', type:'spearman',  baseAtk:27, baseDef:6,  baseHp:88,  rarity:2, faction:'群', desc:'董卓帳下猛將，斬諸侯聯軍' },
 
   /* ══════ 名將 (Rarity 3) — 目標分數 100 ══════ */
-  { id:'liubei',     name:'劉備',   emoji:'🛡️', type:'healer',    baseAtk:15, baseDef:5,  baseHp:95,  rarity:3, faction:'蜀', desc:'仁德之君，統率力強' },
+  { id:'liubei',     name:'劉備',   emoji:'🎋', type:'healer',    baseAtk:15, baseDef:5,  baseHp:95,  rarity:3, faction:'蜀', desc:'仁德之君，統率力強' },
   { id:'zhangfei',   name:'張飛',   emoji:'😤', type:'spearman',  baseAtk:30, baseDef:7,  baseHp:146, rarity:3, faction:'蜀', desc:'萬人敵，一聲喝退百萬兵' },
   { id:'pangtong',   name:'龐統',   emoji:'🐦', type:'mage',      baseAtk:23, baseDef:3,  baseHp:73,  rarity:3, faction:'蜀', desc:'鳳雛，連環計定赤壁' },
   { id:'caopi',      name:'曹丕',   emoji:'👑', type:'archer',    baseAtk:36, baseDef:4,  baseHp:70,  rarity:3, faction:'魏', desc:'篡漢稱帝，建安風骨' },
   { id:'zhanghe',    name:'張郃',   emoji:'🦅', type:'spearman',  baseAtk:30, baseDef:7,  baseHp:146, rarity:3, faction:'魏', desc:'河北四庭柱，用兵巧變' },
-  { id:'zhangliao',  name:'張遼',   emoji:'⚡', type:'horse',     baseAtk:30, baseDef:7,  baseHp:138, rarity:3, faction:'魏', desc:'威震逍遙津，八百騎破十萬' },
+  { id:'zhangliao',  name:'張遼',   emoji:'🏅', type:'horse',     baseAtk:30, baseDef:7,  baseHp:138, rarity:3, faction:'魏', desc:'威震逍遙津，八百騎破十萬' },
   { id:'taishi_ci',  name:'太史慈', emoji:'🐯', type:'spearman',  baseAtk:30, baseDef:7,  baseHp:146, rarity:3, faction:'吳', desc:'江東猛將，義薄雲天' },
   { id:'lusu',       name:'魯肅',   emoji:'🤝', type:'mage',      baseAtk:23, baseDef:3,  baseHp:73,  rarity:3, faction:'吳', desc:'江東戰略家，聯劉抗曹' },
   { id:'zhangzhao',  name:'張昭',   emoji:'📋', type:'healer',    baseAtk:13, baseDef:5,  baseHp:100, rarity:3, faction:'吳', desc:'東吳重臣，內政之才' },
-  { id:'wenchou',    name:'文醜',   emoji:'🗡️', type:'warrior',   baseAtk:47, baseDef:7,  baseHp:104, rarity:3, faction:'群', desc:'河北名將，顏良文醜' },
+  { id:'wenchou',    name:'文醜',   emoji:'⚓', type:'warrior',   baseAtk:47, baseDef:7,  baseHp:104, rarity:3, faction:'群', desc:'河北名將，顏良文醜' },
   { id:'mateng',     name:'馬騰',   emoji:'🏇', type:'horse',     baseAtk:30, baseDef:7,  baseHp:138, rarity:3, faction:'群', desc:'西涼太守，馬超之父' },
   { id:'zhangjiao',  name:'張角',   emoji:'⚡', type:'healer',    baseAtk:15, baseDef:5,  baseHp:95,  rarity:3, faction:'群', desc:'大賢良師，蒼天已死' },
 
@@ -47,7 +47,7 @@ var HERO_DATA = [
   { id:'caocao',     name:'曹操',   emoji:'🎭', type:'horse',     baseAtk:47, baseDef:11, baseHp:187, rarity:4, faction:'魏', desc:'亂世之奸雄，挾天子以令諸侯' },
   { id:'guanyu',     name:'關羽',   emoji:'🐲', type:'warrior',   baseAtk:72, baseDef:11, baseHp:154, rarity:4, faction:'蜀', desc:'武聖，青龍偃月橫掃千軍' },
   { id:'zhugeliang', name:'諸葛亮', emoji:'🧠', type:'mage',      baseAtk:36, baseDef:5,  baseHp:109, rarity:4, faction:'蜀', desc:'臥龍先生，神機妙算，三分天下' },
-  { id:'sunshangxiang', name:'孫尚香', emoji:'🎯', type:'archer', baseAtk:59, baseDef:7,  baseHp:108, rarity:4, faction:'吳', desc:'孫權之妹，巾幗不讓鬚眉' },
+  { id:'sunshangxiang', name:'孫尚香', emoji:'🎗️', type:'archer', baseAtk:59, baseDef:7,  baseHp:108, rarity:4, faction:'吳', desc:'孫權之妹，巾幗不讓鬚眉' },
   { id:'ganning',    name:'甘寧',   emoji:'💎', type:'horse',     baseAtk:47, baseDef:12, baseHp:187, rarity:4, faction:'吳', desc:'錦帆賊，百騎劫營，橫行江東' },
   { id:'machao',     name:'馬超',   emoji:'🐎', type:'spearman',  baseAtk:48, baseDef:9,  baseHp:183, rarity:4, faction:'群', desc:'錦馬超，西涼鐵騎，威震羌人' },
   { id:'diaochan',   name:'貂蟬',   emoji:'🌙', type:'healer',    baseAtk:22, baseDef:8,  baseHp:149, rarity:4, faction:'群', desc:'連環計，離間董卓呂布，巾幗英雄' },
@@ -57,16 +57,34 @@ var HERO_DATA = [
   { id:'dianwei',    name:'典韋',   emoji:'⛓️', type:'warrior',   baseAtk:115, baseDef:18, baseHp:220, rarity:5, faction:'魏', desc:'古之惡來，護主死戰，近戰無敵' },
   { id:'zhaoyun',    name:'趙雲',   emoji:'✨', type:'spearman',  baseAtk:82, baseDef:14, baseHp:275, rarity:5, faction:'蜀', desc:'常勝將軍，七進七出，一身是膽' },
   { id:'huangzhong', name:'黃忠',   emoji:'🎯', type:'archer',    baseAtk:87, baseDef:11, baseHp:154, rarity:5, faction:'蜀', desc:'老當益壯，百步穿楊，箭無虛發' },
-  { id:'sunce',      name:'孫策',   emoji:'⚔️', type:'spearman',  baseAtk:80, baseDef:13, baseHp:270, rarity:5, faction:'吳', desc:'小霸王，江東基業開創者，霸王槍橫掃江東' },
+  { id:'sunce',      name:'孫策',   emoji:'💢', type:'spearman',  baseAtk:80, baseDef:13, baseHp:270, rarity:5, faction:'吳', desc:'小霸王，江東基業開創者，霸王槍橫掃江東' },
   { id:'zhouyu',     name:'周瑜',   emoji:'🔥', type:'healer',    baseAtk:33, baseDef:12, baseHp:196, rarity:5, faction:'吳', desc:'江東美周郎，火燒赤壁' },
   { id:'lubu',       name:'呂布',   emoji:'💪', type:'horse',     baseAtk:73, baseDef:18, baseHp:302, rarity:5, faction:'群', desc:'人中呂布，馬中赤兔，無雙之將' },
   { id:'zuoci',      name:'左慈',   emoji:'🌀', type:'mage',      baseAtk:60, baseDef:6,  baseHp:150, rarity:5, faction:'群', desc:'遁世仙人，戲弄諸侯' },
+
+  /* ══════ 特陣營·楚漢爭霸 — 無雙 (Rarity 5) — 數值為同階三國 1.2 倍 ══════ */
+  { id:'xiangyu',     name:'項羽',   emoji:'🗿', type:'horse',     baseAtk:88, baseDef:22, baseHp:362, rarity:5, faction:'特', desc:'西楚霸王，力拔山兮氣蓋世，千古無二' },
+  { id:'jibu',        name:'季布',   emoji:'💫', type:'spearman',  baseAtk:97, baseDef:16, baseHp:327, rarity:5, faction:'特', desc:'一諾千金，楚之名將，忠義無雙' },
+  { id:'yingbu',      name:'英布',   emoji:'🎖️', type:'spearman',  baseAtk:97, baseDef:16, baseHp:327, rarity:5, faction:'特', desc:'九江王，漢初三將之一，驍勇善戰' },
+  { id:'hanxin',      name:'韓信',   emoji:'🏆', type:'mage',      baseAtk:71, baseDef:8,  baseHp:183, rarity:5, faction:'特', desc:'兵仙神帥，多多益善，十面埋伏滅項羽' },
+  { id:'liubang',     name:'劉邦',   emoji:'🐉', type:'healer',    baseAtk:40, baseDef:14, baseHp:235, rarity:5, faction:'特', desc:'漢高祖，大風起兮雲飛揚，威加海內' },
+  { id:'yuji',        name:'虞姬',   emoji:'🌹', type:'archer',    baseAtk:104, baseDef:13, baseHp:185, rarity:5, faction:'特', desc:'霸王別姬，絕代佳人，至死不渝' },
+  { id:'fankuai',     name:'樊噲',   emoji:'🐗', type:'warrior',   baseAtk:138, baseDef:22, baseHp:264, rarity:5, faction:'特', desc:'鴻門闖宴，忠勇無雙，漢初猛將' },
+
+  /* ══════ 特陣營·楚漢爭霸 — 傳說 (Rarity 4) — 數值為同階三國 1.2 倍 ══════ */
+  { id:'pengyue',     name:'彭越',   emoji:'🐆', type:'horse',     baseAtk:56, baseDef:14, baseHp:224, rarity:4, faction:'特', desc:'漢初名將，游擊戰始祖，與韓信英布並稱漢初三將' },
+  { id:'zhoubo',      name:'周勃',   emoji:'⚜️', type:'spearman',  baseAtk:58, baseDef:11, baseHp:220, rarity:4, faction:'特', desc:'漢初名將，誅呂安劉，平定天下' },
+  { id:'fanzeng',     name:'范增',   emoji:'🧓', type:'mage',      baseAtk:43, baseDef:6,  baseHp:131, rarity:4, faction:'特', desc:'項羽亞父，鴻門宴設局，老謀深算' },
+  { id:'xiaohe',      name:'蕭何',   emoji:'📦', type:'healer',    baseAtk:26, baseDef:10, baseHp:179, rarity:4, faction:'特', desc:'漢初三傑，鎮國家撫百姓，功人第一' },
+  { id:'zhangliang',  name:'張良',   emoji:'🌟', type:'healer',    baseAtk:26, baseDef:10, baseHp:179, rarity:4, faction:'特', desc:'謀聖，運籌帷幄之中，決勝千里之外' },
+  { id:'lvhou',       name:'呂后',   emoji:'👸', type:'archer',    baseAtk:71, baseDef:8,  baseHp:130, rarity:4, faction:'特', desc:'漢高祖之后，臨朝稱制，剛毅果決' },
+  { id:'xiangzhuang', name:'項莊',   emoji:'💃', type:'warrior',   baseAtk:86, baseDef:13, baseHp:185, rarity:4, faction:'特', desc:'項羽堂弟，鴻門宴舞劍意在沛公' },
 ];
 
 var RARITY_NAMES = ['', '良', '優', '名將', '傳說', '無雙'];
 var RARITY_COLORS = ['', '#8a8a8a', '#2ecc71', '#3498db', '#9b59b6', '#ffd700'];
 
-var FACTION_LABELS = { shu:'蜀', wei:'魏', wu:'吳', qun:'群' };
+var FACTION_LABELS = { shu:'蜀', wei:'魏', wu:'吳', qun:'群', te:'特' };
 
 /* 羈絆加成數據
    type:'auto' → 必然（全體上陣武將生效，滿條件後每多一人+2%）
@@ -113,6 +131,23 @@ var BOND_DATA = [
   { type:'bond', id:'wuzi_liangjiang', name:'五子良將', desc:'張郃張遼',     members:['zhanghe','zhangliao'],                       atkPct:10, hpPct:10 },
   { type:'bond', id:'shenting_dantiao', name:'神亭單挑', desc:'太史慈孫策',   members:['taishi_ci','sunce'],                         atkPct:10 },
   { type:'bond', id:'taiping_daoshu', name:'太平道術', desc:'張角左慈',     members:['zhangjiao','zuoci'],                         atkPct:10 },
+
+  /* ══════ 楚漢羈絆（特陣營內部自組，不跟三國混） ══════ */
+  /* type:'factionBond' → 依 factionBond 欄位判定，特陣營上陣 ≥ minFaction 人時觸發，僅對該陣營英雄生效 */
+  { type:'factionBond', id:'chuhan_bond', name:'楚漢羈絆', desc:'上陣2個特陣營英雄觸發', members:[], atkPct:15, factionBond:'特', minFaction:2 },
+  { type:'bond', id:'bawang_bieji', name:'霸王別姬', desc:'項羽虞姬',   members:['xiangyu','yuji'],                              atkPct:15, hpPct:10 },
+  { type:'bond', id:'hanchu_sanjie', name:'漢初三傑', desc:'劉邦韓信張良(任2人)', members:['liubang','hanxin','zhangliang'], minMembers:2, atkPct:20, hpPct:10 },
+  { type:'bond', id:'hongmen_yan', name:'鴻門宴', desc:'項羽范增項莊(任2人)', members:['xiangyu','fanzeng','xiangzhuang'], minMembers:2, atkPct:15, hpPct:10 },
+  { type:'bond', id:'chuhan_zhengba', name:'楚漢爭霸', desc:'項羽劉邦',   members:['xiangyu','liubang'],                            atkPct:15 },
+  { type:'bond', id:'mousheng_duijue', name:'謀聖對決', desc:'張良范增',  members:['zhangliang','fanzeng'],                         atkPct:10, hpPct:10 },
+  { type:'bond', id:'hanxin_xiaohe', name:'成也蕭何', desc:'韓信蕭何',    members:['hanxin','xiaohe'],                              atkPct:10, hpPct:10 },
+  { type:'bond', id:'lvhou_liubang', name:'帝后同心', desc:'劉邦呂后',    members:['liubang','lvhou'],                              atkPct:10, hpPct:10 },
+  { type:'bond', id:'fankuai_chuangyan', name:'闖宴護主', desc:'樊噲項羽', members:['fankuai','xiangyu'],                            atkPct:10 },
+  { type:'bond', id:'hanxin_zhangliang', name:'兵仙謀聖', desc:'韓信張良', members:['hanxin','zhangliang'],                          atkPct:15 },
+  { type:'bond', id:'xiangzhuang_wujian', name:'舞劍意在沛公', desc:'項莊劉邦', members:['xiangzhuang','liubang'],                  atkPct:10 },
+  { type:'bond', id:'chuhan_legend', name:'楚漢傳說', desc:'范增蕭何呂后(任2人)', members:['fanzeng','xiaohe','lvhou'], minMembers:2, atkPct:15, hpPct:10 },
+  { type:'bond', id:'chuhan_shuangying', name:'楚漢雙英', desc:'季布英布', members:['jibu','yingbu'], atkPct:15, hpPct:10 },
+  { type:'bond', id:'hanchu_mingjiang', name:'漢初名將', desc:'彭越周勃', members:['pengyue','zhoubo'], atkPct:10, hpPct:10 },
 
 ];
 
@@ -851,6 +886,58 @@ function getStageByFlatIndex(idx) {
   }
   return null;
 }
+/* ===== 每日任務定義 ===== */
+var DAILY_TASKS = [
+  {
+    id: 'battle_win',
+    name: '征戰勝利',
+    icon: '⚔️',
+    milestones: [1, 3, 6, 10, 15, 20, 25],
+    reward: 2
+  },
+  {
+    id: 'stamina_spend',
+    name: '體力消耗',
+    icon: '⚡',
+    milestones: [30, 60, 100, 150],
+    reward: 2
+  },
+  {
+    id: 'weapon_sell',
+    name: '出售武器',
+    icon: '🗡️',
+    milestones: [1, 3, 6, 10],
+    reward: 2
+  }
+];
+
+/* ===== 每日商店定義 ===== */
+var DAILY_SHOP = [
+  {
+    id: 'buy_stamina',
+    name: '體力補充',
+    icon: '⚡',
+    desc: '1,000 金幣換 50 體力（可超過上限）',
+    costGold: 1000,
+    dailyLimit: 3,
+    effect: function() {
+      Service.appData.stamina = Service.appData.stamina + 50;
+      Service.saveData();
+    }
+  },
+  {
+    id: 'buy_diamond',
+    name: '鑽石兌換',
+    icon: '💎',
+    desc: '1,000 金幣換 1 鑽石',
+    costGold: 1000,
+    dailyLimit: 0, // 無限制
+    effect: function() {
+      Service.addDiamond(1);
+    }
+  }
+];
+
 function getStageGold(stageIdx, difficulty, firstClear) {
   if (difficulty === 'hard') {
     return firstClear ? (stageIdx + 1) * 100 : 100;
@@ -939,6 +1026,24 @@ var HERO_SKILLS = {
   zhouyu: { name: '赤壁神炎', type: 'heal', desc: '治療生命最低的我方，恢復 80% 最大生命', cd: 12, cost: 0, multiplier: 0.8, aoeRange: 0, duration: 0, effectValue: 0 },
   lubu: { name: '狂暴無雙', type: 'buff_self', desc: '自身攻擊力提升 50%，持續 8 秒', cd: 15, cost: 0, multiplier: 0, aoeRange: 0, duration: 8, effectValue: 50 },
   zuoci: { name: '幻影遁甲', type: 'buff_ally', desc: '鼓舞全體我方，提升 25% 攻擊力，持續 8 秒', cd: 18, cost: 0, multiplier: 0, aoeRange: 0, duration: 8, effectValue: 25 },
+
+  // 特陣營·傳說 (R4)
+  fanzeng: { name: '鴻門設局', type: 'stun', desc: '對目標造成 100% 攻擊傷害並暈眩 2.5 秒', cd: 10, cost: 0, multiplier: 1.0, aoeRange: 0, duration: 2.5, effectValue: 0 },
+  xiaohe: { name: '鎮國安民', type: 'heal', desc: '治療生命最低的我方，恢復 60% 最大生命', cd: 12, cost: 0, multiplier: 0.6, aoeRange: 0, duration: 0, effectValue: 0 },
+  lvhou: { name: '臨朝稱制', type: 'damage_single', desc: '對單一敵人造成 400% 攻擊傷害', cd: 8, cost: 0, multiplier: 4.0, aoeRange: 0, duration: 0, effectValue: 0 },
+  pengyue: { name: '游擊奇襲', type: 'damage_aoe', desc: '對範圍敵人造成 200% 攻擊傷害', cd: 10, cost: 0, multiplier: 2.0, aoeRange: 2.5, duration: 0, effectValue: 0 },
+  zhoubo: { name: '誅呂安劉', type: 'buff_self', desc: '自身攻擊力提升 30%，持續 6 秒', cd: 15, cost: 0, multiplier: 0, aoeRange: 0, duration: 6, effectValue: 30 },
+  zhangliang: { name: '運籌帷幄', type: 'buff_ally', desc: '鼓舞全體我方，提升 15% 攻擊力，持續 6 秒', cd: 18, cost: 0, multiplier: 0, aoeRange: 0, duration: 6, effectValue: 15 },
+  xiangzhuang: { name: '鴻門舞劍', type: 'damage_single', desc: '對單一敵人造成 400% 攻擊傷害', cd: 8, cost: 0, multiplier: 4.0, aoeRange: 0, duration: 0, effectValue: 0 },
+
+  // 特陣營·無雙 (R5)
+  xiangyu: { name: '霸王扛鼎', type: 'buff_self', desc: '自身攻擊力提升 50%，持續 8 秒', cd: 15, cost: 0, multiplier: 0, aoeRange: 0, duration: 8, effectValue: 50 },
+  jibu: { name: '一諾千金', type: 'stun', desc: '對目標造成 100% 攻擊傷害並暈眩 2.5 秒', cd: 10, cost: 0, multiplier: 1.0, aoeRange: 0, duration: 2.5, effectValue: 0 },
+  yingbu: { name: '九江怒斬', type: 'damage_single', desc: '對單一敵人造成 500% 攻擊傷害', cd: 8, cost: 0, multiplier: 5.0, aoeRange: 0, duration: 0, effectValue: 0 },
+  liubang: { name: '大風起兮', type: 'heal', desc: '治療生命最低的我方，恢復 80% 最大生命', cd: 12, cost: 0, multiplier: 0.8, aoeRange: 0, duration: 0, effectValue: 0 },
+  hanxin: { name: '十面埋伏', type: 'damage_aoe', desc: '對範圍敵人造成 300% 攻擊傷害', cd: 10, cost: 0, multiplier: 3.0, aoeRange: 2.5, duration: 0, effectValue: 0 },
+  yuji: { name: '霸王別姬', type: 'damage_single', desc: '對單一敵人造成 500% 攻擊傷害', cd: 8, cost: 0, multiplier: 5.0, aoeRange: 0, duration: 0, effectValue: 0 },
+  fankuai: { name: '鴻門闖宴', type: 'buff_self', desc: '自身攻擊力提升 50%，持續 8 秒', cd: 15, cost: 0, multiplier: 0, aoeRange: 0, duration: 8, effectValue: 50 },
 };
 
 // 將技能欄位動態附加到 HERO_DATA

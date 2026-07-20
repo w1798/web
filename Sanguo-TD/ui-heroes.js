@@ -16,7 +16,6 @@ UI.showHeroes = function() {
 UI.renderHeroList = function() {
     var container = document.getElementById('heroes-list');
     container.innerHTML = '';
-    container.scrollTop = 0;
     var d = Service.appData;
     if (d.ownedHeroes.length === 0) {
       container.innerHTML = '<div style="text-align:center;padding:40px;color:#6a5a4a;">尚無武將，快去招募！</div>';
@@ -55,6 +54,13 @@ UI.renderHeroList = function() {
       slotRow.appendChild(slot);
     }
     container.appendChild(slotRow);
+
+    /* --- 特陣營上陣限制提示 --- */
+    var specialHint = document.createElement('div');
+    specialHint.className = 'deploy-special-hint';
+    specialHint.style.cssText = 'text-align:center;padding:6px 8px;margin:4px 0 8px;font-size:12px;color:#e67e22;background:rgba(230,126,34,0.1);border-radius:4px;';
+    specialHint.textContent = '⚠ 特陣營英雄最多只能上陣 2 人';
+    container.appendChild(specialHint);
 
     /* --- 上陣確認 / 一鍵上陣（僅 >6 時顯示） --- */
     if (d.ownedHeroes.length > 6) {
@@ -147,11 +153,11 @@ UI.renderHeroList = function() {
     var filterRow = document.createElement('div');
     filterRow.className = 'filter-row';
 
-    var filterGroups = [
-      { key:'filterFaction', label:'陣營', options:[{id:'',label:'全部'},{id:'蜀',label:'蜀'},{id:'魏',label:'魏'},{id:'吳',label:'吳'},{id:'群',label:'群'}] },
-      { key:'filterType', label:'兵種', options:[{id:'',label:'全部'},{id:'warrior',label:'刀'},{id:'spearman',label:'槍'},{id:'archer',label:'弓'},{id:'horse',label:'騎'},{id:'mage',label:'法'},{id:'healer',label:'僧'}] },
-      { key:'filterRarity', label:'軍階', options:[{id:'',label:'全部'},{id:'1',label:'良'},{id:'2',label:'優'},{id:'3',label:'名將'},{id:'4',label:'傳說'},{id:'5',label:'無雙'}] }
-    ];
+var filterGroups = [
+       { key:'filterFaction', label:'陣營', options:[{id:'',label:'全部'},{id:'蜀',label:'蜀'},{id:'魏',label:'魏'},{id:'吳',label:'吳'},{id:'群',label:'群'},{id:'特',label:'特'}] },
+       { key:'filterType', label:'兵種', options:[{id:'',label:'全部'},{id:'warrior',label:'刀'},{id:'spearman',label:'槍'},{id:'archer',label:'弓'},{id:'horse',label:'騎'},{id:'mage',label:'法'},{id:'healer',label:'僧'}] },
+       { key:'filterRarity', label:'軍階', options:[{id:'',label:'全部'},{id:'1',label:'良'},{id:'2',label:'優'},{id:'3',label:'名將'},{id:'4',label:'傳說'},{id:'5',label:'無雙'}] }
+     ];
     for (var fi = 0; fi < filterGroups.length; fi++) {
       (function(fg) {
         var group = document.createElement('span');
@@ -244,7 +250,7 @@ UI.renderHeroList = function() {
         return getHeroScore(hb, tb, sb, Service.getWeapon(b)) - getHeroScore(ha, ta, sa, Service.getWeapon(a));
       });
     } else if (this.sortMode === 'faction') {
-      var factionOrder = { '蜀':0, '魏':1, '吳':2, '群':3 };
+      var factionOrder = { '蜀':0, '魏':1, '吳':2, '群':3, '特':4 };
       sorted.sort(function(a, b) {
         var ha = getHeroData(a), hb = getHeroData(b);
         var fa = ha ? (factionOrder[ha.faction] || 99) : 99;
@@ -273,6 +279,16 @@ UI.renderHeroList = function() {
       var deployed2 = Service.isDeployed(hid);
       var tm = 1.0 + star * (PROMO_STAR[tier] || 0);
       var canToggle = d.ownedHeroes.length > 6 && (deployed2 || Service.getDeployedHeroes().length < 6);
+      /* 特陣營最多只能上陣 2 人 */
+      if (!deployed2 && hd.faction === '特') {
+        var specialCount = 0;
+        var deployedNow = Service.getDeployedHeroes();
+        for (var si = 0; si < deployedNow.length; si++) {
+          var shd = getHeroData(deployedNow[si]);
+          if (shd && shd.faction === '特') specialCount++;
+        }
+        if (specialCount >= 2) canToggle = false;
+      }
       var tierShow = TIER_NAMES[tier] + (tier >= 4 && star > 0 ? '+' + star + '⭐' : '');
       var lv = (Service.appData.heroLevel && Service.appData.heroLevel[hid]) || 0;
       var exp = (Service.appData.heroExp && Service.appData.heroExp[hid]) || 0;
@@ -408,11 +424,23 @@ UI.getDeployedSynergySummary = function(deployed) {
     if (factionMax >= 3) lines.push('<span class="synergy-tag auto" data-tip="全員生效">【必然】</span>同陣營≥' + factionMax + '人 → 全體ATK+' + (4 + 2 * factionMax) + '%');
     for (var b = 0; b < BOND_DATA.length; b++) {
       var bond = BOND_DATA[b];
-      if (bond.type !== 'bond') continue;
-      var allOk = true;
-      for (var m = 0; m < bond.members.length; m++) {
-        if (deployed.indexOf(bond.members[m]) === -1) { allOk = false; break; }
+      if (bond.type !== 'bond' && bond.type !== 'factionBond') continue;
+      if (bond.type === 'factionBond') {
+        var fc = factionCount[bond.factionBond] || 0;
+        if (fc >= (bond.minFaction || 2)) {
+          var s = '<span class="synergy-tag limited" data-tip="只有限定成員生效">【限定】</span>' + bond.name;
+          if (bond.atkPct) s += ' ATK+' + bond.atkPct + '%';
+          if (bond.hpPct) s += ' HP+' + bond.hpPct + '%';
+          lines.push(s);
+        }
+        continue;
       }
+      var deployedCount = 0;
+      for (var m = 0; m < bond.members.length; m++) {
+        if (deployed.indexOf(bond.members[m]) !== -1) deployedCount++;
+      }
+      var required = bond.minMembers || bond.members.length;
+      var allOk = deployedCount >= required;
       if (allOk) {
         var s = '<span class="synergy-tag limited" data-tip="只有限定成員生效">【限定】</span>' + bond.name;
         if (bond.atkPct) s += ' ATK+' + bond.atkPct + '%';
