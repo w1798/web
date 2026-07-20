@@ -302,7 +302,7 @@ var TYPE_ADVANTAGE = {
   horse: ['bow','sword','mage'] // 騎打弓/刀/法
 };
 /* 原軍階都不同 ≥5 人時的全體攻擊力加成 % */
-var DISTINCT_RARITY_BONUS_ATK = 30;
+var DISTINCT_RARITY_BONUS_ATK = 50;
 /* Hero type → weaponType mapping */
 var HERO_WEAPON = {
   warrior:  'sword',
