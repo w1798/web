@@ -917,8 +917,8 @@ var DAILY_SHOP = [
     id: 'buy_stamina',
     name: '體力補充',
     icon: '⚡',
-    desc: '1,000 金幣換 50 體力（可超過上限）',
-    costGold: 1000,
+    desc: '500 金幣換 50 體力（可超過上限）',
+    costGold: 500,
     dailyLimit: 3,
     effect: function() {
       Service.appData.stamina = Service.appData.stamina + 50;
@@ -929,9 +929,9 @@ var DAILY_SHOP = [
     id: 'buy_diamond',
     name: '鑽石兌換',
     icon: '💎',
-    desc: '1,000 金幣換 1 鑽石',
-    costGold: 1000,
-    dailyLimit: 0, // 無限制
+    desc: '100 金幣換 1 鑽石',
+    costGold: 100,
+    dailyLimit: 5, // 無限制
     effect: function() {
       Service.addDiamond(1);
     }
