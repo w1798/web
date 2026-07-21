@@ -72,7 +72,7 @@ UI.renderGacha = function() {
       var rd = rates[r];
       var list = [];
       for (var hi = 0; hi < HERO_DATA.length; hi++) {
-        if (HERO_DATA[hi].rarity === rd.rarity) list.push(HERO_DATA[hi]);
+        if (HERO_DATA[hi].rarity === rd.rarity && HERO_DATA[hi].faction !== '特') list.push(HERO_DATA[hi]);
       }
       if (list.length === 0) continue;
 

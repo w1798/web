@@ -1,27 +1,29 @@
 /* ===== 敵軍系統 ===== */
 function Enemy(data, startCol, startRow) {
-  this.data = data;
-  this.name = data.name;
-  this.emoji = data.emoji;
-  this.maxHp = data.hp;
-  this.hp = data.hp;
-  this.atk = data.atk;
-  this.def = data.def;
-  this.speed = data.speed;
-  this.color = data.color || '#8a3a3a';
-  this.col = startCol;
-  this.row = startRow;
-  this.pathIndex = 0;
-  this.pixelX = 0;
-  this.pixelY = 0;
-  this.moveProgress = 0;
-  this.dead = false;
-  this.el = null;
-  this.attackCooldown = 0;
-  this.weaponType = data.weaponType || 'sword';
-  this.stunnedTimer = 0; // 初始化眩暈計數器
+   this.data = data;
+   this.name = data.name;
+   this.emoji = data.emoji;
+   this.maxHp = data.hp;
+   this.hp = data.hp;
+   this.atk = data.atk;
+   this.def = data.def;
+   this.speed = data.speed;
+   this.color = data.color || '#8a3a3a';
+   this.col = startCol;
+   this.row = startRow;
+   this.pathIndex = 0;
+   this.pixelX = 0;
+   this.pixelY = 0;
+   this.moveProgress = 0;
+   this.dead = false;
+   this.el = null;
+   this.attackCooldown = 0;
+   this.weaponType = data.weaponType || 'sword';
+   this.stunnedTimer = 0; // 初始化眩暈計數器
+   this.slowPct = 0;      // 緩速百分比
+   this.slowTimer = 0;    // 緩速計時器
 
-  this.syncPixelPos();
+   this.syncPixelPos();
 }
 
 Enemy.prototype.syncPixelPos = function() {
@@ -37,6 +39,7 @@ Enemy.prototype.update = function(dt) {
   // 暈眩狀態處理
   if (this.stunnedTimer > 0) {
     this.stunnedTimer -= dt;
+    // 確保在計時器歸零時仍然保持暈眩狀態直到幀結束
     if (this.el && !this.el.querySelector('.stunned-effect')) {
       var stunDiv = document.createElement('div');
       stunDiv.className = 'stunned-effect';
@@ -53,9 +56,29 @@ Enemy.prototype.update = function(dt) {
     }
     return; // 眩暈中，跳過行動
   } else {
+    // 確保在超時時移除視覺效果
     if (this.el) {
       var stunDiv = this.el.querySelector('.stunned-effect');
       if (stunDiv) stunDiv.remove();
+    }
+  }
+
+  // 緩速狀態處理
+  var currentSpeed = this.speed;
+  if (this.slowTimer > 0) {
+    this.slowTimer -= dt;
+    currentSpeed = this.speed * (1 - (this.slowPct || 0) / 100);
+    if (this.el && !this.el.querySelector('.slow-effect')) {
+      var slowDiv = document.createElement('div');
+      slowDiv.className = 'slow-effect';
+      slowDiv.textContent = '❄️';
+      slowDiv.style.cssText = 'position:absolute;left:50%;top:-8px;transform:translateX(-50%);font-size:14px;z-index:5;pointer-events:none;';
+      this.el.appendChild(slowDiv);
+    }
+  } else {
+    if (this.el) {
+      var slowDiv = this.el.querySelector('.slow-effect');
+      if (slowDiv) slowDiv.remove();
     }
   }
 
@@ -65,7 +88,7 @@ Enemy.prototype.update = function(dt) {
     return;
   }
 
-  this.moveProgress += this.speed * dt;
+  this.moveProgress += currentSpeed * dt;
   if (this.moveProgress >= 1) {
     this.moveProgress = 0;
     this.pathIndex++;

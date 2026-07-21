@@ -578,6 +578,7 @@ var Game = {
 
   update: function(dt) {
     if (this.battlePhase !== 'fighting' || this.gameEnded) return;
+    this.gameTime = (this.gameTime || 0) + dt;
 
     this.autoWaveTimer -= dt;
     if (this.autoWaveTimer <= 0 && !this.waveActive) {
@@ -824,6 +825,7 @@ var Game = {
     var self = this;
     this.lastTime = performance.now();
     this.speed = 1;
+    this.gameTime = 0;
     this._skillBarTick = 0;
     function loop(now) {
       var dt = Math.min((now - self.lastTime) / 1000, 0.05) * self.speed;

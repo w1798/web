@@ -32,6 +32,14 @@ function Unit(heroData, col, row, tier, star) {
   this.stunnedTimer = 0;
   this.buffAtkPct = 0;
   this.buffDuration = 0;
+  this.buffDefPct = 0;
+  this.buffHpPct = 0;
+  this.buffDefDuration = 0;
+  this.buffDefAddedHp = 0;
+
+  // Buff 獨立生命週期系統
+  this.buffs = []; // { type:'atk'|'def', endTime, value, ... }
+  this._defBuffBaseMaxHp = 0; // 無 DEF Buff 時的 maxHp 基準值
 
   this.applyTierStats(heroData);
 }
@@ -146,6 +154,75 @@ Unit.prototype.findUnstunnedTarget = function() {
   return best;
 };
 
+// 過濾過期 Buff 並重新計算所有 Buff 總值
+Unit.prototype._recalcBuffs = function() {
+  var now = (window.Game && Game.gameTime) || 0;
+  var hadDefBuff = this.buffs.some(function(b) { return b.type === 'def'; });
+  var oldTotalHpPct = 0;
+  for (var i = 0; i < this.buffs.length; i++) {
+    if (this.buffs[i].type === 'def') oldTotalHpPct += (this.buffs[i].hpPct || 0);
+  }
+
+  // 過濾過期 Buff
+  this.buffs = this.buffs.filter(function(b) { return b.endTime > now; });
+
+  // 計算當前所有活跃 Buff 總值
+  var totalAtk = 0;
+  var totalDef = 0;
+  var totalHpPct = 0;
+  var latestEndTime = 0;
+  for (var i = 0; i < this.buffs.length; i++) {
+    var b = this.buffs[i];
+    if (b.type === 'atk') {
+      totalAtk += b.value;
+      if (b.endTime > latestEndTime) latestEndTime = b.endTime;
+    } else if (b.type === 'def') {
+      totalDef += (b.defPct || 0);
+      totalHpPct += (b.hpPct || 0);
+      if (b.endTime > latestEndTime) latestEndTime = b.endTime;
+    }
+  }
+
+  // 更新 ATK Buff 屬性
+  this.buffAtkPct = totalAtk;
+  // 為 UI 顯示：取最長剩餘時間
+  this.buffDuration = latestEndTime > now ? latestEndTime - now : 0;
+
+  // 更新 DEF/HP Buff 屬性
+  this.buffDefPct = totalDef;
+
+  // 處理 HP 基準值：若之前有 def buff 但現在沒有，記錄基準
+  if (hadDefBuff && !this.buffs.some(function(b) { return b.type === 'def'; })) {
+    // 所有 def buff 都過期了，重置基準
+    this._defBuffBaseMaxHp = 0;
+  }
+
+  // 從基準值重算 maxHp（如果有 def buff 存在）
+  if (this.buffs.some(function(b) { return b.type === 'def'; })) {
+    if (this._defBuffBaseMaxHp <= 0) {
+      // 首次或基準被清除：以當前 maxHp 反推基準
+      var curHpPct = oldTotalHpPct;
+      this._defBuffBaseMaxHp = curHpPct > 0 ? Math.floor(this.maxHp / (1 + curHpPct / 100)) : this.maxHp;
+    }
+    var newMaxHp = Math.floor(this._defBuffBaseMaxHp * (1 + totalHpPct / 100));
+    if (newMaxHp !== this.maxHp) {
+      var ratio = this.maxHp > 0 ? this.hp / this.maxHp : 1;
+      this.maxHp = Math.max(1, newMaxHp);
+      this.hp = Math.max(1, Math.floor(this.maxHp * ratio));
+    }
+    this.buffHpPct = totalHpPct;
+  } else if (hadDefBuff) {
+    // def buff 全部過期：恢復到基準值
+    if (this._defBuffBaseMaxHp > 0) {
+      var ratio = this.maxHp > 0 ? this.hp / this.maxHp : 1;
+      this.maxHp = Math.max(1, this._defBuffBaseMaxHp);
+      this.hp = Math.max(1, Math.floor(this.maxHp * ratio));
+    }
+    this.buffHpPct = 0;
+    this._defBuffBaseMaxHp = 0;
+  }
+};
+
 Unit.prototype.update = function(dt) {
   if (this.dead) return;
 
@@ -153,13 +230,8 @@ Unit.prototype.update = function(dt) {
   if (this.skillCooldown > 0) {
     this.skillCooldown -= dt;
   }
-  if (this.buffDuration > 0) {
-    this.buffDuration -= dt;
-    if (this.buffDuration <= 0) {
-      this.buffDuration = 0;
-      this.buffAtkPct = 0;
-    }
-  }
+  // Buff 獨立生命週期：過濾過期 Buff 並重新計算總值
+  this._recalcBuffs();
 
   // 自動施法判定 (4.2 - 自動功能)
   if (this.autoCast && this.skill && this.skillCooldown <= 0) {
@@ -169,6 +241,7 @@ Unit.prototype.update = function(dt) {
   // 暈眩狀態處理
   if (this.stunnedTimer > 0) {
     this.stunnedTimer -= dt;
+    // 確保在計時器歸零時仍然保持暈眩狀態直到幀結束
     if (this.el && !this.el.querySelector('.stunned-effect')) {
       var stunDiv = document.createElement('div');
       stunDiv.className = 'stunned-effect';
@@ -185,6 +258,7 @@ Unit.prototype.update = function(dt) {
     }
     return;
   } else {
+    // 確保在超時時移除視覺效果
     if (this.el) {
       var stunDiv = this.el.querySelector('.stunned-effect');
       if (stunDiv) stunDiv.remove();
@@ -220,6 +294,7 @@ Unit.prototype.useSkill = function() {
   var aoeRange = this.skill.aoeRange || 0;
   var dur = this.skill.duration || 0;
   var effectVal = this.skill.effectValue || 0;
+  var effectVal2 = this.skill.effectValue2 || 0;
   
   var selfValAtk = this.atk * (1 + (this.buffAtkPct || 0) / 100);
   
@@ -282,23 +357,75 @@ Unit.prototype.useSkill = function() {
     this.showSkillEffect(tgt.pixelX, tgt.pixelY, '🌀', 'rgba(52,152,219,0.8)');
   }
   else if (type === 'buff_self') {
-    // 疊加攻擊力加成，持續時間取最長者
-    this.buffAtkPct = (this.buffAtkPct || 0) + effectVal;
-    this.buffDuration = Math.max(this.buffDuration || 0, dur);
+    // 每個 Buff 獨立生命週期，不互相影響
+    var now = (window.Game && Game.gameTime) || 0;
+    this.buffs.push({ type: 'atk', value: effectVal, endTime: now + dur });
     var pos = UI.cellToPixel(this.col, this.row);
     this.showSkillEffect(pos.x, pos.y, '✨', 'rgba(230,126,34,0.8)');
   }
-  else if (type === 'buff_ally') {
-    var self = this;
-    Game.units.forEach(function(u) {
-      if (u.dead) return;
-      // 疊加攻擊力加成，持續時間取最長者（確保最後一個 Buff 結束前不歸零）
-      u.buffAtkPct = (u.buffAtkPct || 0) + effectVal;
-      u.buffDuration = Math.max(u.buffDuration || 0, dur);
-      var pos = UI.cellToPixel(u.col, u.row);
-      self.showSkillEffect(pos.x, pos.y, '🌞', 'rgba(241,196,15,0.8)');
-    });
-  }
+else if (type === 'buff_ally') {
+        var self = this;
+        var now = (window.Game && Game.gameTime) || 0;
+        Game.units.forEach(function(u) {
+            if (u.dead) return;
+            // 每個單位各自添加獨立的 Buff 實例
+            u.buffs.push({ type: 'atk', value: effectVal, endTime: now + dur });
+            var pos = UI.cellToPixel(u.col, u.row);
+            self.showSkillEffect(pos.x, pos.y, '🌞', 'rgba(241,196,15,0.8)');
+        });
+    }
+    else if (type === 'slow_aoe') {
+        var center = this.target || this.findTarget();
+        if (!center || center.dead) return false;
+        
+        var dmg = Math.round(selfValAtk * mult);
+        this.showSkillEffect(center.pixelX, center.pixelY, '❄️', 'rgba(173,216,230,0.8)', aoeRange * 40);
+        
+        var inRange = [];
+        for (var i = 0; i < Game.enemies.length; i++) {
+            var e = Game.enemies[i];
+            if (e.dead) continue;
+            var dx = e.col - center.col;
+            var dy = e.row - center.row;
+            var d = Math.sqrt(dx*dx + dy*dy);
+            if (d <= aoeRange) {
+                inRange.push(e);
+            }
+        }
+        inRange.forEach(function(e) {
+            e.takeDamage(dmg);
+            // 施加緩速效果
+            e.slowPct = effectVal;
+            e.slowTimer = dur;
+        });
+    }
+    else if (type === 'buff_def_aoe') {
+        var center = this.target || this.findTarget();
+        if (!center || center.dead) return false;
+        
+        this.showSkillEffect(center.pixelX, center.pixelY, '🛡️', 'rgba(30,144,255,0.8)', aoeRange * 40);
+        
+        var now = (window.Game && Game.gameTime) || 0;
+        var inRange = [];
+        for (var i = 0; i < Game.units.length; i++) {
+            var u = Game.units[i];
+            if (u.dead || u.isSoldier) continue; // 只影響武將
+            var dx = u.col - center.col;
+            var dy = u.row - center.row;
+            var d = Math.sqrt(dx*dx + dy*dy);
+            if (d <= aoeRange) {
+                inRange.push(u);
+            }
+        }
+        inRange.forEach(function(u) {
+            // 若無 DEF Buff 基準值，記錄當前 maxHp 為基準
+            if (u._defBuffBaseMaxHp <= 0) {
+                u._defBuffBaseMaxHp = u.maxHp;
+            }
+            // 添加獨立 DEF/HP Buff 實例
+            u.buffs.push({ type: 'def', defPct: effectVal, hpPct: effectVal2, endTime: now + dur });
+        });
+    }
   
   if (typeof UI.triggerScreenShake === 'function') {
     UI.triggerScreenShake();

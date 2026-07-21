@@ -427,7 +427,7 @@ UI._clearDeployHighlights = function() {
     
       if (u.skill) {
         info.push('<strong style="color:#ffd700;">【主動技能】 ' + u.skill.name + '</strong> (CD: ' + u.skill.cd + ' 秒)');
-        info.push('<span style="color:#e0d0b0;font-size:11px;">描述: ' + u.skill.desc + '</span>');
+        info.push('<span style="color:#e0d0b0;font-size:11px;">描述: ' + (u.skill.getDesc ? u.skill.getDesc(u.tier) : u.skill.desc) + '</span>');
       }}
     info.push('HP: ' + Math.floor(u.hp) + '/' + Math.floor(u.maxHp));
     var buffPct = u.buffAtkPct || 0;
@@ -478,7 +478,7 @@ UI.showWaitingUnitTooltip = function(wu, ev) {
         info.push('★' + hd.rarity + '  Lv.' + (wu.level || 1));
         if (hd.skill) {
           info.push('<strong style="color:#ffd700;">【主動技能】 ' + hd.skill.name + '</strong> (CD: ' + hd.skill.cd + ' 秒)');
-          info.push('<span style="color:#e0d0b0;font-size:11px;">描述: ' + hd.skill.desc + '</span>');
+          info.push('<span style="color:#e0d0b0;font-size:11px;">描述: ' + (hd.skill.getDesc ? hd.skill.getDesc(hd.rarity) : hd.skill.desc) + '</span>');
         }
         var lv = wu.level || 1;
         var lvMult = 1 + (lv - 1) * 0.5;
@@ -1058,7 +1058,7 @@ UI.updateUnitActions = function() {
   };
 
 /* ===== 技能欄 (左右兩側區分 & 自動施法) ===== */
-UI.showSkillTooltip = function(skill, ev, heroName, row, col) {
+UI.showSkillTooltip = function(skill, ev, heroName, row, col, tier) {
   var old = document.getElementById('unit-tooltip');
   if (old) old.remove();
   var info = [];
@@ -1074,10 +1074,12 @@ UI.showSkillTooltip = function(skill, ev, heroName, row, col) {
     'heal': '治療',
     'stun': '控場暈眩',
     'buff_self': '自身強化',
-    'buff_ally': '全體強化'
+    'buff_ally': '全體強化',
+    'slow_aoe': '範圍緩速',
+    'buff_def_aoe': '範圍防禦'
   }[skill.type] || skill.type;
   info.push('類型: ' + typeZh);
-  info.push('<span style="color:#c8b896;font-size:12px;">' + skill.desc + '</span>');
+  info.push('<span style="color:#c8b896;font-size:12px;">' + (skill.getDesc ? skill.getDesc(tier || 1) : skill.desc) + '</span>');
   
   var el = document.createElement('div');
   el.id = 'unit-tooltip';
@@ -1140,7 +1142,7 @@ UI.renderSkillBar = function() {
       
       btn.onmouseenter = function(e) {
         if (u.el) u.el.classList.add('highlight-skill-owner');
-        UI.showSkillTooltip(u.skill, e, u.name, u.row, u.col);
+        UI.showSkillTooltip(u.skill, e, u.name, u.row, u.col, u.tier);
       };
       btn.onmouseleave = function() {
         if (u.el) u.el.classList.remove('highlight-skill-owner');
