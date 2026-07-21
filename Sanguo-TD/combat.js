@@ -192,8 +192,41 @@ var Combat = {
   doEnemyAttack: function(enemy, unit) {
     if (unit.dead) return;
     var adv = this.getAdvMult(enemy, unit);
+    if (enemy.attackType === 'aoe') {
+      var dmg = Math.max(1, Math.floor(enemy.atk * adv - unit.def * 0.5));
+      for (var i = 0; i < Game.units.length; i++) {
+        var u = Game.units[i];
+        if (u.dead) continue;
+        var dx = u.col - enemy.col;
+        var dy = u.row - enemy.row;
+        if (Math.sqrt(dx*dx + dy*dy) <= (enemy.range || 2)) {
+          u.takeDamage(Math.max(1, Math.floor(enemy.atk * adv - u.def * 0.5)));
+        }
+      }
+      return;
+    }
+    if (enemy.attackType === 'heal') {
+      var weakest = null;
+      var minPct = 1;
+      for (var i = 0; i < Game.enemies.length; i++) {
+        var e = Game.enemies[i];
+        if (e.dead || e === enemy) continue;
+        var pct = e.hp / e.maxHp;
+        if (pct < minPct) { minPct = pct; weakest = e; }
+      }
+      if (weakest) {
+        var healAmt = Math.floor(enemy.atk * 1.5);
+        weakest.hp = Math.min(weakest.maxHp, weakest.hp + healAmt);
+        UI.showDmgNum(weakest.pixelX, weakest.pixelY, '+' + healAmt, '#2ecc71');
+      }
+      return;
+    }
     var dmg = Math.max(1, Math.floor(enemy.atk * adv - unit.def * 0.5));
     unit.takeDamage(dmg);
+    if (enemy.weaponType === 'spear' && !unit.dead) {
+      var dmg2 = Math.floor(dmg * 0.5);
+      unit.takeDamage(dmg2);
+    }
   },
 
   findNearestEnemy: function(col, row, range) {

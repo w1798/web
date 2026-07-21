@@ -406,34 +406,32 @@ function getWeaponType(unit) {
   return 'sword';
 }
 
-/* ===== 敵軍資料庫 ===== */
+/* ===== 敵軍資料庫（6兵種×3階級 = 18種） ===== */
 var ENEMY_DATA = [
-  /* 黃巾之亂 */
-  { id:'yellow_soldier',   name:'黃巾兵',   emoji:'💀', hp:30, atk:5,  def:1, speed:0.6, weaponType:'sword',  color:'#8a7a30' },
-  { id:'yellow_archer',    name:'黃巾弓手', emoji:'🏹', hp:20, atk:8,  def:0, speed:0.5, weaponType:'bow',   color:'#7a6a20' },
-  { id:'yellow_leader',    name:'黃巾頭目', emoji:'👺', hp:60, atk:10, def:3, speed:0.4, weaponType:'spear', color:'#9a5a20' },
-  /* 討董之戰 */
-  { id:'dong_soldier',     name:'董卓軍',   emoji:'⚔️', hp:40, atk:7,  def:2, speed:0.5, weaponType:'sword',  color:'#6a2a2a' },
-  { id:'dong_cavalry',     name:'西涼騎兵', emoji:'🐴', hp:50, atk:12, def:3, speed:0.8, weaponType:'horse',  color:'#8a3a2a' },
-  { id:'dong_commander',   name:'董卓將領', emoji:'👑', hp:80, atk:15, def:5, speed:0.3, weaponType:'mage',   color:'#aa2a2a' },
-  /* 魏國 */
-  { id:'wei_soldier',      name:'魏國步兵', emoji:'🛡️', hp:50, atk:9,  def:4, speed:0.5, weaponType:'sword',  color:'#2a3a6a' },
-  { id:'wei_archer',       name:'魏國弓手', emoji:'🏹', hp:35, atk:12, def:2, speed:0.4, weaponType:'bow',   color:'#2a4a7a' },
-  { id:'wei_cavalry',      name:'虎豹騎',   emoji:'🐎', hp:65, atk:14, def:4, speed:0.7, weaponType:'horse',  color:'#3a3a8a' },
-  { id:'wei_general',      name:'魏國大將', emoji:'👹', hp:100, atk:18, def:6, speed:0.3, weaponType:'mage',   color:'#2a2a8a' },
-  /* 吳國 */
-  { id:'wu_soldier',       name:'吳國步兵', emoji:'⚓', hp:40, atk:8,  def:3, speed:0.6, weaponType:'spear', color:'#2a6a4a' },
-  { id:'wu_archer',        name:'吳國弓兵', emoji:'🏹', hp:30, atk:10, def:2, speed:0.5, weaponType:'bow',   color:'#2a7a5a' },
-  { id:'wu_commander',     name:'吳國都督', emoji:'🔥', hp:90, atk:16, def:5, speed:0.3, weaponType:'mage',   color:'#1a8a5a' },
-  /* 蜀國 */
-  { id:'shu_soldier',      name:'蜀國步兵', emoji:'🐉', hp:45, atk:8,  def:3, speed:0.5, weaponType:'horse',  color:'#6a5a2a' },
-  { id:'shu_archer',       name:'蜀國弓手', emoji:'🎯', hp:30, atk:11, def:2, speed:0.4, weaponType:'bow',   color:'#7a6a2a' },
-  { id:'shu_general',      name:'蜀國大將', emoji:'🐲', hp:95, atk:17, def:6, speed:0.3, weaponType:'spear', color:'#8a7a2a' },
-  /* BOSS */
-  { id:'boss_dongzhuo',    name:'魔化董卓',     emoji:'👿', hp:200, atk:20, def:8, speed:0.2, weaponType:'sword',  color:'#aa1a1a' },
-  { id:'boss_caocao',      name:'魔化曹操',     emoji:'🎭', hp:220, atk:22, def:9, speed:0.2, weaponType:'mage',   color:'#1a2a7a' },
-  { id:'boss_sunquan',     name:'魔化孫權',     emoji:'👑', hp:200, atk:18, def:8, speed:0.2, weaponType:'spear', color:'#1a6a4a' },
-  { id:'boss_lubu',        name:'魔化呂布',     emoji:'💀', hp:250, atk:28, def:10, speed:0.3, weaponType:'horse',  color:'#aa3a1a' },
+  /* 步兵 melee */
+  { id:'infantry_1',  name:'初級步兵', emoji:'🗡️', hp:40, atk:8,  def:3, speed:0.5, weaponType:'sword',  attackType:'melee', color:'#6a5a3a', range:1 },
+  { id:'infantry_2',  name:'中級步兵', emoji:'🛡️', hp:80, atk:16, def:6, speed:0.5, weaponType:'sword',  attackType:'melee', color:'#5a4a2a', range:1 },
+  { id:'infantry_3',  name:'高級步兵', emoji:'⚔️', hp:120, atk:24, def:9, speed:0.5, weaponType:'sword',  attackType:'melee', color:'#4a3a1a', range:1 },
+  /* 弓手 ranged */
+  { id:'archer_1',    name:'初級弓手', emoji:'🏹', hp:25, atk:10, def:1, speed:0.4, weaponType:'bow',    attackType:'ranged', color:'#5a7a3a', range:2.5, atkSpeed:0.7 },
+  { id:'archer_2',    name:'中級弓手', emoji:'🎯', hp:50, atk:20, def:2, speed:0.4, weaponType:'bow',    attackType:'ranged', color:'#4a6a2a', range:2.5, atkSpeed:0.7 },
+  { id:'archer_3',    name:'高級弓手', emoji:'🔱', hp:75, atk:30, def:3, speed:0.4, weaponType:'bow',    attackType:'ranged', color:'#3a5a1a', range:2.5, atkSpeed:0.7 },
+  /* 槍兵 melee */
+  { id:'spearman_1',  name:'初級槍兵', emoji:'🔱', hp:45, atk:9,  def:3, speed:0.5, weaponType:'spear',  attackType:'melee', color:'#3a5a6a', range:1 },
+  { id:'spearman_2',  name:'中級槍兵', emoji:'🔱', hp:90, atk:18, def:6, speed:0.5, weaponType:'spear',  attackType:'melee', color:'#2a4a5a', range:1 },
+  { id:'spearman_3',  name:'高級槍兵', emoji:'🔱', hp:135, atk:27, def:9, speed:0.5, weaponType:'spear',  attackType:'melee', color:'#1a3a4a', range:1 },
+  /* 騎兵 melee */
+  { id:'cavalry_1',   name:'初級騎兵', emoji:'🐴', hp:50, atk:10, def:3, speed:0.7, weaponType:'horse',  attackType:'melee', color:'#6a3a2a', range:1 },
+  { id:'cavalry_2',   name:'中級騎兵', emoji:'🐎', hp:100, atk:20, def:6, speed:0.7, weaponType:'horse',  attackType:'melee', color:'#5a2a1a', range:1 },
+  { id:'cavalry_3',   name:'高級騎兵', emoji:'🏇', hp:150, atk:30, def:9, speed:0.7, weaponType:'horse',  attackType:'melee', color:'#4a1a0a', range:1 },
+  /* 法師 aoe */
+  { id:'mage_1',      name:'初級法師', emoji:'🔮', hp:20, atk:12, def:1, speed:0.3, weaponType:'mage',   attackType:'aoe', color:'#7a3a7a', range:2.0, atkSpeed:0.5 },
+  { id:'mage_2',      name:'中級法師', emoji:'💜', hp:40, atk:24, def:2, speed:0.3, weaponType:'mage',   attackType:'aoe', color:'#6a2a6a', range:2.0, atkSpeed:0.5 },
+  { id:'mage_3',      name:'高級法師', emoji:'⚡', hp:60, atk:36, def:3, speed:0.3, weaponType:'mage',   attackType:'aoe', color:'#5a1a5a', range:2.0, atkSpeed:0.5 },
+  /* 治療 heal */
+  { id:'healer_1',    name:'初級治療', emoji:'💚', hp:30, atk:5,  def:2, speed:0.4, weaponType:'healer', attackType:'heal', color:'#2a8a5a', range:1 },
+  { id:'healer_2',    name:'中級治療', emoji:'💚', hp:60, atk:10, def:4, speed:0.4, weaponType:'healer', attackType:'heal', color:'#1a7a4a', range:1 },
+  { id:'healer_3',    name:'高級治療', emoji:'💚', hp:90, atk:15, def:6, speed:0.4, weaponType:'healer', attackType:'heal', color:'#0a6a3a', range:1 },
 ];
 
 /* ===== 挑戰模式設定 ===== */
@@ -445,34 +443,22 @@ var CHALLENGE_CONFIG = {
   goldRewardBase: 3     // 退出/失敗時金幣獎勵基礎
 };
 
-/* ===== Boss Rush 順序 ===== */
-var BOSS_RUSH_ORDER = [
-  { heroId: 'boss_dongzhuo', atkMult: 3.0, hpMult: 3.0 },
-  { heroId: 'boss_caocao',   atkMult: 13.37, hpMult: 13.37 },
-  { heroId: 'boss_sunquan',  atkMult: 23.74, hpMult: 23.74 },
-  { heroId: 'boss_lubu',     atkMult: 34.11, hpMult: 34.11 },
-  { heroId: 'boss_dongzhuo', atkMult: 44.47, hpMult: 44.47 },
-  { heroId: 'boss_caocao',   atkMult: 54.84, hpMult: 54.84 },
-  { heroId: 'boss_sunquan',  atkMult: 65.21, hpMult: 65.21 },
-  { heroId: 'boss_lubu',     atkMult: 75.58, hpMult: 75.58 },
-  { heroId: 'boss_dongzhuo', atkMult: 85.95, hpMult: 85.95 },
-  { heroId: 'boss_caocao',   atkMult: 96.32, hpMult: 96.32 },
-  { heroId: 'boss_sunquan',  atkMult: 106.68, hpMult: 106.68 },
-  { heroId: 'boss_lubu',     atkMult: 117.05, hpMult: 117.05 },
-  { heroId: 'boss_dongzhuo', atkMult: 127.42, hpMult: 127.42 },
-  { heroId: 'boss_caocao',   atkMult: 137.79, hpMult: 137.79 },
-  { heroId: 'boss_sunquan',  atkMult: 148.16, hpMult: 148.16 },
-  { heroId: 'boss_lubu',     atkMult: 158.53, hpMult: 158.53 },
-  { heroId: 'boss_dongzhuo', atkMult: 168.89, hpMult: 168.89 },
-  { heroId: 'boss_caocao',   atkMult: 179.26, hpMult: 179.26 },
-  { heroId: 'boss_sunquan',  atkMult: 189.63, hpMult: 189.63 },
-  { heroId: 'boss_lubu',     atkMult: 200.0, hpMult: 200.0 }
-];
-
+/* ===== Boss Rush 動態生成 ===== */
+var BOSS_RUSH_TOTAL = 20;
+function generateBossRushBoss(index) {
+  if (!generateBossRushBoss._used) generateBossRushBoss._used = {};
+  var heroes = HERO_DATA.filter(function(h) { return h.skill && !generateBossRushBoss._used[h.id]; });
+  if (heroes.length === 0) {
+    generateBossRushBoss._used = {};
+    heroes = HERO_DATA.filter(function(h) { return h.skill; });
+  }
+  var pick = heroes[Math.floor(Math.random() * heroes.length)];
+  generateBossRushBoss._used[pick.id] = true;
+  var mult = 3 + index * 10;
+  return { heroId: pick.id, atkMult: mult, hpMult: mult };
+}
 function getBossRushDescription() {
-  var min = BOSS_RUSH_ORDER[0].atkMult;
-  var max = BOSS_RUSH_ORDER[BOSS_RUSH_ORDER.length - 1].atkMult;
-  return '共 ' + BOSS_RUSH_ORDER.length + ' 關，Boss 屬性：×' + min + ' ~ ×' + max;
+  return '共 ' + BOSS_RUSH_TOTAL + ' 關，Boss 從武將池隨機抽取';
 }
 
 /* ===== 開發模式（僅本機檔案開啟） ===== */
@@ -676,24 +662,24 @@ var CAMPAIGNS = [
     stages:[
       {id:'yt_1', name:'潁川之戰', map:'long_snake',
         waves:[
-          {enemies:[{type:'yellow_soldier',count:6}], delay:2},
-          {enemies:[{type:'yellow_soldier',count:8},{type:'yellow_archer',count:2}], delay:2},
-          {enemies:[{type:'yellow_soldier',count:6},{type:'yellow_archer',count:4},{type:'yellow_leader',count:2}], delay:2}
+          {enemies:[{type:'infantry_1',count:6}], delay:2},
+          {enemies:[{type:'infantry_1',count:8},{type:'archer_1',count:2}], delay:2},
+          {enemies:[{type:'infantry_1',count:6},{type:'archer_1',count:4},{type:'spearman_1',count:2}], delay:2}
         ]},
       {id:'yt_2', name:'長社之戰', map:'long_snake',
         waves:[
-          {enemies:[{type:'yellow_soldier',count:8}], delay:2},
-          {enemies:[{type:'yellow_soldier',count:6},{type:'yellow_archer',count:4}], delay:2},
-          {enemies:[{type:'yellow_archer',count:5},{type:'yellow_leader',count:3}], delay:2},
-          {enemies:[{type:'yellow_soldier',count:8},{type:'yellow_leader',count:3},{type:'yellow_archer',count:4}], delay:2}
+          {enemies:[{type:'infantry_1',count:8}], delay:2},
+          {enemies:[{type:'infantry_1',count:6},{type:'archer_1',count:4}], delay:2},
+          {enemies:[{type:'archer_1',count:5},{type:'spearman_1',count:3}], delay:2},
+          {enemies:[{type:'infantry_1',count:8},{type:'spearman_1',count:3},{type:'archer_1',count:4}], delay:2}
         ]},
       {id:'yt_3', name:'廣宗之戰', map:'long_snake',
         waves:[
-          {enemies:[{type:'yellow_soldier',count:10}], delay:2},
-          {enemies:[{type:'yellow_soldier',count:8},{type:'yellow_archer',count:5}], delay:2},
-          {enemies:[{type:'yellow_leader',count:5},{type:'yellow_archer',count:6}], delay:2},
-          {enemies:[{type:'yellow_soldier',count:10},{type:'yellow_leader',count:4},{type:'yellow_archer',count:5}], delay:2},
-          {enemies:[{type:'yellow_leader',count:6},{type:'yellow_soldier',count:8}], delay:3}
+          {enemies:[{type:'infantry_1',count:10}], delay:2},
+          {enemies:[{type:'infantry_1',count:8},{type:'archer_1',count:5}], delay:2},
+          {enemies:[{type:'spearman_1',count:5},{type:'archer_1',count:6}], delay:2},
+          {enemies:[{type:'infantry_1',count:10},{type:'spearman_1',count:4},{type:'archer_1',count:5}], delay:2},
+          {enemies:[{type:'spearman_1',count:6},{type:'infantry_1',count:8}], delay:3}
         ]}
     ]
   },
@@ -702,24 +688,24 @@ var CAMPAIGNS = [
     stages:[
       {id:'dz_1', name:'汜水關之戰', map:'left_ladder',
         waves:[
-          {enemies:[{type:'dong_soldier',count:8}], delay:2},
-          {enemies:[{type:'dong_soldier',count:6},{type:'dong_cavalry',count:4}], delay:2},
-          {enemies:[{type:'dong_soldier',count:8},{type:'dong_cavalry',count:4},{type:'dong_commander',count:2}], delay:2}
+          {enemies:[{type:'infantry_1',count:8}], delay:2},
+          {enemies:[{type:'infantry_1',count:6},{type:'cavalry_1',count:4}], delay:2},
+          {enemies:[{type:'infantry_1',count:8},{type:'cavalry_1',count:4},{type:'mage_1',count:2}], delay:2}
         ]},
       {id:'dz_2', name:'虎牢關之戰', map:'left_ladder',
         waves:[
-          {enemies:[{type:'dong_soldier',count:10}], delay:2},
-          {enemies:[{type:'dong_soldier',count:8},{type:'dong_cavalry',count:5}], delay:2},
-          {enemies:[{type:'dong_cavalry',count:6},{type:'dong_commander',count:3}], delay:2},
-          {enemies:[{type:'dong_soldier',count:10},{type:'dong_cavalry',count:5},{type:'dong_commander',count:2}], delay:2}
+          {enemies:[{type:'infantry_1',count:10}], delay:2},
+          {enemies:[{type:'infantry_1',count:8},{type:'cavalry_1',count:5}], delay:2},
+          {enemies:[{type:'cavalry_1',count:6},{type:'mage_1',count:3}], delay:2},
+          {enemies:[{type:'infantry_1',count:10},{type:'cavalry_1',count:5},{type:'mage_1',count:2}], delay:2}
         ]},
       {id:'dz_3', name:'長安攻城戰', map:'left_ladder',
         waves:[
-          {enemies:[{type:'dong_soldier',count:10},{type:'dong_cavalry',count:4}], delay:2},
-          {enemies:[{type:'dong_cavalry',count:8},{type:'dong_commander',count:3}], delay:2},
-          {enemies:[{type:'dong_soldier',count:12},{type:'dong_commander',count:5}], delay:2},
-          {enemies:[{type:'dong_commander',count:5},{type:'dong_cavalry',count:8}], delay:2},
-          {enemies:[{type:'boss_dongzhuo',count:1},{type:'dong_commander',count:5},{type:'dong_soldier',count:8}], delay:3}
+          {enemies:[{type:'infantry_1',count:10},{type:'cavalry_1',count:4}], delay:2},
+          {enemies:[{type:'cavalry_1',count:8},{type:'mage_1',count:3}], delay:2},
+          {enemies:[{type:'infantry_1',count:12},{type:'mage_1',count:5}], delay:2},
+          {enemies:[{type:'mage_1',count:5},{type:'cavalry_1',count:8}], delay:2},
+          {enemies:[{type:'infantry_2',count:1},{type:'mage_1',count:5},{type:'infantry_1',count:8}], delay:3}
         ]}
     ]
   },
@@ -728,22 +714,22 @@ var CAMPAIGNS = [
     stages:[
       {id:'wl_1', name:'徐州之戰', map:'three_step',
         waves:[
-          {enemies:[{type:'dong_soldier',count:8},{type:'dong_cavalry',count:2}], delay:2},
-          {enemies:[{type:'dong_cavalry',count:5},{type:'dong_commander',count:2}], delay:2},
-          {enemies:[{type:'dong_soldier',count:10},{type:'dong_cavalry',count:5}], delay:2}
+          {enemies:[{type:'infantry_1',count:8},{type:'cavalry_1',count:2}], delay:2},
+          {enemies:[{type:'cavalry_1',count:5},{type:'mage_1',count:2}], delay:2},
+          {enemies:[{type:'infantry_1',count:10},{type:'cavalry_1',count:5}], delay:2}
         ]},
       {id:'wl_2', name:'兗州之戰', map:'three_step',
         waves:[
-          {enemies:[{type:'dong_soldier',count:10},{type:'dong_cavalry',count:4}], delay:2},
-          {enemies:[{type:'dong_cavalry',count:6},{type:'dong_commander',count:3}], delay:2},
-          {enemies:[{type:'dong_soldier',count:12},{type:'dong_cavalry',count:5},{type:'dong_commander',count:3}], delay:2}
+          {enemies:[{type:'infantry_1',count:10},{type:'cavalry_1',count:4}], delay:2},
+          {enemies:[{type:'cavalry_1',count:6},{type:'mage_1',count:3}], delay:2},
+          {enemies:[{type:'infantry_1',count:12},{type:'cavalry_1',count:5},{type:'mage_1',count:3}], delay:2}
         ]},
       {id:'wl_3', name:'下邳之戰', map:'three_step',
         waves:[
-          {enemies:[{type:'dong_soldier',count:10},{type:'dong_cavalry',count:5}], delay:2},
-          {enemies:[{type:'dong_cavalry',count:8},{type:'dong_commander',count:3}], delay:2},
-          {enemies:[{type:'dong_commander',count:5},{type:'dong_soldier',count:10}], delay:2},
-          {enemies:[{type:'boss_lubu',count:1},{type:'dong_cavalry',count:8},{type:'dong_commander',count:3}], delay:3}
+          {enemies:[{type:'infantry_1',count:10},{type:'cavalry_1',count:5}], delay:2},
+          {enemies:[{type:'cavalry_1',count:8},{type:'mage_1',count:3}], delay:2},
+          {enemies:[{type:'mage_1',count:5},{type:'infantry_1',count:10}], delay:2},
+          {enemies:[{type:'cavalry_2',count:1},{type:'cavalry_1',count:8},{type:'mage_1',count:3}], delay:3}
         ]}
     ]
   },
@@ -752,24 +738,24 @@ var CAMPAIGNS = [
     stages:[
       {id:'gd_1', name:'白馬之戰', map:'zigzag_left',
         waves:[
-          {enemies:[{type:'wei_soldier',count:8},{type:'wei_archer',count:4}], delay:2},
-          {enemies:[{type:'wei_soldier',count:10},{type:'wei_cavalry',count:4}], delay:2},
-          {enemies:[{type:'wei_cavalry',count:6},{type:'wei_archer',count:5},{type:'wei_general',count:2}], delay:2}
+          {enemies:[{type:'infantry_2',count:8},{type:'archer_2',count:4}], delay:2},
+          {enemies:[{type:'infantry_2',count:10},{type:'cavalry_2',count:4}], delay:2},
+          {enemies:[{type:'cavalry_2',count:6},{type:'archer_2',count:5},{type:'mage_2',count:2}], delay:2}
         ]},
       {id:'gd_2', name:'延津之戰', map:'zigzag_left',
         waves:[
-          {enemies:[{type:'wei_soldier',count:10},{type:'wei_archer',count:5}], delay:2},
-          {enemies:[{type:'wei_cavalry',count:8},{type:'wei_general',count:2}], delay:2},
-          {enemies:[{type:'wei_soldier',count:12},{type:'wei_cavalry',count:5},{type:'wei_archer',count:4}], delay:2},
-          {enemies:[{type:'wei_general',count:3},{type:'wei_cavalry',count:8},{type:'wei_soldier',count:8}], delay:2}
+          {enemies:[{type:'infantry_2',count:10},{type:'archer_2',count:5}], delay:2},
+          {enemies:[{type:'cavalry_2',count:8},{type:'mage_2',count:2}], delay:2},
+          {enemies:[{type:'infantry_2',count:12},{type:'cavalry_2',count:5},{type:'archer_2',count:4}], delay:2},
+          {enemies:[{type:'mage_2',count:3},{type:'cavalry_2',count:8},{type:'infantry_2',count:8}], delay:2}
         ]},
       {id:'gd_3', name:'官渡決戰', map:'zigzag_left',
         waves:[
-          {enemies:[{type:'wei_soldier',count:12},{type:'wei_archer',count:6}], delay:2},
-          {enemies:[{type:'wei_cavalry',count:10},{type:'wei_general',count:3}], delay:2},
-          {enemies:[{type:'wei_soldier',count:12},{type:'wei_cavalry',count:8},{type:'wei_archer',count:5}], delay:2},
-          {enemies:[{type:'wei_general',count:5},{type:'wei_cavalry',count:10}], delay:2},
-          {enemies:[{type:'boss_caocao',count:1},{type:'wei_general',count:4},{type:'wei_cavalry',count:8},{type:'wei_soldier',count:8}], delay:3}
+          {enemies:[{type:'infantry_2',count:12},{type:'archer_2',count:6}], delay:2},
+          {enemies:[{type:'cavalry_2',count:10},{type:'mage_2',count:3}], delay:2},
+          {enemies:[{type:'infantry_2',count:12},{type:'cavalry_2',count:8},{type:'archer_2',count:5}], delay:2},
+          {enemies:[{type:'mage_2',count:5},{type:'cavalry_2',count:10}], delay:2},
+          {enemies:[{type:'cavalry_2',count:1},{type:'mage_2',count:4},{type:'cavalry_2',count:8},{type:'infantry_2',count:8}], delay:3}
         ]}
     ]
   },
@@ -778,24 +764,24 @@ var CAMPAIGNS = [
     stages:[
       {id:'cb_1', name:'長坂之戰', map:'right_ladder',
         waves:[
-          {enemies:[{type:'wei_soldier',count:10},{type:'wei_cavalry',count:5}], delay:2},
-          {enemies:[{type:'wei_cavalry',count:8},{type:'wei_general',count:2}], delay:2},
-          {enemies:[{type:'wei_soldier',count:12},{type:'wei_cavalry',count:6},{type:'wei_archer',count:5}], delay:2}
+          {enemies:[{type:'infantry_2',count:10},{type:'cavalry_2',count:5}], delay:2},
+          {enemies:[{type:'cavalry_2',count:8},{type:'mage_2',count:2}], delay:2},
+          {enemies:[{type:'infantry_2',count:12},{type:'cavalry_2',count:6},{type:'archer_2',count:5}], delay:2}
         ]},
       {id:'cb_2', name:'烏林之戰', map:'right_ladder',
         waves:[
-          {enemies:[{type:'wu_soldier',count:10},{type:'wu_archer',count:5}], delay:2},
-          {enemies:[{type:'wu_soldier',count:8},{type:'wu_archer',count:6},{type:'wu_commander',count:2}], delay:2},
-          {enemies:[{type:'wu_archer',count:8},{type:'wu_commander',count:3}], delay:2},
-          {enemies:[{type:'wu_soldier',count:12},{type:'wu_archer',count:6},{type:'wu_commander',count:3}], delay:2}
+          {enemies:[{type:'infantry_2',count:10},{type:'archer_2',count:5}], delay:2},
+          {enemies:[{type:'infantry_2',count:8},{type:'archer_2',count:6},{type:'mage_2',count:2}], delay:2},
+          {enemies:[{type:'archer_2',count:8},{type:'mage_2',count:3}], delay:2},
+          {enemies:[{type:'infantry_2',count:12},{type:'archer_2',count:6},{type:'mage_2',count:3}], delay:2}
         ]},
       {id:'cb_3', name:'赤壁之戰', map:'right_ladder',
         waves:[
-          {enemies:[{type:'wei_cavalry',count:10},{type:'wei_archer',count:6}], delay:2},
-          {enemies:[{type:'wei_general',count:5},{type:'wei_soldier',count:10}], delay:2},
-          {enemies:[{type:'wei_cavalry',count:10},{type:'wei_general',count:3},{type:'wei_archer',count:5}], delay:2},
-          {enemies:[{type:'wei_soldier',count:12},{type:'wei_cavalry',count:8},{type:'wei_general',count:4}], delay:2},
-          {enemies:[{type:'boss_caocao',count:1},{type:'wei_general',count:5},{type:'wei_cavalry',count:8}], delay:3}
+          {enemies:[{type:'cavalry_2',count:10},{type:'archer_2',count:6}], delay:2},
+          {enemies:[{type:'mage_2',count:5},{type:'infantry_2',count:10}], delay:2},
+          {enemies:[{type:'cavalry_2',count:10},{type:'mage_2',count:3},{type:'archer_2',count:5}], delay:2},
+          {enemies:[{type:'infantry_2',count:12},{type:'cavalry_2',count:8},{type:'mage_2',count:4}], delay:2},
+          {enemies:[{type:'cavalry_2',count:1},{type:'mage_2',count:5},{type:'cavalry_2',count:8}], delay:3}
         ]}
     ]
   },
@@ -804,33 +790,37 @@ var CAMPAIGNS = [
     stages:[
       {id:'tk_1', name:'夷陵之戰', map:'zigzag_right',
         waves:[
-          {enemies:[{type:'wu_soldier',count:10},{type:'wu_archer',count:6}], delay:2},
-          {enemies:[{type:'wu_archer',count:8},{type:'wu_commander',count:3}], delay:2},
-          {enemies:[{type:'wu_soldier',count:12},{type:'wu_commander',count:4},{type:'wu_archer',count:6}], delay:2}
+          {enemies:[{type:'infantry_2',count:10},{type:'archer_2',count:6}], delay:2},
+          {enemies:[{type:'archer_2',count:8},{type:'mage_2',count:3}], delay:2},
+          {enemies:[{type:'infantry_2',count:12},{type:'mage_2',count:4},{type:'archer_2',count:6}], delay:2}
         ]},
       {id:'tk_2', name:'合肥之戰', map:'zigzag_right',
         waves:[
-          {enemies:[{type:'wei_soldier',count:12},{type:'wei_archer',count:6}], delay:2},
-          {enemies:[{type:'wei_cavalry',count:10},{type:'wei_general',count:3}], delay:2},
-          {enemies:[{type:'wei_soldier',count:12},{type:'wei_cavalry',count:8},{type:'wei_archer',count:6}], delay:2},
-          {enemies:[{type:'wei_general',count:5},{type:'wei_cavalry',count:10},{type:'wei_archer',count:5}], delay:2}
+          {enemies:[{type:'infantry_3',count:12},{type:'archer_2',count:6}], delay:2},
+          {enemies:[{type:'cavalry_2',count:10},{type:'mage_2',count:3}], delay:2},
+          {enemies:[{type:'infantry_3',count:12},{type:'cavalry_2',count:8},{type:'archer_2',count:6}], delay:2},
+          {enemies:[{type:'mage_3',count:5},{type:'cavalry_2',count:10},{type:'archer_2',count:5}], delay:2}
         ]},
       {id:'tk_3', name:'五丈原之戰', map:'zigzag_right',
         waves:[
-          {enemies:[{type:'wei_soldier',count:12},{type:'wei_archer',count:6},{type:'wei_cavalry',count:5}], delay:2},
-          {enemies:[{type:'wei_cavalry',count:10},{type:'wei_general',count:5}], delay:2},
-          {enemies:[{type:'wei_soldier',count:12},{type:'wei_cavalry',count:8},{type:'wei_general',count:3},{type:'wei_archer',count:6}], delay:2},
-          {enemies:[{type:'wei_general',count:6},{type:'wei_cavalry',count:8},{type:'wei_soldier',count:10}], delay:2},
-          {enemies:[{type:'boss_caocao',count:1},{type:'boss_lubu',count:1},{type:'wei_general',count:5},{type:'wei_cavalry',count:8}], delay:3}
+          {enemies:[{type:'infantry_3',count:12},{type:'archer_2',count:6},{type:'cavalry_2',count:5}], delay:2},
+          {enemies:[{type:'cavalry_2',count:10},{type:'mage_3',count:5}], delay:2},
+          {enemies:[{type:'infantry_3',count:12},{type:'cavalry_2',count:8},{type:'mage_2',count:3},{type:'archer_2',count:6}], delay:2},
+          {enemies:[{type:'mage_3',count:6},{type:'cavalry_2',count:8},{type:'infantry_3',count:10}], delay:2},
+          {enemies:[{type:'mage_3',count:1},{type:'cavalry_3',count:1},{type:'mage_2',count:5},{type:'cavalry_2',count:8}], delay:3}
         ]},
       {id:'hell', name:'打寶地獄', map:'zigzag_right',
         waves:[
-          {enemies:[{type:'wei_general',count:8},{type:'wei_cavalry',count:10}], delay:2},
-          {enemies:[{type:'wei_cavalry',count:12},{type:'wei_archer',count:8}], delay:2},
-          {enemies:[{type:'wei_general',count:10},{type:'wei_soldier',count:15}], delay:2},
-          {enemies:[{type:'wei_cavalry',count:12},{type:'wei_general',count:8},{type:'wei_archer',count:8}], delay:2},
-          {enemies:[{type:'boss_caocao',count:1},{type:'wei_general',count:8},{type:'wei_cavalry',count:10}], delay:2},
-          {enemies:[{type:'boss_caocao',count:1},{type:'boss_lubu',count:1},{type:'wei_general',count:8},{type:'wei_cavalry',count:10}], delay:3}
+          {enemies:[{type:'mage_3',count:8},{type:'cavalry_3',count:10}], delay:2},
+          {enemies:[{type:'cavalry_3',count:12},{type:'archer_3',count:8}], delay:2},
+          {enemies:[{type:'mage_3',count:10},{type:'infantry_3',count:15}], delay:2},
+          {enemies:[{type:'cavalry_3',count:12},{type:'mage_3',count:8},{type:'archer_3',count:8}], delay:2},
+          {enemies:[{type:'cavalry_3',count:1},{type:'mage_3',count:8},{type:'cavalry_3',count:10}], delay:3},
+          {enemies:[{type:'infantry_3',count:10},{type:'cavalry_3',count:12},{type:'mage_3',count:8}], delay:2},
+          {enemies:[{type:'archer_3',count:8},{type:'mage_3',count:8},{type:'healer_3',count:4}], delay:2},
+          {enemies:[{type:'cavalry_3',count:10},{type:'infantry_3',count:10},{type:'mage_3',count:6}], delay:2},
+          {enemies:[{type:'mage_3',count:5},{type:'cavalry_3',count:10},{type:'healer_3',count:5}], delay:2},
+          {enemies:[{type:'infantry_3',count:8},{type:'cavalry_3',count:8},{type:'archer_3',count:8}], delay:2}
         ]}
     ]
   }

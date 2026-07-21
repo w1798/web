@@ -227,35 +227,58 @@ var Game = {
     var baseCount = 3 + Math.floor(waveNum * 0.5);
     var isBoss = (waveNum % CHALLENGE_CONFIG.bossInterval === 0);
     if (isBoss) {
-      var bossPool = ['boss_dongzhuo', 'boss_caocao', 'boss_sunquan', 'boss_lubu'];
-      var bossId = bossPool[Math.floor(Math.random() * bossPool.length)];
-      enemies.push({ type: bossId, count: 1 });
-      for (var i = 0; i < Math.floor(baseCount / 2); i++) {
-        enemies.push({ type: 'wei_soldier', count: 1 });
+      var bossCount = 1 + Math.floor(Math.random() * 5);
+      var usedHeroes = {};
+      for (var b = 0; b < bossCount; b++) {
+        var boss = generateBossRushBoss(waveNum + b);
+        if (!usedHeroes[boss.heroId]) {
+          enemies.push({ type: boss.heroId, count: 1, isBoss: true, atkMult: boss.atkMult, hpMult: boss.hpMult });
+          usedHeroes[boss.heroId] = true;
+        }
+      }
+      var minionPool;
+      if (waveNum <= 5) {
+        minionPool = ['infantry_1', 'archer_1', 'spearman_1'];
+      } else if (waveNum <= 10) {
+        minionPool = ['infantry_2', 'archer_2', 'cavalry_2'];
+      } else {
+        minionPool = ['infantry_3', 'archer_3', 'cavalry_3'];
+      }
+      var minionCount = Math.floor(baseCount / 2);
+      for (var i = 0; i < minionCount; i++) {
+        enemies.push({ type: minionPool[Math.floor(Math.random() * minionPool.length)], count: 1 });
       }
     } else {
-      var typeMap = ['wei_soldier', 'wu_soldier', 'wei_archer', 'dong_cavalry', 'wei_general'];
+      var minionPool;
+      if (waveNum <= 5) {
+        minionPool = ['infantry_1', 'archer_1', 'spearman_1', 'cavalry_1'];
+      } else if (waveNum <= 10) {
+        minionPool = ['infantry_2', 'archer_2', 'cavalry_2', 'mage_2'];
+      } else {
+        minionPool = ['infantry_3', 'archer_3', 'cavalry_3', 'mage_3'];
+      }
       for (var i = 0; i < baseCount; i++) {
-        enemies.push({ type: typeMap[Math.floor(Math.random() * typeMap.length)], count: 1 });
+        enemies.push({ type: minionPool[Math.floor(Math.random() * minionPool.length)], count: 1 });
       }
     }
     return { enemies: enemies, delay: 2 };
   },
 
   initBossRushStage: function(bossIndex) {
-    if (bossIndex >= BOSS_RUSH_ORDER.length) {
+    if (bossIndex >= BOSS_RUSH_TOTAL) {
       this.battlePhase = 'won';
       this.onVictory();
       return;
     }
     this.bossRushIndex = bossIndex;
-    var boss = BOSS_RUSH_ORDER[bossIndex];
+    var boss = generateBossRushBoss(bossIndex);
+    this.bossRushCurrentBoss = boss;
     var layoutKey = getRandomMapLayout();
     this.stage = {
       id: 'bossrush_' + bossIndex,
       name: 'Boss Rush ' + (bossIndex + 1),
       map: layoutKey,
-      waves: [{ enemies: [{ type: boss.heroId, count: 1 }], delay: 2 }]
+      waves: [{ enemies: [{ type: boss.heroId, count: 1, isBoss: true, atkMult: boss.atkMult, hpMult: boss.hpMult }], delay: 2 }]
     };
     this.mapLayout = MAP_LAYOUTS[layoutKey];
     this.units = [];
@@ -284,10 +307,9 @@ var Game = {
   },
 
   startBossRushWave: function() {
-    var boss = BOSS_RUSH_ORDER[this.bossRushIndex];
-    if (!boss) return;
+    var boss = this.bossRushCurrentBoss || generateBossRushBoss(this.bossRushIndex);
     this.waveIndex = 1;
-    this.currentWaveEnemies = [boss.heroId];
+    this.currentWaveEnemies = [{ type: boss.heroId, isBoss: true, atkMult: boss.atkMult, hpMult: boss.hpMult }];
     this.waveActive = true;
     this.spawnedCount = 0;
     this.waveDelay = 2;
@@ -386,7 +408,8 @@ var Game = {
         return true;
       }
       if (waitingUnit.type === 'hero' && !tgt.isSoldier &&
-          waitingUnit.heroId === tgt.heroId && tgt.battleLevel < 5) {
+          waitingUnit.heroId === tgt.heroId &&
+          waitingUnit.level === tgt.battleLevel && tgt.battleLevel < 5) {
         tgt.battleLevel++;
         tgt.level = tgt.battleLevel;
         var hd = getHeroData(tgt.heroId);
@@ -537,8 +560,15 @@ var Game = {
       this.spawnTimer = 0;
       for (var i = 0; i < wave.enemies.length; i++) {
         var ew = wave.enemies[i];
-        for (var j = 0; j < ew.count; j++) {
-          this.currentWaveEnemies.push(ew.type);
+        if (ew.isBoss) {
+          // Boss 需保留完整 metadata（isBoss/atkMult/hpMult）
+          for (var j = 0; j < ew.count; j++) {
+            this.currentWaveEnemies.push({ type: ew.type, isBoss: true, atkMult: ew.atkMult, hpMult: ew.hpMult });
+          }
+        } else {
+          for (var j = 0; j < ew.count; j++) {
+            this.currentWaveEnemies.push(ew.type);
+          }
         }
       }
       UI.updateHUD();
@@ -593,16 +623,19 @@ var Game = {
           var etype = this.currentWaveEnemies[this.spawnedCount];
           this.spawnedCount++;
           UI.renderBarUnits();
-          var enemyData = getEnemyData(etype);
+          var etypeId = typeof etype === 'object' ? etype.type : etype;
+          var enemyData = getEnemyData(etypeId);
           if (enemyData) {
             var mult;
             if (this.gameMode === 'challenge') {
               var scale = 1 + (this.challengeWave - 1) * CHALLENGE_CONFIG.atkScale;
               var hpScale = 1 + (this.challengeWave - 1) * CHALLENGE_CONFIG.hpScale;
               mult = { atk: scale, hp: hpScale };
+              if (typeof etype === 'object' && etype.isBoss) {
+                mult = { atk: etype.atkMult || scale, hp: etype.hpMult || hpScale };
+              }
             } else if (this.gameMode === 'bossrush') {
-              var boss = BOSS_RUSH_ORDER[this.bossRushIndex];
-              mult = { atk: boss ? boss.atkMult : 3, hp: boss ? boss.hpMult : 3 };
+              mult = { atk: (typeof etype === 'object' && etype.atkMult) || 3, hp: (typeof etype === 'object' && etype.hpMult) || 3 };
             } else {
               mult = getEnemyMult(this.stage.id, this.difficulty);
             }
@@ -611,6 +644,15 @@ var Game = {
             scaledData.hp = Math.round(enemyData.hp * mult.hp);
             scaledData.atk = Math.round(enemyData.atk * mult.atk);
             scaledData.def = Math.round((enemyData.def || 0) * mult.hp);
+            if (typeof etype === 'object' && etype.isBoss) {
+              var hero = getHeroData(etypeId);
+              if (hero) {
+                scaledData.skill = hero.skill || null;
+                scaledData.isBoss = true;
+                scaledData.name = hero.name;
+                scaledData.emoji = hero.emoji;
+              }
+            }
             var startPos = this.mapLayout.path[0];
             var enemy = new Enemy(scaledData, startPos.col, startPos.row);
             this.enemies.push(enemy);
@@ -628,7 +670,7 @@ var Game = {
             this.bossRushIndex++;
             Service.saveData();
             UI.updateHUD();
-            if (this.bossRushIndex >= BOSS_RUSH_ORDER.length) {
+            if (this.bossRushIndex >= BOSS_RUSH_TOTAL) {
               this.onVictory();
             } else {
               UI.showBossRest();
@@ -650,7 +692,7 @@ var Game = {
       if (e.dead) {
         this.enemies.splice(i, 1);
         if (e.hp <= 0) {
-          var isBoss = e.data && e.data.id && e.data.id.indexOf('boss_') === 0;
+          var isBoss = e.isBoss || (e.data && e.data.isBoss);
           var waveMult = this.waveIndex === 1 ? 2 : 1;
           var gained = (isBoss ? 2 : 1) * waveMult;
           this.food += gained;
@@ -697,7 +739,7 @@ var Game = {
         Service.appData.bossRushKills = this.bossRushKills;
       }
       Service.saveData();
-      if (this.bossRushIndex + 1 >= BOSS_RUSH_ORDER.length) {
+      if (this.bossRushIndex + 1 >= BOSS_RUSH_TOTAL) {
         UI.showResult(true, 0, null);
       } else {
         UI.showBossRest();

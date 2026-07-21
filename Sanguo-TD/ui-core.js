@@ -208,14 +208,11 @@ var UI = {
     var el = document.getElementById('bossrush-progress');
     if (!el) return;
     var html = '';
-    for (var i = 0; i < BOSS_RUSH_ORDER.length; i++) {
+    for (var i = 0; i < BOSS_RUSH_TOTAL; i++) {
       var cls = 'br-dot';
       if (i < currentIdx) cls += ' cleared';
       else if (i === currentIdx) cls += ' current';
-      var boss = BOSS_RUSH_ORDER[i];
-      var enemyData = getEnemyData(boss.heroId);
-      var emoji = enemyData ? enemyData.emoji : '?';
-      html += '<div class="' + cls + '">' + emoji + '</div>';
+      html += '<div class="' + cls + '">' + (i + 1) + '</div>';
     }
     el.innerHTML = html;
   },
@@ -285,14 +282,11 @@ var UI = {
     var el = document.getElementById('rest-progress');
     if (!el) return;
     var html = '';
-    for (var i = 0; i < BOSS_RUSH_ORDER.length; i++) {
+    for (var i = 0; i < BOSS_RUSH_TOTAL; i++) {
       var cls = 'br-dot';
       if (i < Game.bossRushIndex) cls += ' cleared';
       else if (i === Game.bossRushIndex) cls += ' current';
-      var boss = BOSS_RUSH_ORDER[i];
-      var enemyData = getEnemyData(boss.heroId);
-      var emoji = enemyData ? enemyData.emoji : '?';
-      html += '<div class="' + cls + '">' + emoji + '</div>';
+      html += '<div class="' + cls + '">' + (i + 1) + '</div>';
     }
     el.innerHTML = html;
   },

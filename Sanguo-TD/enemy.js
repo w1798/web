@@ -19,9 +19,15 @@ function Enemy(data, startCol, startRow) {
    this.el = null;
    this.attackCooldown = 0;
    this.weaponType = data.weaponType || 'sword';
-   this.stunnedTimer = 0; // 初始化眩暈計數器
-   this.slowPct = 0;      // 緩速百分比
-   this.slowTimer = 0;    // 緩速計時器
+   this.attackType = data.attackType || 'melee';
+   this.range = data.range || 1;
+   this.atkSpeed = data.atkSpeed || 1.0;
+   this.skill = data.skill || null;
+   this.skillCooldown = 0;
+   this.isBoss = data.isBoss || false;
+   this.stunnedTimer = 0;
+   this.slowPct = 0;
+   this.slowTimer = 0;
 
    this.syncPixelPos();
 }
@@ -105,12 +111,21 @@ Enemy.prototype.update = function(dt) {
 
   this.syncPixelPos();
 
+  // Boss 技能冷卻
+  if (this.isBoss && this.skill) {
+    this.skillCooldown -= dt;
+    if (this.skillCooldown <= 0) {
+      this.enemySkillCast();
+      this.skillCooldown = 8;
+    }
+  }
+
   this.attackCooldown -= dt;
   if (this.attackCooldown <= 0) {
-    var target = Combat.findNearestUnit(this.col, this.row, this.data.range || 1);
+    var target = Combat.findNearestUnit(this.col, this.row, this.range || 1);
     if (target) {
       Combat.doEnemyAttack(this, target);
-      this.attackCooldown = 1.0 / (this.data.atkSpeed || 1.0);
+      this.attackCooldown = 1.0 / this.atkSpeed;
     }
   }
 };
@@ -135,4 +150,96 @@ Enemy.prototype.attackUnit = function(unit) {
   if (this.attackCooldown > 0) return;
   unit.takeDamage(this.atk);
   this.attackCooldown = 1.0;
+};
+
+Enemy.prototype.enemySkillCast = function() {
+  if (!this.skill || this.dead) return false;
+  var type = this.skill.type;
+  var mult = this.skill.multiplier || 0;
+  var aoeRange = this.skill.aoeRange || 2;
+  var dur = this.skill.duration || 2;
+  var effectVal = this.skill.effectValue || 0;
+
+  if (type === 'damage_single') {
+    var lowest = null;
+    var minHp = Infinity;
+    for (var i = 0; i < Game.units.length; i++) {
+      var u = Game.units[i];
+      if (u.dead) continue;
+      if (u.hp < minHp) { minHp = u.hp; lowest = u; }
+    }
+    if (lowest) {
+      var dmg = Math.round(this.atk * mult);
+      lowest.takeDamage(dmg);
+      UI.showDmgNum(lowest.pixelX, lowest.pixelY, '⚡-' + dmg, '#ff6b6b');
+    }
+  } else if (type === 'damage_aoe') {
+    var dmg = Math.round(this.atk * mult);
+    for (var i = 0; i < Game.units.length; i++) {
+      var u = Game.units[i];
+      if (u.dead) continue;
+      var dx = u.col - this.col;
+      var dy = u.row - this.row;
+      if (Math.sqrt(dx*dx + dy*dy) <= aoeRange) {
+        u.takeDamage(dmg);
+      }
+    }
+  } else if (type === 'heal') {
+    var weakest = null;
+    var minPct = 1;
+    for (var i = 0; i < Game.enemies.length; i++) {
+      var e = Game.enemies[i];
+      if (e.dead || e === this) continue;
+      var pct = e.hp / e.maxHp;
+      if (pct < minPct) { minPct = pct; weakest = e; }
+    }
+    if (weakest) {
+      var healVal = Math.round(this.atk * mult);
+      weakest.hp = Math.min(weakest.maxHp, weakest.hp + healVal);
+      UI.showDmgNum(weakest.pixelX, weakest.pixelY, '+' + healVal, '#2ecc71');
+    }
+  } else if (type === 'stun') {
+    var tgt = null;
+    var bestDist = Infinity;
+    for (var i = 0; i < Game.units.length; i++) {
+      var u = Game.units[i];
+      if (u.dead || u.stunnedTimer > 0) continue;
+      var dx = u.col - this.col;
+      var dy = u.row - this.row;
+      var d = Math.sqrt(dx*dx + dy*dy);
+      if (d <= aoeRange && d < bestDist) { bestDist = d; tgt = u; }
+    }
+    if (tgt) {
+      tgt.takeDamage(Math.round(this.atk * mult));
+      tgt.stunnedTimer = dur;
+    }
+  } else if (type === 'buff_self') {
+    this.atk = Math.round(this.atk * (1 + effectVal / 100));
+  } else if (type === 'buff_ally') {
+    var boost = effectVal;
+    for (var i = 0; i < Game.enemies.length; i++) {
+      var e = Game.enemies[i];
+      if (e.dead) continue;
+      e.atk = Math.round(e.atk * (1 + boost / 100));
+    }
+  } else if (type === 'slow_aoe') {
+    var dmg = Math.round(this.atk * mult);
+    for (var i = 0; i < Game.units.length; i++) {
+      var u = Game.units[i];
+      if (u.dead) continue;
+      var dx = u.col - this.col;
+      var dy = u.row - this.row;
+      if (Math.sqrt(dx*dx + dy*dy) <= aoeRange) {
+        u.takeDamage(dmg);
+      }
+    }
+  } else if (type === 'buff_def_aoe') {
+    var boost = effectVal;
+    for (var i = 0; i < Game.enemies.length; i++) {
+      var e = Game.enemies[i];
+      if (e.dead) continue;
+      e.def = Math.round(e.def * (1 + boost / 100));
+    }
+  }
+  return true;
 };

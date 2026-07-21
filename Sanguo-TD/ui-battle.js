@@ -293,7 +293,7 @@ UI.onCellClick = function(col, row) {
         var su = cell.unit;
         var swu = su.isSoldier
           ? { soldierType: su.soldierType, level: su.level }
-          : { type: 'hero', heroId: su.heroId };
+          : { type: 'hero', heroId: su.heroId, level: su.battleLevel || su.level || 1 };
         this._showDeployHighlights(swu);
         return;
       }
@@ -314,7 +314,7 @@ UI.onCellClick = function(col, row) {
       var u = cell.unit;
       var wu = u.isSoldier
         ? { soldierType: u.soldierType, level: u.level }
-        : { type: 'hero', heroId: u.heroId };
+        : { type: 'hero', heroId: u.heroId, level: u.battleLevel || u.level || 1 };
       this._showDeployHighlights(wu);
       return;
     }
@@ -368,7 +368,7 @@ UI._canMerge = function(wu, unit) {
       return wu.soldierType === unit.soldierType && wu.level === unit.level && unit.level < 5;
     }
     if (wu.type === 'hero' && unit.heroId) {
-      return wu.heroId === unit.heroId && unit.battleLevel < 5;
+      return wu.heroId === unit.heroId && wu.level === unit.battleLevel && unit.battleLevel < 5;
     }
     return false;
   };
@@ -429,15 +429,26 @@ UI._clearDeployHighlights = function() {
         info.push('<strong style="color:#ffd700;">【主動技能】 ' + u.skill.name + '</strong> (CD: ' + u.skill.cd + ' 秒)');
         info.push('<span style="color:#e0d0b0;font-size:11px;">描述: ' + (u.skill.getDesc ? u.skill.getDesc(u.tier) : u.skill.desc) + '</span>');
       }}
-    info.push('HP: ' + Math.floor(u.hp) + '/' + Math.floor(u.maxHp));
-    var buffPct = u.buffAtkPct || 0;
-    if (buffPct > 0) {
-      var buffedAtk = Math.floor(u.atk * (1 + buffPct / 100));
-      info.push('ATK: ' + buffedAtk + ' <span style="color:#2ecc71;">(+' + buffPct + '%)</span>');
+    var hpBuffPct = u.buffHpPct || 0;
+    var hpStr = 'HP: ' + Math.floor(u.hp) + '/' + Math.floor(u.maxHp);
+    if (hpBuffPct > 0) {
+      hpStr += ' <span style="color:#2ecc71;">(+' + hpBuffPct + '%)</span>';
+    }
+    info.push(hpStr);
+    var buffAtkPct = u.buffAtkPct || 0;
+    if (buffAtkPct > 0) {
+      var buffedAtk = Math.floor(u.atk * (1 + buffAtkPct / 100));
+      info.push('ATK: ' + buffedAtk + ' <span style="color:#2ecc71;">(+' + buffAtkPct + '%)</span>');
     } else {
       info.push('ATK: ' + Math.floor(u.atk));
     }
-    info.push('DEF: ' + Math.floor(u.def || 0));
+    var buffDefPct = u.buffDefPct || 0;
+    if (buffDefPct > 0) {
+      var buffedDef = Math.floor(u.def * (1 + buffDefPct / 100));
+      info.push('DEF: ' + buffedDef + ' <span style="color:#2ecc71;">(+' + buffDefPct + '%)</span>');
+    } else {
+      info.push('DEF: ' + Math.floor(u.def || 0));
+    }
     info.push('範圍: ' + (u.range || 2));
     var el = document.createElement('div');
     el.id = 'unit-tooltip';
@@ -648,9 +659,8 @@ function onMove(e) {
                     UI.renderWaitingArea();
                     return;
                   }
-                  if (src.type === 'hero' && tgt.type === 'hero' && src.heroId === tgt.heroId && tgt.level < 5) {
-                    tgt.level = Math.max(tgt.level || 1, src.level || 1) + 1;
-                    if (tgt.level > 5) tgt.level = 5;
+                  if (src.type === 'hero' && tgt.type === 'hero' && src.heroId === tgt.heroId && src.level === tgt.level && tgt.level < 5) {
+                    tgt.level++;
                     Game.waitingUnits.splice(last.idx, 1);
                     if (UI.selectedWaitingIdx >= last.idx) UI.selectedWaitingIdx--;
                     UI.renderWaitingArea();
@@ -701,7 +711,7 @@ UI.startBattleUnitDrag = function(unitObj, cx, cy, el) {
     this.dragData = { unit: unitObj, ghost: ghost, startX: cx, startY: cy };
     var wu = unitObj.isSoldier
       ? { soldierType: unitObj.soldierType, level: unitObj.level }
-      : { type: 'hero', heroId: unitObj.heroId };
+      : { type: 'hero', heroId: unitObj.heroId, level: unitObj.battleLevel || unitObj.level || 1 };
     this._showDeployHighlights(wu);
     var self = this;
     document.addEventListener('mousemove', onMove);
@@ -769,7 +779,7 @@ UI.startBattleUnitDrag = function(unitObj, cx, cy, el) {
           self.showUnitTooltip(last.unit);
           var wu = last.unit.isSoldier
             ? { soldierType: last.unit.soldierType, level: last.unit.level }
-            : { type: 'hero', heroId: last.unit.heroId };
+            : { type: 'hero', heroId: last.unit.heroId, level: last.unit.battleLevel || last.unit.level || 1 };
           self._showDeployHighlights(wu);
           return;
         }
@@ -829,22 +839,22 @@ UI.startBattleUnitDrag = function(unitObj, cx, cy, el) {
                   var u = last.unit;
                   if (wu && u) {
                     var merged = false;
-                    if (u.isSoldier && wu.soldierType && u.soldierType === wu.soldierType && u.level === wu.level && wu.level < 5) {
-                      wu.level++;
-                      Game.removeUnit(u);
-                      UI.renderBattle();
-                      UI.renderWaitingArea();
-                      self.showToast('合成 Lv' + wu.level);
-                      merged = true;
-                    } else if (!u.isSoldier && wu.type === 'hero' && u.heroId === wu.heroId && wu.level < 5) {
-                      wu.level = Math.max(wu.level || 1, u.battleLevel || 1) + 1;
-                      if (wu.level > 5) wu.level = 5;
-                      Game.removeUnit(u);
-                      UI.renderBattle();
-                      UI.renderWaitingArea();
-                      self.showToast('合成 Lv' + wu.level);
-                      merged = true;
-                    }
+      if (u.isSoldier && wu.soldierType && u.soldierType === wu.soldierType && u.level === wu.level && wu.level < 5) {
+        wu.level++;
+        Game.removeUnit(u);
+        UI.renderBattle();
+        UI.renderWaitingArea();
+        self.showToast('合成 Lv' + wu.level);
+        merged = true;
+      } else if (!u.isSoldier && wu.type === 'hero' && u.heroId === wu.heroId && u.battleLevel === wu.level && wu.level < 5) {
+        wu.level++;
+        if (wu.level > 5) wu.level = 5;
+        Game.removeUnit(u);
+        UI.renderBattle();
+        UI.renderWaitingArea();
+        self.showToast('合成 Lv' + wu.level);
+        merged = true;
+      }
                     if (!merged) {
                       var ucol = u.col, urow = u.row;
                       var wuCopy = u.isSoldier
@@ -994,11 +1004,15 @@ UI.renderBarUnits = function() {
     var remaining = Game.spawnedCount || 0;
     for (var i = remaining; i < Game.currentWaveEnemies.length; i++) {
       var etype = Game.currentWaveEnemies[i];
-      var ed = getEnemyData(etype);
+      var etypeId = typeof etype === 'object' ? etype.type : etype;
+      var isBossEntry = typeof etype === 'object' && etype.isBoss;
+      var ed = getEnemyData(etypeId);
+      if (!ed && isBossEntry) ed = getHeroData(etypeId);
       var dot = document.createElement('span');
       dot.className = 'wave-dot';
-      dot.textContent = ed ? (ed.emoji || '👹') : '👹';
-      dot.title = ed ? ed.name : '';
+      dot.textContent = ed ? (ed.emoji || '👹') : (isBossEntry ? '💀' : '👹');
+      dot.title = ed ? (ed.name || etypeId) : etypeId;
+      if (isBossEntry) dot.style.cssText = 'font-size:16px;color:#ffd700;';
       bar.appendChild(dot);
     }
   };
@@ -1353,7 +1367,7 @@ UI.updateHUD = function() {
       if (Game.gameMode === 'challenge') {
         waveEl.textContent = '🌊 第 ' + Game.challengeWave + ' 波';
       } else if (Game.gameMode === 'bossrush') {
-        waveEl.textContent = '👹 Boss ' + (Game.bossRushIndex + 1) + '/' + BOSS_RUSH_ORDER.length;
+        waveEl.textContent = '👹 Boss ' + (Game.bossRushIndex + 1) + '/' + BOSS_RUSH_TOTAL;
       } else {
         waveEl.textContent = '🌊 ' + Game.waveIndex + '/' + Game.stage.waves.length;
       }

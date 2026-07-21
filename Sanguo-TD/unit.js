@@ -198,29 +198,31 @@ Unit.prototype._recalcBuffs = function() {
   }
 
   // 從基準值重算 maxHp（如果有 def buff 存在）
-  if (this.buffs.some(function(b) { return b.type === 'def'; })) {
-    if (this._defBuffBaseMaxHp <= 0) {
-      // 首次或基準被清除：以當前 maxHp 反推基準
-      var curHpPct = oldTotalHpPct;
-      this._defBuffBaseMaxHp = curHpPct > 0 ? Math.floor(this.maxHp / (1 + curHpPct / 100)) : this.maxHp;
+    if (this.buffs.some(function(b) { return b.type === 'def'; })) {
+      if (this._defBuffBaseMaxHp <= 0) {
+        // 首次或基準被清除：以當前 maxHp 反推基準
+        var curHpPct = oldTotalHpPct;
+        this._defBuffBaseMaxHp = curHpPct > 0 ? Math.floor(this.maxHp / (1 + curHpPct / 100)) : this.maxHp;
+      }
+      var newMaxHp = Math.floor(this._defBuffBaseMaxHp * (1 + totalHpPct / 100));
+      if (newMaxHp !== this.maxHp) {
+        // 關鍵修改：HP 隨 maxHp 同比例縮放，但不再強制限制在 newMaxHp 內
+        // 這樣當 maxHp 降低時，hp 會按比例降低，但不會被截斷
+        var ratio = this.maxHp > 0 ? this.hp / this.maxHp : 1;
+        this.maxHp = Math.max(1, newMaxHp);
+        this.hp = Math.max(1, Math.floor(this.maxHp * ratio));
+      }
+      this.buffHpPct = totalHpPct;
+    } else if (hadDefBuff) {
+      // def buff 全部過期：恢復到基準值
+      if (this._defBuffBaseMaxHp > 0) {
+        var ratio = this.maxHp > 0 ? this.hp / this.maxHp : 1;
+        this.maxHp = Math.max(1, this._defBuffBaseMaxHp);
+        this.hp = Math.max(1, Math.floor(this.maxHp * ratio));
+      }
+      this.buffHpPct = 0;
+      this._defBuffBaseMaxHp = 0;
     }
-    var newMaxHp = Math.floor(this._defBuffBaseMaxHp * (1 + totalHpPct / 100));
-    if (newMaxHp !== this.maxHp) {
-      var ratio = this.maxHp > 0 ? this.hp / this.maxHp : 1;
-      this.maxHp = Math.max(1, newMaxHp);
-      this.hp = Math.max(1, Math.floor(this.maxHp * ratio));
-    }
-    this.buffHpPct = totalHpPct;
-  } else if (hadDefBuff) {
-    // def buff 全部過期：恢復到基準值
-    if (this._defBuffBaseMaxHp > 0) {
-      var ratio = this.maxHp > 0 ? this.hp / this.maxHp : 1;
-      this.maxHp = Math.max(1, this._defBuffBaseMaxHp);
-      this.hp = Math.max(1, Math.floor(this.maxHp * ratio));
-    }
-    this.buffHpPct = 0;
-    this._defBuffBaseMaxHp = 0;
-  }
 };
 
 Unit.prototype.update = function(dt) {
@@ -400,24 +402,11 @@ else if (type === 'buff_ally') {
         });
     }
     else if (type === 'buff_def_aoe') {
-        var center = this.target || this.findTarget();
-        if (!center || center.dead) return false;
-        
-        this.showSkillEffect(center.pixelX, center.pixelY, '🛡️', 'rgba(30,144,255,0.8)', aoeRange * 40);
-        
+        // 改為全體我方武將生效
         var now = (window.Game && Game.gameTime) || 0;
-        var inRange = [];
-        for (var i = 0; i < Game.units.length; i++) {
-            var u = Game.units[i];
-            if (u.dead || u.isSoldier) continue; // 只影響武將
-            var dx = u.col - center.col;
-            var dy = u.row - center.row;
-            var d = Math.sqrt(dx*dx + dy*dy);
-            if (d <= aoeRange) {
-                inRange.push(u);
-            }
-        }
-        inRange.forEach(function(u) {
+        Game.units.forEach(function(u) {
+            if (u.dead || u.isSoldier) return; // 只影響武將
+            
             // 若無 DEF Buff 基準值，記錄當前 maxHp 為基準
             if (u._defBuffBaseMaxHp <= 0) {
                 u._defBuffBaseMaxHp = u.maxHp;
@@ -425,6 +414,10 @@ else if (type === 'buff_ally') {
             // 添加獨立 DEF/HP Buff 實例
             u.buffs.push({ type: 'def', defPct: effectVal, hpPct: effectVal2, endTime: now + dur });
         });
+        
+        // 視覺效果：在施法者位置顯示一個大光環
+        var pos = UI.cellToPixel(this.col, this.row);
+        this.showSkillEffect(pos.x, pos.y, '🛡️', 'rgba(30,144,255,0.8)', 3.0);
     }
   
   if (typeof UI.triggerScreenShake === 'function') {
@@ -530,6 +523,13 @@ function SoldierUnit(type, level, col, row) {
   this.attackType = st.attackType;
   this.aoeMax = st.aoeMax || 3;
   this.damageType = st.damageType;
+  // Buff 獨立生命週期系統（與 Unit 建構子同步）
+  this.buffs = [];
+  this._defBuffBaseMaxHp = 0;
+  this.buffAtkPct = 0;
+  this.buffDuration = 0;
+  this.buffDefPct = 0;
+  this.buffHpPct = 0;
   this.upgradeStats();
 }
 
