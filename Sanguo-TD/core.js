@@ -643,15 +643,16 @@ var Game = {
           }
           if (enemyData) {
             var mult;
-            if (this.gameMode === 'challenge') {
-              var scale = 1 + (this.challengeWave - 1) * CHALLENGE_CONFIG.atkScale;
-              scale = Math.min(scale, 11);  // ATK 上限 +1000%
-              var hpScale = 1 + (this.challengeWave - 1) * CHALLENGE_CONFIG.hpScale;
-              mult = { atk: scale, hp: hpScale };
-              if (typeof etype === 'object' && etype.isBoss) {
-                mult = { atk: etype.atkMult || scale, hp: etype.hpMult || hpScale };
-              }
-            } else if (this.gameMode === 'bossrush') {
+              if (this.gameMode === 'challenge') {
+                var scale = 1 + (this.challengeWave - 1) * CHALLENGE_CONFIG.atkScale;
+                scale = Math.min(scale, 11);  // ATK 上限 +1000%
+                var hpScale = 1 + (this.challengeWave - 1) * CHALLENGE_CONFIG.hpScale;
+                mult = { atk: scale, hp: hpScale };
+                if (typeof etype === 'object' && etype.isBoss) {
+                  // Boss 採用小兵倍率 ×1.5（ATK 上限 16x），不使用 Boss Rush 的離散倍率
+                  mult = { atk: Math.min(scale * 1.5, 16), hp: hpScale * 1.5 };
+                }
+              } else if (this.gameMode === 'bossrush') {
               mult = { atk: (typeof etype === 'object' && etype.atkMult) || 3, hp: (typeof etype === 'object' && etype.hpMult) || 3 };
             } else {
               mult = getEnemyMult(this.stage.id, this.difficulty);
