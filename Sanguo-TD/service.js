@@ -270,8 +270,7 @@ var Service = {
     var codes = {
       'VIP666': { gold: 200, diamond: 20, yellowWeapon: 1 },
       'VIP777': { gold: 200, diamond: 20, yellowWeapon: 1 },
-      'VIP888': { gold: 200, diamond: 20, yellowWeapon: 1 },
-      'HAPPYDAI': { gold: 10000, diamond: 1000, yellowWeapon: 20 }
+      'VIP888': { gold: 200, diamond: 20, yellowWeapon: 1 }
     };
 
     var reward = codes[cleanCode];

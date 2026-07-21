@@ -113,6 +113,39 @@ Unit.prototype.findTarget = function() {
   return best;
 };
 
+// 優先尋找範圍內未暈眩的敵人（用於暈眩技能，避免重複暈眩同一目標）
+Unit.prototype.findUnstunnedTarget = function() {
+  var best = null;
+  var bestDist = Infinity;
+  // 第一輪：只找未暈眩的
+  for (var i = 0; i < Game.enemies.length; i++) {
+    var e = Game.enemies[i];
+    if (e.dead || e.stunnedTimer > 0) continue;
+    var dx = e.col - this.col;
+    var dy = e.row - this.row;
+    var dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist <= this.range && dist < bestDist) {
+      bestDist = dist;
+      best = e;
+    }
+  }
+  // 第二輪：若所有範圍內敵人都已暈眩，則 fallback 找最近的（含已暈眩）
+  if (!best) {
+    for (var i = 0; i < Game.enemies.length; i++) {
+      var e = Game.enemies[i];
+      if (e.dead) continue;
+      var dx = e.col - this.col;
+      var dy = e.row - this.row;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist <= this.range && dist < bestDist) {
+        bestDist = dist;
+        best = e;
+      }
+    }
+  }
+  return best;
+};
+
 Unit.prototype.update = function(dt) {
   if (this.dead) return;
 
@@ -240,7 +273,8 @@ Unit.prototype.useSkill = function() {
     UI.showDmgNum(pos.x, pos.y, '+' + healVal, '#2ecc71');
   }
   else if (type === 'stun') {
-    var tgt = this.target || this.findTarget();
+    // 優先選擇未暈眩的敵人，避免多個暈眩技能重複暈眩同一目標
+    var tgt = this.findUnstunnedTarget();
     if (!tgt || tgt.dead) return false;
     
     tgt.takeDamage(Math.round(selfValAtk * mult));
@@ -248,8 +282,9 @@ Unit.prototype.useSkill = function() {
     this.showSkillEffect(tgt.pixelX, tgt.pixelY, '🌀', 'rgba(52,152,219,0.8)');
   }
   else if (type === 'buff_self') {
-    this.buffAtkPct = effectVal;
-    this.buffDuration = dur;
+    // 疊加攻擊力加成，持續時間取最長者
+    this.buffAtkPct = (this.buffAtkPct || 0) + effectVal;
+    this.buffDuration = Math.max(this.buffDuration || 0, dur);
     var pos = UI.cellToPixel(this.col, this.row);
     this.showSkillEffect(pos.x, pos.y, '✨', 'rgba(230,126,34,0.8)');
   }
@@ -257,8 +292,9 @@ Unit.prototype.useSkill = function() {
     var self = this;
     Game.units.forEach(function(u) {
       if (u.dead) return;
-      u.buffAtkPct = effectVal;
-      u.buffDuration = dur;
+      // 疊加攻擊力加成，持續時間取最長者（確保最後一個 Buff 結束前不歸零）
+      u.buffAtkPct = (u.buffAtkPct || 0) + effectVal;
+      u.buffDuration = Math.max(u.buffDuration || 0, dur);
       var pos = UI.cellToPixel(u.col, u.row);
       self.showSkillEffect(pos.x, pos.y, '🌞', 'rgba(241,196,15,0.8)');
     });

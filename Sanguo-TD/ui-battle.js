@@ -430,7 +430,13 @@ UI._clearDeployHighlights = function() {
         info.push('<span style="color:#e0d0b0;font-size:11px;">描述: ' + u.skill.desc + '</span>');
       }}
     info.push('HP: ' + Math.floor(u.hp) + '/' + Math.floor(u.maxHp));
-    info.push('ATK: ' + Math.floor(u.atk));
+    var buffPct = u.buffAtkPct || 0;
+    if (buffPct > 0) {
+      var buffedAtk = Math.floor(u.atk * (1 + buffPct / 100));
+      info.push('ATK: ' + buffedAtk + ' <span style="color:#2ecc71;">(+' + buffPct + '%)</span>');
+    } else {
+      info.push('ATK: ' + Math.floor(u.atk));
+    }
     info.push('DEF: ' + Math.floor(u.def || 0));
     info.push('範圍: ' + (u.range || 2));
     var el = document.createElement('div');
