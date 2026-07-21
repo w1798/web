@@ -1090,7 +1090,7 @@ UI.showSkillTooltip = function(skill, ev, heroName, row, col, tier) {
     'buff_self': '自身強化',
     'buff_ally': '全體強化',
     'slow_aoe': '範圍緩速',
-    'buff_def_aoe': '範圍防禦'
+    'buff_def_aoe': '全體防禦'
   }[skill.type] || skill.type;
   info.push('類型: ' + typeZh);
   info.push('<span style="color:#c8b896;font-size:12px;">' + (skill.getDesc ? skill.getDesc(tier || 1) : skill.desc) + '</span>');

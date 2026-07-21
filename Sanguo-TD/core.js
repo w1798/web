@@ -224,10 +224,23 @@ var Game = {
 
   generateChallengeWave: function(waveNum) {
     var enemies = [];
-    var baseCount = 3 + Math.floor(waveNum * 0.5);
+    var baseCount = 3 + Math.floor(waveNum * 1);
     var isBoss = (waveNum % CHALLENGE_CONFIG.bossInterval === 0);
+
+    // 決定階級
+    var tierKey;
+    if (waveNum <= 20) {
+      tierKey = 'low';
+    } else if (waveNum <= 40) {
+      tierKey = 'mid';
+    } else {
+      tierKey = 'high';
+    }
+    var pool = TIER_POOLS[tierKey];
+
     if (isBoss) {
-      var bossCount = 1 + Math.floor(Math.random() * 5);
+      // Boss 波：floor(waveNum/5) 隻不重複 boss
+      var bossCount = Math.floor(waveNum / 5);
       var usedHeroes = {};
       for (var b = 0; b < bossCount; b++) {
         var boss = generateBossRushBoss(waveNum + b);
@@ -236,29 +249,15 @@ var Game = {
           usedHeroes[boss.heroId] = true;
         }
       }
-      var minionPool;
-      if (waveNum <= 5) {
-        minionPool = ['infantry_1', 'archer_1', 'spearman_1'];
-      } else if (waveNum <= 10) {
-        minionPool = ['infantry_2', 'archer_2', 'cavalry_2'];
-      } else {
-        minionPool = ['infantry_3', 'archer_3', 'cavalry_3'];
-      }
+      // 小兵：floor(baseCount/2)，6 種兵種輪詢分配
       var minionCount = Math.floor(baseCount / 2);
       for (var i = 0; i < minionCount; i++) {
-        enemies.push({ type: minionPool[Math.floor(Math.random() * minionPool.length)], count: 1 });
+        enemies.push({ type: pool[i % 6], count: 1 });
       }
     } else {
-      var minionPool;
-      if (waveNum <= 5) {
-        minionPool = ['infantry_1', 'archer_1', 'spearman_1', 'cavalry_1'];
-      } else if (waveNum <= 10) {
-        minionPool = ['infantry_2', 'archer_2', 'cavalry_2', 'mage_2'];
-      } else {
-        minionPool = ['infantry_3', 'archer_3', 'cavalry_3', 'mage_3'];
-      }
+      // 一般波：baseCount 個敵人，6 種兵種輪詢分配
       for (var i = 0; i < baseCount; i++) {
-        enemies.push({ type: minionPool[Math.floor(Math.random() * minionPool.length)], count: 1 });
+        enemies.push({ type: pool[i % 6], count: 1 });
       }
     }
     return { enemies: enemies, delay: 2 };
@@ -625,10 +624,28 @@ var Game = {
           UI.renderBarUnits();
           var etypeId = typeof etype === 'object' ? etype.type : etype;
           var enemyData = getEnemyData(etypeId);
+          // Boss 使用武將 ID（不在 ENEMY_DATA 中），需要從英雄資料建立基礎數據
+          if (!enemyData) {
+            var heroData = getHeroData(etypeId);
+            if (heroData) {
+              enemyData = {
+                hp: heroData.baseHp || 100,
+                atk: heroData.baseAtk || 20,
+                def: heroData.baseDef || 5,
+                speed: 0.5,
+                weaponType: 'sword',
+                attackType: 'melee',
+                range: 1,
+                atkSpeed: 1.0,
+                color: '#8B0000'
+              };
+            }
+          }
           if (enemyData) {
             var mult;
             if (this.gameMode === 'challenge') {
               var scale = 1 + (this.challengeWave - 1) * CHALLENGE_CONFIG.atkScale;
+              scale = Math.min(scale, 11);  // ATK 上限 +1000%
               var hpScale = 1 + (this.challengeWave - 1) * CHALLENGE_CONFIG.hpScale;
               mult = { atk: scale, hp: hpScale };
               if (typeof etype === 'object' && etype.isBoss) {
@@ -650,7 +667,7 @@ var Game = {
                 scaledData.skill = hero.skill || null;
                 scaledData.isBoss = true;
                 scaledData.name = hero.name;
-                scaledData.emoji = hero.emoji;
+                scaledData.emoji = '👑' + hero.emoji;
               }
             }
             var startPos = this.mapLayout.path[0];

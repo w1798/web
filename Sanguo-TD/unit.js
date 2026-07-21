@@ -191,11 +191,8 @@ Unit.prototype._recalcBuffs = function() {
   // 更新 DEF/HP Buff 屬性
   this.buffDefPct = totalDef;
 
-  // 處理 HP 基準值：若之前有 def buff 但現在沒有，記錄基準
-  if (hadDefBuff && !this.buffs.some(function(b) { return b.type === 'def'; })) {
-    // 所有 def buff 都過期了，重置基準
-    this._defBuffBaseMaxHp = 0;
-  }
+  // 處理 HP 基準值：若之前有 def buff 但現在沒有，標記待恢復（實際恢復在 else if 區塊處理）
+  // 注意：不能在這裡清空 _defBuffBaseMaxHp，否則恢復邏輯會失去基準值
 
   // 從基準值重算 maxHp（如果有 def buff 存在）
     if (this.buffs.some(function(b) { return b.type === 'def'; })) {

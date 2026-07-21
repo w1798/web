@@ -409,29 +409,29 @@ function getWeaponType(unit) {
 /* ===== 敵軍資料庫（6兵種×3階級 = 18種） ===== */
 var ENEMY_DATA = [
   /* 步兵 melee */
-  { id:'infantry_1',  name:'初級步兵', emoji:'🗡️', hp:40, atk:8,  def:3, speed:0.5, weaponType:'sword',  attackType:'melee', color:'#6a5a3a', range:1 },
-  { id:'infantry_2',  name:'中級步兵', emoji:'🛡️', hp:80, atk:16, def:6, speed:0.5, weaponType:'sword',  attackType:'melee', color:'#5a4a2a', range:1 },
-  { id:'infantry_3',  name:'高級步兵', emoji:'⚔️', hp:120, atk:24, def:9, speed:0.5, weaponType:'sword',  attackType:'melee', color:'#4a3a1a', range:1 },
+  { id:'infantry_1',  name:'初級步兵', emoji:'👹', hp:40, atk:8,  def:3, speed:0.5, weaponType:'sword',  attackType:'melee', color:'#6a5a3a', range:1 },
+  { id:'infantry_2',  name:'中級步兵', emoji:'🧟', hp:80, atk:16, def:6, speed:0.5, weaponType:'sword',  attackType:'melee', color:'#5a4a2a', range:1 },
+  { id:'infantry_3',  name:'高級步兵', emoji:'💀', hp:120, atk:24, def:9, speed:0.5, weaponType:'sword',  attackType:'melee', color:'#4a3a1a', range:1 },
   /* 弓手 ranged */
-  { id:'archer_1',    name:'初級弓手', emoji:'🏹', hp:25, atk:10, def:1, speed:0.4, weaponType:'bow',    attackType:'ranged', color:'#5a7a3a', range:2.5, atkSpeed:0.7 },
-  { id:'archer_2',    name:'中級弓手', emoji:'🎯', hp:50, atk:20, def:2, speed:0.4, weaponType:'bow',    attackType:'ranged', color:'#4a6a2a', range:2.5, atkSpeed:0.7 },
-  { id:'archer_3',    name:'高級弓手', emoji:'🔱', hp:75, atk:30, def:3, speed:0.4, weaponType:'bow',    attackType:'ranged', color:'#3a5a1a', range:2.5, atkSpeed:0.7 },
+  { id:'archer_1',    name:'初級弓手', emoji:'🏴‍☠️', hp:25, atk:10, def:1, speed:0.4, weaponType:'bow',    attackType:'ranged', color:'#5a7a3a', range:2.5, atkSpeed:0.7 },
+  { id:'archer_2',    name:'中級弓手', emoji:'🏹‍', hp:50, atk:20, def:2, speed:0.4, weaponType:'bow',    attackType:'ranged', color:'#4a6a2a', range:2.5, atkSpeed:0.7 },
+  { id:'archer_3',    name:'高級弓手', emoji:'🧟‍♂️', hp:75, atk:30, def:3, speed:0.4, weaponType:'bow',    attackType:'ranged', color:'#3a5a1a', range:2.5, atkSpeed:0.7 },
   /* 槍兵 melee */
-  { id:'spearman_1',  name:'初級槍兵', emoji:'🔱', hp:45, atk:9,  def:3, speed:0.5, weaponType:'spear',  attackType:'melee', color:'#3a5a6a', range:1 },
-  { id:'spearman_2',  name:'中級槍兵', emoji:'🔱', hp:90, atk:18, def:6, speed:0.5, weaponType:'spear',  attackType:'melee', color:'#2a4a5a', range:1 },
-  { id:'spearman_3',  name:'高級槍兵', emoji:'🔱', hp:135, atk:27, def:9, speed:0.5, weaponType:'spear',  attackType:'melee', color:'#1a3a4a', range:1 },
+  { id:'spearman_1',  name:'初級槍兵', emoji:'🦂', hp:45, atk:9,  def:3, speed:0.5, weaponType:'spear',  attackType:'melee', color:'#3a5a6a', range:1 },
+  { id:'spearman_2',  name:'中級槍兵', emoji:'🧛', hp:90, atk:18, def:6, speed:0.5, weaponType:'spear',  attackType:'melee', color:'#2a4a5a', range:1 },
+  { id:'spearman_3',  name:'高級槍兵', emoji:'🔱‍', hp:135, atk:27, def:9, speed:0.5, weaponType:'spear',  attackType:'melee', color:'#1a3a4a', range:1 },
   /* 騎兵 melee */
-  { id:'cavalry_1',   name:'初級騎兵', emoji:'🐴', hp:50, atk:10, def:3, speed:0.7, weaponType:'horse',  attackType:'melee', color:'#6a3a2a', range:1 },
-  { id:'cavalry_2',   name:'中級騎兵', emoji:'🐎', hp:100, atk:20, def:6, speed:0.7, weaponType:'horse',  attackType:'melee', color:'#5a2a1a', range:1 },
-  { id:'cavalry_3',   name:'高級騎兵', emoji:'🏇', hp:150, atk:30, def:9, speed:0.7, weaponType:'horse',  attackType:'melee', color:'#4a1a0a', range:1 },
+  { id:'cavalry_1',   name:'初級騎兵', emoji:'🐺', hp:50, atk:10, def:3, speed:0.7, weaponType:'horse',  attackType:'melee', color:'#6a3a2a', range:1 },
+  { id:'cavalry_2',   name:'中級騎兵', emoji:'🐉', hp:100, atk:20, def:6, speed:0.7, weaponType:'horse',  attackType:'melee', color:'#5a2a1a', range:1 },
+  { id:'cavalry_3',   name:'高級騎兵', emoji:'🦇', hp:150, atk:30, def:9, speed:0.7, weaponType:'horse',  attackType:'melee', color:'#4a1a0a', range:1 },
   /* 法師 aoe */
-  { id:'mage_1',      name:'初級法師', emoji:'🔮', hp:20, atk:12, def:1, speed:0.3, weaponType:'mage',   attackType:'aoe', color:'#7a3a7a', range:2.0, atkSpeed:0.5 },
-  { id:'mage_2',      name:'中級法師', emoji:'💜', hp:40, atk:24, def:2, speed:0.3, weaponType:'mage',   attackType:'aoe', color:'#6a2a6a', range:2.0, atkSpeed:0.5 },
-  { id:'mage_3',      name:'高級法師', emoji:'⚡', hp:60, atk:36, def:3, speed:0.3, weaponType:'mage',   attackType:'aoe', color:'#5a1a5a', range:2.0, atkSpeed:0.5 },
+  { id:'mage_1',      name:'初級法師', emoji:'💀‍', hp:20, atk:12, def:1, speed:0.3, weaponType:'mage',   attackType:'aoe', color:'#7a3a7a', range:2.0, atkSpeed:0.5 },
+  { id:'mage_2',      name:'中級法師', emoji:'🧙‍♂️', hp:40, atk:24, def:2, speed:0.3, weaponType:'mage',   attackType:'aoe', color:'#6a2a6a', range:2.0, atkSpeed:0.5 },
+  { id:'mage_3',      name:'高級法師', emoji:'🕷️', hp:60, atk:36, def:3, speed:0.3, weaponType:'mage',   attackType:'aoe', color:'#5a1a5a', range:2.0, atkSpeed:0.5 },
   /* 治療 heal */
-  { id:'healer_1',    name:'初級治療', emoji:'💚', hp:30, atk:5,  def:2, speed:0.4, weaponType:'healer', attackType:'heal', color:'#2a8a5a', range:1 },
-  { id:'healer_2',    name:'中級治療', emoji:'💚', hp:60, atk:10, def:4, speed:0.4, weaponType:'healer', attackType:'heal', color:'#1a7a4a', range:1 },
-  { id:'healer_3',    name:'高級治療', emoji:'💚', hp:90, atk:15, def:6, speed:0.4, weaponType:'healer', attackType:'heal', color:'#0a6a3a', range:1 },
+  { id:'healer_1',    name:'初級治療', emoji:'🩸', hp:30, atk:5,  def:2, speed:0.4, weaponType:'healer', attackType:'heal', color:'#2a8a5a', range:1 },
+  { id:'healer_2',    name:'中級治療', emoji:'💉', hp:60, atk:10, def:4, speed:0.4, weaponType:'healer', attackType:'heal', color:'#1a7a4a', range:1 },
+  { id:'healer_3',    name:'高級治療', emoji:'🧪', hp:90, atk:15, def:6, speed:0.4, weaponType:'healer', attackType:'heal', color:'#0a6a3a', range:1 },
 ];
 
 /* ===== 挑戰模式設定 ===== */
@@ -441,6 +441,13 @@ var CHALLENGE_CONFIG = {
   bossInterval: 5,      // 每 5 波出 Boss
   recruitCostBase: 8,   // 征招基礎費用
   goldRewardBase: 3     // 退出/失敗時金幣獎勵基礎
+};
+
+/* 挑戰模式兵種階級池（6兵種×3階級） */
+var TIER_POOLS = {
+  low:  ['infantry_1','archer_1','spearman_1','cavalry_1','mage_1','healer_1'],
+  mid:  ['infantry_2','archer_2','spearman_2','cavalry_2','mage_2','healer_2'],
+  high: ['infantry_3','archer_3','spearman_3','cavalry_3','mage_3','healer_3']
 };
 
 /* ===== Boss Rush 動態生成 ===== */
@@ -1006,7 +1013,7 @@ function makeScaledSkill(name, type, tier) {
       case 'buff_self': return '自身攻擊力提升 ' + base.effectVal[idx2] + '%，持續 ' + base.dur[idx2] + ' 秒';
       case 'buff_ally': return '鼓舞全體我方，提升 ' + base.effectVal[idx2] + '% 攻擊力，持續 ' + base.dur[idx2] + ' 秒';
       case 'slow_aoe': return '對範圍內敵人造成 ' + (base.mult[idx2] * 100) + '% 傷害並減速 ' + base.effectVal[idx2] + '%，持續 ' + base.dur[idx2] + ' 秒';
-      case 'buff_def_aoe': return '範圍內我方防禦提升 ' + base.effectVal[idx2] + '%，最大生命提升 ' + base.effectVal2[idx2] + '%，持續 ' + base.dur[idx2] + ' 秒';
+      case 'buff_def_aoe': return '全體我方防禦提升 ' + base.effectVal[idx2] + '%，最大生命提升 ' + base.effectVal2[idx2] + '%，持續 ' + base.dur[idx2] + ' 秒';
     }
     return '';
   };
