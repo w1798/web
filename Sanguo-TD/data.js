@@ -1006,8 +1006,6 @@ function makeScaledSkill(name, type, tier) {
   sk.getDesc = function(tier2) {
     var idx2 = Math.min(Math.max(tier2 - 1, 0), 4);
     switch(type) {
-      case 'damage_single': return '對單一敵人造成 ' + (base.mult[idx2] * 100) + '% 攻擊傷害';
-      case 'damage_aoe': return '對範圍內敵人造成 ' + (base.mult[idx2] * 100) + '% 攻擊傷害（範圍 ' + base.aoeRange[idx2] + ' 格）';
       case 'heal': return '治療生命最低的我方，恢復 ' + (base.mult[idx2] * 100) + '% 最大生命';
       case 'stun': return '對目標造成 ' + (base.mult[idx2] * 100) + '% 傷害並暈眩 ' + base.dur[idx2] + ' 秒';
       case 'buff_self': return '自身攻擊力提升 ' + base.effectVal[idx2] + '%，持續 ' + base.dur[idx2] + ' 秒';
@@ -1020,39 +1018,41 @@ function makeScaledSkill(name, type, tier) {
   return sk;
 }
 
-/* ===== 52 英雄主動技能定義 ===== */
+/* ===== 66 英雄主動技能定義 ===== */
 var HERO_SKILL_TYPES = {
-  /* R1 良 (12) */
-  caoxing:'damage_single', guanping:'damage_single', jiangwei:'buff_self',
-  jiangwan:'heal', jiaxu:'damage_aoe', xunyu:'heal',
-  guojia:'buff_def_aoe', lingtong:'stun', lvmeng:'buff_ally',
-  buliangshi:'slow_aoe', chengong:'damage_aoe', yanliang:'stun',
-  /* R2 優 (12) */
-  xiahoudun:'damage_single', zhenji:'heal', xiahouyuan:'damage_single',
-  guanxing:'damage_single', weiyan:'stun', zhangbao:'damage_aoe',
-  huanggai:'buff_self', zhoutai:'buff_def_aoe', xiaoqiao:'slow_aoe',
-  gongsunzan:'damage_single', tianfeng:'damage_aoe', huaxiong:'buff_ally',
-  /* R3 名將 (12) */
-  liubei:'heal', zhangfei:'stun', pangtong:'slow_aoe',
-  caopi:'damage_single', zhanghe:'stun', zhangliao:'buff_self',
-  taishi_ci:'damage_aoe', lusu:'slow_aoe', zhangzhao:'buff_ally',
-  wenchou:'buff_self', mateng:'buff_def_aoe', zhangjiao:'heal',
+  /* R1 良 (12) — 6 技能各 2 人，同階同國不重複 */
+  jiaxu:'slow_aoe', xunyu:'heal', guojia:'buff_self',               // 魏: slow_aoe, heal, buff_self
+  guanping:'stun', jiangwei:'buff_def_aoe', jiangwan:'heal',        // 蜀: stun, buff_def_aoe, heal
+  lingtong:'stun', lvmeng:'slow_aoe', buliangshi:'buff_ally',       // 吳: stun, slow_aoe, buff_ally
+  caoxing:'buff_def_aoe', chengong:'buff_self', yanliang:'buff_ally',// 群: buff_def_aoe, buff_self, buff_ally
+  /* R2 優 (12) — 6 技能各 2 人，同階同國不重複 */
+  xiahoudun:'buff_self', zhenji:'heal', xiahouyuan:'stun',          // 魏: buff_self, heal, stun
+  guanxing:'buff_ally', weiyan:'buff_self', zhangbao:'slow_aoe',    // 蜀: buff_ally, buff_self, slow_aoe
+  huanggai:'buff_def_aoe', zhoutai:'buff_ally', xiaoqiao:'heal',    // 吳: buff_def_aoe, buff_ally, heal
+  gongsunzan:'stun', tianfeng:'slow_aoe', huaxiong:'buff_def_aoe',  // 群: stun, slow_aoe, buff_def_aoe
+  /* R3 名將 (12) — 6 技能各 2 人，同階同國不重複 */
+  caopi:'buff_ally', zhanghe:'buff_def_aoe', zhangliao:'stun',      // 魏: buff_ally, buff_def_aoe, stun
+  liubei:'heal', zhangfei:'buff_def_aoe', pangtong:'slow_aoe',      // 蜀: heal, buff_def_aoe, slow_aoe
+  taishi_ci:'buff_self', lusu:'slow_aoe', zhangzhao:'buff_ally',    // 吳: buff_self, slow_aoe, buff_ally
+  wenchou:'buff_self', mateng:'stun', zhangjiao:'heal',             // 群: buff_self, stun, heal
   /* R4 傳說 — 三國 (8) */
-  xuchu:'buff_def_aoe', caocao:'buff_ally', guanyu:'damage_single',
-  zhugeliang:'damage_aoe', sunshangxiang:'damage_single', ganning:'stun',
-  machao:'buff_self', diaochan:'heal',
+  xuchu:'stun', caocao:'buff_ally',                                 // 魏
+  guanyu:'buff_self', zhugeliang:'slow_aoe',                        // 蜀
+  sunshangxiang:'buff_def_aoe', ganning:'stun',                     // 吳
+  machao:'buff_ally', diaochan:'heal',                              // 群
   /* R4 傳說 — 特陣營 (7) */
-  fanzeng:'stun', xiaohe:'heal', lvhou:'damage_single',
-  pengyue:'slow_aoe', zhoubo:'buff_def_aoe', zhangliang:'buff_ally',
-  xiangzhuang:'damage_single',
+  pengyue:'stun', zhoubo:'buff_def_aoe', fanzeng:'slow_aoe',
+  xiaohe:'heal', zhangliang:'heal', lvhou:'buff_self',
+  xiangzhuang:'buff_ally',
   /* R5 無雙 — 三國 (8) */
-  simayi:'slow_aoe', dianwei:'buff_self', zhaoyun:'buff_def_aoe',
-  huangzhong:'buff_ally', sunce:'buff_self', zhouyu:'heal',
-  lubu:'buff_self', zuoci:'slow_aoe',
+  simayi:'slow_aoe', dianwei:'buff_def_aoe',                        // 魏
+  zhaoyun:'stun', huangzhong:'buff_ally',                           // 蜀
+  sunce:'buff_self', zhouyu:'heal',                                 // 吳
+  lubu:'buff_self', zuoci:'slow_aoe',                               // 群
   /* R5 無雙 — 特陣營 (7) */
-  xiangyu:'buff_self', jibu:'stun', yingbu:'damage_single',
-  liubang:'heal', hanxin:'damage_aoe', yuji:'damage_single',
-  fankuai:'buff_def_aoe'
+  xiangyu:'buff_self', jibu:'buff_def_aoe', yingbu:'stun',
+  hanxin:'buff_ally', liubang:'slow_aoe', yuji:'heal',
+  fankuai:'buff_self'
 };
 
 // 將技能欄位動態附加到 HERO_DATA（按 rarity 自動取對應 tier 倍率）
