@@ -474,15 +474,15 @@ var DEV_MODE = window.location.protocol === 'file:';
 /* ===== 難度系統 ===== */
 var DIFFICULTY = {
   normal: { label: '正常', mult: 1 },
-  hard:   { label: '困難', mult: 3 },
-  hell:   { label: '地獄', mult: 6 }
+  hard:   { label: '困難', mult: 2.5 },
+  hell:   { label: '地獄', mult: 5 }
 };
 function getEnemyMult(stageId, difficulty) {
   var base = DIFFICULTY[difficulty] ? DIFFICULTY[difficulty].mult : 1;
   var idx = Math.max(0, getStageIndex(stageId));
   return {
-    atk: base * (1 + idx * 0.1),
-    hp:  base * (1 + idx * 0.1)
+    atk: base * (1 + idx * 0.06),
+    hp:  base * (1 + idx * 0.06)
   };
 }
 
