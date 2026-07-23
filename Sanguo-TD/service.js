@@ -319,7 +319,7 @@ var Service = {
       'VIP777': { gold: 200, diamond: 20, yellowWeapon: 1 },
       'VIP888': { gold: 200, diamond: 20, yellowWeapon: 1 }, 
       'HAPPYDAI': { gold: 10000, diamond: 300, yellowWeapon: 20 }, 
-      'ALANBRO': { gold: 10000, diamond: 300, yellowWeapon: 20 }
+      'ALANBRO1': { gold: 10000, diamond: 300, yellowWeapon: 20 }
     };
 
     /* 自動清理：只保留 codes 中仍然存在的禮包碼 */
