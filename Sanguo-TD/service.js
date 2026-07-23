@@ -713,8 +713,7 @@ completeStage: function(stageId, difficulty) {
 
     var types = ['sword','spear','bow','horse','mage','monk'];
     var type = types[Math.floor(Math.random() * types.length)];
-    var stats = this._generateWeaponStats(quality);
-    return { quality: quality, type: type, atkPct: stats.atkPct, hpPct: stats.hpPct, spd: stats.spd };
+    return this._buildWeapon(quality, type);
   },
 
   doWeaponGacha: function() {
@@ -768,8 +767,7 @@ completeStage: function(stageId, difficulty) {
     }
     var types = ['sword','spear','bow','horse','mage','monk'];
     var type = types[Math.floor(Math.random() * types.length)];
-    var stats = this._generateWeaponStats(quality);
-    return { quality: quality, type: type, atkPct: stats.atkPct, hpPct: stats.hpPct, spd: stats.spd };
+    return this._buildWeapon(quality, type);
   },
 
   _generateWeaponStats: function(quality) {
@@ -791,11 +789,61 @@ completeStage: function(stageId, difficulty) {
     return { atkPct: atkPct, hpPct: hpPct, spd: spd };
   },
 
+  _buildWeapon: function(quality, type) {
+    var stats = this._generateWeaponStats(quality);
+    var w = { quality: quality, type: type, atkPct: stats.atkPct, hpPct: stats.hpPct, spd: stats.spd };
+    if (quality === 4 && Math.random() < 0.20) {
+      w.extraSkill = this._generateExtraSkill();
+    }
+    return w;
+  },
+
+  _generateExtraSkill: function() {
+    var spec = EXTRA_SKILL_SPECS[Math.floor(Math.random() * EXTRA_SKILL_SPECS.length)];
+    var skill = {
+      type: spec.type,
+      name: spec.name,
+      procRate: +(0.1 + Math.random() * 9.9).toFixed(1),
+      skillValues: {},
+      lastProcTime: 0
+    };
+    var desc = spec.desc;
+    if (spec.healPctRange) {
+      skill.skillValues.healPct = +(spec.healPctRange[0] + Math.random() * (spec.healPctRange[1] - spec.healPctRange[0])).toFixed(1);
+      desc = desc.replace('{healPct}', skill.skillValues.healPct);
+    }
+  if (spec.atkPctRange) {
+    skill.skillValues.atkPct = +(spec.atkPctRange[0] + Math.random() * (spec.atkPctRange[1] - spec.atkPctRange[0])).toFixed(1);
+    desc = desc.replace('{atkPct}', skill.skillValues.atkPct);
+  }
+    if (spec.atkPctRange) {
+      skill.skillValues.atkPct = +(spec.atkPctRange[0] + Math.random() * (spec.atkPctRange[1] - spec.atkPctRange[0])).toFixed(1);
+      desc = desc.replace('{atkPct}', skill.skillValues.atkPct);
+    }
+    if (spec.bonusPctRange) {
+      skill.skillValues.bonusPct = +(spec.bonusPctRange[0] + Math.random() * (spec.bonusPctRange[1] - spec.bonusPctRange[0])).toFixed(1);
+      desc = desc.replace('{bonusPct}', skill.skillValues.bonusPct);
+    }
+    if (spec.stunDurationRange) {
+      skill.skillValues.stunDuration = +(spec.stunDurationRange[0] + Math.random() * (spec.stunDurationRange[1] - spec.stunDurationRange[0])).toFixed(1);
+      desc = desc.replace('{stunDuration}', skill.skillValues.stunDuration);
+    }
+    if (spec.slowPctRange) {
+      skill.skillValues.slowPct = +(spec.slowPctRange[0] + Math.random() * (spec.slowPctRange[1] - spec.slowPctRange[0])).toFixed(1);
+      desc = desc.replace('{slowPct}', skill.skillValues.slowPct);
+    }
+    if (spec.durationRange) {
+      skill.skillValues.duration = +(spec.durationRange[0] + Math.random() * (spec.durationRange[1] - spec.durationRange[0])).toFixed(1);
+      desc = desc.replace('{duration}', skill.skillValues.duration);
+    }
+    skill.desc = desc;
+    return skill;
+  },
+
   generateWeaponByQuality: function(quality) {
     var types = ['sword','spear','bow','horse','mage','monk'];
     var type = types[Math.floor(Math.random() * types.length)];
-    var stats = this._generateWeaponStats(quality);
-    return { quality: quality, type: type, atkPct: stats.atkPct, hpPct: stats.hpPct, spd: stats.spd };
+    return this._buildWeapon(quality, type);
   },
 
   equipWeapon: function(heroId, weaponData) {
@@ -860,6 +908,14 @@ completeStage: function(stageId, difficulty) {
     this.addTaskProgress('weapon_sell', 1);
     this.saveData();
     return gold;
+  },
+
+  toggleFavoriteWeapon: function(storageIndex) {
+    var stored = this.appData.weaponStorage[storageIndex];
+    if (!stored) return false;
+    stored.isFavorite = !stored.isFavorite;
+    this.saveData();
+    return stored.isFavorite;
   },
 
   unequipAllToStorage: function() {

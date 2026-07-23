@@ -8,8 +8,8 @@ UI.showWeapons = function() {
 
 UI.renderWeaponsList = function() {
     var container = document.getElementById('weapons-list');
+    var prevScrollTop = container.scrollTop;
     container.innerHTML = '';
-    container.scrollTop = 0;
     var d = Service.appData;
     var self = this;
 
@@ -96,9 +96,27 @@ UI.renderWeaponsList = function() {
           stats += '⚔+' + (w.atkPct || 0).toFixed(1) + '%';
           if (w.hpPct) stats += ' ❤+' + (w.hpPct || 0).toFixed(1) + '%';
           if (w.spd) stats += ' 🏃+' + (w.spd || 0).toFixed(2);
+          if (w.extraSkill) {
+            stats += '<br><span style="font-size:11px;color:#ffd700;">⭐' + w.extraSkill.name + ' (' + w.extraSkill.procRate + '%觸發, CD5s): ' + w.extraSkill.desc + '</span>';
+          }
           card.innerHTML = heroInfo + '<div class="wc-weapon">' + wIcon + ' ' + stats + '</div>';
           var btnRow = document.createElement('div');
           btnRow.className = 'weapon-btn-row';
+
+          /* 最愛切換按鈕 */
+          var favBtn = document.createElement('span');
+          favBtn.className = 'weapon-recycle-btn';
+          var isFav = !!w.isFavorite;
+          favBtn.textContent = isFav ? '❤️' : '🤍';
+          favBtn.style.cssText = isFav ? 'background:#3a1a1a;border-color:#6a3a2a;' : 'background:#2a2a2a;border-color:#5a5a5a;';
+          favBtn.onclick = function(hid2) {
+            return function() {
+              var w2 = Service.getWeapon(hid2);
+              if (w2) { w2.isFavorite = !w2.isFavorite; Service.saveData(); }
+              self.renderWeaponsList();
+            };
+          }(hid);
+          btnRow.appendChild(favBtn);
 
           var transferCandidates = [];
           for (var t = 0; t < d.ownedHeroes.length; t++) {
@@ -134,20 +152,22 @@ UI.renderWeaponsList = function() {
           }(hid);
           btnRow.appendChild(storageBtn);
 
-          var recycleGold = WEAPON_QUALITY[w.quality] ? WEAPON_QUALITY[w.quality].recycleGold : 0;
-          var recycleBtn = document.createElement('span');
-          recycleBtn.className = 'weapon-recycle-btn';
-          recycleBtn.textContent = '🗑️ 回收 +' + recycleGold + '💰';
-          recycleBtn.onclick = function(hid2, gold) {
-            return function() {
-              self.showConfirm('確定要回收這把武器嗎？可獲得 ' + gold + ' 金幣', function() {
-                var g = Service.recycleWeapon(hid2);
-                if (g > 0) self.showToast('回收成功，獲得 ' + g + ' 金幣！');
-                self.renderWeaponsList();
-              });
-            };
-          }(hid, recycleGold);
-          btnRow.appendChild(recycleBtn);
+          if (!w.isFavorite) {
+            var recycleGold = WEAPON_QUALITY[w.quality] ? WEAPON_QUALITY[w.quality].recycleGold : 0;
+            var recycleBtn = document.createElement('span');
+            recycleBtn.className = 'weapon-recycle-btn';
+            recycleBtn.textContent = '🗑️ 回收 +' + recycleGold + '💰';
+            recycleBtn.onclick = function(hid2, gold) {
+              return function() {
+                self.showConfirm('確定要回收這把武器嗎？可獲得 ' + gold + ' 金幣', function() {
+                  var g = Service.recycleWeapon(hid2);
+                  if (g > 0) self.showToast('回收成功，獲得 ' + g + ' 金幣！');
+                  self.renderWeaponsList();
+                });
+              };
+            }(hid, recycleGold);
+            btnRow.appendChild(recycleBtn);
+          }
 
           card.appendChild(btnRow);
         } else {
@@ -182,7 +202,7 @@ UI.renderWeaponsList = function() {
       function countByQuality(q) {
         var c = 0;
         for (var x = 0; x < d.weaponStorage.length; x++) {
-          if (d.weaponStorage[x].quality === q) c++;
+          if (d.weaponStorage[x].quality === q && !d.weaponStorage[x].isFavorite) c++;
         }
         return c;
       }
@@ -199,7 +219,7 @@ UI.renderWeaponsList = function() {
           self.showConfirm('確定回收全部 ' + cnt + ' 件' + label + '武器？可獲得 ' + (cnt * gold) + ' 金幣', function() {
             var total = 0, removed = 0;
             for (var k = d.weaponStorage.length - 1; k >= 0; k--) {
-              if (d.weaponStorage[k].quality === q) {
+              if (d.weaponStorage[k].quality === q && !d.weaponStorage[k].isFavorite) {
                 total += gold;
                 d.weaponStorage.splice(k, 1);
                 removed++;
@@ -314,9 +334,27 @@ UI.renderWeaponsList = function() {
           stats += '⚔+' + (w.atkPct || 0).toFixed(1) + '%';
           if (w.hpPct) stats += ' ❤+' + (w.hpPct || 0).toFixed(1) + '%';
           if (w.spd) stats += ' 🏃+' + (w.spd || 0).toFixed(2);
+          if (w.extraSkill) {
+            stats += '<br><span style="font-size:11px;color:#ffd700;">⭐' + w.extraSkill.name + ' (' + w.extraSkill.procRate + '%觸發, CD5s): ' + w.extraSkill.desc + '</span>';
+          }
           card.innerHTML = '<div class="wc-weapon">' + stats + '</div>';
           var btnRow = document.createElement('div');
           btnRow.className = 'weapon-btn-row';
+
+          /* 最愛切換按鈕 */
+          var favBtn2 = document.createElement('span');
+          favBtn2.className = 'weapon-recycle-btn';
+          var isFav2 = !!w.isFavorite;
+          favBtn2.textContent = isFav2 ? '❤️' : '🤍';
+          favBtn2.style.cssText = isFav2 ? 'background:#3a1a1a;border-color:#6a3a2a;' : 'background:#2a2a2a;border-color:#5a5a5a;';
+          favBtn2.onclick = function(i2) {
+            return function() {
+              Service.toggleFavoriteWeapon(i2);
+              self.renderWeaponsList();
+            };
+          }(idx);
+          btnRow.appendChild(favBtn2);
+
           var candidates = [];
           for (var k = 0; k < d.ownedHeroes.length; k++) {
             var hd2 = getHeroData(d.ownedHeroes[k]);
@@ -340,20 +378,22 @@ UI.renderWeaponsList = function() {
               }
             };
             btnRow.appendChild(equipBtn);
-          var recycleGold = WEAPON_QUALITY[w.quality] ? WEAPON_QUALITY[w.quality].recycleGold : 0;
-          var recycleBtn = document.createElement('span');
-          recycleBtn.className = 'weapon-recycle-btn';
-          recycleBtn.textContent = '🗑️ 回收 +' + recycleGold + '💰';
-          recycleBtn.onclick = function(i2, gold) {
-            return function() {
-              self.showConfirm('確定要回收這把武器嗎？可獲得 ' + gold + ' 金幣', function() {
-                var g = Service.recycleStoredWeapon(i2);
-                if (g > 0) self.showToast('回收成功，獲得 ' + g + ' 金幣！');
-                self.renderWeaponsList();
-              });
-            };
-          }(idx, recycleGold);
-          btnRow.appendChild(recycleBtn);
+          if (!w.isFavorite) {
+            var recycleGold = WEAPON_QUALITY[w.quality] ? WEAPON_QUALITY[w.quality].recycleGold : 0;
+            var recycleBtn = document.createElement('span');
+            recycleBtn.className = 'weapon-recycle-btn';
+            recycleBtn.textContent = '🗑️ 回收 +' + recycleGold + '💰';
+            recycleBtn.onclick = function(i2, gold) {
+              return function() {
+                self.showConfirm('確定要回收這把武器嗎？可獲得 ' + gold + ' 金幣', function() {
+                  var g = Service.recycleStoredWeapon(i2);
+                  if (g > 0) self.showToast('回收成功，獲得 ' + g + ' 金幣！');
+                  self.renderWeaponsList();
+                });
+              };
+            }(idx, recycleGold);
+            btnRow.appendChild(recycleBtn);
+          }
           card.appendChild(btnRow);
           container.appendChild(card);
         })(storageSorted[j]);
@@ -371,6 +411,9 @@ UI.renderWeaponsList = function() {
         if (card2) container.appendChild(card2);
       }
     }
+
+    /* 恢復捲軸位置 */
+    container.scrollTop = Math.min(prevScrollTop, container.scrollHeight - container.clientHeight);
   };
 
 UI.showWeaponEquipDialog = function(storageIndex, candidates) {

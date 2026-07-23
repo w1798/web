@@ -424,18 +424,41 @@ var UI = {
   },
 
   showResetConfirm: function() {
+    var self = this;
+    var currentName = Service.appData.playerName || '';
     var overlay = document.createElement('div');
     overlay.className = 'reset-overlay';
     overlay.innerHTML =
       '<div class="reset-dialog">' +
         '<div class="reset-title">⚠️ 確認重置</div>' +
         '<div class="reset-msg">所有遊戲資料將被清除，此操作無法復原！</div>' +
+        '<div style="margin:12px 0;text-align:center;">' +
+          '<div style="color:#ffd700;font-size:13px;margin-bottom:6px;">請輸入玩家名稱 <b>' + currentName + '</b> 以確認</div>' +
+          '<input id="reset-confirm-name" type="text" maxlength="16" placeholder="輸入名稱" style="width:160px;padding:6px 8px;border:1px solid #5a4a3a;border-radius:4px;background:#1a1a2e;color:#e0d0c0;text-align:center;font-size:14px;">' +
+        '</div>' +
         '<div class="reset-btns">' +
           '<button class="btn btn-cancel" onclick="this.parentElement.parentElement.parentElement.remove()">取消</button>' +
-          '<button class="btn btn-danger" onclick="Service.resetData(); this.parentElement.parentElement.parentElement.remove()">確認重置</button>' +
+          '<button class="btn btn-danger" id="reset-confirm-btn" onclick="UI._doResetConfirm()">確認重置</button>' +
         '</div>' +
       '</div>';
     document.body.appendChild(overlay);
+    var input = document.getElementById('reset-confirm-name');
+    if (input) input.focus();
+  },
+
+  _doResetConfirm: function() {
+    var currentName = Service.appData.playerName || '';
+    var typed = document.getElementById('reset-confirm-name');
+    if (!typed) return;
+    if (typed.value !== currentName) {
+      this.showToast('名稱不符，請重新輸入');
+      typed.focus();
+      typed.select();
+      return;
+    }
+    Service.resetData();
+    var overlay = typed.closest('.reset-overlay');
+    if (overlay) overlay.remove();
   },
 
   showResult: function(won, gold, weapon, extraWeapons, gainedExp, levelUpList) {
@@ -466,6 +489,7 @@ var UI = {
       html += '<br><span style="font-size:12px;">⚔+' + weapon.atkPct + '%';
       if (weapon.hpPct) html += ' ❤+' + weapon.hpPct + '%';
       if (weapon.spd) html += ' 🏃+' + (weapon.spd || 0).toFixed(2);
+      if (weapon.extraSkill) html += '<br><span style="font-size:11px;color:#ffd700;">⭐大技能: ' + weapon.extraSkill.name + ' (' + weapon.extraSkill.procRate + '%觸發) - ' + weapon.extraSkill.desc + '</span>';
       html += '　<span style="color:#8a7a20;">已存入倉庫</span></span></div>';
     }
     if (extraWeapons && extraWeapons.length) {
@@ -480,6 +504,7 @@ var UI = {
         html += '<br><span style="font-size:12px;">⚔+' + ew.atkPct + '%';
         if (ew.hpPct) html += ' ❤+' + ew.hpPct + '%';
         if (ew.spd) html += ' 🏃+' + (ew.spd || 0).toFixed(2);
+        if (ew.extraSkill) html += '<br><span style="font-size:11px;color:#ffd700;">⭐大技能: ' + ew.extraSkill.name + ' (' + ew.extraSkill.procRate + '%觸發) - ' + ew.extraSkill.desc + '</span>';
         html += '　<span style="color:#8a7a20;">已存入倉庫</span></span></div>';
       }
     }
@@ -818,32 +843,35 @@ var UI = {
       if (name.indexOf(badWords[b]) !== -1) { this.showToast('名稱包含不雅字詞'); return; }
     }
     var self = this;
-    LeaderboardAPI.checkNameExists(name, function(exists) {
-      if (exists) {
-        if (self._nameDialogMode === 'edit') {
+    LeaderboardAPI.checkNameExists(name, function(existsLB) {
+      CloudSaveAPI.checkExists(name).then(function(existsSave) {
+        var exists = existsLB || existsSave;
+        if (exists) {
+          if (self._nameDialogMode === 'edit') {
+            document.getElementById('name-dialog').style.display = 'none';
+            self.showToast('已有相同的名字（排行榜或雲端存檔）');
+            return;
+          }
+          var rand = 'user' + Math.floor(Math.random() * 90000 + 10000);
+          Service.appData.playerName = rand;
+          Service.saveData();
           document.getElementById('name-dialog').style.display = 'none';
-          self.showToast('已有相同的名字');
+          var lbNameEl = document.getElementById('setting-lb-name');
+          if (lbNameEl) lbNameEl.textContent = rand;
+          self.showToast('此名稱已有人使用，已為您取名：' + rand);
+          self.uploadCurrentScore();
+          self.renderLeaderboard('totalScore');
           return;
         }
-        var rand = 'user' + Math.floor(Math.random() * 90000 + 10000);
-        Service.appData.playerName = rand;
+        Service.appData.playerName = name;
         Service.saveData();
         document.getElementById('name-dialog').style.display = 'none';
         var lbNameEl = document.getElementById('setting-lb-name');
-        if (lbNameEl) lbNameEl.textContent = rand;
-        self.showToast('此名稱已有人使用，已為您取名：' + rand);
+        if (lbNameEl) lbNameEl.textContent = name;
+        self.showToast('名稱已設定：' + name);
         self.uploadCurrentScore();
         self.renderLeaderboard('totalScore');
-        return;
-      }
-      Service.appData.playerName = name;
-      Service.saveData();
-      document.getElementById('name-dialog').style.display = 'none';
-      var lbNameEl = document.getElementById('setting-lb-name');
-      if (lbNameEl) lbNameEl.textContent = name;
-      self.showToast('名稱已設定：' + name);
-      self.uploadCurrentScore();
-      self.renderLeaderboard('totalScore');
+      });
     });
   },
 
@@ -919,10 +947,13 @@ var UI = {
   cloudUpload: function() {
     if (DEV_MODE) { this.showToast('本機模式無法使用資料轉移'); return; }
     var password = document.getElementById('cloud-password').value;
-    if (!password) { this.showToast('請輸入密碼'); return; }
+    var confirmPw = document.getElementById('cloud-password-confirm').value;
+    if (!password) { this.showToast('請輸入復原密碼'); return; }
+    if (!confirmPw) { this.showToast('請輸入密碼確認'); return; }
+    if (password !== confirmPw) { this.showToast('復原密碼與密碼確認不一致'); return; }
     var name = Service.appData.playerName;
     if (!name) { this.showToast('請先設定排行榜名稱'); return; }
-    if (!confirm('確定要將本裝置資料轉移到雲端？(本裝置資料會清除！)')) return;
+    if (!confirm('確定要將本裝置資料 (' + name + ') 轉移到雲端？(本裝置資料會清除！)')) return;
     var self = this;
     var statusEl = document.getElementById('cloud-status');
     statusEl.textContent = '⏳ 加密上傳中...';

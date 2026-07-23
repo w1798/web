@@ -165,6 +165,50 @@ var WEAPON_TYPE_ICONS = {
   sword:'🗡️', spear:'🔱', bow:'🏹', horse:'🐴', mage:'🔮', monk:'🙏'
 };
 
+/* ===== 黃武大技能規格（品質4武器 extraSkill） ===== */
+var EXTRA_SKILL_SPECS = [
+  {
+    type: 'heal',
+    name: '仁德甘霖',
+    desc: '回復全體 maxHp {healPct}% 的生命',
+    healPctRange: [1.0, 15.0]
+  },
+  {
+    type: 'buff_self',
+    name: '絕世狂暴',
+    desc: '自身攻擊力 +{atkPct}%，持續 {duration} 秒',
+    atkPctRange: [5.0, 40.0],
+    durationRange: [4, 8]
+  },
+  {
+    type: 'buff_ally',
+    name: '號令群雄',
+    desc: '全體攻擊力 +{atkPct}%，持續 {duration} 秒',
+    atkPctRange: [3.0, 25.0],
+    durationRange: [3, 6]
+  },
+  {
+    type: 'buff_def_aoe',
+    name: '鐵壁金湯',
+    desc: '全體血防 +{bonusPct}%，持續 {duration} 秒',
+    bonusPctRange: [5.0, 40.0],
+    durationRange: [5, 10]
+  },
+  {
+    type: 'stun',
+    name: '震地咆哮',
+    desc: '暈眩周圍敵人 {stunDuration} 秒',
+    stunDurationRange: [0.1, 2.5]
+  },
+  {
+    type: 'slow_aoe',
+    name: '冰霜遲緩',
+    desc: '範圍減速 {slowPct}%，持續 {duration} 秒',
+    slowPctRange: [20.0, 50.0],
+    durationRange: [3, 6]
+  }
+];
+
 /* ===== 各關卡武器掉落率 ===== */
 var STAGE_WEAPON_DROP = {
   /* 黃巾之亂 */
@@ -475,14 +519,14 @@ var DEV_MODE = window.location.protocol === 'file:';
 var DIFFICULTY = {
   normal: { label: '正常', mult: 1 },
   hard:   { label: '困難', mult: 2.5 },
-  hell:   { label: '地獄', mult: 5 }
+  hell:   { label: '地獄', mult: 6 }
 };
 function getEnemyMult(stageId, difficulty) {
   var base = DIFFICULTY[difficulty] ? DIFFICULTY[difficulty].mult : 1;
   var idx = Math.max(0, getStageIndex(stageId));
   return {
     atk: base * (1 + idx * 0.06),
-    hp:  base * (1 + idx * 0.06)
+    hp:  base * (1 + idx * 0.08)
   };
 }
 

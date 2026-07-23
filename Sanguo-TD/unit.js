@@ -451,6 +451,104 @@ Unit.prototype.showSkillEffect = function(px, py, emoji, color, radius) {
 
 Unit.prototype.attack = function(target) {
   Combat.doUnitAttack(this, target);
+  // 黃武大技能觸發 (on-hit proc)
+  this._tryProcExtraSkill(target);
+};
+
+Unit.prototype._tryProcExtraSkill = function(target) {
+  if (this.isSoldier || !target || target.dead) return;
+  var w = Service.getWeapon(this.heroId);
+  if (!w || !w.extraSkill) return;
+  var es = w.extraSkill;
+  var now = (Game && Game.gameTime) || 0;
+  // 5 秒 ICD
+  if (now - (es.lastProcTime || 0) < 5) return;
+  // procRate 判定（0.1%~10%，除以100轉為機率）
+  if (Math.random() >= es.procRate / 100) return;
+  es.lastProcTime = now;
+  this._execExtraSkill(es, target);
+};
+
+Unit.prototype._execExtraSkill = function(es, target) {
+  var sv = es.skillValues;
+  var now = (Game && Game.gameTime) || 0;
+
+  if (es.type === 'heal') {
+    // 回復全體 maxHp 1.0%~15.0%
+    var healPct = sv.healPct || 5.0;
+    var healAmt = Math.round(this.maxHp * healPct / 100);
+    for (var i = 0; i < Game.units.length; i++) {
+      var u = Game.units[i];
+      if (u.dead || u.hp >= u.maxHp) continue;
+      u.hp = Math.min(u.hp + healAmt, u.maxHp);
+      UI.showDmgNum(u.getPixelPos().x, u.getPixelPos().y, '+' + healAmt + '❤', '#2ecc71');
+    }
+    this.showSkillEffect(this.getPixelPos().x, this.getPixelPos().y, '💚', 'rgba(46,204,113,0.9)');
+  }
+  else if (es.type === 'buff_self') {
+    // 自身攻擊 +5%~35%，持續 4~8 秒
+    var atkPct = sv.atkPct || 15.0;
+    var dur = sv.duration || 5;
+    this.buffs.push({ type:'atk', value: atkPct, endTime: now + dur });
+    this._recalcBuffs();
+    this.showSkillEffect(this.getPixelPos().x, this.getPixelPos().y, '⚡', 'rgba(255,215,0,0.9)');
+  }
+  else if (es.type === 'buff_ally') {
+    // 全體攻擊力 +3%~25%，持續 3~6 秒
+    var atkPct = sv.atkPct || 10.0;
+    var dur = sv.duration || 4;
+    for (var i = 0; i < Game.units.length; i++) {
+      var u = Game.units[i];
+      if (u.dead) continue;
+      u.buffs.push({ type:'atk', value: atkPct, endTime: now + dur });
+      u._recalcBuffs();
+    }
+    this.showSkillEffect(this.getPixelPos().x, this.getPixelPos().y, '⚔️', 'rgba(255,200,50,0.9)');
+  }
+  else if (es.type === 'buff_def_aoe') {
+    // 全體血防 +5%~40%，持續 5~10 秒
+    var pct = sv.bonusPct || 20.0;
+    var dur = sv.duration || 7;
+    for (var i = 0; i < Game.units.length; i++) {
+      var u = Game.units[i];
+      if (u.dead) continue;
+      u.buffs.push({ type:'def', defPct: pct, hpPct: pct, endTime: now + dur });
+      u._recalcBuffs();
+    }
+    this.showSkillEffect(this.getPixelPos().x, this.getPixelPos().y, '🛡️', 'rgba(100,200,255,0.9)');
+  }
+  else if (es.type === 'stun') {
+    // 範圍暈眩 0.1~2.5 秒
+    var stunDur = sv.stunDuration || 1.0;
+    var aoeRange = 2.0;
+    this.showSkillEffect(target.pixelX, target.pixelY, '💫', 'rgba(200,180,255,0.9)', aoeRange * 40);
+    for (var i = 0; i < Game.enemies.length; i++) {
+      var e = Game.enemies[i];
+      if (e.dead) continue;
+      var dx = e.col - this.col;
+      var dy = e.row - this.row;
+      if (Math.sqrt(dx*dx + dy*dy) <= aoeRange) {
+        e.stunnedTimer = Math.max(e.stunnedTimer || 0, stunDur);
+      }
+    }
+  }
+  else if (es.type === 'slow_aoe') {
+    // 範圍減速 20%~50%，持續 3~6 秒
+    var slowPct = sv.slowPct || 30.0;
+    var dur = sv.duration || 4;
+    var aoeRange = 2.5;
+    this.showSkillEffect(target.pixelX, target.pixelY, '❄️', 'rgba(150,200,255,0.9)', aoeRange * 40);
+    for (var i = 0; i < Game.enemies.length; i++) {
+      var e = Game.enemies[i];
+      if (e.dead) continue;
+      var dx = e.col - this.col;
+      var dy = e.row - this.row;
+      if (Math.sqrt(dx*dx + dy*dy) <= aoeRange) {
+        e.buffs = e.buffs || [];
+        e.buffs.push({ type:'slow', value: slowPct, endTime: now + dur });
+      }
+    }
+  }
 };
 
 Unit.prototype.takeDamage = function(dmg) {
