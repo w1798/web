@@ -73,9 +73,7 @@ var UI = {
         return;
       }
     if (now - (Service.appData.lastScoreUploadTime || 0) > 60000) {
-      this.uploadCurrentScore(true);
-      Service.appData.lastScoreUploadTime = now;
-      Service.saveData();
+      this.uploadCurrentScore(false);
     }
     }
   },
@@ -805,8 +803,6 @@ var UI = {
   var last = Service.appData.lastScoreUploadTime || 0;
   if (now - last > 60000) {
     self.uploadCurrentScore(true);
-    Service.appData.lastScoreUploadTime = now;
-    Service.saveData();
   }
     }
     this.renderLeaderboard('totalScore');
@@ -933,6 +929,9 @@ var UI = {
     LeaderboardAPI.submitScore(name, totalScore, heroes, extraData, function(ok) {
       if (ok) {
         if (!silent) self.showToast('戰力已上傳！');
+        // 上傳成功才更新時間戳，避免失敗時冷卻卡住
+        Service.appData.lastScoreUploadTime = Date.now();
+        Service.saveData();
         // 清除排行榜快取，確保下次進入時顯示最新資料
         localStorage.removeItem(LB_CACHE_KEY);
         // 如果目前在排行榜畫面，重新渲染

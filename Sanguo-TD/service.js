@@ -193,6 +193,7 @@ var Service = {
       for (var k in data.dailyShopPurchases) d.dailyShopPurchases[k] = data.dailyShopPurchases[k];
     }
     if (Array.isArray(data.claimedCompensation)) d.claimedCompensation = data.claimedCompensation;
+    if (typeof data.lastScoreUploadTime === 'number') d.lastScoreUploadTime = data.lastScoreUploadTime;
     return d;
   },
 
