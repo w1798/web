@@ -72,11 +72,11 @@ var UI = {
         setTimeout(function() { document.getElementById('name-input').focus(); }, 100);
         return;
       }
-      if (now - (Service.appData.lastScoreUploadTime || 0) > 60000) {
-        this.uploadCurrentScore(true);
-        Service.appData.lastScoreUploadTime = now;
-        Service.saveData();
-      }
+    if (now - (Service.appData.lastScoreUploadTime || 0) > 60000) {
+      this.uploadCurrentScore(true);
+      Service.appData.lastScoreUploadTime = now;
+      Service.saveData();
+    }
     }
   },
 
@@ -801,13 +801,13 @@ var UI = {
         setTimeout(function() { document.getElementById('name-input').focus(); }, 100);
         return;
       }
-      var now = Date.now();
-      var last = Service.appData.lastScoreUploadTime || 0;
-      if (now - last > 60000) {
-        self.uploadCurrentScore(true);
-        Service.appData.lastScoreUploadTime = now;
-        Service.saveData();
-      }
+  var now = Date.now();
+  var last = Service.appData.lastScoreUploadTime || 0;
+  if (now - last > 60000) {
+    self.uploadCurrentScore(true);
+    Service.appData.lastScoreUploadTime = now;
+    Service.saveData();
+  }
     }
     this.renderLeaderboard('totalScore');
   },
