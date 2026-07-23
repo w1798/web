@@ -81,6 +81,7 @@ var Service = {
       // ===== 範例（請取消註解並修改） =====
       // { id: 'fix_20260723_xiaoming', name: '小明', gold: 5000, diamond: 100, message: '修復補償：金幣 5000、鑽石 100' },
       // { id: 'fix_20260723_xiaohua', name: '小華', gold: 10000, message: '金幣補償 10000' },
+      { id: 'fix_20260723_1', name: '我從零開始', gold: 10000,  diamond: 300, message: '修復補償：金幣 10000、鑽石 300' },
     ];
     for (var i = 0; i < rewards.length; i++) {
       var r = rewards[i];
