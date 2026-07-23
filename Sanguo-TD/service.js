@@ -35,7 +35,8 @@ var DEFAULT_DATA = {
   dailyResetDate: '',
   dailyTaskProgress: {},
   dailyTaskClaimed: {},
-  dailyShopPurchases: {}
+  dailyShopPurchases: {},
+  claimedCompensation: []
 };
 
 var Service = {
@@ -63,16 +64,61 @@ var Service = {
   },
 
   checkReset: function() {
-    return;     // 重置玩家紀錄時，請註解此行
-    
-    if (this.appData && this.appData.playerName === "使用者名稱") {
-      if (this.appData.challengeHighWave === 172) {
-        this.appData.challengeHighWave = 63;
-      }
-      if (this.appData.bossRushKills === 9) {
-        this.appData.bossRushKills = 1;
+    if (!this.appData) return;
+
+    var name = this.appData.playerName;
+    var claimed = this.appData.claimedCompensation;
+
+    /* === 補償清單（始終執行，單次發放） ===
+     * 每筆格式：{ id, name, gold, diamond, message }
+     * - id:     唯一識別碼（同一筆只能領一次）
+     * - name:   目標玩家名稱
+     * - gold:   金幣數量（可省略）
+     * - diamond:鑽石數量（可省略）
+     * - message:領取後彈出的提示訊息（可省略）
+     */
+    var rewards = [
+      // ===== 範例（請取消註解並修改） =====
+      // { id: 'fix_20260723_xiaoming', name: '小明', gold: 5000, diamond: 100, message: '修復補償：金幣 5000、鑽石 100' },
+      // { id: 'fix_20260723_xiaohua', name: '小華', gold: 10000, message: '金幣補償 10000' },
+    ];
+    for (var i = 0; i < rewards.length; i++) {
+      var r = rewards[i];
+      if (r.name === name && claimed.indexOf(r.id) === -1) {
+        if (r.gold) this.appData.gold += r.gold;
+        if (r.diamond) this.appData.diamond += r.diamond;
+        claimed.push(r.id);
+        if (r.message) alert(r.message);
       }
     }
+
+    /* === 排行榜數值重置（始終執行，單次重置） ===
+     * 每筆格式：{ id, name, newWave, newKills }
+     * - id:       唯一識別碼（同一筆只能重置一次）
+     * - name:     目標玩家名稱
+     * - newWave:  重置後的波數（可省略）
+     * - newKills: 重置後的擊殺數（可省略）
+     */
+    var resets = [
+      // ===== 範例（請取消註解並修改） =====
+      // { id: 'reset_20260723_user', name: '使用者名稱', newWave: 63, newKills: 1 }, 
+    ];
+    for (var i = 0; i < resets.length; i++) {
+      var r = resets[i];
+      if (r.name === name && claimed.indexOf(r.id) === -1) {
+        if (r.newWave !== undefined) this.appData.challengeHighWave = r.newWave;
+        if (r.newKills !== undefined) this.appData.bossRushKills = r.newKills;
+        claimed.push(r.id);
+      }
+    }
+
+    /* 自動清理：只保留 rewards 與 resets 中仍然存在的 ID */
+    var validIds = [];
+    for (var i = 0; i < rewards.length; i++) validIds.push(rewards[i].id);
+    for (var i = 0; i < resets.length; i++) validIds.push(resets[i].id);
+    this.appData.claimedCompensation = claimed.filter(function(id) {
+      return validIds.indexOf(id) !== -1;
+    });
   },
 
   mergeDefaults: function(data) {
@@ -146,6 +192,7 @@ var Service = {
     if (data.dailyShopPurchases && typeof data.dailyShopPurchases === 'object') {
       for (var k in data.dailyShopPurchases) d.dailyShopPurchases[k] = data.dailyShopPurchases[k];
     }
+    if (Array.isArray(data.claimedCompensation)) d.claimedCompensation = data.claimedCompensation;
     return d;
   },
 
@@ -265,13 +312,20 @@ var Service = {
   redeemCode: function(code) {
     var cleanCode = code.trim().toUpperCase();
     if (!cleanCode) return { ok: false, msg: '請輸入禮包碼' };
-    if (this.appData.redeemedCodes.indexOf(cleanCode) !== -1) return { ok: false, msg: '此禮包碼已領取過' };
 
     var codes = {
       'VIP666': { gold: 200, diamond: 20, yellowWeapon: 1 },
       'VIP777': { gold: 200, diamond: 20, yellowWeapon: 1 },
       'VIP888': { gold: 200, diamond: 20, yellowWeapon: 1 }
     };
+
+    /* 自動清理：只保留 codes 中仍然存在的禮包碼 */
+    var currentCodes = Object.keys(codes);
+    this.appData.redeemedCodes = this.appData.redeemedCodes.filter(function(c) {
+      return currentCodes.indexOf(c) !== -1;
+    });
+
+    if (this.appData.redeemedCodes.indexOf(cleanCode) !== -1) return { ok: false, msg: '此禮包碼已領取過' };
 
     var reward = codes[cleanCode];
     if (!reward) return { ok: false, msg: '無效的禮包碼' };
