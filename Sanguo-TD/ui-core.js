@@ -913,7 +913,8 @@ var UI = {
           typeIcon: WEAPON_TYPE_ICONS[w.type] || '?',
           atkPct: w.atkPct,
           hpPct: w.hpPct,
-          spd: w.spd
+          spd: w.spd,
+          extraSkill: w.extraSkill || null
         };
       }
       heroes.push({
@@ -1101,6 +1102,9 @@ var UI = {
             html += ' <span style="color:#e74c3c;">攻+' + (w.atkPct || 0) + '%</span>';
             html += ' <span style="color:#27ae60;">血+' + (w.hpPct || 0) + '%</span>';
             html += ' <span style="color:#f39c12;">速+' + (w.spd ? w.spd.toFixed(2) : '0.00') + '</span>';
+            if (w.extraSkill) {
+              html += '<br><span style="font-size:11px;color:#ffd700;">⭐' + w.extraSkill.procRate + '% ' + w.extraSkill.desc + '</span>';
+            }
             html += '</div>';
           }
           html += '</div>';
