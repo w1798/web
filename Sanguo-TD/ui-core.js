@@ -802,7 +802,7 @@ var UI = {
   var now = Date.now();
   var last = Service.appData.lastScoreUploadTime || 0;
   if (now - last > 60000) {
-    self.uploadCurrentScore(true);
+    self.uploadCurrentScore(false);
   }
     }
     this.renderLeaderboard('totalScore');
