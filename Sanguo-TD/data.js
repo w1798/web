@@ -63,22 +63,42 @@ var HERO_DATA = [
   { id:'zuoci',      name:'左慈',   emoji:'🌀', type:'mage',      baseAtk:60, baseDef:6,  baseHp:150, rarity:5, faction:'群', desc:'遁世仙人，戲弄諸侯' },
 
   /* ══════ 特陣營·楚漢爭霸 — 無雙 (Rarity 5) — 數值為同階三國 1.2 倍 ══════ */
-  { id:'xiangyu',     name:'項羽',   emoji:'🗿', type:'horse',     baseAtk:88, baseDef:22, baseHp:362, rarity:5, faction:'特', desc:'西楚霸王，力拔山兮氣蓋世，千古無二' },
-  { id:'jibu',        name:'季布',   emoji:'💫', type:'spearman',  baseAtk:97, baseDef:16, baseHp:327, rarity:5, faction:'特', desc:'一諾千金，楚之名將，忠義無雙' },
-  { id:'yingbu',      name:'英布',   emoji:'🎖️', type:'spearman',  baseAtk:97, baseDef:16, baseHp:327, rarity:5, faction:'特', desc:'九江王，漢初三將之一，驍勇善戰' },
-  { id:'hanxin',      name:'韓信',   emoji:'🏆', type:'mage',      baseAtk:71, baseDef:8,  baseHp:183, rarity:5, faction:'特', desc:'兵仙神帥，多多益善，十面埋伏滅項羽' },
-  { id:'liubang',     name:'劉邦',   emoji:'🐉', type:'healer',    baseAtk:40, baseDef:14, baseHp:235, rarity:5, faction:'特', desc:'漢高祖，大風起兮雲飛揚，威加海內' },
-  { id:'yuji',        name:'虞姬',   emoji:'🌹', type:'archer',    baseAtk:104, baseDef:13, baseHp:185, rarity:5, faction:'特', desc:'霸王別姬，絕代佳人，至死不渝' },
-  { id:'fankuai',     name:'樊噲',   emoji:'🐗', type:'warrior',   baseAtk:138, baseDef:22, baseHp:264, rarity:5, faction:'特', desc:'鴻門闖宴，忠勇無雙，漢初猛將' },
+  { id:'xiangyu',     name:'項羽',   emoji:'🗿', type:'horse',     baseAtk:88, baseDef:22, baseHp:362, rarity:5, faction:'特', series:'chuhan', desc:'西楚霸王，力拔山兮氣蓋世，千古無二' },
+  { id:'jibu',        name:'季布',   emoji:'💫', type:'spearman',  baseAtk:97, baseDef:16, baseHp:327, rarity:5, faction:'特', series:'chuhan', desc:'一諾千金，楚之名將，忠義無雙' },
+  { id:'yingbu',      name:'英布',   emoji:'🎖️', type:'spearman',  baseAtk:97, baseDef:16, baseHp:327, rarity:5, faction:'特', series:'chuhan', desc:'九江王，漢初三將之一，驍勇善戰' },
+  { id:'hanxin',      name:'韓信',   emoji:'🏆', type:'mage',      baseAtk:71, baseDef:8,  baseHp:183, rarity:5, faction:'特', series:'chuhan', desc:'兵仙神帥，多多益善，十面埋伏滅項羽' },
+  { id:'liubang',     name:'劉邦',   emoji:'🐉', type:'healer',    baseAtk:40, baseDef:14, baseHp:235, rarity:5, faction:'特', series:'chuhan', desc:'漢高祖，大風起兮雲飛揚，威加海內' },
+  { id:'yuji',        name:'虞姬',   emoji:'🌹', type:'archer',    baseAtk:104, baseDef:13, baseHp:185, rarity:5, faction:'特', series:'chuhan', desc:'霸王別姬，絕代佳人，至死不渝' },
+  { id:'fankuai',     name:'樊噲',   emoji:'🐗', type:'warrior',   baseAtk:138, baseDef:22, baseHp:264, rarity:5, faction:'特', series:'chuhan', desc:'鴻門闖宴，忠勇無雙，漢初猛將' },
 
   /* ══════ 特陣營·楚漢爭霸 — 傳說 (Rarity 4) — 數值為同階三國 1.2 倍 ══════ */
-  { id:'pengyue',     name:'彭越',   emoji:'🐆', type:'horse',     baseAtk:56, baseDef:14, baseHp:224, rarity:4, faction:'特', desc:'漢初名將，游擊戰始祖，與韓信英布並稱漢初三將' },
-  { id:'zhoubo',      name:'周勃',   emoji:'⚜️', type:'spearman',  baseAtk:58, baseDef:11, baseHp:220, rarity:4, faction:'特', desc:'漢初名將，誅呂安劉，平定天下' },
-  { id:'fanzeng',     name:'范增',   emoji:'🧓', type:'mage',      baseAtk:43, baseDef:6,  baseHp:131, rarity:4, faction:'特', desc:'項羽亞父，鴻門宴設局，老謀深算' },
-  { id:'xiaohe',      name:'蕭何',   emoji:'📦', type:'healer',    baseAtk:26, baseDef:10, baseHp:179, rarity:4, faction:'特', desc:'漢初三傑，鎮國家撫百姓，功人第一' },
-  { id:'zhangliang',  name:'張良',   emoji:'🌟', type:'healer',    baseAtk:26, baseDef:10, baseHp:179, rarity:4, faction:'特', desc:'謀聖，運籌帷幄之中，決勝千里之外' },
-  { id:'lvhou',       name:'呂后',   emoji:'👸', type:'archer',    baseAtk:71, baseDef:8,  baseHp:130, rarity:4, faction:'特', desc:'漢高祖之后，臨朝稱制，剛毅果決' },
-  { id:'xiangzhuang', name:'項莊',   emoji:'💃', type:'warrior',   baseAtk:86, baseDef:13, baseHp:185, rarity:4, faction:'特', desc:'項羽堂弟，鴻門宴舞劍意在沛公' },
+  { id:'pengyue',     name:'彭越',   emoji:'🐆', type:'horse',     baseAtk:56, baseDef:14, baseHp:224, rarity:4, faction:'特', series:'chuhan', desc:'漢初名將，游擊戰始祖，與韓信英布並稱漢初三將' },
+  { id:'zhoubo',      name:'周勃',   emoji:'⚜️', type:'spearman',  baseAtk:58, baseDef:11, baseHp:220, rarity:4, faction:'特', series:'chuhan', desc:'漢初名將，誅呂安劉，平定天下' },
+  { id:'fanzeng',     name:'范增',   emoji:'🧓', type:'mage',      baseAtk:43, baseDef:6,  baseHp:131, rarity:4, faction:'特', series:'chuhan', desc:'項羽亞父，鴻門宴設局，老謀深算' },
+  { id:'xiaohe',      name:'蕭何',   emoji:'📦', type:'healer',    baseAtk:26, baseDef:10, baseHp:179, rarity:4, faction:'特', series:'chuhan', desc:'漢初三傑，鎮國家撫百姓，功人第一' },
+  { id:'zhangliang',  name:'張良',   emoji:'🌟', type:'healer',    baseAtk:26, baseDef:10, baseHp:179, rarity:4, faction:'特', series:'chuhan', desc:'謀聖，運籌帷幄之中，決勝千里之外' },
+  { id:'lvhou',       name:'呂后',   emoji:'👸', type:'archer',    baseAtk:71, baseDef:8,  baseHp:130, rarity:4, faction:'特', series:'chuhan', desc:'漢高祖之后，臨朝稱制，剛毅果決' },
+  { id:'xiangzhuang', name:'項莊',   emoji:'💃', type:'warrior',   baseAtk:86, baseDef:13, baseHp:185, rarity:4, faction:'特', series:'chuhan', desc:'項羽堂弟，鴻門宴舞劍意在沛公' },
+
+  /* ══════ 特陣營·秦始皇 — 無雙 (Rarity 5) — 數值為同階三國 1.2 倍 ══════ */
+  /* 無雙無槍重複：spearman 最多 1 人（蒙恬），其餘避開 spear */
+  { id:'qinshihuang', name:'秦始皇', emoji:'👑', type:'horse',     baseAtk:88, baseDef:22,  baseHp:362, rarity:5, faction:'特', series:'qin', desc:'千古一帝，掃六合統天下，書同文車同軌' },
+  { id:'mengtian',    name:'蒙恬',   emoji:'🛡️', type:'horse',     baseAtk:98, baseDef:17, baseHp:330, rarity:5, faction:'特', series:'qin', desc:'大秦名將，北逐匈奴，修築長城' },
+  { id:'wangjian',    name:'王翦',   emoji:'⚔️', type:'warrior',   baseAtk:138, baseDef:22, baseHp:264, rarity:5, faction:'特', series:'qin', desc:'秦國老將，滅楚平趙，功蓋天下' },
+  { id:'lisi',        name:'李斯',   emoji:'📜', type:'mage',      baseAtk:70, baseDef:8,  baseHp:186, rarity:5, faction:'特', series:'qin', desc:'秦國丞相，廢分封立郡縣，統一文字' },
+  { id:'jingke',      name:'荊軻',   emoji:'🗡️', type:'spearman',  baseAtk:97, baseDef:16, baseHp:327, rarity:5, faction:'特', series:'qin', desc:'燕國刺客，圖窮匕見，刺秦王於咸陽' },
+  { id:'fusu',        name:'扶蘇',   emoji:'🌿', type:'healer',    baseAtk:40, baseDef:14, baseHp:235, rarity:5, faction:'特', series:'qin', desc:'秦始皇長子，仁德寬厚，遭趙高陷害' },
+  { id:'gaojianli',   name:'高漸離', emoji:'🎵', type:'archer',    baseAtk:104, baseDef:13, baseHp:185, rarity:5, faction:'特', series:'qin', desc:'燕國樂師，擊筑刺秦王，慷慨赴死' },
+
+  /* ══════ 特陣營·秦始皇 — 傳說 (Rarity 4) — 數值為同階三國 1.2 倍 ══════ */
+  /* 傳說無僧重複：healer 最多 1 人（徐福），其餘避開 monk */
+  { id:'zhaogao',     name:'趙高',   emoji:'🦊', type:'mage',      baseAtk:43, baseDef:6,  baseHp:131, rarity:4, faction:'特', series:'qin', desc:'秦朝宦官，指鹿為馬，矯詔殺扶蘇' },
+  { id:'xufu',        name:'徐福',   emoji:'⛵', type:'healer',    baseAtk:26, baseDef:10, baseHp:179, rarity:4, faction:'特', series:'qin', desc:'秦朝方士，東渡蓬萊求仙藥，一去不返' },
+  { id:'zhanghan',    name:'章邯',   emoji:'🐎', type:'warrior',   baseAtk:86, baseDef:13, baseHp:185, rarity:4, faction:'特', series:'qin', desc:'秦末名將，驪山刑徒成軍，屢破起義軍' },
+  { id:'zhaotuo',     name:'趙佗',   emoji:'🌏', type:'spearman',  baseAtk:58, baseDef:11, baseHp:220, rarity:4, faction:'特', series:'qin', desc:'南越武王，秦末割據嶺南，開拓南疆' },
+  { id:'mengyi',      name:'蒙毅',   emoji:'⚖️', type:'horse',     baseAtk:56, baseDef:14, baseHp:224, rarity:4, faction:'特', series:'qin', desc:'蒙恬之弟，秦國上卿，執法嚴明' },
+  { id:'lixin',       name:'李信',   emoji:'🏇', type:'warrior',   baseAtk:86, baseDef:13, baseHp:185, rarity:4, faction:'特', series:'qin', desc:'秦國年輕將領，伐楚失利後隨王翦滅楚' },
+  { id:'ganluo',      name:'甘羅',   emoji:'🧒', type:'archer',    baseAtk:71, baseDef:8,  baseHp:130, rarity:4, faction:'特', series:'qin', desc:'秦國神童，十二歲拜相，說趙得城' },
 ];
 
 var RARITY_NAMES = ['', '良', '優', '名將', '傳說', '無雙'];
@@ -132,9 +152,9 @@ var BOND_DATA = [
   { type:'bond', id:'shenting_dantiao', name:'神亭單挑', desc:'太史慈孫策',   members:['taishi_ci','sunce'],                         atkPct:10 },
   { type:'bond', id:'taiping_daoshu', name:'太平道術', desc:'張角左慈',     members:['zhangjiao','zuoci'],                         atkPct:10 },
 
-  /* ══════ 楚漢羈絆（特陣營內部自組，不跟三國混） ══════ */
-  /* type:'factionBond' → 依 factionBond 欄位判定，特陣營上陣 ≥ minFaction 人時觸發，僅對該陣營英雄生效 */
-  { type:'factionBond', id:'chuhan_bond', name:'楚漢羈絆', desc:'上陣2個特陣營英雄觸發', members:[], atkPct:15, factionBond:'特', minFaction:2 },
+/* ══════ 時空裂隙羈絆（特陣營內部自組，不跟三國混） ══════ */
+/* type:'factionBond' → 依 factionBond 欄位判定，特陣營上陣 ≥ minFaction 人時觸發，僅對該陣營英雄生效 */
+{ type:'factionBond', id:'rift_bond', name:'時空裂隙羈絆', desc:'上陣2個特陣營英雄觸發', members:[], atkPct:15, factionBond:'特', minFaction:2 },
   { type:'bond', id:'bawang_bieji', name:'霸王別姬', desc:'項羽虞姬',   members:['xiangyu','yuji'],                              atkPct:15, hpPct:10 },
   { type:'bond', id:'hanchu_sanjie', name:'漢初三傑', desc:'劉邦韓信張良(任2人)', members:['liubang','hanxin','zhangliang'], minMembers:2, atkPct:20, hpPct:10 },
   { type:'bond', id:'hongmen_yan', name:'鴻門宴', desc:'項羽范增項莊(任2人)', members:['xiangyu','fanzeng','xiangzhuang'], minMembers:2, atkPct:15, hpPct:10 },
@@ -148,6 +168,15 @@ var BOND_DATA = [
   { type:'bond', id:'chuhan_legend', name:'楚漢傳說', desc:'范增蕭何呂后(任2人)', members:['fanzeng','xiaohe','lvhou'], minMembers:2, atkPct:15, hpPct:10 },
   { type:'bond', id:'chuhan_shuangying', name:'楚漢雙英', desc:'季布英布', members:['jibu','yingbu'], atkPct:15, hpPct:10 },
   { type:'bond', id:'hanchu_mingjiang', name:'漢初名將', desc:'彭越周勃', members:['pengyue','zhoubo'], atkPct:10, hpPct:10 },
+
+/* ══════ 秦始皇系列羈絆 ══════ */
+  { type:'bond', id:'qinhuang_baye', name:'秦皇霸業', desc:'秦始皇李斯趙高(任2人)', members:['qinshihuang','lisi','zhaogao'], minMembers:2, atkPct:20, hpPct:10 },
+  { type:'bond', id:'mengshi_xiongdi', name:'蒙氏兄弟', desc:'蒙恬蒙毅', members:['mengtian','mengyi'], atkPct:10, hpPct:10 },
+  { type:'bond', id:'ciqin_shuangjie', name:'刺秦雙傑', desc:'荊軻高漸離', members:['jingke','gaojianli'], atkPct:15, hpPct:10 },
+  { type:'bond', id:'qinjiang_shuangbi', name:'秦將雙壁', desc:'王翦李信', members:['wangjian','lixin'], atkPct:10 },
+  { type:'bond', id:'nanjiang_kaituo', name:'南疆開拓', desc:'趙佗章邯', members:['zhaotuo','zhanghan'], atkPct:10 },
+  { type:'bond', id:'changsheng_qiuxian', name:'長生求仙', desc:'徐福秦始皇', members:['xufu','qinshihuang'], atkPct:10 },
+  { type:'bond', id:'rende_taizi', name:'仁德太子', desc:'扶蘇蒙毅', members:['fusu','mengyi'], atkPct:10 },
 
 ];
 
@@ -514,6 +543,22 @@ function getBossRushDescription() {
 
 /* ===== 開發模式（僅本機檔案開啟） ===== */
 var DEV_MODE = window.location.protocol === 'file:';
+
+/* ===== 時空裂隙系列切換 ===== */
+var ACTIVE_SERIES = (function() {
+  /* 優先級：localStorage dev_series_override > 月份判斷 */
+  if (DEV_MODE) {
+    var lsOverride = localStorage.getItem('dev_series_override');
+    if (lsOverride === 'qin' || lsOverride === 'chuhan') return lsOverride;
+  }
+  var month = new Date().getMonth() + 1; /* 1~12 */
+  return (month >= 1 && month <= 6) ? 'qin' : 'chuhan';
+})();
+
+var SERIES_INFO = {
+  qin: { name: '秦始皇', fullName: '時空裂隙·秦始皇', period: '1/1~6/30' },
+  chuhan: { name: '楚漢爭霸', fullName: '時空裂隙·楚漢爭霸', period: '7/1~12/31' }
+};
 
 /* ===== 難度系統 ===== */
 var DIFFICULTY = {
@@ -1034,7 +1079,11 @@ var HERO_SKILL_NAMES = {
   fanzeng:'鴻門設局', xiaohe:'鎮國安民', lvhou:'臨朝稱制', pengyue:'游擊奇襲',
   zhoubo:'誅呂安劉', zhangliang:'運籌帷幄', xiangzhuang:'鴻門舞劍',
   xiangyu:'霸王扛鼎', jibu:'一諾千金', yingbu:'九江怒斬', liubang:'大風起兮',
-  hanxin:'十面埋伏', yuji:'霸王別姬', fankuai:'鴻門闖宴'
+  hanxin:'十面埋伏', yuji:'霸王別姬', fankuai:'鴻門闖宴',
+  qinshihuang:'掃六合', mengtian:'北逐匈奴', wangjian:'滅楚平趙', lisi:'書同文',
+  jingke:'圖窮匕見', fusu:'仁德寬厚', gaojianli:'擊筑刺秦',
+  zhaogao:'指鹿為馬', xufu:'東渡蓬萊', zhanghan:'驪山刑徒', zhaotuo:'南疆開拓',
+  mengyi:'執法嚴明', lixin:'伐楚先鋒', ganluo:'神童拜相'
 };
 
 function makeScaledSkill(name, type, tier) {
@@ -1096,7 +1145,15 @@ var HERO_SKILL_TYPES = {
   /* R5 無雙 — 特陣營 (7) */
   xiangyu:'buff_self', jibu:'buff_def_aoe', yingbu:'stun',
   hanxin:'buff_ally', liubang:'slow_aoe', yuji:'heal',
-  fankuai:'buff_self'
+  fankuai:'buff_self',
+  /* R5 無雙 — 特陣營·秦始皇 (7) — 無槍重複（spearman 僅蒙恬） */
+  qinshihuang:'buff_self', mengtian:'stun', wangjian:'buff_def_aoe',
+  lisi:'slow_aoe', jingke:'buff_ally', fusu:'heal',
+  gaojianli:'buff_self',
+  /* R4 傳說 — 特陣營·秦始皇 (7) — 無僧重複（healer 僅徐福） */
+  zhaogao:'slow_aoe', xufu:'heal', zhanghan:'stun',
+  zhaotuo:'buff_ally', mengyi:'buff_def_aoe', lixin:'buff_self',
+  ganluo:'buff_ally'
 };
 
 // 將技能欄位動態附加到 HERO_DATA（按 rarity 自動取對應 tier 倍率）

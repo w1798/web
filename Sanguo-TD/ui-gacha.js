@@ -291,6 +291,19 @@ UI.renderEventGacha = function() {
     var diamondEl = document.getElementById('event-gacha-diamond');
     if (diamondEl) diamondEl.textContent = d.diamond;
 
+    /* 動態更新系列名稱 */
+    var seriesEl = document.getElementById('event-gacha-series');
+    if (seriesEl) {
+      var si = SERIES_INFO[ACTIVE_SERIES] || SERIES_INFO['chuhan'];
+      seriesEl.textContent = si.name;
+    }
+    /* 動態更新頁面標題 */
+    var headerEl = document.querySelector('#screen-event-gacha .screen-header h2');
+    if (headerEl) {
+      var si2 = SERIES_INFO[ACTIVE_SERIES] || SERIES_INFO['chuhan'];
+      headerEl.textContent = '⏳ ' + si2.fullName + ' (' + si2.period + ')';
+    }
+
     var btn = document.getElementById('btn-event-gacha');
     if (btn) {
       btn.disabled = false;
@@ -307,7 +320,10 @@ UI.renderEventGacha = function() {
     container.innerHTML = '';
     container.closest('.gacha-content').scrollTop = 0;
 
-    var specialHeroes = HERO_DATA.filter(function(h) { return h.faction === '特'; });
+    /* 只顯示當前活躍系列的特陣營角色 */
+    var specialHeroes = HERO_DATA.filter(function(h) {
+      return h.faction === '特' && h.series === ACTIVE_SERIES;
+    });
     var rates = [
       { rarity: 5, label: '無雙', pct: '10%', color: '#ffd700' },
       { rarity: 4, label: '傳說', pct: '90%', color: '#9b59b6' }

@@ -72,7 +72,7 @@ var Service = {
     /* === 補償清單（始終執行，單次發放） ===
      * 每筆格式：{ id, name, gold, diamond, message }
      * - id:     唯一識別碼（同一筆只能領一次）
-     * - name:   目標玩家名稱
+     * - name:   目標玩家名稱(可省略，對所有玩家)
      * - gold:   金幣數量（可省略）
      * - diamond:鑽石數量（可省略）
      * - message:領取後彈出的提示訊息（可省略）
@@ -81,10 +81,13 @@ var Service = {
       // ===== 範例（請取消註解並修改） =====
       // { id: 'fix_20260723_xiaoming', name: '小明', gold: 5000, diamond: 100, message: '修復補償：金幣 5000、鑽石 100' },
       // { id: 'fix_20260723_xiaohua', name: '小華', gold: 10000, message: '金幣補償 10000' },
+
     ];
     for (var i = 0; i < rewards.length; i++) {
       var r = rewards[i];
-      if (r.name === name && claimed.indexOf(r.id) === -1) {
+      var isAll = !r.name;
+      var match = isAll || r.name === name;
+      if (match && claimed.indexOf(r.id) === -1) {
         if (r.gold) this.appData.gold += r.gold;
         if (r.diamond) this.appData.diamond += r.diamond;
         claimed.push(r.id);
@@ -95,7 +98,7 @@ var Service = {
     /* === 排行榜數值重置（始終執行，單次重置） ===
      * 每筆格式：{ id, name, newWave, newKills }
      * - id:       唯一識別碼（同一筆只能重置一次）
-     * - name:     目標玩家名稱
+     * - name:     目標玩家名稱（省略表示對所有玩家）
      * - newWave:  重置後的波數（可省略）
      * - newKills: 重置後的擊殺數（可省略）
      */
@@ -105,7 +108,9 @@ var Service = {
     ];
     for (var i = 0; i < resets.length; i++) {
       var r = resets[i];
-      if (r.name === name && claimed.indexOf(r.id) === -1) {
+      var isAll = !r.name;
+      var match = isAll || r.name === name;
+      if (match && claimed.indexOf(r.id) === -1) {
         if (r.newWave !== undefined) this.appData.challengeHighWave = r.newWave;
         if (r.newKills !== undefined) this.appData.bossRushKills = r.newKills;
         claimed.push(r.id);
@@ -744,10 +749,12 @@ completeStage: function(stageId, difficulty) {
       rarity = 4;
     }
     var candidates = HERO_DATA.filter(function(h) {
-      return h.rarity === rarity && h.faction === '特';
+      return h.rarity === rarity && h.faction === '特' && h.series === ACTIVE_SERIES;
     });
     if (candidates.length === 0) {
-      candidates = HERO_DATA.filter(function(h) { return h.faction === '特'; });
+      candidates = HERO_DATA.filter(function(h) {
+        return h.faction === '特' && h.series === ACTIVE_SERIES;
+      });
     }
     var picked = candidates[Math.floor(Math.random() * candidates.length)];
     var isNew = !this.hasHero(picked.id);

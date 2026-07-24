@@ -49,7 +49,7 @@ var Combat = {
       var bond = BOND_DATA[b];
       if (bond.type !== 'bond' && bond.type !== 'factionBond') continue;
       var allOk = true;
-      /* factionBond：按陣營觸發（如楚漢羈絆，上陣 2 個「特」英雄） */
+      /* factionBond：按陣營觸發（如時空裂隙羈絆，上陣 2 個「特」英雄） */
       if (bond.factionBond) {
         var fc = factionCount[bond.factionBond] || 0;
         allOk = fc >= (bond.minFaction || 2);
