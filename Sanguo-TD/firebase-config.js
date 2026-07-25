@@ -4,8 +4,8 @@ var firebaseConfig = {
   authDomain: "sanguo-td.firebaseapp.com",
   projectId: "sanguo-td",
   storageBucket: "sanguo-td.appspot.com",
-  messagingSenderId: "000000000000",
-  appId: "1:000000000000:web:0000000000000000"
+  messagingSenderId: "G-37W198SSSD",
+  appId: "1:1055126172943:web:dc981c09444a4277803a7a"
 };
 
 var LeaderboardAPI = {
