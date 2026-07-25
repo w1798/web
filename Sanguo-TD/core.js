@@ -775,9 +775,6 @@ var Game = {
     var gainedExp = Math.round(baseExp * (stageIdx + 1) * diffMult);
     var survivors = this.units.filter(function(u) { return !u.isSoldier && !u.dead; });
     var levelUpList = [];
-    
-    if (!Service.appData.heroExp) Service.appData.heroExp = {};
-    if (!Service.appData.heroLevel) Service.appData.heroLevel = {};
 
     survivors.forEach(function(u) {
       var heroId = u.heroId;
@@ -799,8 +796,8 @@ var Game = {
         }
       }
       
-      Service.appData.heroExp[heroId] = curExp;
-      Service.appData.heroLevel[heroId] = curLevel;
+      Service.setHeroExp(heroId, curExp);
+      Service.setHeroLevel(heroId, curLevel);
       if (leveled) {
         levelUpList.push(u.emoji + u.name + ' 升至 Lv.' + curLevel);
       }
@@ -811,35 +808,35 @@ var Game = {
     var weapon = firstClear ? Service.generateWeapon(s.id, true, this.difficulty) : Service.generateWeapon(s.id, false, this.difficulty);
     var extraWeapons = [];
     if (weapon) {
-      Service.appData.weaponStorage.push(weapon);
+      Service.addBattleWeapon(weapon);
     }
     if (firstClear) {
       var whiteWpn = Service.generateWeaponByQuality(1);
-      Service.appData.weaponStorage.push(whiteWpn);
+      Service.addBattleWeapon(whiteWpn);
       extraWeapons.push(whiteWpn);
       if (stageIdx % 3 === 2) {
         if (this.difficulty === 'hard') {
           var blueWpn = Service.generateWeaponByQuality(2);
-          Service.appData.weaponStorage.push(blueWpn);
+          Service.addBattleWeapon(blueWpn);
           extraWeapons.push(blueWpn);
         } else if (this.difficulty === 'hell') {
           var purpWpn = Service.generateWeaponByQuality(3);
-          Service.appData.weaponStorage.push(purpWpn);
+          Service.addBattleWeapon(purpWpn);
           extraWeapons.push(purpWpn);
         }
       }
       if (s.id === 'hell') {
         if (this.difficulty === 'normal') {
           var hellBlue = Service.generateWeaponByQuality(2);
-          Service.appData.weaponStorage.push(hellBlue);
+          Service.addBattleWeapon(hellBlue);
           extraWeapons.push(hellBlue);
         } else if (this.difficulty === 'hard') {
           var hellPurp = Service.generateWeaponByQuality(3);
-          Service.appData.weaponStorage.push(hellPurp);
+          Service.addBattleWeapon(hellPurp);
           extraWeapons.push(hellPurp);
         } else {
           var hellGold = Service.generateWeaponByQuality(4);
-          Service.appData.weaponStorage.push(hellGold);
+          Service.addBattleWeapon(hellGold);
           extraWeapons.push(hellGold);
         }
       }
