@@ -15,3 +15,4 @@ babel.min.js         https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.2
 firebase-app-compat.js  https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js    Sanguo-TD
 firebase-auth-compat.js https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js   Sanguo-TD
 firebase-firestore-compat.js    https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js  Sanguo-TD
+firebase-app-check-compat.js    https://www.gstatic.com/firebasejs/9.23.0/firebase-app-check-compat.js  Sanguo-TD

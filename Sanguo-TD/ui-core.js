@@ -374,11 +374,7 @@ this.uploadCurrentScore(true);
     Game.state = 'settings';
     var soundToggle = document.getElementById('setting-sound');
     if (soundToggle) soundToggle.checked = Sound.enabled;
-    var devItem = document.getElementById('setting-dev-item');
-    if (devItem) devItem.style.display = DEV_MODE ? '' : 'none';
-    var devToggle = document.getElementById('setting-dev');
-    if (devToggle) devToggle.checked = DEV_MODE;
-    /* 時空裂隙系列切換（僅開發模式顯示） */
+    /* 時空裂隙系列切換（僅 DEV_MODE / file:/// 時顯示） */
     var seriesTitle = document.getElementById('setting-series-title');
     var seriesItem = document.getElementById('setting-series-item');
     var seriesLabel = document.getElementById('setting-series-label');
@@ -436,7 +432,7 @@ this.uploadCurrentScore(true);
     this.renderCampaignList();
   },
 
-  /* ===== 時空裂隙系列切換（開發模式） =====
+  /* ===== 時空裂隙系列切換（僅 file:/// 開發模式） =====
    * 循環：自動(依月份) -> 秦始皇 -> 楚漢爭霸 -> 自動
    * 存至 localStorage['dev_series_override']，即時更新 ACTIVE_SERIES
    */
@@ -1290,39 +1286,4 @@ this.uploadCurrentScore(true);
     }
   },
 
-  toggleSeriesOverride: function() {
-    var current = localStorage.getItem('dev_series_override');
-    var next;
-    if (!current) next = 'qin';
-    else if (current === 'qin') next = 'chuhan';
-    else next = '';
-    if (next) {
-      localStorage.setItem('dev_series_override', next);
-    } else {
-      localStorage.removeItem('dev_series_override');
-    }
-    /* 重新計算 ACTIVE_SERIES */
-    ACTIVE_SERIES = (function() {
-      if (DEV_MODE) {
-        var lsOverride = localStorage.getItem('dev_series_override');
-        if (lsOverride === 'qin' || lsOverride === 'chuhan') return lsOverride;
-      }
-      var month = new Date().getMonth() + 1;
-      return (month >= 1 && month <= 6) ? 'qin' : 'chuhan';
-    })();
-    /* 更新設定介面標籤 */
-    var seriesLabel = document.getElementById('setting-series-label');
-    if (seriesLabel) {
-      var lsOverride = localStorage.getItem('dev_series_override');
-      if (lsOverride === 'qin') seriesLabel.textContent = '秦始皇';
-      else if (lsOverride === 'chuhan') seriesLabel.textContent = '楚漢爭霸';
-      else seriesLabel.textContent = '自動 (依月份)';
-    }
-    /* 如果抽卡畫面開啟，重新渲染 */
-    var gachaScreen = document.getElementById('screen-event-gacha');
-    if (gachaScreen && gachaScreen.style.display !== 'none') {
-      this.renderEventGacha();
-    }
-    this.showToast('系列已切換為：' + (SERIES_INFO[ACTIVE_SERIES] ? SERIES_INFO[ACTIVE_SERIES].name : '自動'));
-  }
-};
+  };

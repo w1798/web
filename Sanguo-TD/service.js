@@ -448,39 +448,81 @@ var Service = {
     return true;
   },
 
-  addFrag: function(heroId, count) {
-    var f = this.appData.heroFrags;
-    f[heroId] = (f[heroId] || 0) + count;
-    var addedCount = count;
-    var hd = getHeroData(heroId);
-    if (!hd) return { upgraded: false, msg: '', tier: this.getHeroTier(heroId), star: this.getHeroStar(heroId), fragCount: addedCount };
-    var origin = hd.rarity;
-    var tier = this.getHeroTier(heroId);
-    var star = this.getHeroStar(heroId);
-    var upgraded = false;
-    var upgradeMsg = '';
+addFrag: function(heroId, count) {
+  var f = this.appData.heroFrags;
+  f[heroId] = (f[heroId] || 0) + count;
+  var addedCount = count;
+  var hd = getHeroData(heroId);
+  if (!hd) return { upgraded: false, msg: '', tier: this.getHeroTier(heroId), star: this.getHeroStar(heroId), fragCount: addedCount };
+  var origin = hd.rarity;
+  var tier = this.getHeroTier(heroId);
+  var star = this.getHeroStar(heroId);
+  var upgraded = false;
+  var upgradeMsg = '';
 
-    while (true) {
-      var next = getNextPromotion(origin, tier, star);
-      if (!next) {
-        upgradeMsg = '已達最高軍階！';
-        break;
+  while (true) {
+    var next = getNextPromotion(origin, tier, star);
+    if (!next) break;
+    if (f[heroId] >= next.cost) {
+      f[heroId] -= next.cost;
+      tier = next.toTier;
+      star = next.toStar;
+      this.appData.heroTier[heroId] = tier;
+      this.appData.heroStar[heroId] = star;
+      upgradeMsg = TIER_NAMES[tier] + (tier >= 4 && star > 0 ? '+' + star + '⭐' : '') + ' 晉升！';
+      upgraded = true;
+    } else {
+      break;
+    }
+  }
+
+  /* ===== 滿星碎片轉換 ===== */
+  var convertMsg = '';
+  var remainingFrags = f[heroId] || 0;
+  if (remainingFrags > 0 && !getNextPromotion(origin, tier, star)) {
+    if (hd.faction === '特') {
+      /* 特陣營（系列）：傳說(R4)→藍武器x3/碎片，無雙(R5)→黃武器x1/碎片 */
+      if (origin === 4) {
+        var blueCount = remainingFrags * 3;
+        for (var i = 0; i < blueCount; i++) {
+          this.appData.weaponStorage.push(this.generateWeaponByQuality(2));
+        }
+        convertMsg = '轉換為藍武器 x' + blueCount;
+        f[heroId] = 0;
+      } else if (origin === 5) {
+        for (var i = 0; i < remainingFrags; i++) {
+          this.appData.weaponStorage.push(this.generateWeaponByQuality(4));
+        }
+        convertMsg = '轉換為黃武器 x' + remainingFrags;
+        f[heroId] = 0;
       }
-      if (f[heroId] >= next.cost) {
-        f[heroId] -= next.cost;
-        tier = next.toTier;
-        star = next.toStar;
-        this.appData.heroTier[heroId] = tier;
-        this.appData.heroStar[heroId] = star;
-        upgradeMsg = TIER_NAMES[tier] + (tier >= 4 && star > 0 ? '+' + star + '⭐' : '') + ' 晉升！';
-        upgraded = true;
-      } else {
-        break;
+    } else {
+      /* 三國：R1→1金，R2→2金，R3→3金，R4→5金，R5→100金 */
+      var goldRate = 0;
+      if (origin === 1) goldRate = 1;
+      else if (origin === 2) goldRate = 2;
+      else if (origin === 3) goldRate = 3;
+      else if (origin === 4) goldRate = 5;
+      else if (origin === 5) goldRate = 100;
+      if (goldRate > 0) {
+        var totalGold = remainingFrags * goldRate;
+        this.appData.gold += totalGold;
+        convertMsg = '轉換為金幣 x' + totalGold;
+        f[heroId] = 0;
       }
     }
-    this.saveData();
-    return { upgraded: upgraded, msg: upgradeMsg, tier: tier, star: star, fragCount: addedCount };
-  },
+  }
+
+  this.saveData();
+  return {
+    upgraded: upgraded,
+    converted: !!convertMsg,
+    msg: convertMsg || upgradeMsg,
+    tier: tier,
+    star: star,
+    fragCount: addedCount
+  };
+},
 
   /* ===== Deploy System ===== */
   getDeployedHeroes: function() {
@@ -681,12 +723,10 @@ completeStage: function(stageId, difficulty) {
 
   _gachaPull: function() {
     var roll = Math.random();
-    var rarity;
-    if (roll < 0.01) rarity = 5;
-    else if (roll < 0.06) rarity = 4;
-    else if (roll < 0.20) rarity = 3;
-    else if (roll < 0.50) rarity = 2;
-    else rarity = 1;
+    var rarity = 1;
+    for (var i = 0; i < GACHA_RATES.length; i++) {
+      if (roll < GACHA_RATES[i].threshold) { rarity = GACHA_RATES[i].rarity; break; }
+    }
 
     var candidates = HERO_DATA.filter(function(h) { return h.rarity === rarity && h.faction !== '特'; });
     if (candidates.length === 0) candidates = HERO_DATA.filter(function(h) { return h.rarity <= 2 && h.faction !== '特'; });
@@ -743,10 +783,11 @@ completeStage: function(stageId, difficulty) {
     var rarity;
     if (forceWushuang) {
       rarity = 5;
-    } else if (roll < 0.10) {
-      rarity = 5;
     } else {
       rarity = 4;
+      for (var i = 0; i < EVENT_GACHA_RATES.length; i++) {
+        if (roll < EVENT_GACHA_RATES[i].threshold) { rarity = EVENT_GACHA_RATES[i].rarity; break; }
+      }
     }
     var candidates = HERO_DATA.filter(function(h) {
       return h.rarity === rarity && h.faction === '特' && h.series === ACTIVE_SERIES;

@@ -59,13 +59,7 @@ UI.renderGacha = function() {
       return;
     }
 
-    var rates = [
-      { rarity: 5, label: '無雙', pct: '1%', color: '#ffd700' },
-      { rarity: 4, label: '傳說', pct: '5%', color: '#9b59b6' },
-      { rarity: 3, label: '名將', pct: '14%', color: '#3498db' },
-      { rarity: 2, label: '優', pct: '30%', color: '#2ecc71' },
-      { rarity: 1, label: '良', pct: '50%', color: '#8a8a8a' }
-    ];
+    var rates = GACHA_RATES;
 
     var self = this;
     for (var r = 0; r < rates.length; r++) {
@@ -161,14 +155,16 @@ UI._handleGachaResult = function(result) {
     var h = result.hero;
     var label = RARITY_NAMES[h.rarity];
     var color = RARITY_COLORS[h.rarity];
-    var upgradeHtml = '';
-    if (result.upgradeInfo) {
-      if (result.upgradeInfo.upgraded) {
-        upgradeHtml = '<div class="gc-frag" style="color:#2ecc71;">⬆ ' + result.upgradeInfo.msg + '</div>';
-      } else {
-        upgradeHtml = '<div class="gc-frag" style="color:#e67e22;">+1 碎片</div>';
-      }
+  var upgradeHtml = '';
+  if (result.upgradeInfo) {
+    if (result.upgradeInfo.upgraded) {
+      upgradeHtml = '<div class="gc-frag" style="color:#2ecc71;">⬆ ' + result.upgradeInfo.msg + '</div>';
+    } else if (result.upgradeInfo.converted) {
+      upgradeHtml = '<div class="gc-frag" style="color:#3498db;">🔄 ' + result.upgradeInfo.msg + '</div>';
+    } else {
+      upgradeHtml = '<div class="gc-frag" style="color:#e67e22;">+1 碎片</div>';
     }
+  }
     var html = '<div class="gacha-card rarity-' + h.rarity + '" style="border:2px solid ' + color + ';">' +
       '<div class="gc-emoji">' + h.emoji + '</div>' +
       '<div class="gc-name" style="color:' + color + ';">' + h.name + '</div>' +
@@ -185,18 +181,22 @@ UI._handleMultiGachaResult = function(results, count) {
     document.getElementById('gacha-gold').textContent = d.gold;
     var container = document.getElementById('gacha-result');
     if (!container) return;
-    var counts = {}, newCount = 0, upgrades = [];
-    for (var i = 0; i < results.length; i++) {
-      var r = results[i];
-      if (!r) continue;
-      var rn = RARITY_NAMES[r.hero.rarity] || '?';
-      counts[rn] = (counts[rn] || 0) + 1;
-      if (r.isNew) {
-        newCount++;
-      } else if (r.upgradeInfo && r.upgradeInfo.upgraded) {
+  var counts = {}, newCount = 0, upgrades = [], converts = [];
+  for (var i = 0; i < results.length; i++) {
+    var r = results[i];
+    if (!r) continue;
+    var rn = RARITY_NAMES[r.hero.rarity] || '?';
+    counts[rn] = (counts[rn] || 0) + 1;
+    if (r.isNew) {
+      newCount++;
+    } else if (r.upgradeInfo) {
+      if (r.upgradeInfo.upgraded) {
         upgrades.push(r.hero.emoji + r.hero.name + ' ' + r.upgradeInfo.msg);
+      } else if (r.upgradeInfo.converted) {
+        converts.push(r.hero.emoji + r.hero.name + ' ' + r.upgradeInfo.msg);
       }
     }
+  }
     var parts = [];
     var order = ['無雙','傳說','名將','優','良'];
     for (var i = 0; i < order.length; i++) {
@@ -204,9 +204,10 @@ UI._handleMultiGachaResult = function(results, count) {
     }
     var html = '<div style="padding:12px;color:#f0e6d0;font-size:15px;line-height:1.8;">' +
       parts.join('　');
-    if (newCount > 0) html += '<br><span style="color:#2ecc71;">✧ 新武將 ' + newCount + ' 隻</span>';
-    if (upgrades.length > 0) html += '<br><span style="color:#e67e22;">⬆ ' + upgrades.join('、') + '</span>';
-    html += '</div>';
+  if (newCount > 0) html += '<br><span style="color:#2ecc71;">✧ 新武將 ' + newCount + ' 隻</span>';
+  if (upgrades.length > 0) html += '<br><span style="color:#e67e22;">⬆ ' + upgrades.join('、') + '</span>';
+  if (converts.length > 0) html += '<br><span style="color:#3498db;">🔄 ' + converts.join('、') + '</span>';
+  html += '</div>';
     container.innerHTML = html;
     this.renderGacha();
   };
@@ -324,10 +325,7 @@ UI.renderEventGacha = function() {
     var specialHeroes = HERO_DATA.filter(function(h) {
       return h.faction === '特' && h.series === ACTIVE_SERIES;
     });
-    var rates = [
-      { rarity: 5, label: '無雙', pct: '10%', color: '#ffd700' },
-      { rarity: 4, label: '傳說', pct: '90%', color: '#9b59b6' }
-    ];
+    var rates = EVENT_GACHA_RATES;
 
     var self = this;
     for (var r = 0; r < rates.length; r++) {
@@ -386,13 +384,15 @@ UI._handleEventGachaResult = function(result, count) {
       var label = RARITY_NAMES[h.rarity];
       var color = RARITY_COLORS[h.rarity];
       var fragHtml = '';
-      if (result.isNew) {
-        fragHtml = '<div class="gc-new">✧ 新武將！</div>';
-      } else if (result.upgradeInfo && result.upgradeInfo.upgraded) {
-        fragHtml = '<div class="gc-frag" style="color:#2ecc71;">⬆ ' + result.upgradeInfo.msg + '</div>';
-      } else {
-        fragHtml = '<div class="gc-frag" style="color:#e67e22;">+' + (result.upgradeInfo ? result.upgradeInfo.fragCount : 1) + ' 碎片</div>';
-      }
+  if (result.isNew) {
+    fragHtml = '<div class="gc-new">✧ 新武將！</div>';
+  } else if (result.upgradeInfo && result.upgradeInfo.upgraded) {
+    fragHtml = '<div class="gc-frag" style="color:#2ecc71;">⬆ ' + result.upgradeInfo.msg + '</div>';
+  } else if (result.upgradeInfo && result.upgradeInfo.converted) {
+    fragHtml = '<div class="gc-frag" style="color:#3498db;">🔄 ' + result.upgradeInfo.msg + '</div>';
+  } else {
+    fragHtml = '<div class="gc-frag" style="color:#e67e22;">+' + (result.upgradeInfo ? result.upgradeInfo.fragCount : 1) + ' 碎片</div>';
+  }
       container.innerHTML = '<div class="gacha-card rarity-' + h.rarity + '" style="border:2px solid ' + color + ';">' +
         '<div class="gc-emoji">' + h.emoji + '</div>' +
         '<div class="gc-name" style="color:' + color + ';">' + h.name + '</div>' +
@@ -400,31 +400,34 @@ UI._handleEventGachaResult = function(result, count) {
         fragHtml +
         '</div>';
     } else {
-      var counts = {}, fragTotal = 0, newCount = 0, upgrades = [];
-      var heroListHtml = '';
-      for (var i = 0; i < result.length; i++) {
-        var r = result[i];
-        if (!r) continue;
-        var rn = RARITY_NAMES[r.hero.rarity] || '?';
-        counts[rn] = (counts[rn] || 0) + 1;
-        var color = RARITY_COLORS[r.hero.rarity] || '#888';
-        var statusHtml = '';
-        if (r.isNew) {
-          newCount++;
-          statusHtml = '<span style="color:#2ecc71;">✧ 新武將！</span>';
-        } else if (r.upgradeInfo && r.upgradeInfo.upgraded) {
-          upgrades.push(r.hero.emoji + r.hero.name + ' ' + r.upgradeInfo.msg);
-          statusHtml = '<span style="color:#2ecc71;">⬆ ' + r.upgradeInfo.msg + '</span>';
-        } else {
-          statusHtml = '<span style="color:#e67e22;">+1 碎片</span>';
-        }
-        heroListHtml += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);">' +
-          '<span style="font-size:20px;">' + r.hero.emoji + '</span>' +
-          '<span style="color:' + color + ';flex:1;">' + r.hero.name + '</span>' +
-          '<span style="color:' + color + ';font-size:12px;">' + rn + '</span>' +
-          statusHtml +
-          '</div>';
-      }
+  var counts = {}, fragTotal = 0, newCount = 0, upgrades = [], converts = [];
+  var heroListHtml = '';
+  for (var i = 0; i < result.length; i++) {
+    var r = result[i];
+    if (!r) continue;
+    var rn = RARITY_NAMES[r.hero.rarity] || '?';
+    counts[rn] = (counts[rn] || 0) + 1;
+    var color = RARITY_COLORS[r.hero.rarity] || '#888';
+    var statusHtml = '';
+    if (r.isNew) {
+      newCount++;
+      statusHtml = '<span style="color:#2ecc71;">✧ 新武將！</span>';
+    } else if (r.upgradeInfo && r.upgradeInfo.upgraded) {
+      upgrades.push(r.hero.emoji + r.hero.name + ' ' + r.upgradeInfo.msg);
+      statusHtml = '<span style="color:#2ecc71;">⬆ ' + r.upgradeInfo.msg + '</span>';
+    } else if (r.upgradeInfo && r.upgradeInfo.converted) {
+      converts.push(r.hero.emoji + r.hero.name + ' ' + r.upgradeInfo.msg);
+      statusHtml = '<span style="color:#3498db;">🔄 ' + r.upgradeInfo.msg + '</span>';
+    } else {
+      statusHtml = '<span style="color:#e67e22;">+1 碎片</span>';
+    }
+    heroListHtml += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);">' +
+      '<span style="font-size:20px;">' + r.hero.emoji + '</span>' +
+      '<span style="color:' + color + ';flex:1;">' + r.hero.name + '</span>' +
+      '<span style="color:' + color + ';font-size:12px;">' + rn + '</span>' +
+      statusHtml +
+      '</div>';
+  }
       var parts = [];
       var order = ['無雙','傳說','名將','優','良'];
       for (var i = 0; i < order.length; i++) {
@@ -432,9 +435,10 @@ UI._handleEventGachaResult = function(result, count) {
       }
       var summaryHtml = '<div style="padding:8px 12px;color:#f0e6d0;font-size:14px;background:rgba(0,0,0,0.2);border-radius:6px;margin-bottom:8px;">' +
         parts.join('　');
-      if (newCount > 0) summaryHtml += '<br><span style="color:#2ecc71;">✧ 新武將 ' + newCount + ' 隻</span>';
-      if (upgrades.length > 0) summaryHtml += '<br><span style="color:#2ecc71;">⬆ ' + upgrades.join('、') + '</span>';
-      summaryHtml += '</div>';
+  if (newCount > 0) summaryHtml += '<br><span style="color:#2ecc71;">✧ 新武將 ' + newCount + ' 隻</span>';
+  if (upgrades.length > 0) summaryHtml += '<br><span style="color:#2ecc71;">⬆ ' + upgrades.join('、') + '</span>';
+  if (converts.length > 0) summaryHtml += '<br><span style="color:#3498db;">🔄 ' + converts.join('、') + '</span>';
+  summaryHtml += '</div>';
       container.innerHTML = '<div style="padding:12px;color:#f0e6d0;font-size:14px;line-height:1.8;">' +
         summaryHtml + heroListHtml + '</div>';
     }

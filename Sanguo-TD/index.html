@@ -375,12 +375,11 @@
           <span class="toggle-slider"></span>
         </label>
       </div>
-      <div class="settings-item" id="setting-dev-item">
-        <span>🔧 開發模式</span>
-        <label class="toggle-switch">
-          <input type="checkbox" id="setting-dev" onchange="UI.toggleDevMode(this.checked)">
-          <span class="toggle-slider"></span>
-        </label>
+      <!-- 時空裂隙系列（僅開發模式顯示） -->
+      <div class="settings-section-title" id="setting-series-title" style="display:none;">時空裂隙系列</div>
+      <div class="settings-item" id="setting-series-item" style="display:none;cursor:pointer;" onclick="UI.toggleSeriesOverride()">
+        <span>當前系列</span>
+        <span><span id="setting-series-label" style="color:#ffd700;">自動 (依月份)</span> <span style="color:#8a7a6a;font-size:12px;">[切換]</span></span>
       </div>
 
       <!-- 禮包兌換 -->
@@ -402,13 +401,6 @@
       <div class="settings-item" id="setting-lb-clean-item" style="cursor:pointer;" onclick="UI.cleanupLeaderboard()">
         <span>🧹 清理排行榜</span>
         <span style="color:#8a7a6a;font-size:12px;">[開發工具]</span>
-      </div>
-
-      <!-- 時空裂隙系列（僅開發模式顯示） -->
-      <div class="settings-section-title" id="setting-series-title" style="display:none;">時空裂隙系列</div>
-      <div class="settings-item" id="setting-series-item" style="display:none;cursor:pointer;" onclick="UI.toggleSeriesOverride()">
-        <span>當前系列</span>
-        <span><span id="setting-series-label" style="color:#ffd700;">自動 (依月份)</span> <span style="color:#8a7a6a;font-size:12px;">[切換]</span></span>
       </div>
 
       <!-- 資料轉移 -->

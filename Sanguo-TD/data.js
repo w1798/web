@@ -104,6 +104,36 @@ var HERO_DATA = [
 var RARITY_NAMES = ['', '良', '優', '名將', '傳說', '無雙'];
 var RARITY_COLORS = ['', '#8a8a8a', '#2ecc71', '#3498db', '#9b59b6', '#ffd700'];
 
+/* ===== 抽卡機率表（唯一定義，service.js 與 ui-gacha.js 共用） ===== */
+/* pct 顯示文字 與 threshold 累積門檻 均由 chance 自動計算，勿手動修改 */
+var GACHA_RATES = (function() {
+  var raw = [
+    { rarity: 5, label: '無雙', chance: 1,  color: '#ffd700' },
+    { rarity: 4, label: '傳說', chance: 5,  color: '#9b59b6' },
+    { rarity: 3, label: '名將', chance: 16, color: '#3498db' },
+    { rarity: 2, label: '優',   chance: 33, color: '#2ecc71' },
+    { rarity: 1, label: '良',   chance: 45, color: '#8a8a8a' }
+  ];
+  var cum = 0;
+  return raw.map(function(r) {
+    cum += r.chance;
+    return { rarity: r.rarity, label: r.label, pct: r.chance + '%', color: r.color, threshold: cum / 100 };
+  });
+})();
+
+/* ===== 系列抽卡機率表（唯一定義，service.js 與 ui-gacha.js 共用） ===== */
+var EVENT_GACHA_RATES = (function() {
+  var raw = [
+    { rarity: 5, label: '無雙', chance: 15, color: '#ffd700' },
+    { rarity: 4, label: '傳說', chance: 85, color: '#9b59b6' }
+  ];
+  var cum = 0;
+  return raw.map(function(r) {
+    cum += r.chance;
+    return { rarity: r.rarity, label: r.label, pct: r.chance + '%', color: r.color, threshold: cum / 100 };
+  });
+})();
+
 var FACTION_LABELS = { shu:'蜀', wei:'魏', wu:'吳', qun:'群', te:'特' };
 
 /* 羈絆加成數據
@@ -546,12 +576,15 @@ var DEV_MODE = window.location.protocol === 'file:';
 
 /* ===== 時空裂隙系列切換 ===== */
 var ACTIVE_SERIES = (function() {
-  /* 優先級：localStorage dev_series_override > 月份判斷 */
-  if (DEV_MODE) {
-    var lsOverride = localStorage.getItem('dev_series_override');
-    if (lsOverride === 'qin' || lsOverride === 'chuhan') return lsOverride;
+  /* 非 file:/// 協定下強制使用系統時間，忽略 localStorage */
+  if (window.location.protocol !== 'file:') {
+    var month = new Date().getMonth() + 1; /* 1~12 */
+    return (month >= 1 && month <= 6) ? 'qin' : 'chuhan';
   }
-  var month = new Date().getMonth() + 1; /* 1~12 */
+  /* file:/// 協定下允許 localStorage dev_series_override */
+  var lsOverride = localStorage.getItem('dev_series_override');
+  if (lsOverride === 'qin' || lsOverride === 'chuhan') return lsOverride;
+  var month = new Date().getMonth() + 1;
   return (month >= 1 && month <= 6) ? 'qin' : 'chuhan';
 })();
 

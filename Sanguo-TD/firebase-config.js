@@ -15,6 +15,13 @@ var LeaderboardAPI = {
   init: function() {
     try {
       firebase.initializeApp(firebaseConfig);
+
+      // 啟動 App Check（reCAPTCHA v3）
+      firebase.appCheck().activate(
+        '6Le2H2QtAAAAAOvb8f5Z666vUseA403uFu-vP4yC',
+        true  // isTokenAutoRefreshEnabled
+      );
+
       this.db = firebase.firestore();
       this.signIn();
     } catch(e) {
