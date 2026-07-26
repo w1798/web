@@ -217,18 +217,8 @@ UI.renderWeaponsList = function() {
         btn.onclick = function() {
           var gold = WEAPON_QUALITY[q] ? WEAPON_QUALITY[q].recycleGold : 0;
           self.showConfirm('確定回收全部 ' + cnt + ' 件' + label + '武器？可獲得 ' + (cnt * gold) + ' 金幣', function() {
-            var total = 0, removed = 0;
-            for (var k = d.weaponStorage.length - 1; k >= 0; k--) {
-              if (d.weaponStorage[k].quality === q && !d.weaponStorage[k].isFavorite) {
-                total += gold;
-                d.weaponStorage.splice(k, 1);
-                removed++;
-                Service.addTaskProgress('weapon_sell', 1);
-              }
-            }
-            d.gold += total;
-            Service.saveData();
-            self.showToast('回收 ' + removed + ' 件' + label + '，獲得 ' + total + ' 金幣！');
+            var result = Service.batchRecycleStoredWeapons(q);
+            self.showToast('回收 ' + result.removed + ' 件' + label + '，獲得 ' + result.gold + ' 金幣！');
             self.renderWeaponsList();
           });
         };

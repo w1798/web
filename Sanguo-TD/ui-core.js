@@ -1004,7 +1004,7 @@ this.uploadCurrentScore(true);
         statusEl.textContent = '';
         return;
       }
-      CloudSaveAPI.upload(name, Service.appData, password).then(function(ok) {
+      CloudSaveAPI.upload(name, localStorage.getItem(STORAGE_KEY), password).then(function(ok) {
         if (ok) {
           statusEl.textContent = '✅ 上傳成功，本地資料已清除';
           self.showToast('資料已上傳，本地已重置');
@@ -1035,15 +1035,11 @@ this.uploadCurrentScore(true);
         self.showToast(msg);
         return;
       }
-      Service.appData = Service.mergeDefaults(result.data);
-      Service.getStamina();
-      Service.saveData();
+      localStorage.setItem(STORAGE_KEY, result.rawStr);
       CloudSaveAPI.deleteDoc(name).then(function() {
-        var lbNameEl = document.getElementById('setting-lb-name');
-        if (lbNameEl) lbNameEl.textContent = Service.appData.playerName || '(未設定)';
-        document.getElementById('cloud-name').value = Service.appData.playerName || '';
         statusEl.textContent = '✅ 下載成功，雲端已清除';
-        self.showToast('下載成功，請重整頁面');
+        self.showToast('下載成功，重整頁面中...');
+        location.reload();
       });
     });
   },

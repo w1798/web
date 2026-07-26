@@ -1,4 +1,4 @@
-/* ===== 存檔、金幣、抽卡、碎片、上陣系統 ===== */
+/* ===== 存檔、圖片、城池、碎片、上陣系統 ===== */
 var STORAGE_KEY = 'sanguo_td_save';
 var LB_CACHE_KEY = 'sanguo_td_lb_cache';
 var TIER_NAMES = ['', '良', '優', '名將', '傳說', '無雙'];
@@ -6,6 +6,127 @@ var TIER_COLORS = ['', '#8a8a8a', '#2ecc71', '#3498db', '#9b59b6', '#ffd700'];
 var STAMINA_MAX = 120;
 var STAMINA_COST = 5;
 var STAMINA_RECOVER_MS = 600000; // 10 分鐘
+
+/* ═══ 本地存檔加解密（XOR + LCG 混淆 + djb2 hash 簽名）═══ */
+var _SAVE_SECRET = 'sgt_td_2026_s3cr3t';
+
+function _djb2(str) {
+  var h = 5381;
+  for (var i = 0; i < str.length; i++) { h = ((h << 5) + h) + str.charCodeAt(i); h |= 0; }
+  return (h >>> 0).toString(16);
+}
+
+function _djb2Bytes(bytes) {
+  var h = 5381;
+  for (var i = 0; i < bytes.length; i++) { h = ((h << 5) + h) + bytes[i]; h |= 0; }
+  return h >>> 0;
+}
+
+function _intToBytes(n) {
+  return new Uint8Array([(n >>> 24) & 0xFF, (n >>> 16) & 0xFF, (n >>> 8) & 0xFF, n & 0xFF]);
+}
+
+function _bytesToInt(bytes) {
+  return ((bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3]) >>> 0;
+}
+
+function _lcgStream(seed, len) {
+  var s = seed, bytes = new Uint8Array(len);
+  for (var i = 0; i < len; i++) { s = (s * 1103515245 + 12345) >>> 0; bytes[i] = (s >>> 16) & 0xFF; }
+  return bytes;
+}
+
+function _xorBytes(a, b) {
+  var r = new Uint8Array(a.length);
+  for (var i = 0; i < a.length; i++) r[i] = a[i] ^ b[i];
+  return r;
+}
+
+function _strToBytes(str) {
+  var bytes = new Uint8Array(str.length);
+  for (var i = 0; i < str.length; i++) bytes[i] = str.charCodeAt(i) & 0xFF;
+  return bytes;
+}
+
+function _bytesToStr(bytes) {
+  var str = '';
+  for (var i = 0; i < bytes.length; i++) str += String.fromCharCode(bytes[i]);
+  return str;
+}
+
+function _btoaSafe(bytes) {
+  var binary = '';
+  for (var i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
+
+function _atobSafe(b64) {
+  var binary = atob(b64);
+  var bytes = new Uint8Array(binary.length);
+  for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+function _utf8Encode(str) {
+  return unescape(encodeURIComponent(str));
+}
+
+function _utf8Decode(str) {
+  return decodeURIComponent(escape(str));
+}
+
+function _encryptSave(dataObj) {
+  var json = _utf8Encode(JSON.stringify(dataObj));
+  var jsonBytes = _strToBytes(json);
+  var hashNum = _djb2Bytes(jsonBytes);
+  var hashBytes = _intToBytes(hashNum);
+  var payload = new Uint8Array(jsonBytes.length + 4);
+  payload.set(jsonBytes, 0);
+  payload.set(hashBytes, jsonBytes.length);
+  var seed = _djb2Bytes(_strToBytes(_SAVE_SECRET + hashNum));
+  var key = _lcgStream(seed, payload.length);
+  var enc = _xorBytes(payload, key);
+  return { _v: 3, hash: hashNum, data: _btoaSafe(enc) };
+}
+
+function _decryptSave(pack) {
+  var enc = _atobSafe(pack.data);
+  /* 新格式 _v: 3 */
+  if (pack._v === 3 && typeof pack.hash === 'number') {
+    var seed3 = _djb2Bytes(_strToBytes(_SAVE_SECRET + pack.hash));
+    var key3 = _lcgStream(seed3, enc.length);
+    var dec3 = _xorBytes(enc, key3);
+    if (dec3.length < 4) return null;
+    var jsonBytes3 = dec3.slice(0, dec3.length - 4);
+    var hashBytes3 = dec3.slice(dec3.length - 4);
+    var expected3 = _djb2Bytes(jsonBytes3);
+    if (_bytesToInt(hashBytes3) !== expected3) return null;
+    var json3 = _utf8Decode(_bytesToStr(jsonBytes3));
+    return JSON.parse(json3);
+  }
+  /* 舊格式 _v=2 */
+  if (pack._v === 2 && typeof pack._h === 'string') {
+    var seed2 = _djb2(_SAVE_SECRET + pack._h);
+    var key2 = _lcgStream(seed2, enc.length);
+    var dec2 = _bytesToStr(_xorBytes(enc, key2));
+    var sep = dec2.lastIndexOf('::');
+    if (sep === -1) return null;
+    var json2 = _utf8Decode(dec2.substring(0, sep));
+    var hash2 = dec2.substring(sep + 2);
+    var expected2 = _djb2(_utf8Encode(json2) + _SAVE_SECRET);
+    if (hash2 !== expected2) return null;
+    return JSON.parse(json2);
+  }
+  return null;
+}
+
+function _isEncryptedPack(raw) {
+  try {
+    var p = JSON.parse(raw);
+    return p && typeof p._v === 'number' && typeof p.data === 'string'
+      && (typeof p.hash === 'number' || typeof p._h === 'string');
+  } catch(e) { return false; }
+}
 
 var DEFAULT_DATA = {
   gold: 10,
@@ -87,11 +208,28 @@ var Service = (function() {
       }
       delete _data[prop];
       return true;
+    },
+    ownKeys: function(target) {
+      return Object.keys(_data || {});
+    },
+    getOwnPropertyDescriptor: function(target, prop) {
+      if (_data && prop in _data) {
+        return { enumerable: true, configurable: true };
+      }
+      return undefined;
     }
   };
   function buildProxy() {
     if (!_proxyCache) _proxyCache = new Proxy({}, _proxyHandler);
     return _proxyCache;
+  }
+
+  /* ═══ Console 呼叫檢測（透過 Error.stack 判斷）═══ */
+  function _isConsoleCall() {
+    try {
+      var stack = new Error().stack || '';
+      return /eval|anonymous|<anonymous>|console/i.test(stack);
+    } catch(e) { return true; }
   }
 
   /* addBattleWeapon 每日計數（閉包變數，重整後重置） */
@@ -102,21 +240,33 @@ var Service = (function() {
 
   loadData: function() {
     var raw = localStorage.getItem(STORAGE_KEY);
+    var loaded = false;
     if (raw) {
-      try {
-        var parsed = JSON.parse(raw);
-        _data = this.mergeDefaults(parsed);
-      } catch(e) {
-        _data = clone(DEFAULT_DATA);
+      if (_isEncryptedPack(raw)) {
+        try {
+          var dec = _decryptSave(JSON.parse(raw));
+          if (dec) { _data = this.mergeDefaults(dec); loaded = true; }
+        } catch(e) { /* 解密失敗，fallback 到預設 */ }
       }
-    } else {
-      _data = clone(DEFAULT_DATA);
+      if (!loaded) {
+        /* 舊版明文 JSON 相容 */
+        try {
+          var parsed = JSON.parse(raw);
+          if (parsed && typeof parsed.gold === 'number') {
+            _data = this.mergeDefaults(parsed);
+            loaded = true;
+            /* 自動升級為加密格式 */
+            this.saveData();
+          }
+        } catch(e) {}
+      }
     }
+    if (!loaded) _data = clone(DEFAULT_DATA);
     var oldWave = _data.challengeHighWave;
     var oldKills = _data.bossRushKills;
     this.checkReset();
     if (_data.challengeHighWave !== oldWave || _data.bossRushKills !== oldKills) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(_data));
+      this.saveData();
     }
     return _data;
   },
@@ -126,6 +276,7 @@ var Service = (function() {
 
     var name = _data.playerName;
     var claimed = _data.claimedCompensation;
+    var dirty = false;
 
     /* === 補償清單（始終執行，單次發放） ===
      * 每筆格式：{ id, name, gold, diamond, message }
@@ -139,7 +290,6 @@ var Service = (function() {
       // ===== 範例（請取消註解並修改） =====
       // { id: 'fix_20260723_xiaoming', name: '小明', gold: 5000, diamond: 100, message: '修復補償：金幣 5000、鑽石 100' },
       // { id: 'fix_20260723_xiaohua', name: '小華', gold: 10000, message: '金幣補償 10000' },
-
     ];
     for (var i = 0; i < rewards.length; i++) {
       var r = rewards[i];
@@ -149,6 +299,7 @@ var Service = (function() {
         if (r.gold) _data.gold += r.gold;
         if (r.diamond) _data.diamond += r.diamond;
         claimed.push(r.id);
+        dirty = true;
         if (r.message) alert(r.message);
       }
     }
@@ -172,6 +323,7 @@ var Service = (function() {
         if (r.newWave !== undefined) _data.challengeHighWave = r.newWave;
         if (r.newKills !== undefined) _data.bossRushKills = r.newKills;
         claimed.push(r.id);
+        dirty = true;
       }
     }
 
@@ -182,6 +334,7 @@ var Service = (function() {
     _data.claimedCompensation = claimed.filter(function(id) {
       return validIds.indexOf(id) !== -1;
     });
+    if (dirty) this.saveData();
   },
 
   mergeDefaults: function(data) {
@@ -262,7 +415,8 @@ var Service = (function() {
 
   saveData: function() {
     this.checkReset();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(_data));
+    var pack = _encryptSave(_data);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(pack));
   },
 
   addDiamond: function(amount) {
@@ -369,6 +523,7 @@ var Service = (function() {
   addGold: function(amount) {
     if (amount > 10000) amount = 10000;
     _data.gold += amount;
+    this.saveData();
   },
 
   /* 戰鬥獎勵加入武器（繞過 Proxy 直接寫入 _data；每日 100 次上限） */
@@ -379,6 +534,7 @@ var Service = (function() {
     if (_wpnDailyCount > 100) return;
     if (!_data.weaponStorage) _data.weaponStorage = [];
     _data.weaponStorage.push(wpn);
+    this.saveData();
   },
 
   /* 設定武將經驗 */
@@ -400,9 +556,7 @@ var Service = (function() {
     var codes = {
       'VIP666': { gold: 200, diamond: 20, yellowWeapon: 1 },
       'VIP777': { gold: 200, diamond: 20, yellowWeapon: 1 },
-      'VIP888': { gold: 200, diamond: 20, yellowWeapon: 1 }, 
-      'HAPPYDAI': { gold: 10000, diamond: 300, yellowWeapon: 20 }, 
-      'ALANBRO1': { gold: 10000, diamond: 300, yellowWeapon: 20 }
+      'VIP888': { gold: 200, diamond: 20, yellowWeapon: 1 }
     };
 
     /* 自動清理：只保留 codes 中仍然存在的禮包碼 */
@@ -1094,6 +1248,22 @@ completeStage: function(stageId, difficulty) {
     return gold;
   },
 
+  batchRecycleStoredWeapons: function(quality) {
+    var gold = WEAPON_QUALITY[quality] ? WEAPON_QUALITY[quality].recycleGold : 0;
+    var total = 0, removed = 0;
+    for (var k = _data.weaponStorage.length - 1; k >= 0; k--) {
+      if (_data.weaponStorage[k].quality === quality && !_data.weaponStorage[k].isFavorite) {
+        total += gold;
+        _data.weaponStorage.splice(k, 1);
+        removed++;
+        this.addTaskProgress('weapon_sell', 1);
+      }
+    }
+    _data.gold += total;
+    this.saveData();
+    return { removed: removed, gold: total };
+  },
+
   toggleFavoriteWeapon: function(storageIndex) {
     var stored = _data.weaponStorage[storageIndex];
     if (!stored) return false;
@@ -1151,6 +1321,12 @@ completeStage: function(stageId, difficulty) {
   getHeroWeaponType: function(hd) {
     var map = { warrior:'sword', spearman:'spear', archer:'bow', horse:'horse', mage:'mage', healer:'monk' };
     return map[hd.type] || 'sword';
+  },
+
+  importSaveData: function(dataObj) {
+    if (!dataObj || typeof dataObj !== 'object') return;
+    _data = this.mergeDefaults(dataObj);
+    this.saveData();
   }
 };
 

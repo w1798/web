@@ -16,11 +16,16 @@ var LeaderboardAPI = {
     try {
       firebase.initializeApp(firebaseConfig);
 
-      // 啟動 App Check（reCAPTCHA v3）
-      firebase.appCheck().activate(
-        '6Le2H2QtAAAAAOvb8f5Z666vUseA403uFu-vP4yC',
-        true  // isTokenAutoRefreshEnabled
-      );
+      // 本地環境跳過 App Check（避免 ReCAPTCHA 403 錯誤洗版）
+      var _host = (self.location && self.location.hostname) || '';
+      var _isLocal = _host === '127.0.0.1' || _host === 'localhost' || (self.location && self.location.protocol === 'file:');
+      if (!_isLocal) {
+        // 啟動 App Check（reCAPTCHA v3）
+        firebase.appCheck().activate(
+          '6Le2H2QtAAAAAOvb8f5Z666vUseA403uFu-vP4yC',
+          true  // isTokenAutoRefreshEnabled
+        );
+      }
 
       this.db = firebase.firestore();
       this.signIn();
@@ -203,41 +208,54 @@ var CloudSaveAPI = {
     return result;
   },
 
-  _encrypt: async function(data, password) {
+  _encrypt: async function(rawStr, password) {
+    // v2: AES-256-GCM + PBKDF2 — 加密任意字串（localStorage 原始內容）
     var enc = new TextEncoder();
     var salt = crypto.getRandomValues(new Uint8Array(16));
-    if (this._useSubtle) {
-      var iv = crypto.getRandomValues(new Uint8Array(12));
-      var keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
-      var key = await crypto.subtle.deriveKey({name:'PBKDF2', salt:salt, iterations:100000, hash:'SHA-256'}, keyMaterial, {name:'AES-GCM', length:256}, false, ['encrypt']);
-      var encrypted = await crypto.subtle.encrypt({name:'AES-GCM', iv:iv}, key, enc.encode(JSON.stringify(data)));
-      return {
-        _v:2, salt: _bufToB64(salt), iv: _bufToB64(iv),
-        data: _bufToB64(new Uint8Array(encrypted))
-      };
-    }
-    var bytes = enc.encode(JSON.stringify(data));
-    var encBytes = this._xorEncrypt(bytes, password, salt);
-    return { _v:1, salt: _bufToB64(salt), data: _bufToB64(encBytes) };
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    var keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+    var key = await crypto.subtle.deriveKey({name:'PBKDF2', salt:salt, iterations:100000, hash:'SHA-256'}, keyMaterial, {name:'AES-GCM', length:256}, false, ['encrypt']);
+    var encrypted = await crypto.subtle.encrypt({name:'AES-GCM', iv:iv}, key, enc.encode(rawStr));
+    return {
+      _v: 2,
+      salt: _bufToB64(salt),
+      iv: _bufToB64(iv),
+      data: _bufToB64(new Uint8Array(encrypted))
+    };
   },
 
   _decrypt: async function(pack, password) {
-    var enc = new TextEncoder();
-    var salt = _b64ToBuf(pack.salt);
-    var isV2 = pack._v === 2 || (pack._v === undefined && pack.iv);
-    if (isV2) {
-      if (!this._useSubtle) throw new Error('need_secure_context');
+    if (!pack || !pack.data) return null;
+    // v1: 全位元組 XOR + hash 驗證（與 _encrypt 完全一致）
+    if (pack._v === 1 && typeof pack.hash === 'number') {
+      var dataBytes = _b64ToBuf(pack.data);
+      var seed = _djb2(password + ':' + pack.hash);
+      var key = new Uint8Array(dataBytes.length);
+      for (var i = 0; i < dataBytes.length; i++) {
+        seed = (seed * 1103515245 + 12345) >>> 0;
+        key[i] = (seed >>> 16) & 0xFF;
+      }
+      var decBytes = new Uint8Array(dataBytes.length);
+      for (var i = 0; i < dataBytes.length; i++) decBytes[i] = dataBytes[i] ^ key[i];
+      if (decBytes.length < 4) return null;
+      var jsonBytes = decBytes.slice(0, decBytes.length - 4);
+      var hashBytes = decBytes.slice(decBytes.length - 4);
+      var expected = _djb2Bytes(jsonBytes);
+      if (_bytesToInt(hashBytes) !== expected) return null;
+      return JSON.parse(_utf8Decode(_bytesToStr(jsonBytes)));
+    }
+    // v2: AES-GCM — 解密回原始字串（不再 JSON.parse）
+    if (pack._v === 2 && pack.iv && this._useSubtle) {
+      var enc = new TextEncoder();
+      var salt = _b64ToBuf(pack.salt);
       var iv = _b64ToBuf(pack.iv);
       var data = _b64ToBuf(pack.data);
       var keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
       var key = await crypto.subtle.deriveKey({name:'PBKDF2', salt:salt, iterations:100000, hash:'SHA-256'}, keyMaterial, {name:'AES-GCM', length:256}, false, ['decrypt']);
       var decrypted = await crypto.subtle.decrypt({name:'AES-GCM', iv:iv}, key, data);
-      return JSON.parse(new TextDecoder().decode(decrypted));
+      return new TextDecoder().decode(decrypted);
     }
-    var dataBytes = _b64ToBuf(pack.data);
-    var decBytes = this._xorEncrypt(dataBytes, password, salt);
-    var json = new TextDecoder().decode(decBytes);
-    return JSON.parse(json);
+    return null;
   },
 
   checkExists: async function(playerName) {
@@ -248,18 +266,18 @@ var CloudSaveAPI = {
     } catch(e) { return false; }
   },
 
-  upload: async function(playerName, appData, password) {
+  upload: async function(playerName, rawStr, password) {
     if (!LeaderboardAPI.db) return false;
     try {
-      var pack = await this._encrypt(appData, password);
+      var pack = await this._encrypt(rawStr, password);
       var toStore = {
         playerName: playerName,
         salt: pack.salt,
+        iv: pack.iv,
         data: pack.data,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       };
       if (pack._v) toStore._v = pack._v;
-      if (pack.iv) toStore.iv = pack.iv;
       await LeaderboardAPI.db.collection('saves').doc(playerName).set(toStore);
       return true;
     } catch(e) {
@@ -274,7 +292,8 @@ var CloudSaveAPI = {
       var doc = await LeaderboardAPI.db.collection('saves').doc(playerName).get();
       if (!doc.exists) return {ok:false, reason:'not_found'};
       var decrypted = await this._decrypt(doc.data(), password);
-      return {ok:true, data:decrypted};
+      if (!decrypted) return {ok:false, reason:'wrong_password'};
+      return {ok:true, rawStr:decrypted};
     } catch(e) {
       return {ok:false, reason:'wrong_password'};
     }
