@@ -249,14 +249,17 @@ var Service = (function() {
         } catch(e) { /* 解密失敗，fallback 到預設 */ }
       }
       if (!loaded) {
-        /* 舊版明文 JSON 相容 */
+        /* 舊版明文 JSON 相容 — 過渡期僅限小明/小王 */
         try {
           var parsed = JSON.parse(raw);
           if (parsed && typeof parsed.gold === 'number') {
-            _data = this.mergeDefaults(parsed);
-            loaded = true;
-            /* 自動升級為加密格式 */
-            this.saveData();
+            var name = parsed.playerName || '';
+            if (name === '羅密歐與豬過夜' || name === '我從零開始') {
+              _data = this.mergeDefaults(parsed);
+              loaded = true;
+              /* 自動升級為加密格式 */
+              this.saveData();
+            }
           }
         } catch(e) {}
       }
