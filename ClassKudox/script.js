@@ -611,6 +611,14 @@ const startApp = () => {
                 validItems.forEach(itm => { row += `,${sLogs.filter(l => l.lb === itm).reduce((acc, l) => acc + l.pt, 0)}`; });
                 csv += row + '\n';
             });
+            csv += '\n姓名,總次數,' + validItems.join(',') + '\n';
+            students.forEach(s => {
+                const sLogs = filteredLogs.filter(l => l.sID === s.id);
+                if (sLogs.length === 0) return;
+                let row = `"${s.id}",${sLogs.length}`;
+                validItems.forEach(itm => { row += `,${sLogs.filter(l => l.lb === itm).length}`; });
+                csv += row + '\n';
+            });
             const b = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `report_${new Date().toLocaleDateString()}.csv`; a.click();
         });
