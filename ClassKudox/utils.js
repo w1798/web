@@ -59,6 +59,13 @@ const sortItems = (a, b) => {
     if (ta !== tb) return ta - tb;
     return (a.lb || a.id || a).localeCompare(b.lb || b.id || b, 'zh-TW');
 };
+const sortByNumber = (a, b) => {
+    const ia = parseInt(String(a.id), 10), ib = parseInt(String(b.id), 10);
+    const na = isFinite(ia), nb = isFinite(ib);
+    if (na && nb && ia !== ib) return ia - ib;
+    if (na !== nb) return na ? -1 : 1;
+    return String(a.id).localeCompare(String(b.id), 'zh-TW');
+};
 const compressJSON = async (obj, formatted = false) => {
     try {
         const str = formatted ? JSON.stringify(obj, null, 2) : JSON.stringify(obj);
@@ -171,6 +178,7 @@ const safeLoad = (key, template) => {
 
 window.safeInt = safeInt;
 window.sortItems = sortItems;
+window.sortByNumber = sortByNumber;
 window.StampTool = StampTool;
 window.getTS = getTS;
 window.compressJSON = compressJSON;

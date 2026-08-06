@@ -410,12 +410,12 @@ function Settings() {
                             <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: '1.5rem 0' }} />
 
                             <div className="input-group" style={{ marginBottom: '0.8rem' }}>
-                                <label style={{ color: '#ef4444' }}>清除「目前班級」學生的點數和寶物的紀錄(但保留  cP/iP 點數)</label>
+                                <label style={{ color: '#ef4444' }}>清除「目前班級」學生的點數和寶物的紀錄(但保留 cP/iP 點數與寶物持有量)</label>
                                 <button className="btn negative-btn" id="clearCurrentClassRecordsBtn" style={{ width: '100%' }}>清除目前班級點數紀錄</button>
                             </div>
 
                             <div className="input-group" style={{ marginBottom: '0.8rem' }}>
-                                <label style={{ color: '#ef4444' }}>清除「所有班級」學生的點數和寶物的紀錄(但保留  cP/iP 點數)</label>
+                                <label style={{ color: '#ef4444' }}>清除「所有班級」學生的點數和寶物的紀錄(但保留 cP/iP 點數與寶物持有量)</label>
                                 <button className="btn negative-btn" id="clearAllClassesRecordsBtn" style={{ width: '100%' }}>清除所有班級點數紀錄</button>
                             </div>
 

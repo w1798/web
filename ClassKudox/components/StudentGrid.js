@@ -34,7 +34,7 @@ function StudentGrid() {
 
     return (
         <main className="student-grid" id="studentGrid">
-            {students.map(s => {
+            {[...students].sort(window.sortByNumber).map(s => {
                 const total = (Number(s.cP) || 0) + (Number(s.iP) || 0);
                 const isSelected = isMultiSelectMode && selectedStudentIds.includes(s.id);
                 

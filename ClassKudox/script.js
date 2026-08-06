@@ -669,13 +669,13 @@ const startApp = () => {
         // toggleMultiSelectBtn 已遷移至 React Header
 
         wire('clearCurrentClassRecordsBtn', () => { 
-            if(confirm(`清除目前班級「${currentClassId}」的點數紀錄與寶物？(保留 cP/iP 點數)`)) { 
+            if(confirm(`清除目前班級「${currentClassId}」的點數與寶物紀錄？(保留 cP/iP 點數與寶物持有量)`)) { 
                 window.clearCurrentClassRecords();
                 renderStudents(); if(currentView === 'groups') renderGroups(); alert('已清除');
             } 
         });
         wire('clearAllClassesRecordsBtn', () => { 
-            if(confirm('清除所有班級的點數紀錄與寶物？(保留 cP/iP 點數)')) { 
+            if(confirm('清除所有班級的點數與寶物紀錄？(保留 cP/iP 點數與寶物持有量)')) { 
                 window.clearAllClassesRecords();
                 renderStudents(); if(currentView === 'groups') renderGroups(); alert('已清除');
             } 

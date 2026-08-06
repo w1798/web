@@ -410,7 +410,7 @@ const syncBehaviors = (srcClass) => {
 };
 
 const clearCurrentClassRecords = () => {
-    logs = []; delLogs = []; delLogRestored = []; delLogResData = {}; students.forEach(s => { s.tr = {}; });
+    logs = []; delLogs = []; delLogRestored = []; delLogResData = {};
     pushOp(16, null);
     saveData();
 };
@@ -421,11 +421,8 @@ const clearAllClassesRecords = () => {
         localStorage.setItem(`CD_${c.id}_DLs`, '[]');
         localStorage.setItem(`CD_${c.id}_DL_Res`, '[]');
         localStorage.setItem(`CD_${c.id}_DL_ResData`, '{}');
-        const stus = JSON.parse(localStorage.getItem(`CD_${c.id}_Stus`) || '[]');
-        stus.forEach(s => { s.tr = {}; });
-        localStorage.setItem(`CD_${c.id}_Stus`, JSON.stringify(stus));
     });
-    logs = []; delLogs = []; delLogRestored = []; delLogResData = {}; students.forEach(s => { s.tr = {}; });
+    logs = []; delLogs = []; delLogRestored = []; delLogResData = {};
     pushOp(18, null, true);
     saveData();
 };

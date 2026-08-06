@@ -556,11 +556,8 @@ const checkCloudSyncState = async () => {
                             localStorage.setItem(`CD_${c.id}_DLs`, '[]');
                             localStorage.setItem(`CD_${c.id}_DL_Res`, '[]');
                             localStorage.setItem(`CD_${c.id}_DL_ResData`, '{}');
-                            const stus = JSON.parse(localStorage.getItem(`CD_${c.id}_Stus`) || '[]');
-                            stus.forEach(s => { s.cP = 0; s.iP = 0; });
-                            localStorage.setItem(`CD_${c.id}_Stus`, JSON.stringify(stus));
                         });
-                        logs = []; delLogs = []; delLogRestored = []; delLogResData = {}; students.forEach(s => { s.cP = 0; s.iP = 0; });
+                        logs = []; delLogs = []; delLogRestored = []; delLogResData = {};
                     }
                     else if (o.a === ACT.SET_CUSTOM_ITEMS) { customItems = o.d; }
                     modified = true;
@@ -595,7 +592,7 @@ const checkCloudSyncState = async () => {
                     else if (o.a === ACT.LOG_CLR) {
                         localStorage.setItem(`CD_${currentClassId}_DL_Res`, '[]');
                         localStorage.setItem(`CD_${currentClassId}_DL_ResData`, '{}');
-                        logs = []; delLogs = []; delLogRestored = []; delLogResData = {}; students.forEach(s => { s.cP = 0; s.iP = 0; }); modified = true;
+                        logs = []; delLogs = []; delLogRestored = []; delLogResData = {}; modified = true;
                     }
                     else if (o.a === ACT.SET_PT_ITEMS) { pointItems = o.d; modified = true; }
                     else if (o.a === ACT.SET_AVATAR_STYLE) { students.forEach(s => s.aS = o.d); modified = true; }

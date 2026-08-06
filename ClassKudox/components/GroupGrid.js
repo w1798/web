@@ -24,7 +24,7 @@ function GroupGrid() {
 
     return (
         <main className="group-grid" id="groupGrid">
-            {safeGroups.map(g => {
+            {[...safeGroups].sort(window.sortByNumber).map(g => {
                 const sIds = g.sIds || [];
                 const members = sIds.map(sid => safeStudents.find(s => s && s.id === sid)).filter(Boolean);
 
