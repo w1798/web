@@ -27,7 +27,7 @@ function MultiSelectBar() {
             <div className="floating-bottom-strip">
                 <button 
                     id="floatingMultiSelectBtn" 
-                    className="floating-bottom-btn hidden"
+                    className="floating-bottom-btn"
                     title="多選模式"
                     onClick={toggleMultiSelectMode}
                 >

@@ -200,10 +200,8 @@ const startApp = () => {
             const undoToast = document.getElementById('undoToast');
             if (floatingBtn) {
                 const isModalOpen = !!document.querySelector('.modal-overlay:not(.hidden)');
-                const isBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 80);
-                
                 // 讀取 window.isMultiSelectMode（已由 React 同步更新）
-                const shouldShowFloating = isBottom && !window.isMultiSelectMode && !isModalOpen;
+                const shouldShowFloating = !window.isMultiSelectMode && !isModalOpen;
 
                 if (shouldShowFloating) {
                     floatingBtn.classList.remove('hidden');
