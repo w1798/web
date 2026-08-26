@@ -7,7 +7,7 @@
 
 <script>
     document.documentElement.style.visibility = 'hidden';
-    const APP_VER = "1.00d";
+    const APP_VER = "1.00e";
 </script>
 
 <script src="../loader_engine.js?ver=1.00d"></script>
@@ -40,7 +40,7 @@
         <div style="background:white; width:400px; margin:50px auto; padding:30px; border-radius:12px; position:relative; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
             <span onclick="closeSettings()" style="position:absolute; right:20px; top:15px; cursor:pointer; font-size:28px;">&times;</span>
             <h2 style="margin-top:0;">科目縮寫設定</h2>
-            <p style="color: #666;">格式：全名[空格]簡名（例如：數學 數），每行一筆。</p>
+            <p style="color: #666;">格式：不重複關鍵字全名[空格]簡名（例如：自然 自），每行一筆。</p>
             <textarea id="subjectMapInput" style="width: 100%; height: 300px; font-size: 20px; font-family: monospace; padding: 10px; border: 1px solid #ccc;"></textarea>
             <div style="margin-top:20px; text-align:right;">
                 <button onclick="resetSettingsOnly()" style="background: #9e9e9e; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 5px;">重置縮寫設定</button>

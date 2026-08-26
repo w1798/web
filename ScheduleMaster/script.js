@@ -154,18 +154,16 @@ function renderIntegratedTables() {
     let tableHeader = '<thead><tr><th>節次</th><th>週一</th><th>週二</th><th>週三</th><th>週四</th><th>週五</th></tr></thead><tbody>';
     
     const generateTable = (title, isTutor) => {
-        let summaryHtml = '';
-        if (isTutor) {
-            summaryHtml = allProcessedData.map(d => {
-                let cnt = 0;
-                for (let s = 0; s < 7; s++) for (let d2 = 0; d2 < 5; d2++) {
-                    let r = d.scheduleData[s][d2]; if (r === '—') continue;
-                    let t = d.teacherMap[simplifySubject(r)], h = d.teacherMap['導師姓名'] || '';
-                    if (!t || t.includes(h) || t.includes('導師')) cnt++;
-                }
-                return `${d.classNum}班${cnt}節`;
-            }).join('　');
-        }
+        let summaryHtml = allProcessedData.map(d => {
+            let cnt = 0;
+            for (let s = 0; s < 7; s++) for (let d2 = 0; d2 < 5; d2++) {
+                let r = d.scheduleData[s][d2]; if (r === '—') continue;
+                let t = d.teacherMap[simplifySubject(r)], h = d.teacherMap['導師姓名'] || '';
+                let isTC = !t || t.includes(h) || t.includes('導師');
+                if (isTutor ? isTC : !isTC) cnt++;
+            }
+            return `${d.classNum}班${cnt}節`;
+        }).join('　');
         let html = `<h3 style="display:inline;">${title}</h3><span style="margin-left:15px; font-size:15px; color:#555; font-weight:normal; vertical-align:middle;">${summaryHtml}</span><table border="1" style="border-collapse: collapse; text-align: center; width: 100%; clear:both;">` + tableHeader;
         for (let s = 0; s < 7; s++) {
             let rowStyle = (s === 3) ? 'style="border-bottom: 3px solid black;"' : '';
