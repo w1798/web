@@ -16,6 +16,7 @@ const links = [
     { id: "ScheduleMaster", category: "stage", title: "學年總課表", desc: "　能自動化整合多班級的 Word 格式課表，系統可讀取任課資訊，自動分類導師課與科任課。支援完全自訂的科目縮寫設定，一鍵生成清晰的「學年總課表」，大幅提升安排教學活動的效率。", url: "ScheduleMaster" },
     { id: "BKL2excel", category: "stage", title: "博客來書單一鍵轉", desc: "　是一款專為博客來書籍資料設計的自動化擷取工具。透過簡單的「全選、貼上、解析」三步驟，即可精準提取書名、ISBN、售價等八大核心資訊。程式支援多筆資料累加持久化儲存，並提供一鍵 Tab 格式複製，讓使用者能流暢地將批量書籍資訊匯入 Excel 進行管理。", url: "BKL2excel" },
     { id: "NameFormatter", category: "stage", title: "姓名中譯英格式轉換器", desc: "　本程式是一款專為「外文姓名中譯英」設計的格式自動化工具。使用者僅需輸入中文姓名，系統便能智慧識別姓氏與名字，並一鍵轉換為符合領務局規範的「姓,名1,名2;」格式。內建貼上、清除與複製功能，大幅提升行政處理效率與正確性。", url: "NameFormatter" },
+    { id: "StudentNameStrips", category: "stage", title: "教師手冊名條產生器", desc: "　本程式是一款輕量級網頁工具，專為教師快速製作學生名條而設計。使用者只需匯入包含學生姓名、生日等資料的 Excel 檔，程式便會自動套用 Word 範本，批次產生可列印的名條排版。", url: "StudentNameStrips" },
 
 
     { id: "TextLab", category: "doc", title: "多功能文字處理器", desc: "　透過累加運算邏輯，整合串接、分割、取代與重複項偵測等強大功能。極簡暗色介面搭配直覺式操作，助您瞬間完成複雜的文本清理與格式重塑。", url: "TextLab" },

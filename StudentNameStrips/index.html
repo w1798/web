@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>教師手冊名條產生器</title>
+  <script>
+    // Charles Nextime 系統定義
+    var APP_VER = '1.0.0a';
+    var APP_JSX = 'vanilla'; // 純 JS 模式，直接載入 script.js
+  </script>
+  <!-- 載入引擎 -->
+  <script src="../loader_engine.js?ver=1.0.0a"></script>
+
+</head>
+<body>
+  <div class="container">
+    <h1>教師手冊名條產生器</h1>
+    <p class="subtitle">上傳 .xls / .xlsx 檔案，以套印方式產生手冊名條 .docx</p>
+    <div class="upload-zone" id="dropZone">
+      <div class="icon">&#128196;</div>
+      <p>拖曳檔案到這裡，或點擊選擇檔案</p>
+      <p class="hint">支援 .xls / .xlsx 格式</p>
+      <input type="file" id="fileInput" accept=".xls,.xlsx">
+    </div>
+    <button class="btn" id="uploadBtn" disabled>上傳並產生名條</button>
+    <div class="result" id="result"></div>
+  </div>
+
+  <!-- 作者資訊 footer：留空，由 counter.js 自動帶入 -->
+  <footer></footer>
+
+  <!-- 第三方庫與主程式改由 loader_engine 透過 config.js 的 resources 自動載入 -->
+</body>
+</html>
