@@ -336,7 +336,7 @@ const App = () => {
                             <div style={{ background: '#1e1e2e', border: '1px solid var(--glass-border)', borderRadius: '1rem', padding: '2rem', maxWidth: '480px', width: '90%', fontSize: '0.95rem', lineHeight: 2.0 }} onClick={e => e.stopPropagation()}>
                                 <div style={{ color: 'var(--text-dim)', fontWeight: 700, marginBottom: '0.75rem', fontSize: '1.1rem' }}>💡 .docx 格式說明</div>
                                 <div>第一篇的第 1 行：題目</div>
-                                <div style={{ color: '#F9F900' }}>第 2 行：學號（純數字，如 5401）</div>
+                                <div style={{ color: '#F9F900' }}>第 2 行：學號（純數字 4~5 碼，如 5401）</div>
                                 <div>第 3 行：學生姓名</div>
                                 <div>第 4 行：指導老師（可略，空白則採預設老師）</div>
                                 <div style={{ color: 'var(--text-dim)', fontSize: '0.85rem', marginLeft: '1rem' }}>這要空一行，再接文章內容</div>

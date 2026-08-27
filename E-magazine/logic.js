@@ -195,8 +195,8 @@ const Logic = {
                 continue;
             }
 
-            // 以學號 (4位數字) 為錨點
-            if (/^\d{4}$/.test(line) && i > 0) {
+            // 以學號 (4~5位數字) 為錨點
+            if (/^\d{4,5}$/.test(line) && i > 0) {
                 const workObj = {
                     type: currentTypeMarker,
                     title: allLines[i-1],
@@ -209,7 +209,7 @@ const Logic = {
                 // 收集內文 (僅保留非空行，後續由系統加空行)
                 let j = i + 3;
                 while (j < allLines.length) {
-                    if (allLines[j+1] && /^\d{4}$/.test(allLines[j+1])) break;
+                    if (allLines[j+1] && /^\d{4,5}$/.test(allLines[j+1])) break;
                     if (allLines[j] !== "" && !allLines[j].startsWith("[類型:")) {
                         workObj.contentLines.push(allLines[j]);
                     }
