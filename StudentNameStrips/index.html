@@ -3,27 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>教師手冊名條產生器</title>
+  <title>學生手冊名條產生器</title>
   <script>
     // Charles Nextime 系統定義
-    var APP_VER = '1.0.0a';
+    var APP_VER = '1.0.0b';
     var APP_JSX = 'vanilla'; // 純 JS 模式，直接載入 script.js
   </script>
   <!-- 載入引擎 -->
-  <script src="../loader_engine.js?ver=1.0.0a"></script>
+  <script src="../loader_engine.js?ver=1.0.0b"></script>
 
 </head>
 <body>
   <div class="container">
-    <h1>教師手冊名條產生器</h1>
-    <p class="subtitle">上傳 .xls / .xlsx 檔案，以套印方式產生手冊名條 .docx</p>
-    <div class="upload-zone" id="dropZone">
-      <div class="icon">&#128196;</div>
-      <p>拖曳檔案到這裡，或點擊選擇檔案</p>
-      <p class="hint">支援 .xls / .xlsx 格式</p>
-      <input type="file" id="fileInput" accept=".xls,.xlsx">
+    <h1>學生手冊名條產生器</h1>
+    <p class="subtitle">說明：先在學務系統那，選</p>
+    <p class="subtitle">學生概況查詢 -&gt; 基本資料查詢 -&gt; 查詢 -&gt; 列印檔案到 Excel</p>
+    <div class="upload-row">
+      <div class="upload-zone" id="dropZone">
+        <div class="icon">&#128196;</div>
+        <p>1 點擊選擇檔案</p>
+        <p class="hint">支援 .xls / .xlsx 格式</p>
+        <input type="file" id="fileInput" accept=".xls,.xlsx">
+      </div>
+      <button class="btn" id="uploadBtn" disabled>2 確認並產生名條</button>
     </div>
-    <button class="btn" id="uploadBtn" disabled>上傳並產生名條</button>
     <div class="result" id="result"></div>
   </div>
 
