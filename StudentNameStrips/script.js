@@ -180,8 +180,8 @@
     const beforeTables = docXml.substring(0, docXml.indexOf('<w:tbl>'));
     const afterTables = docXml.substring(docXml.lastIndexOf('</w:tbl>') + '</w:tbl>'.length);
 
-    // 所有學生姓名扁平化
-    const names = students.map(s => esc(s.name));
+    // 所有學生姓名扁平化（座號直接接姓名，無空格）
+    const names = students.map(s => esc(s.seatNo) + esc(s.name));
     const totalCells = names.length;
     const cellsPerRow = 8;
 
