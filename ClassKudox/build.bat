@@ -1,7 +1,7 @@
 @echo off
 setlocal
 echo ======================================
-echo   ClassKudox2 - esbuild
+echo   ClassKudox - esbuild
 echo ======================================
 
 set ESBUILD=D:\portable\esbuild.exe
