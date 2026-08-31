@@ -628,5 +628,18 @@ const App = () => {
     );
 };
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<App />);
+// 確保在 DOM 與核心庫就緒後才進行渲染
+// (避免 script.js 在 #root 元素建立前執行，導致 createRoot 收到 null 而拋出 React error #299)
+const mountApp = () => {
+    const rootElement = document.getElementById('root');
+    if (rootElement && typeof ReactDOM !== 'undefined') {
+        const root = ReactDOM.createRoot(rootElement);
+        root.render(<App />);
+    }
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', mountApp);
+} else {
+    mountApp();
+}
