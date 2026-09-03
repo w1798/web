@@ -282,7 +282,7 @@ const ChieflyLogic = {
      */
     generateWordDoc(sheet) {
         const jobs = sheet.activeJobs.filter(j => !sheet.hiddenJobIds.includes(j.id));
-        const gridCols = sheet.gridCols || 6;
+        const gridCols = sheet.gridCols || 5;
         
         let html = `
             <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
