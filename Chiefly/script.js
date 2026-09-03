@@ -429,7 +429,7 @@ function App() {
                                 <div className="sheet-manager" style={{ margin: 0, padding: '0.5rem' }}>
                                     <h4 style={{ marginBottom: '0.4rem', fontSize: '1.2rem', color: 'var(--text-muted)' }}>📐 版面排列 (一列顯示)</h4>
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.4rem' }}>
-                                        {[4, 6, 8, 10].map(n => (
+                                        {[3, 4, 5, 6, 7, 8, 9, 10].map(n => (
                                             <button key={n} className={`tab-btn ${currentSheet.gridCols === n ? 'active' : ''}`} style={{ padding: '6px' }} onClick={() => updateCurrentSheet(s => ({ ...s, gridCols: n }))}>{n}</button>
                                         ))}
                                     </div>
