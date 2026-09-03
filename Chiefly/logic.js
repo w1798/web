@@ -9,7 +9,7 @@ const DEFAULT_SHEET_CONTENT = {
     activeJobs: [], 
     assignments: {},
     hiddenJobIds: [],
-    gridCols: 6,
+    gridCols: 5,
     // 字體大小與模式設定
     jobTitleSize: 1.2,
     tagSize: 1.25,
