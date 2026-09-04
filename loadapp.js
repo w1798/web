@@ -9,20 +9,12 @@
         const bar = document.getElementById('loading-bar');
         const text = document.getElementById('loading-text');
         const statusText = document.getElementById('loading-status');
-        const { isBabel: isBabelMode, isEsbuild: isEsbuildMode } = window.APP_ENV;
-        const isJSXProject = isBabelMode || isEsbuildMode;
+        const { isEsbuild: isEsbuildMode } = window.APP_ENV;
+        const isJSXProject = isEsbuildMode;
         
         let displayPercent = percent;
         let displayStatus = status || '載入中...';
 
-        if (isBabelMode && percent >= 80 && percent < 90) {
-            displayPercent = 80;
-            displayStatus = '100% 載入完成，正在啟動引擎...';
-        } else if (isBabelMode && percent >= 90) {
-            displayPercent = 90;
-            displayStatus = '引擎啟動完成';
-        }
-        
         if (bar) bar.style.width = displayPercent + '%';
         if (text) text.innerText = Math.round(displayPercent) + '%';
         if (statusText) statusText.innerText = displayStatus;
@@ -47,35 +39,9 @@
         }
     };
 
-    function startBabelOrFinish() {
-        const isBabelMode = window.APP_ENV.isBabel;
-        
-        if (!isBabelMode) {
-            window.updateLoading(100, '載入完成');
-            return;
-        }
-
-        let babelTimer = setInterval(function() {
-            const hasBabelTags = !!document.querySelector('script[type="text/babel"]');
-            if (hasBabelTags && window.Babel) {
-                clearInterval(babelTimer);
-                window.updateLoading(90, '正在編譯分析組件...');
-                setTimeout(() => {
-                    L('[Loader] 開始執行 Babel 轉換...');
-                    Babel.transformScriptTags();
-                    window.updateLoading(100, '引擎啟動完成');
-                }, 50);
-            } else if (window.loaderFinished && !hasBabelTags) {
-                clearInterval(babelTimer);
-                window.updateLoading(100);
-            }
-        }, 50);
-    }
-
     // 核心注入邏輯 (回歸 Script Tag 以保證相容性)
     function injectResource(type, item, onComplete) {
         const url = typeof item === 'string' ? item : item.url;
-        const scriptType = typeof item === 'object' ? item.type : null;
         const isCSS = type === 'css';
         const el = document.createElement(isCSS ? 'link' : 'script');
         const attr = isCSS ? 'href' : 'src';
@@ -83,23 +49,8 @@
         if (isCSS) {
             el.rel = 'stylesheet';
         } else {
-            let finalType = scriptType;
-            if (!finalType) {
-                finalType = window.APP_ENV.isBabel ? 'jsx' : 'js';
-            }
-
-            if (finalType === 'jsx') {
-                el.type = 'text/babel';
-                el.setAttribute('data-presets', 'react');
-            } else if (finalType !== 'js') {
-                el.type = finalType;
-            }
-            
             // 核心優化：只有 JS (正常執行腳本) 才需要 async = false
-            // JSX 不要 async = false，否則會導致瀏覽器在執行隊列中卡死無法觸發 onload
-            if (finalType === 'js') {
-                el.async = false;
-            }
+            el.async = false;
         }
 
         // 狀態管理
@@ -114,11 +65,6 @@
         // 先掛監聽，再設網址，防止本機快取漏掉事件
         el.onload = done;
         el.onerror = done;
-
-        // 針對 text/babel 增加 1.5 秒的保險，應對某些老舊瀏覽器不對資料標籤觸發 onload
-        if (!isCSS && el.type === 'text/babel') {
-            setTimeout(done, 1500);
-        }
 
         const ver = typeof APP_VER !== 'undefined' ? APP_VER : "1.00a";
         el[attr] = `${url}?ver=${ver}`;
@@ -158,7 +104,7 @@
                     if (isString) return 'dist/' + url;
                     return { ...item, url: 'dist/' + url };
                 }
-                
+
                 return item;
             });
         }
@@ -169,14 +115,13 @@
         const handleComplete = () => {
             window.loaderFinished = true;
             L('[Loader] 所有資源確認完成');
-            startBabelOrFinish();
             if (typeof reveal === 'function') reveal();
         };
 
         const reportProgress = (url) => {
             loadedCount++;
-            const { isBabel: isBabelMode, isEsbuild: isEsbuildMode } = window.APP_ENV;
-            const isJSXProject = isBabelMode || isEsbuildMode;
+            const { isEsbuild: isEsbuildMode } = window.APP_ENV;
+            const isJSXProject = isEsbuildMode;
             
             const progress = 20 + (loadedCount / totalResources) * (isJSXProject ? 60 : 80);
             const fileName = url.split('/').pop();

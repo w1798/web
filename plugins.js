@@ -22,22 +22,15 @@
             }
         });
 
-        const { isBabel: isBabelMode, isEsbuild: isEsbuildMode } = window.APP_ENV;
+        const { isEsbuild: isEsbuildMode } = window.APP_ENV;
 
-        if (isBabelMode || isEsbuildMode) {
+        if (isEsbuildMode) {
             // pro 模式：React 必須在 loadapp.js 之前載入 (lazy: false)
-            // babel 模式：React 可延遲載入，因為 Babel 轉換會等待 (lazy: true)
-            const isLazyReact = isBabelMode;
             const jsxLibs = [
-                { url: "https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js", lazy: isLazyReact },
-                { url: "https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js", lazy: isLazyReact }
+                { url: "https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js", lazy: false },
+                { url: "https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js", lazy: false }
             ];
             
-            // 只有 Babel 模式才加載 Babel
-            if (isBabelMode) {
-                jsxLibs.push({ url: "https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js", lazy: true });
-            }
-
             // 避免重複加入
             jsxLibs.forEach(jl => {
                 if (!libraries.some(l => (typeof l === 'string' ? l : l.url) === jl.url)) {
@@ -56,7 +49,7 @@
             // 模式匹配：如果是正常模式，跳過標記為 lazy 的；如果是 lazy 模式，指抓載入標記為 lazy 的
             const isItemLazy = lib.lazy === true;
             if (isLazy !== isItemLazy) return;
-
+            
             if (!shouldLoad) {
                 L(`[plugins] [略過]: ${fileName} (環境已支援)`);
                 return;

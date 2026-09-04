@@ -1,5 +1,5 @@
 /**
- * Charles Nextime - 資源載入引擎 (Engine.js)
+ * Charles Nextime - 資源載入引擎 (loader_engine.js)
  */
 
 // --- 全局 Log 系統 (最早初始化，供所有後續模組使用) ---
@@ -51,10 +51,8 @@ window._loadPako = () => {
 window.APP_ENV = (function() {
     const rawMode = typeof APP_JSX !== 'undefined' ? String(APP_JSX).toLowerCase() : 'vanilla';
     const isEsbuild = ['es', 'esbuild', '1'].includes(rawMode);
-    const isBabel = ['test', 'babel', 'ba'].includes(rawMode);
 
     return {
-        isBabel: isBabel,
         isEsbuild: isEsbuild,
         version: typeof APP_VER !== 'undefined' ? APP_VER : '1.00a'
     };

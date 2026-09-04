@@ -4,7 +4,7 @@ var resources = {
     ], 
     
     scripts: [
-        { url: "logic.js",  type: "js" },
+        "logic.js",
         "script.js"
     ]
 };

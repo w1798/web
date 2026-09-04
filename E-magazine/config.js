@@ -9,7 +9,7 @@ var resources = {
         "style.css"
     ], 
     scripts: [
-        { url: "logic.js",  type: "js" },
+        "logic.js",
         "script.js"
     ]
 };

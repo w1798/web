@@ -1,0 +1,1 @@
+(function(){function o(){console.log("[Updater] 正在檢查版本更新..."),fetch("version.json?t="+Date.now()).then(e=>e.json()).then(e=>{e.ver&&typeof APP_VER<"u"&&e.ver!==APP_VER&&(console.log(`[Updater] 偵測到新版本: ${APP_VER} -> ${e.ver}，自動更新中...`),localStorage.setItem("APP_VER",e.ver),location.reload(!0))}).catch(e=>console.warn("[Updater] 版本檢查失敗 (可能處於離線狀態)"))}setInterval(o,6e5)})();

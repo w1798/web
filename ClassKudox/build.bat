@@ -12,49 +12,71 @@ if not exist dist mkdir dist
 if not exist dist\components mkdir dist\components
 
 echo.
-echo [1/11] context.js
+echo [1/18] utils.js
+%ESBUILD% utils.js %OPTS% --outfile=dist\utils.js
+if errorlevel 1 goto :error
+
+echo [2/18] state.js
+%ESBUILD% state.js %OPTS% --outfile=dist\state.js
+if errorlevel 1 goto :error
+
+echo [3/18] sync.js
+%ESBUILD% sync.js %OPTS% --outfile=dist\sync.js
+if errorlevel 1 goto :error
+
+echo [4/18] actions.js
+%ESBUILD% actions.js %OPTS% --outfile=dist\actions.js
+if errorlevel 1 goto :error
+
+echo [5/18] ui.js
+%ESBUILD% ui.js %OPTS% --outfile=dist\ui.js
+if errorlevel 1 goto :error
+
+echo [6/18] init-ui.js
+%ESBUILD% init-ui.js %OPTS% --outfile=dist\init-ui.js
+if errorlevel 1 goto :error
+
+echo [7/18] updater.js
+%ESBUILD% updater.js %OPTS% --outfile=dist\updater.js
+if errorlevel 1 goto :error
+
+echo [8/18] context.js
 %ESBUILD% context.js %JSX_FLAGS% %OPTS% --outfile=dist\context.js
 if errorlevel 1 goto :error
 
-echo [2/11] components\Header.js
+echo [9/18] components\Header.js
 %ESBUILD% components\Header.js %JSX_FLAGS% %OPTS% --outfile=dist\components\Header.js
 if errorlevel 1 goto :error
 
-echo [3/11] components\StudentGrid.js
+echo [10/18] components\StudentGrid.js
 %ESBUILD% components\StudentGrid.js %JSX_FLAGS% %OPTS% --outfile=dist\components\StudentGrid.js
 if errorlevel 1 goto :error
 
-echo [4/11] components\GroupGrid.js
+echo [11/18] components\GroupGrid.js
 %ESBUILD% components\GroupGrid.js %JSX_FLAGS% %OPTS% --outfile=dist\components\GroupGrid.js
 if errorlevel 1 goto :error
 
-echo [5/11] components\MultiSelectBar.js
+echo [12/18] components\MultiSelectBar.js
 %ESBUILD% components\MultiSelectBar.js %JSX_FLAGS% %OPTS% --outfile=dist\components\MultiSelectBar.js
 if errorlevel 1 goto :error
 
-echo [6/11] components\Modals.js
+echo [13/18] components\Modals.js
 %ESBUILD% components\Modals.js %JSX_FLAGS% %OPTS% --outfile=dist\components\Modals.js
 if errorlevel 1 goto :error
 
-echo [7/11] components\Settings.js
+echo [14/18] components\Settings.js
 %ESBUILD% components\Settings.js %JSX_FLAGS% %OPTS% --outfile=dist\components\Settings.js
 if errorlevel 1 goto :error
 
-echo [8/11] components\Reports.js
+echo [15/18] components\Reports.js
 %ESBUILD% components\Reports.js %JSX_FLAGS% %OPTS% --outfile=dist\components\Reports.js
 if errorlevel 1 goto :error
 
-echo [9/11] script.js
+echo [16/18] script.js
 %ESBUILD% script.js %JSX_FLAGS% %OPTS% --outfile=dist\script.js
 if errorlevel 1 goto :error
 
-echo [10/11] vanilla.js
-copy /b utils.js+state.js+sync.js+actions.js+ui.js+init-ui.js+updater.js dist\vanilla_raw.js
-%ESBUILD% dist\vanilla_raw.js %OPTS% --outfile=dist\vanilla.js
-del dist\vanilla_raw.js
-if errorlevel 1 goto :error
-
-echo [11/11] style.css
+echo [17/18] style.css
 %ESBUILD% style.css --minify --charset=utf8 --outfile=dist\style.css
 if errorlevel 1 goto :error
 
