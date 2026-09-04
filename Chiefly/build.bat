@@ -3,7 +3,7 @@ SET ESBUILD=D:\portable\esbuild.exe
 IF NOT EXIST dist mkdir dist
 
 echo Building Chiefly...
-%ESBUILD% logic.js --minify --outfile=dist/vanilla.js --platform=browser
+%ESBUILD% logic.js --minify --outfile=dist/logic.js --platform=browser
 if errorlevel 1 goto :error
 
 %ESBUILD% script.js --minify --outfile=dist/script.js --platform=browser --loader:.js=jsx
