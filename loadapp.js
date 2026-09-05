@@ -115,6 +115,15 @@
         const handleComplete = () => {
             window.loaderFinished = true;
             L('[Loader] 所有資源確認完成');
+            // 直接同步隱藏 loading screen（不依賴 transition/setTimeout，避免 file:/// 下卡住）
+            const screen = document.getElementById('loading-screen');
+            const root = document.getElementById('root');
+            if (screen) {
+                screen.style.opacity = '0';
+                screen.style.display = 'none';
+            }
+            if (root) root.style.visibility = 'visible';
+            document.documentElement.style.visibility = 'visible';
             if (typeof reveal === 'function') reveal();
         };
 
