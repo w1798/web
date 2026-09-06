@@ -58,6 +58,12 @@ window.APP_ENV = (function() {
     };
 })();
 
+// --- 版本參數集中化 (R6) ---
+window.getVersionedUrl = function(url) {
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}ver=${window.APP_ENV.version}`;
+};
+
 function reveal(isTimeout) {
     // 只有當「是因為超時觸發」且「事實上已經載入完成」時，才攔截不處理
     if (isTimeout && typeof window.loaderFinished !== 'undefined') return;
@@ -95,13 +101,13 @@ function reveal(isTimeout) {
     document.documentElement.style.visibility = 'visible';
 }
 
-// 輔助函式：建立 Script 標籤並返回 Promise
+// 輔助函式：建立 Script 標籤並返回 Promise (R5: reject 傳 Error 物件)
 function loadScript(src) {
     return new Promise((resolve, reject) => {
         const script = document.createElement('script');
         script.src = src;
         script.onload = () => resolve(src);
-        script.onerror = () => reject(src);
+        script.onerror = () => reject(new Error(`Script load failed: ${src}`));
         document.head.appendChild(script);
     });
 }
@@ -117,20 +123,24 @@ async function startLoading() {
     try {
         // --- 第一步：載入核心配置 ---
         if (window.updateLoading) window.updateLoading(5, '讀取系統配置...');
-        await loadScript(`config.js?ver=${version}`);
+        // config.js 永遠相對於頁面（專案目錄），不加 pathPrefix；共用庫才需 ../ 到主倉根目錄
+        await loadScript(window.getVersionedUrl(`config.js`));
 
         // --- 第二步：並行載入通用插件 ---
         const commonAssets = [
-            `${pathPrefix}counter.js?ver=${version}`,
-            `${pathPrefix}plugins.js?ver=${version}`
+            window.getVersionedUrl(`${pathPrefix}counter.js`),
+            window.getVersionedUrl(`${pathPrefix}plugins.js`)
         ];
         
         const results = await Promise.allSettled(commonAssets.map(src => loadScript(src)));
+        results.forEach(r => {
+            if (r.status === 'rejected') LE(`[Engine] 共用插件載入失敗: ${r.reason?.message || r.reason}`);
+        });
         if (window.updateLoading) window.updateLoading(20, '準備核心插件...');
         
         // --- 第三步：載入主程式 loadapp.js ---
         if (window.updateLoading) window.updateLoading(60, '啟動應用程式載入器...');
-        await loadScript(`${pathPrefix}loadapp.js?ver=${version}`);
+        await loadScript(window.getVersionedUrl(`${pathPrefix}loadapp.js`));
 
         // --- loadapp.js 已載入，資源載入階段開始 ---
         // 不清除 overallTimeoutId，保留 6 秒全域超時保險覆蓋資源載入
@@ -146,8 +156,31 @@ async function startLoading() {
         }
 
     } catch (error) {
-        LE("[Engine] 載入過程中發生關鍵錯誤:", error);
-        reveal(false);
+        // R5: 錯誤分類處理
+        const msg = error?.message || String(error);
+        const isConfigMissing = msg.includes('config.js');
+        const isNetworkError = msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('ERR_');
+        const isScriptError = msg.includes('Script load failed');
+        
+        if (isConfigMissing) {
+            // 配置遺失 → 顯示錯誤頁提示
+            LE("[Engine] 核心配置遺失:", error);
+            const statusEl = document.getElementById('status');
+            if (statusEl) statusEl.innerHTML = "<span style='color:red; font-weight:bold;'>[Engine] 找不到 config.js，請確認專案結構完整。</span>";
+            reveal(false);
+        } else if (isNetworkError) {
+            // 網路失敗 → 記錄並 reveal
+            LE("[Engine] 網路載入失敗:", error);
+            reveal(false);
+        } else if (isScriptError) {
+            // 腳本錯誤 → 記錄並提前揭露（避免卡在 loading screen 6 秒）
+            LE("[Engine] 腳本載入錯誤，嘗試繼續:", error);
+            reveal(false);
+        } else {
+            // 其他未預期錯誤
+            LE("[Engine] 載入過程中發生關鍵錯誤:", error);
+            reveal(false);
+        }
     }
 }
 

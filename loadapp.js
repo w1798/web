@@ -19,23 +19,10 @@
         if (text) text.innerText = Math.round(displayPercent) + '%';
         if (statusText) statusText.innerText = displayStatus;
         
-        // 揭開遮罩邏輯
+        // 進度達 100% 時，僅更新 UI 文字；Loading Screen 揭露統一由 loader_engine.reveal() 控制
         if (percent >= 100) {
-            const screen = document.getElementById('loading-screen');
-            const root = document.getElementById('root');
             const statusEl = document.getElementById('status');
-            
-            // 重要：清理主引擎留下的任何警告
             if (statusEl) statusEl.innerHTML = '';
-
-            if (screen && screen.style.display !== 'none') {
-                screen.style.opacity = '0';
-                if (root) root.style.visibility = 'visible'; 
-                setTimeout(() => {
-                    screen.style.display = 'none';
-                    if (root) root.style.visibility = 'visible';
-                }, 500); 
-            }
         }
     };
 
@@ -64,10 +51,14 @@
 
         // 先掛監聽，再設網址，防止本機快取漏掉事件
         el.onload = done;
-        el.onerror = done;
+        el.onerror = () => {
+            if (isDone) return;
+            isDone = true;
+            LE(`[Loader] 載入失敗 ${type.toUpperCase()}: ${url.split('/').pop()}`);
+            if (onComplete) onComplete();
+        };
 
-        const ver = typeof APP_VER !== 'undefined' ? APP_VER : "1.00a";
-        el[attr] = `${url}?ver=${ver}`;
+        el[attr] = window.getVersionedUrl(url);
         document.head.appendChild(el);
     }
 
@@ -115,15 +106,7 @@
         const handleComplete = () => {
             window.loaderFinished = true;
             L('[Loader] 所有資源確認完成');
-            // 直接同步隱藏 loading screen（不依賴 transition/setTimeout，避免 file:/// 下卡住）
-            const screen = document.getElementById('loading-screen');
-            const root = document.getElementById('root');
-            if (screen) {
-                screen.style.opacity = '0';
-                screen.style.display = 'none';
-            }
-            if (root) root.style.visibility = 'visible';
-            document.documentElement.style.visibility = 'visible';
+            // 僅設定完成旗標，統一由 loader_engine.reveal() 處理 UI 揭露（避免雙重控制造成閃爍）
             if (typeof reveal === 'function') reveal();
         };
 
