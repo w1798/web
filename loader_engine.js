@@ -132,12 +132,10 @@ async function startLoading() {
         if (window.updateLoading) window.updateLoading(60, '啟動應用程式載入器...');
         await loadScript(`${pathPrefix}loadapp.js?ver=${version}`);
 
-        // --- 全部成功：清除超時計時器並確保 UI 乾淨 ---
-        if (window.overallTimeoutId) {
-            clearTimeout(window.overallTimeoutId);
-            window.overallTimeoutId = null;
-        }
-        
+        // --- loadapp.js 已載入，資源載入階段開始 ---
+        // 不清除 overallTimeoutId，保留 6 秒全域超時保險覆蓋資源載入
+        // reveal(true) 內部會檢查 window.loaderFinished，正常完成時不會重複處理
+
         // 強致清理一次 status (應對極速載入時的殘留)
         const statusEl = document.getElementById('status');
         if (statusEl) statusEl.innerHTML = "";
@@ -153,4 +151,9 @@ async function startLoading() {
     }
 }
 
-startLoading();
+// 等待 DOM 就緒再啟動，修復 file:/// 下 <body> 尚未解析導致 #loading-screen 找不到的問題
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startLoading);
+} else {
+    startLoading();
+}

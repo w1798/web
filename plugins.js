@@ -43,7 +43,7 @@
 
         libraries.forEach(item => {
             const lib = typeof item === 'string' ? { url: item } : item;
-            const fileName = new URL(lib.url).pathname.split('/').pop();
+            const fileName = new URL(lib.url, window.location.href).pathname.split('/').pop();
             const shouldLoad = (lib.condition !== undefined) ? lib.condition : true;
             
             // 模式匹配：如果是正常模式，跳過標記為 lazy 的；如果是 lazy 模式，指抓載入標記為 lazy 的
@@ -55,21 +55,40 @@
                 return;
             }
 
+            const isRoot = (typeof APP_ROOT !== 'undefined' && APP_ROOT === 1);
+            const defaultPrefix = isRoot ? "libs/" : "../libs/";
+            const fallbackPath = lib.fallback || `${defaultPrefix}${fileName}`;
+
             const script = document.createElement('script');
             script.src = lib.url;
             // 關鍵修復：即使是延遲載入，也必須設為 async = false 以保證依賴順序 (React -> ReactDOM)
             script.async = false; 
 
-            script.onload = () => L(`[plugins] [成功] ${isLazy ? '背景' : '核心'}庫已載入: ${fileName}`);
-            script.onerror = function() {
-                const isRoot = (typeof APP_ROOT !== 'undefined' && APP_ROOT === 1);
-                const defaultPrefix = isRoot ? "libs/" : "../libs/";
-                const fallbackPath = lib.fallback || `${defaultPrefix}${fileName}`;
+            let settled = false;
+            const markSettled = () => { settled = true; };
+
+            script.onload = () => {
+                markSettled();
+                L(`[plugins] [成功] ${isLazy ? '背景' : '核心'}庫已載入: ${fileName}`);
+            };
+            script.onerror = () => {
+                markSettled();
+                L(`[plugins] [失敗] ${fileName} CDN 載入失敗，改用本地: ${fallbackPath}`);
                 const fallbackScript = document.createElement('script');
                 fallbackScript.src = fallbackPath;
                 fallbackScript.async = false;
+                fallbackScript.onload = () => L(`[plugins] [成功] 核心庫已載入: ${fileName} (fallback)`);
+                fallbackScript.onerror = () => L(`[plugins] [失敗] 核心庫載入失敗: ${fileName}`);
                 document.head.appendChild(fallbackScript);
             };
+
+            // CDN 超時 fallback：5 秒無回應則改用本地
+            setTimeout(() => {
+                if (!settled) {
+                    L(`[plugins] [超時] ${fileName} CDN 掛起，改用本地: ${fallbackPath}`);
+                    script.src = fallbackPath;
+                }
+            }, 5000);
 
             document.head.appendChild(script);
         });
