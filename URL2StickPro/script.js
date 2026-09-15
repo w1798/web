@@ -173,7 +173,10 @@ async function mainProcess() {
         // 4. QR Code 生成 (Canvas 繪製中心文字)
         if (url.length < 90) {
             const sep = url.includes('?') ? '&' : '?';
-            url += sep + "padding=" + " ".repeat(90 - url.length - 9);
+            const neededPadding = 90 - url.length - sep.length - "padding=".length;
+            if (neededPadding > 0) {
+                url += sep + "padding=" + " ".repeat(neededPadding);
+            }
         }
 
         const qrUint8 = await new Promise((resolve) => {
