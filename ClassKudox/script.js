@@ -600,8 +600,9 @@ const startApp = () => {
                 return true;
             });
             const validItems = [...new Set(filteredLogs.map(l => l.lb))].sort();
+            const sortedStudents = [...students].sort((a, b) => a.id.localeCompare(b.id, 'zh-TW'));
             let csv = '\uFEFF姓名/項目,總點數,' + validItems.join(',') + '\n';
-            students.forEach(s => {
+            sortedStudents.forEach(s => {
                 const sLogs = filteredLogs.filter(l => l.sID === s.id);
                 if (sLogs.length === 0) return;
                 const total = sLogs.reduce((acc, l) => acc + l.pt, 0);
@@ -610,7 +611,7 @@ const startApp = () => {
                 csv += row + '\n';
             });
             csv += '\n姓名,總次數,' + validItems.join(',') + '\n';
-            students.forEach(s => {
+            sortedStudents.forEach(s => {
                 const sLogs = filteredLogs.filter(l => l.sID === s.id);
                 if (sLogs.length === 0) return;
                 let row = `"${s.id}",${sLogs.length}`;
