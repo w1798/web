@@ -110,6 +110,7 @@ const Reports = React.memo(function Reports() {
 
     const handleStudentClick = (sid) => {
         setSelectedStudent(sid);
+        window._reportSelectedStudent = sid;
         setCurrentPage(1);
         document.getElementById('resetReportFilterBtn')?.classList.remove('hidden');
         document.getElementById('resetReportFilterBtn2')?.classList.remove('hidden');
@@ -118,6 +119,7 @@ const Reports = React.memo(function Reports() {
 
     const resetFilter = React.useCallback(() => {
         setSelectedStudent('');
+        window._reportSelectedStudent = '';
         setCurrentPage(1);
         document.getElementById('resetReportFilterBtn')?.classList.add('hidden');
         document.getElementById('resetReportFilterBtn2')?.classList.add('hidden');
@@ -147,6 +149,7 @@ const Reports = React.memo(function Reports() {
             setSortBy('score');
             setCurrentPage(1);
             setSelectedStudent('');
+            window._reportSelectedStudent = '';
             setCustomStart('');
             setCustomEnd('');
             const filter = document.getElementById('timeRangeFilter');
@@ -301,7 +304,7 @@ const Reports = React.memo(function Reports() {
 
                             <h3 style={{ fontSize: '1em', borderBottom: '2px solid var(--border-color)', paddingBottom: '0.4rem', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <span id="reportActivityTitle">{activeLabel} 的{reportView === 'treasure' ? '寶物' : '紀錄'}</span>
-                                <button id="resetReportFilterBtn2" className={`small-btn cancel-btn ${!selectedStudent ? 'hidden' : ''}`} onClick={resetFilter}>↩️ 回到全班</button>
+                                <button id="resetReportFilterBtn2" className={`small-btn secondary-btn ${!selectedStudent ? 'hidden' : ''}`} onClick={resetFilter}>↩️ 回到全班</button>
                             </h3>
 
                             <div className="reports-right-inner">

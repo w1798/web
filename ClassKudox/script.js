@@ -600,7 +600,11 @@ const startApp = () => {
                 return true;
             });
             const validItems = [...new Set(filteredLogs.map(l => l.lb))].sort();
-            const sortedStudents = [...students].sort((a, b) => a.id.localeCompare(b.id, 'zh-TW'));
+            let sortedStudents = [...students].sort((a, b) => a.id.localeCompare(b.id, 'zh-TW'));
+            const reportSid = window._reportSelectedStudent;
+            if (reportSid) {
+                sortedStudents = sortedStudents.filter(s => s.id === reportSid);
+            }
             let csv = '\uFEFF姓名/項目,總點數,' + validItems.join(',') + '\n';
             sortedStudents.forEach(s => {
                 const sLogs = filteredLogs.filter(l => l.sID === s.id);
