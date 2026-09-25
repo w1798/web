@@ -10,10 +10,10 @@
 
 <script>
     document.documentElement.style.visibility = 'hidden';
-    const APP_VER = "1.00e";
+    const APP_VER = "1.00g";
 </script>
 
-<script src="../loader_engine.js?ver=1.00f"></script>
+<script src="../loader_engine.js?ver=1.00g"></script>
     
     <style>
         .quick-select-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 15px; 
@@ -307,6 +307,7 @@ onchange="generateStudentReport()"></select>
     <div class="modal-content modal-full dynamic-size" id="totalModalContent">
         <div class="modal-header-btns">
             <button class="nav-btn" onclick="copyTotalList()">複製名單</button>
+            <button class="nav-btn" onclick="exportTotalListCSV()">匯出 CSV</button>
             <button class="nav-btn" onclick="closeModal('totalListModal')">關閉</button>
         </div>
         <h2>總清點名單(點選任務名稱進行圈選)</h2>

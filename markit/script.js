@@ -585,6 +585,78 @@ function copyTotalList() {
     navigator.clipboard.writeText(document.getElementById('totalListDynamicBody').innerText).then(() => alert("已複製！"));
 }
 
+function exportTotalListCSV() {
+    const sortedAssignments = getSortedList();
+    const studentList = parseList(state.settings.studentList);
+    
+    if (studentList.length === 0) {
+        alert("無學生名單，無法匯出");
+        return;
+    }
+    if (sortedAssignments.length === 0) {
+        alert("無任務資料，無法匯出");
+        return;
+    }
+
+    // CSV 標準轉義：含逗號、換行、雙引號需用雙引號包覆，雙引號轉為兩個雙引號
+    const escapeCsv = (val) => {
+        const str = String(val);
+        if (str.includes(',') || str.includes('\n') || str.includes('\r') || str.includes('"')) {
+            return '"' + str.replace(/"/g, '""') + '"';
+        }
+        return str;
+    };
+
+    // 取得狀態數與標籤
+    const statusCount = parseInt(state.settings.statusCount || 1);
+    const statusLabels = state.settings.statusLabels || {};
+
+    // 建立統計名稱：0未完成, 1{label1}, 2{label2}... N{labelN}
+    const statNames = ['0未完成'];
+    for (let i = 1; i <= statusCount; i++) {
+        statNames.push(`${i}${statusLabels[i] || `狀態${i}`}`);
+    }
+
+    // 第一列：學生 + 統計名稱 + 空欄 + 任務名稱
+    const header = ['學生', ...statNames.map(escapeCsv), '', ...sortedAssignments.map(a => escapeCsv(a.name))].join(',');
+
+    // 每個學生一行：座號 + 個人統計(各狀態出現次數) + 空欄 + 該學生各任務狀態
+    const rows = studentList.map(student => {
+        // 計算該學生的個人統計：遍歷所有任務，統計 status 0..N 出現次數
+        const personalStat = new Array(statNames.length).fill(0);
+        sortedAssignments.forEach(a => {
+            const record = a.doneList.find(item => (typeof item === 'object' ? item.id === student : item === student));
+            let status = 0;
+            if (record) {
+                status = (typeof record === 'object' && record.status) ? record.status : 1;
+            }
+            personalStat[status]++;
+        });
+
+        // 該學生各任務的狀態數字
+        const taskStatuses = sortedAssignments.map(a => {
+            const record = a.doneList.find(item => (typeof item === 'object' ? item.id === student : item === student));
+            let status = 0;
+            if (record) {
+                status = (typeof record === 'object' && record.status) ? record.status : 1;
+            }
+            return status;
+        });
+
+        const cells = [escapeCsv(student), ...personalStat.map(c => escapeCsv(c)), '', ...taskStatuses];
+        return cells.join(',');
+    });
+
+    const csvContent = '\ufeff' + [header, ...rows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '總清單.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
 async function exportData() {
     const toSave = JSON.parse(JSON.stringify(state));
     delete toSave.settings.binId;

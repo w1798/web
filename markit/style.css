@@ -445,7 +445,7 @@ color: var(--text); }
 .report-header-left { display: flex; align-items: center; gap: 30px; margin-bottom: 10px; padding-left: 20px; }
 .report-header-left h2 { margin: 0; font-size: 1.8rem; color: var(--primary); }
 .report-header-left .select-box { display: flex; align-items: center; gap: 10px; font-size: 1.4rem; font-weight: bold; }
-.report-link { color: var(--primary); text-decoration: underline; cursor: pointer; font-size: 1.4rem; margin: 10px 15px 10px 0; display: inline-block; font-weight: bold; }
+.report-link { color: var(--primary); text-decoration: underline; cursor: pointer; font-size: 1.4rem; margin: 10px 0; display: block; font-weight: bold; }
 .report-link:hover { filter: brightness(0.8); color: #000; }
 .select-short { font-size: 1.5rem; padding: 5px 15px; border-radius: 8px; cursor: pointer; border: 2px solid var(--primary); }
 .author-info { margin-top: 30px; padding: 20px; text-align: center; }
