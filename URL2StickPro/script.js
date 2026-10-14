@@ -43,6 +43,8 @@ function initApp() {
         line_spacing: "14",
         qr_size_cm: "2.5",
         offset_dxa: "240",
+        indent_left: "1",
+        indent_right: "1",
         caption: "Nextime 網頁程式集",
         url: "https://w1798.github.io/web",
         subject: "支援圖文上下或左右並排\n自定尺寸、字體大小\n適配各種規格的標籤紙"
@@ -145,6 +147,8 @@ async function mainProcess() {
         const vAlignInput = document.getElementById('v_align').value;
         const hAlignInput = document.getElementById('h_align').value;
         const offsetDxa = parseInt(document.getElementById('offset_dxa').value) || 0;
+        const indentLeft = parseFloat(document.getElementById('indent_left').value) || 0;
+        const indentRight = parseFloat(document.getElementById('indent_right').value) || 0;
 
         // 2. 處理文字內容與對齊映射
         const lines = subject.split('\n').filter(t => t.trim() !== "");
@@ -250,8 +254,11 @@ async function mainProcess() {
                 const lineSpacingDxa = lineSpacingPt * 20;
                 // 在左右排模式下，圖案那一格設為置中，視覺效果最好
                 const qrPara = new Paragraph({ alignment: isSideBySide ? AlignmentType.CENTER : hAlignMap[hAlignInput], children: [qrImg] });
+                const indentLeftDxa = Math.round(indentLeft * fSize * 20);
+                const indentRightDxa = Math.round(indentRight * fSize * 20);
                 const textParas = lines.map(t => new Paragraph({
                     alignment: hAlignMap[hAlignInput],
+                    indent: { left: indentLeftDxa, right: indentRightDxa },
                     spacing: { line: lineSpacingDxa, lineRule: "exact" },
                     children: [new TextRun({ text: t, size: fSize * 2, font: "微軟正黑體" })]
                 }));
