@@ -10,10 +10,10 @@
 
 <script>
     document.documentElement.style.visibility = 'hidden';
-    const APP_VER = "1.00g";
+    const APP_VER = "1.01a";
 </script>
 
-<script src="../loader_engine.js?ver=1.00g"></script>
+<script src="../loader_engine.js?ver=1.01a"></script>
     
     <style>
         .quick-select-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 15px; 
@@ -76,6 +76,17 @@ color: #888; font-size: 1.5rem; font-weight: bold; }
         <button class="nav-btn" onclick="openTotalListModal()">總清單</button>
         <button class="nav-btn btn-primary" onclick="openAddModal()">新增任務</button>
     </div>
+
+    <!-- 多任務入口（手機 <768px 由 JS 隱藏，強制單任務） -->
+    <div id="multiTaskEntry" class="multi-task-entry">
+        <label class="multi-task-label" for="multiTaskSelect">同時處理</label>
+        <select id="multiTaskSelect" class="select-short-width" onchange="setMultiTaskCount(this.value)">
+            <option value="0">單一任務</option>
+            <option value="1">1 個任務</option>
+            <option value="2">2 個任務</option>
+            <option value="4">4 個任務</option>
+        </select>
+    </div>
 </div>
 
 
@@ -83,6 +94,9 @@ color: #888; font-size: 1.5rem; font-weight: bold; }
 
 <main id="assignmentContainer" class="main-layout"></main>
 <div id="paginationContainer" class="pagination-controls"></div>
+
+<!-- 多任務面板容器（多任務模式時顯示，取代卡片清單） -->
+<div id="multiTaskContainer" class="multi-task-container"></div>
 
 
 

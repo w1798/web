@@ -65,7 +65,8 @@ function getInitialState() {
             binId: '',
             apiKey: '',
             expiryDays: 0,
-            pageSize: 10
+            pageSize: 10,
+            multiTaskCount: 0
         },
         assignments: []
     };
@@ -77,6 +78,8 @@ let isDragging = false;
 window.onload = () => {
     initSelectors();
     loadData();
+    syncMultiTaskUI();
+    renderMainView();
 };
 
 function initSelectors() {
@@ -162,7 +165,7 @@ function loadData() {
     
     syncSettingsToUI();
     applySettings();
-    renderAssignments();
+    renderMainView();
 }
 
 /**
@@ -328,6 +331,219 @@ function getSortedList() {
 
 let currentPage = 1;
 
+/* ===== 多任務模式（桌機/平板：單一、2、4；手機強制單一） ===== */
+
+// 面板選取暫存（僅存在於本次開檔，不寫入 localStorage；切換 1/2/4 時會重設為最新任務）
+let multiTaskSlots = [];
+
+// 依螢幕寬度取得允許的多任務數（<768px 一律 0 = 單任務）
+function getAllowedMultiTaskCount() {
+    return (typeof window !== 'undefined' && window.innerWidth < 768) ? 0 : parseInt(state.settings.multiTaskCount || 0);
+}
+
+// 切換多任務數量（0/1/2/4）
+function setMultiTaskCount(n) {
+    let v = parseInt(n) || 0;
+    if ([1, 2, 4].indexOf(v) === -1) v = 0;
+    state.settings.multiTaskCount = v;
+    // 切換時不記憶先前選取，一律改用最新的任務
+    multiTaskSlots = [];
+    saveDataQuietly();
+    syncMultiTaskUI();
+    renderMainView();
+}
+
+// 停用多任務（視窗變窄時呼叫）
+function disableMultiTask() {
+    state.settings.multiTaskCount = 0;
+    multiTaskSlots = [];
+    saveDataQuietly();
+    syncMultiTaskUI();
+    renderMainView();
+}
+
+// 同步下拉選單 UI
+function syncMultiTaskUI() {
+    const sel = document.getElementById('multiTaskSelect');
+    if (sel) sel.value = String(getAllowedMultiTaskCount());
+    const wrap = document.getElementById('multiTaskEntry');
+    if (wrap) wrap.style.display = (typeof window !== 'undefined' && window.innerWidth < 768) ? 'none' : '';
+}
+
+// 渲染學生方格到指定容器（單任務 modal 與多任務面板共用）
+function renderStudentGrid(container, work) {
+    if (!container || !work) return;
+    container.innerHTML = '';
+    parseList(state.settings.studentList).forEach(n => {
+        const div = document.createElement('div');
+        div.className = 'student-item';
+        div.innerText = n;
+        updateStudentUI(n, div, work);
+
+        div.onmousedown = () => { isDragging = true; toggleStudent(n, div, work); };
+        div.onmouseenter = () => { if (isDragging) toggleStudent(n, div, work); };
+        container.appendChild(div);
+    });
+}
+
+// 產生狀態圖例 HTML（多任務面板用精簡版）
+function buildLegendHTML() {
+    const maxStatus = parseInt(state.settings.statusCount || 1);
+    let html = '';
+    for (let i = 1; i <= maxStatus; i++) {
+        const fullLabel = state.settings.statusLabels[i] || `狀態${i}`;
+        html += `<span class="legend-item"><span class="status-dot status-${i}"></span><span class="legend-text">${i}.${fullLabel}</span></span>`;
+    }
+    return html;
+}
+
+// 取得每個面板目前對應的任務 id（無效/缺漏時自動回填為最新任務）
+function getSlotTaskIds(n) {
+    const list = getSortedList();
+    const allIds = list.map(a => a.id);
+    let slots = Array.isArray(multiTaskSlots) ? multiTaskSlots.slice() : [];
+
+    // 清除已不存在的任務 id
+    slots = slots.filter(id => allIds.indexOf(id) !== -1);
+
+    // 依序補齊，並避免與前面面板重複
+    const used = [];
+    for (let i = 0; i < n; i++) {
+        const cur = slots[i];
+        if (cur !== undefined && cur !== null && used.indexOf(cur) === -1) {
+            used.push(cur);
+        } else {
+            const next = allIds.find(id => used.indexOf(id) === -1);
+            slots[i] = (next === undefined) ? null : next;
+            if (next !== undefined) used.push(next);
+        }
+    }
+    slots.length = n;
+    multiTaskSlots = slots;
+    return slots;
+}
+
+// 變更某個面板顯示的任務
+function setSlotTask(slotIndex, taskId) {
+    const n = getAllowedMultiTaskCount();
+    const slots = getSlotTaskIds(n);
+    const i = parseInt(slotIndex, 10);
+    if (isNaN(i) || i < 0 || i >= n) return;
+
+    const id = taskId ? parseInt(taskId, 10) : null;
+    // 不可與其他面板重複：若重複，把重複的那個面板設為空白
+    if (id !== null) {
+        for (let j = 0; j < slots.length; j++) {
+            if (j !== i && slots[j] === id) slots[j] = null;
+        }
+    }
+    slots[i] = id;
+    multiTaskSlots = slots;
+    renderMultiTask();
+}
+
+// 產生單一面板的「選擇任務」下拉選單 HTML
+function buildSlotSelectHtml(slotIndex, currentId) {
+    const list = getSortedList();
+    const slots = multiTaskSlots || [];
+    let opts = `<option value=""${currentId === null ? ' selected' : ''}>— 選擇任務 —</option>`;
+    list.forEach(a => {
+        const usedByOther = slots.some((sid, j) => j !== slotIndex && sid === a.id);
+        opts += `<option value="${a.id}"${a.id === currentId ? ' selected' : ''}${usedByOther ? ' disabled' : ''}>${a.name}</option>`;
+    });
+    return `<select class="task-panel-select" onchange="setSlotTask(${slotIndex}, this.value)">${opts}</select>`;
+}
+
+// 渲染多任務面板
+function renderMultiTask() {
+    const n = getAllowedMultiTaskCount();
+    const totalCount = parseList(state.settings.studentList).length;
+    const slotIds = getSlotTaskIds(n);
+
+    let html = '';
+    for (let i = 0; i < n; i++) {
+        const a = state.assignments.find(x => x.id === slotIds[i]) || null;
+        const picker = `<div class="task-panel-picker">
+                <span class="task-panel-picker-label">選擇任務</span>
+                ${buildSlotSelectHtml(i, a ? a.id : null)}
+            </div>`;
+
+        if (!a) {
+            html += `<div class="task-panel task-panel-empty">
+                ${picker}
+                <div class="task-panel-empty-hint">尚未選擇任務<br><button class="nav-btn btn-primary btn-small" onclick="openAddModal()">+ 新增任務</button></div>
+            </div>`;
+            continue;
+        }
+        const undone = totalCount - a.doneList.length;
+        html += `<div class="task-panel">
+            <div class="task-panel-head">
+                ${picker}
+                <div class="task-panel-meta">
+                    <span class="task-panel-count" id="pc_${a.id}">${undone > 0 ? undone + ' 人未交' : '✅ 已完成'}</span>
+                    <button class="btn-icon" title="展開編輯" onclick="closeAllModals(); openDetail(${a.id})">✎</button>
+                </div>
+            </div>
+            <div class="task-panel-legend">${buildLegendHTML()}</div>
+            <div class="task-panel-body scroll-box"><div class="student-grid" id="mtGrid_${a.id}"></div></div>
+        </div>`;
+    }
+
+    const container = document.getElementById('multiTaskContainer');
+    if (container) {
+        container.innerHTML = html;
+        container.dataset.count = String(n);
+    }
+
+    // 綁定各面板的學生方格
+    slotIds.forEach(id => {
+        if (id === null || id === undefined) return;
+        renderStudentGrid(document.getElementById('mtGrid_' + id), state.assignments.find(x => x.id === id));
+    });
+
+    window.onmouseup = () => isDragging = false;
+}
+
+// 統一主畫面渲染：多任務 / 單任務卡片 切換
+function renderMainView() {
+    const cards = document.getElementById('assignmentContainer');
+    const pagination = document.getElementById('paginationContainer');
+    const multi = document.getElementById('multiTaskContainer');
+    const n = getAllowedMultiTaskCount();
+
+    if (n > 0) {
+        if (cards) cards.style.display = 'none';
+        if (pagination) pagination.style.display = 'none';
+        if (multi) multi.style.display = '';
+        renderMultiTask();
+    } else {
+        if (multi) { multi.innerHTML = ''; multi.style.display = 'none'; }
+        if (cards) cards.style.display = '';
+        if (pagination) pagination.style.display = '';
+        renderAssignments();
+    }
+}
+
+function closeAllModals() {
+    ['detailModal', 'settingsModal', 'addAssignmentModal', 'studentReportModal', 'totalListModal'].forEach(id => {
+        const m = document.getElementById(id);
+        if (m) m.style.display = 'none';
+    });
+}
+
+// 視窗尺寸變化：<768px 強制單任務
+let _lastNarrow = (typeof window !== 'undefined' && window.innerWidth < 768);
+window.addEventListener('resize', () => {
+    const narrow = window.innerWidth < 768;
+    syncMultiTaskUI();
+    if (narrow && !_lastNarrow) {
+        if (getAllowedMultiTaskCount() !== 0) disableMultiTask(); else renderMainView();
+    } else {
+        renderMainView();
+    }
+    _lastNarrow = narrow;
+});
+
 function renderAssignments() {
     const container = document.getElementById('assignmentContainer');
     const pagination = document.getElementById('paginationContainer');
@@ -379,7 +595,7 @@ function renderPaginationControls(totalPages) {
 
 function changePage(delta) {
     currentPage += delta;
-    renderAssignments();
+    renderMainView();
 }
 
 function parseList(input) {
@@ -410,7 +626,7 @@ function openModal(id) {
 function closeModal(id) { 
     const modal = document.getElementById(id);
     if(modal) modal.style.display = 'none'; 
-    renderAssignments(); 
+    renderMainView(); 
 }
 
 function renderTotalListContent() {
@@ -470,6 +686,17 @@ function toggleStudent(n, el, work) {
 
     // 5. 靜默儲存到 localStorage
     saveDataQuietly(); 
+
+    // 6. 同步更新多任務面板上的未交人數
+    updatePanelCount(work);
+}
+
+// 更新多任務面板標題的未交人數（不重繪整個面板，避免破壞拖曳）
+function updatePanelCount(work) {
+    const el = document.getElementById('pc_' + work.id);
+    if (!el) return;
+    const undone = parseList(state.settings.studentList).length - work.doneList.length;
+    el.textContent = undone > 0 ? undone + ' 人未交' : '✅ 已完成';
 }
 
 function updateStudentUI(n, el, work) {
@@ -545,19 +772,8 @@ function openDetail(id) {
         }
     }
 
-    // 3. 渲染學生方格
-    const grid = document.getElementById('studentGrid'); 
-    grid.innerHTML = '';
-    parseList(state.settings.studentList).forEach(n => {
-        const div = document.createElement('div');
-        div.className = `student-item`;
-        div.innerText = n;
-        updateStudentUI(n, div, work);
-
-        div.onmousedown = () => { isDragging = true; toggleStudent(n, div, work); };
-        div.onmouseenter = () => { if (isDragging) toggleStudent(n, div, work); };
-        grid.appendChild(div);
-    });
+    // 3. 渲染學生方格（重用 renderStudentGrid）
+    renderStudentGrid(document.getElementById('studentGrid'), work);
 
     window.onmouseup = () => isDragging = false;
     
@@ -797,7 +1013,7 @@ async function cloudSync(method = 'UPLOAD') {
     }
 }
 
-function saveData() { localStorage.setItem('MarkIt', JSON.stringify(state)); renderAssignments(); }
+function saveData() { localStorage.setItem('MarkIt', JSON.stringify(state)); renderMainView(); }
 function saveDataQuietly() { localStorage.setItem('MarkIt', JSON.stringify(state)); }
 
 
@@ -918,8 +1134,8 @@ window.addEventListener('storage', (event) => {
             // 1. 立即同步 B 視窗記憶體中的 state
             state = JSON.parse(event.newValue);
 
-            // 2. 更新首頁卡片
-            renderAssignments();
+            // 2. 更新首頁卡片 / 多任務面板
+            renderMainView();
 
             // 3. 更新目前開啟的詳細視窗
             const detailModal = document.getElementById('detailModal');
