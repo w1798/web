@@ -331,20 +331,20 @@ function getSortedList() {
 
 let currentPage = 1;
 
-/* ===== 多任務模式（桌機/平板：單一、2、4；手機強制單一） ===== */
+/* ===== 多任務模式（所有裝置：單一、1、2、3、4） ===== */
 
-// 面板選取暫存（僅存在於本次開檔，不寫入 localStorage；切換 1/2/4 時會重設為最新任務）
+// 面板選取暫存（僅存在於本次開檔，不寫入 localStorage；切換數量時會重設為最新任務）
 let multiTaskSlots = [];
 
-// 依螢幕寬度取得允許的多任務數（<768px 一律 0 = 單任務）
+// 取得目前的多任務數（0 = 單任務；手機不再限制）
 function getAllowedMultiTaskCount() {
-    return (typeof window !== 'undefined' && window.innerWidth < 768) ? 0 : parseInt(state.settings.multiTaskCount || 0);
+    return parseInt(state.settings.multiTaskCount || 0);
 }
 
-// 切換多任務數量（0/1/2/4）
+// 切換多任務數量（0/1/2/3/4）
 function setMultiTaskCount(n) {
     let v = parseInt(n) || 0;
-    if ([1, 2, 4].indexOf(v) === -1) v = 0;
+    if ([1, 2, 3, 4].indexOf(v) === -1) v = 0;
     state.settings.multiTaskCount = v;
     // 切換時不記憶先前選取，一律改用最新的任務
     multiTaskSlots = [];
@@ -362,12 +362,12 @@ function disableMultiTask() {
     renderMainView();
 }
 
-// 同步下拉選單 UI
+// 同步下拉選單 UI（入口恆顯示，手機不限制）
 function syncMultiTaskUI() {
     const sel = document.getElementById('multiTaskSelect');
     if (sel) sel.value = String(getAllowedMultiTaskCount());
     const wrap = document.getElementById('multiTaskEntry');
-    if (wrap) wrap.style.display = (typeof window !== 'undefined' && window.innerWidth < 768) ? 'none' : '';
+    if (wrap) wrap.style.display = '';
 }
 
 // 渲染學生方格到指定容器（單任務 modal 與多任務面板共用）
@@ -531,17 +531,10 @@ function closeAllModals() {
     });
 }
 
-// 視窗尺寸變化：<768px 強制單任務
-let _lastNarrow = (typeof window !== 'undefined' && window.innerWidth < 768);
+// 視窗尺寸變化：重新同步 UI 與渲染（手機不再強制單任務）
 window.addEventListener('resize', () => {
-    const narrow = window.innerWidth < 768;
     syncMultiTaskUI();
-    if (narrow && !_lastNarrow) {
-        if (getAllowedMultiTaskCount() !== 0) disableMultiTask(); else renderMainView();
-    } else {
-        renderMainView();
-    }
-    _lastNarrow = narrow;
+    renderMainView();
 });
 
 function renderAssignments() {

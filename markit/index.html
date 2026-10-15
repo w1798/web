@@ -10,10 +10,10 @@
 
 <script>
     document.documentElement.style.visibility = 'hidden';
-    const APP_VER = "1.01a";
+    const APP_VER = "1.01b";
 </script>
 
-<script src="../loader_engine.js?ver=1.01a"></script>
+<script src="../loader_engine.js?ver=1.01b"></script>
     
     <style>
         .quick-select-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 15px; 
@@ -77,13 +77,14 @@ color: #888; font-size: 1.5rem; font-weight: bold; }
         <button class="nav-btn btn-primary" onclick="openAddModal()">新增任務</button>
     </div>
 
-    <!-- 多任務入口（手機 <768px 由 JS 隱藏，強制單任務） -->
+    <!-- 多任務入口（所有裝置皆可選 1/2/3/4 個任務） -->
     <div id="multiTaskEntry" class="multi-task-entry">
         <label class="multi-task-label" for="multiTaskSelect">同時處理</label>
         <select id="multiTaskSelect" class="select-short-width" onchange="setMultiTaskCount(this.value)">
             <option value="0">單一任務</option>
             <option value="1">1 個任務</option>
             <option value="2">2 個任務</option>
+            <option value="3">3 個任務</option>
             <option value="4">4 個任務</option>
         </select>
     </div>

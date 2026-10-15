@@ -657,10 +657,16 @@ color: var(--text); }
     box-sizing: border-box;
 }
 
-/* 桌機 ≥1024px：1 任務全寬、2 任務左右並排、4 任務 2x2 */
+/* 桌機 ≥1024px：1/3 任務單欄（3 為上中下）、2 任務左右並排、4 任務 2x2 */
 @media (min-width: 1024px) {
     .multi-task-container[data-count="1"] { display: grid; grid-template-columns: 1fr; }
     .multi-task-container[data-count="2"] { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .multi-task-container[data-count="3"] {
+        display: grid;
+        grid-template-columns: 1fr;
+        align-content: start;
+        padding-top: 0;
+    }
     .multi-task-container[data-count="4"] {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -672,11 +678,29 @@ color: var(--text); }
 /* 平板 768-1023px：垂直堆疊 */
 @media (min-width: 768px) and (max-width: 1023px) {
     .multi-task-container[data-count="1"],
+    .multi-task-container[data-count="2"] {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+    .multi-task-container[data-count="3"],
+    .multi-task-container[data-count="4"] {
+        display: grid;
+        grid-template-columns: 1fr;
+        align-content: start;
+        padding-top: 0;
+    }
+}
+
+/* 手機 <768px：垂直堆疊（不再限制單任務） */
+@media (max-width: 767px) {
+    .multi-task-container[data-count="1"],
     .multi-task-container[data-count="2"],
+    .multi-task-container[data-count="3"],
     .multi-task-container[data-count="4"] {
         display: grid;
         grid-template-columns: 1fr;
     }
+    .multi-task-container[data-count="3"],
     .multi-task-container[data-count="4"] {
         align-content: start;
         padding-top: 0;
