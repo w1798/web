@@ -405,11 +405,11 @@ function syncMultiTaskUI() {
         alignSel.style.display = count > 0 ? '' : 'none';
     }
 
-    // 左中右分欄（僅 3 或 6 任務時可用）
+    // 左中右分欄（一律顯示；2/4 任務亦支援切換）
     const split = document.getElementById('multiTaskSplit');
     if (split) split.checked = !!state.settings.multiTaskSplit;
     const splitRow = document.getElementById('multiTaskSplitRow');
-    if (splitRow) splitRow.style.display = (count === 3 || count === 6) ? '' : 'none';
+    if (splitRow) splitRow.style.display = '';
 }
 
 // 渲染學生方格到指定容器（單任務 modal 與多任務面板共用）
