@@ -10,10 +10,10 @@
 
 <script>
     document.documentElement.style.visibility = 'hidden';
-    const APP_VER = "1.01b";
+    const APP_VER = "1.01c";
 </script>
 
-<script src="../loader_engine.js?ver=1.01b"></script>
+<script src="../loader_engine.js?ver=1.01c"></script>
     
     <style>
         .quick-select-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 15px; 
@@ -86,6 +86,12 @@ color: #888; font-size: 1.5rem; font-weight: bold; }
             <option value="2">2 個任務</option>
             <option value="3">3 個任務</option>
             <option value="4">4 個任務</option>
+            <option value="6">6 個任務</option>
+        </select>
+        <select id="multiTaskAlignSelect" class="select-short-width" title="任務對齊方式" onchange="setMultiTaskAlign(this.value)">
+            <option value="top">置上</option>
+            <option value="center" selected>置中</option>
+            <option value="bottom">置下</option>
         </select>
     </div>
 </div>
@@ -155,6 +161,8 @@ id="studentFontSizeSelect" class="select-short-width"></select></label></div>
             <select id="statusCountSelect" class="select-short-width"></select>
         </label>
     </div>
+
+    <div class="settings-row" id="multiTaskSplitRow"><label>左中右分欄（3/6 任務）：<input type="checkbox" id="multiTaskSplit" style="width:20px;height:20px;"></label></div>
 
     <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 8px;">
         <label>自訂標籤名稱：</label>

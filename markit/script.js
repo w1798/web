@@ -66,7 +66,9 @@ function getInitialState() {
             apiKey: '',
             expiryDays: 0,
             pageSize: 10,
-            multiTaskCount: 0
+            multiTaskCount: 0,
+            multiTaskAlign: 'center',
+            multiTaskSplit: true
         },
         assignments: []
     };
@@ -148,7 +150,9 @@ function syncSettingsToUI() {
         'binId': (el) => el.value = s.binId || '',
         'apiKey': (el) => el.value = s.apiKey || '',
         'expiryDaysSelect': (el) => el.value = s.expiryDays || 0,
-        'pageSizeSelect': (el) => el.value = s.pageSize || 10
+        'pageSizeSelect': (el) => el.value = s.pageSize || 10,
+        'multiTaskAlignSelect': (el) => el.value = getMultiTaskAlign(),
+        'multiTaskSplit': (el) => el.checked = !!s.multiTaskSplit
     };
 
     for (const [id, setter] of Object.entries(setters)) {
@@ -313,6 +317,8 @@ function saveSettings() {
     if(document.getElementById('apiKey')) s.apiKey = getV('apiKey').trim();
     if(getV('expiryDaysSelect')) s.expiryDays = parseInt(getV('expiryDaysSelect'));
     if(getV('pageSizeSelect')) s.pageSize = parseInt(getV('pageSizeSelect'));
+    if(getV('multiTaskAlignSelect')) s.multiTaskAlign = getV('multiTaskAlignSelect');
+    s.multiTaskSplit = getC('multiTaskSplit');
 
     for(let i = 1; i <= 12; i++) {
         const input = document.getElementById(`statusLabel_${i}`);
@@ -341,13 +347,35 @@ function getAllowedMultiTaskCount() {
     return parseInt(state.settings.multiTaskCount || 0);
 }
 
-// 切換多任務數量（0/1/2/3/4）
+// 切換多任務數量（0/1/2/3/4/6）
 function setMultiTaskCount(n) {
     let v = parseInt(n) || 0;
-    if ([1, 2, 3, 4].indexOf(v) === -1) v = 0;
+    if ([1, 2, 3, 4, 6].indexOf(v) === -1) v = 0;
     state.settings.multiTaskCount = v;
     // 切換時不記憶先前選取，一律改用最新的任務
     multiTaskSlots = [];
+    saveDataQuietly();
+    syncMultiTaskUI();
+    renderMainView();
+}
+
+// 取得對齊方式（top / center / bottom，預設 center）
+function getMultiTaskAlign() {
+    const v = state.settings.multiTaskAlign;
+    return ['top', 'center', 'bottom'].indexOf(v) === -1 ? 'center' : v;
+}
+
+// 設定對齊方式
+function setMultiTaskAlign(v) {
+    state.settings.multiTaskAlign = ['top', 'center', 'bottom'].indexOf(v) === -1 ? 'center' : v;
+    saveDataQuietly();
+    syncMultiTaskUI();
+    renderMainView();
+}
+
+// 設定左中右分欄（3/6 任務適用）
+function setMultiTaskSplit(on) {
+    state.settings.multiTaskSplit = !!on;
     saveDataQuietly();
     syncMultiTaskUI();
     renderMainView();
@@ -364,10 +392,24 @@ function disableMultiTask() {
 
 // 同步下拉選單 UI（入口恆顯示，手機不限制）
 function syncMultiTaskUI() {
+    const count = getAllowedMultiTaskCount();
     const sel = document.getElementById('multiTaskSelect');
-    if (sel) sel.value = String(getAllowedMultiTaskCount());
+    if (sel) sel.value = String(count);
     const wrap = document.getElementById('multiTaskEntry');
     if (wrap) wrap.style.display = '';
+
+    // 對齊選單（僅多任務時顯示）
+    const alignSel = document.getElementById('multiTaskAlignSelect');
+    if (alignSel) {
+        alignSel.value = getMultiTaskAlign();
+        alignSel.style.display = count > 0 ? '' : 'none';
+    }
+
+    // 左中右分欄（僅 3 或 6 任務時可用）
+    const split = document.getElementById('multiTaskSplit');
+    if (split) split.checked = !!state.settings.multiTaskSplit;
+    const splitRow = document.getElementById('multiTaskSplitRow');
+    if (splitRow) splitRow.style.display = (count === 3 || count === 6) ? '' : 'none';
 }
 
 // 渲染學生方格到指定容器（單任務 modal 與多任務面板共用）
@@ -493,6 +535,8 @@ function renderMultiTask() {
     if (container) {
         container.innerHTML = html;
         container.dataset.count = String(n);
+        container.dataset.align = getMultiTaskAlign();
+        container.dataset.split = state.settings.multiTaskSplit ? '1' : '0';
     }
 
     // 綁定各面板的學生方格
@@ -613,6 +657,8 @@ function openModal(id) {
                 labelContainer.appendChild(row);
             }
         }
+        // 依當前任務數量同步「左中右分欄」列顯示與對齊值
+        syncMultiTaskUI();
     }
 }
 

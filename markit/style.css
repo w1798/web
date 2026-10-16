@@ -646,48 +646,46 @@ color: var(--text); }
     gap: 14px;
     align-items: stretch;
     width: 100%;
-    max-width: 95%;
-    /* 佔滿剩餘空間並垂直置中，再向下偏移，讓面板落在畫面中下方 */
+    max-width: min(95%, 1600px);
+    /* 佔滿剩餘空間，垂直位置交由 data-align 控制（預設置中） */
     flex: 1 1 auto;
     min-height: 0;
     margin: 0 auto;
     align-content: center;
-    padding-top: 18vh;
-    padding-bottom: 4vh;
+    --mt-pad-y: clamp(12px, 3vh, 48px);
+    padding-top: var(--mt-pad-y);
+    padding-bottom: var(--mt-pad-y);
+    grid-auto-rows: minmax(0, auto);
     box-sizing: border-box;
 }
 
-/* 桌機 ≥1024px：1/3 任務單欄（3 為上中下）、2 任務左右並排、4 任務 2x2 */
+/* 垂直對齊選項（預設置中） */
+.multi-task-container[data-align="top"]    { align-content: start; }
+.multi-task-container[data-align="center"] { align-content: center; }
+.multi-task-container[data-align="bottom"] { align-content: end; }
+
+/* 桌機 ≥1024px：1/3 任務單欄、2 任務左右並排、4 任務 2x2、6 任務左3右3；對齊由 data-align 控制 */
 @media (min-width: 1024px) {
     .multi-task-container[data-count="1"] { display: grid; grid-template-columns: 1fr; }
     .multi-task-container[data-count="2"] { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .multi-task-container[data-count="3"] {
-        display: grid;
-        grid-template-columns: 1fr;
-        align-content: start;
-        padding-top: 0;
-    }
-    .multi-task-container[data-count="4"] {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        align-content: start;
-        padding-top: 0;
-    }
+    .multi-task-container[data-count="3"] { display: grid; grid-template-columns: 1fr; }
+    .multi-task-container[data-count="4"] { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    /* 左中右分欄：3 任務 → 1+1+1 */
+    .multi-task-container[data-count="3"][data-split="1"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    /* 6 任務：桌機左3右3；分欄後 2+2+2 */
+    .multi-task-container[data-count="6"] { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .multi-task-container[data-count="6"][data-split="1"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 /* 平板 768-1023px：垂直堆疊 */
 @media (min-width: 768px) and (max-width: 1023px) {
     .multi-task-container[data-count="1"],
-    .multi-task-container[data-count="2"] {
-        display: grid;
-        grid-template-columns: 1fr;
-    }
+    .multi-task-container[data-count="2"],
     .multi-task-container[data-count="3"],
-    .multi-task-container[data-count="4"] {
+    .multi-task-container[data-count="4"],
+    .multi-task-container[data-count="6"] {
         display: grid;
         grid-template-columns: 1fr;
-        align-content: start;
-        padding-top: 0;
     }
 }
 
@@ -696,15 +694,13 @@ color: var(--text); }
     .multi-task-container[data-count="1"],
     .multi-task-container[data-count="2"],
     .multi-task-container[data-count="3"],
-    .multi-task-container[data-count="4"] {
+    .multi-task-container[data-count="4"],
+    .multi-task-container[data-count="6"] {
         display: grid;
         grid-template-columns: 1fr;
     }
-    .multi-task-container[data-count="3"],
-    .multi-task-container[data-count="4"] {
-        align-content: start;
-        padding-top: 0;
-    }
+    /* 手機強制置上，避免底部對齊造成裁切 */
+    .multi-task-container[data-align] { align-content: start; }
 }
 
 .task-panel {
@@ -717,6 +713,7 @@ color: var(--text); }
     flex-direction: column;
     min-height: 0;
     min-width: 0;
+    max-height: 100%;
 }
 .task-panel-head {
     display: flex;
