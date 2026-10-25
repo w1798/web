@@ -592,36 +592,152 @@ const startApp = () => {
         });
 
         wire('exportCsvBtn', () => {
-            const range = getReportsTimeRange();
+            // 取得時間範圍（優先使用 React State 同步的全域變數）
+            const getTimeRange = () => {
+                const tf = window._reportsTimeFilter || document.getElementById('timeRangeFilter')?.value || 'all';
+                if (tf === 'all') return null;
+                const now = new Date();
+                let s = new Date(now), e = new Date(now);
+                s.setHours(0, 0, 0, 0); e.setHours(23, 59, 59, 999);
+                if (tf === 'today') return { start: s.getTime(), end: e.getTime() };
+                if (tf === 'week') {
+                    const wd = now.getDay();
+                    s.setDate(s.getDate() - wd);
+                    e.setDate(s.getDate() + 6);
+                    return { start: s.getTime(), end: e.getTime() };
+                }
+                if (tf === 'lastWeek') {
+                    const wd = now.getDay();
+                    s.setDate(s.getDate() - wd - 7);
+                    e.setDate(s.getDate() + 6);
+                    return { start: s.getTime(), end: e.getTime() };
+                }
+                if (tf === 'month') {
+                    s.setDate(1);
+                    let skip = new Date(s); skip.setMonth(skip.getMonth() + 1); skip.setDate(0); skip.setHours(23, 59, 59, 999);
+                    return { start: s.getTime(), end: skip.getTime() };
+                }
+                if (tf === 'custom') {
+                    const sval = window._reportsCustomStart || document.getElementById('startDateFilter')?.value;
+                    const evalStr = window._reportsCustomEnd || document.getElementById('endDateFilter')?.value;
+                    if (sval && evalStr) {
+                        let sd = new Date(sval); sd.setHours(0, 0, 0, 0);
+                        let ed = new Date(evalStr); ed.setHours(23, 59, 59, 999);
+                        return { start: sd.getTime(), end: ed.getTime() };
+                    }
+                }
+                return null;
+            };
+
+            const range = getTimeRange();
+            const isTreasure = window._reportView === 'treasure';
             const filteredLogs = logs.filter(l => {
                 const ts = getTS(l.TS);
                 if (range && (ts < range.start || ts > range.end)) return false;
-                if (l.iSum === 1) return false; 
+                if (isTreasure) {
+                    if (!l.trId) return false;
+                } else {
+                    if (l.iSum === 1) return false;
+                }
                 return true;
             });
-            const validItems = [...new Set(filteredLogs.map(l => l.lb))].sort();
+            let csv = '';
+            let headerItems = '';
+
+            if (isTreasure) {
+                // 報表內容為「寶物」時：輸出寶物數據
+                const treasureDefs = window.treasureDefs || [];
+                if (!treasureDefs.length) {
+                    alert('尚未定義寶物，無法匯出寶物 CSV');
+                    return;
+                }
+                // 按顯示順序排序寶物定義
+                const sortedTreasureDefs = [...treasureDefs].sort(window.sortItems);
+                
+                // 建立 CSV 標頭：姓名/項目,總寶物數,寶物A,寶物A+,寶物A-,寶物B,寶物B+,寶物B-,...
+                const headers = ['姓名/項目', '總寶物數'];
+                sortedTreasureDefs.forEach(td => {
+                    headers.push(td.lb);
+                    headers.push(`${td.lb}+`);
+                    headers.push(`${td.lb}-`);
+                });
+                csv = '\uFEFF' + headers.join(',') + '\n';
+
+                // 計算每位學生的寶物明細（寶物A = 寶物A+ + 寶物A-）
+                const rowValueGetter = (sLogs) => {
+                    const itemStats = {};
+                    sortedTreasureDefs.forEach(td => {
+                        itemStats[td.id] = { posTotal: 0, negTotal: 0, netTotal: 0 };
+                    });
+                    sLogs.filter(l => l.trId).forEach(l => {
+                        const tid = l.trId;
+                        const qty = l.trQty || 0;
+                        if (itemStats[tid]) {
+                            if (qty > 0) itemStats[tid].posTotal += qty;
+                            else if (qty < 0) itemStats[tid].negTotal += qty; // negTotal 保持為負數或負值加總
+                            itemStats[tid].netTotal += qty;
+                        }
+                    });
+                    return itemStats;
+                };
+
+                let sortedStudents = [...students].sort((a, b) => a.id.localeCompare(b.id, 'zh-TW'));
+                const reportSid = window._reportSelectedStudent;
+                if (reportSid) {
+                    sortedStudents = sortedStudents.filter(s => s.id === reportSid);
+                }
+
+                // 寶物資料列輸出
+                sortedStudents.forEach(s => {
+                    const sLogs = filteredLogs.filter(l => l.sID === s.id);
+                    if (sLogs.length === 0) return;
+                    const itemStats = rowValueGetter(sLogs);
+                    
+                    let grandNetTotal = 0;
+                    const rowCols = [];
+                    sortedTreasureDefs.forEach(td => {
+                        const stats = itemStats[td.id] || { posTotal: 0, negTotal: 0, netTotal: 0 };
+                        grandNetTotal += stats.netTotal;
+                        rowCols.push(stats.netTotal);  // 寶物A (總計)
+                        rowCols.push(stats.posTotal);  // 寶物A+
+                        rowCols.push(stats.negTotal);  // 寶物A-
+                    });
+
+                    csv += `"${s.id}",${grandNetTotal},` + rowCols.join(',') + '\n';
+                });
+            } else {
+                // 報表內容為「點數」時：輸出原來的數據
+                const validItems = [...new Set(filteredLogs.map(l => l.lb))].sort();
+                headerItems = validItems;
+                csv = '\uFEFF姓名/項目,總點數,' + validItems.join(',') + '\n';
+            }
+
             let sortedStudents = [...students].sort((a, b) => a.id.localeCompare(b.id, 'zh-TW'));
             const reportSid = window._reportSelectedStudent;
             if (reportSid) {
                 sortedStudents = sortedStudents.filter(s => s.id === reportSid);
             }
-            let csv = '\uFEFF姓名/項目,總點數,' + validItems.join(',') + '\n';
-            sortedStudents.forEach(s => {
-                const sLogs = filteredLogs.filter(l => l.sID === s.id);
-                if (sLogs.length === 0) return;
-                const total = sLogs.reduce((acc, l) => acc + l.pt, 0);
-                let row = `"${s.id}",${total}`;
-                validItems.forEach(itm => { row += `,${sLogs.filter(l => l.lb === itm).reduce((acc, l) => acc + l.pt, 0)}`; });
-                csv += row + '\n';
-            });
-            csv += '\n姓名,總次數,' + validItems.join(',') + '\n';
-            sortedStudents.forEach(s => {
-                const sLogs = filteredLogs.filter(l => l.sID === s.id);
-                if (sLogs.length === 0) return;
-                let row = `"${s.id}",${sLogs.length}`;
-                validItems.forEach(itm => { row += `,${sLogs.filter(l => l.lb === itm).length}`; });
-                csv += row + '\n';
-            });
+
+            if (!isTreasure) {
+                // 原本的點數輸出邏輯
+                sortedStudents.forEach(s => {
+                    const sLogs = filteredLogs.filter(l => l.sID === s.id);
+                    if (sLogs.length === 0) return;
+                    const total = sLogs.reduce((acc, l) => acc + l.pt, 0);
+                    let row = `"${s.id}",${total}`;
+                    headerItems.forEach(itm => { row += `,${sLogs.filter(l => l.lb === itm).reduce((acc, l) => acc + l.pt, 0)}`; });
+                    csv += row + '\n';
+                });
+                csv += '\n姓名,總次數,' + headerItems.join(',') + '\n';
+                sortedStudents.forEach(s => {
+                    const sLogs = filteredLogs.filter(l => l.sID === s.id);
+                    if (sLogs.length === 0) return;
+                    let row = `"${s.id}",${sLogs.length}`;
+                    headerItems.forEach(itm => { row += `,${sLogs.filter(l => l.lb === itm).length}`; });
+                    csv += row + '\n';
+                });
+            }
+
             const b = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `report_${new Date().toLocaleDateString()}.csv`; a.click();
         });

@@ -140,7 +140,9 @@ const Reports = React.memo(function Reports() {
 
     React.useEffect(() => {
         window._reportsTimeFilter = timeFilter;
-    }, [timeFilter]);
+        window._reportsCustomStart = customStart;
+        window._reportsCustomEnd = customEnd;
+    }, [timeFilter, customStart, customEnd]);
 
     React.useEffect(() => {
         if (modals.reports) {
