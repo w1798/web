@@ -727,7 +727,13 @@ function Modals() {
                         {activeProfileTab === 'history' && (
                             <div className="profile-tab-content active">
                                 <ul className="history-list">
-                                    {logs.filter(l => l.sID === cId).reverse().map(l => {
+                                    {[...new Map(logs.filter(l => l.sID === cId).map((l, index) => [l.id, { l, index }])).values()]
+                                     .sort((a, b) => {
+                                         const ta = window.getTS ? window.getTS(a.l.TS) : 0;
+                                         const tb = window.getTS ? window.getTS(b.l.TS) : 0;
+                                         return tb - ta || b.index - a.index;
+                                     })
+                                     .map(({ l }) => {
                                         const d = typeof l.TS === 'number' ? new Date(l.TS) : (window.StampTool ? window.StampTool.decode(l.TS) : new Date());
                                         const isTr = !!l.trId;
                                         return (

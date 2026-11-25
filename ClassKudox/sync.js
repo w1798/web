@@ -568,9 +568,11 @@ const checkCloudSyncState = async () => {
                         if (s) {
                             if (o.d.is === 1 && !o.d.ti) s.iP = (s.iP || 0) + o.d.p;
                             else if (!o.d.ti) s.cP = (s.cP || 0) + o.d.p;
-                            logs.push({ id: o.d.l, sID: sid, lb: o.d.lb, pt: o.d.p, TS: o.t, iSum: o.d.is === 1 ? 1 : undefined, trId: o.d.ti, trQty: o.d.tq });
-                            if (o.d.ti && o.d.tq) { if (!s.tr) s.tr = {}; s.tr[o.d.ti] = (s.tr[o.d.ti] || 0) + o.d.tq; }
-                            modified = true;
+                            if (!logs.some(x => x.id === o.d.l)) {
+                                logs.push({ id: o.d.l, sID: sid, lb: o.d.lb, pt: o.d.p, TS: o.t, iSum: o.d.is === 1 ? 1 : undefined, trId: o.d.ti, trQty: o.d.tq });
+                                if (o.d.ti && o.d.tq) { if (!s.tr) s.tr = {}; s.tr[o.d.ti] = (s.tr[o.d.ti] || 0) + o.d.tq; }
+                                modified = true;
+                            }
                         }
                     } else if (o.a === ACT.STU_AWD_REV) { 
                         const logIdx = logs.findIndex(l => l.id === o.d);
